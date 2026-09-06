@@ -21,18 +21,36 @@ inside what you think is a comment:
 > < + - . , [ ]
 ```
 
-So a comment reading `QUARTER-ROUND` silently executes a `-` (decrement), and a
-range written `0x00..0x1F` executes two `.` (output). **Comment and
-documentation text embedded in a `.bf` file MUST avoid all eight command
-bytes.** In practice:
+So a comment reading `QUARTER-ROUND` silently executes a `-` (decrement), a
+range written `0x00..0x1F` executes two `.` (output), and — the one that bites
+hardest — **ordinary English punctuation is code**: every comma and full stop in
+a sentence is a live `,` (read a byte) or `.` (write a byte).
 
-- Use letters, digits, spaces, and this safe punctuation only: `_ : = ; ! ? # @ * / ( ) { } | ~ ^ $ % &`
-- Never use `-` in a comment — use `_` in names (`QUARTER_ROUND`, not `QUARTER-ROUND`).
-- Never use `.` in a comment — the range separator is a colon (`0x00:0x1F`), never `..`; end sentences with `;` or nothing, not a period.
-- When you must *refer* to a command byte in prose, name it: `PLUS MINUS LEFT RIGHT DOT COMMA OPEN CLOSE`.
+Two mechanisms handle this, and **both** are required:
 
-Everything below is designed to be written with the safe set, so tape maps,
-block headers, and idiom annotations can live directly in the source.
+1. **`;` starts a comment to end of line** in the pinned interpreter
+   (`tools/bfi`), so prose can be written naturally. Every comment line begins
+   with `;`, and every trailing annotation is introduced by `;`.
+2. **Portability is enforced, because `;` is not standard brainfuck.** Another
+   interpreter would execute that prose. So `tools/bflint` compares the
+   instruction stream *with `;` comments honoured* against the stream *with only
+   command bytes kept*: they MUST be identical. A file that runs correctly only
+   under our own interpreter is not brainfuck and fails the lint.
+
+In practice, when writing comment prose:
+
+- Use letters, digits, spaces, and this safe punctuation: `_ : = ; ! ? # @ * / ( ) { } | ~ ^ $ % &`
+- Never use `-` in a name — use `_` (`QUARTER_ROUND`, not `QUARTER-ROUND`).
+- Never use `.` — end sentences with `;` or nothing; ranges use a colon (`0x00:0x1F`), never `..`.
+- Never use `[` `]` — array counts use braces (`state{16}`, not `state[16]`).
+- Avoid commas in prose; a double space reads fine as a pause.
+- When you must *refer* to a command byte, name it: `PLUS MINUS LEFT RIGHT DOT COMMA OPEN CLOSE`.
+
+**You do not have to get this right by hand.** `tools/bflint --fix` rewrites
+comment prose into the safe set (dropping prose commas, turning full stops into
+`;`, `-` into `_`, brackets into braces), touching nothing outside comments, so
+program semantics cannot change. Run it before committing; the KATs then prove
+the rewrite was inert.
 
 (This file is Markdown, not brainfuck, so it uses normal punctuation freely.
 The rule applies only to text inside `.bf` files.)
@@ -46,6 +64,10 @@ bfsodium targets one interpreter with one semantics profile, implemented by
 
 - **Cells** are unsigned 8-bit and **wrap mod 256**. We *rely* on the wrap as
   free modular-byte arithmetic.
+- **`;` runs a comment to end of line** (§0). This is the one convenience the
+  pinned interpreter adds, and it is neutralised by the portability lint: with
+  comments stripped, every bfsodium file must be identical to what a canonical
+  brainfuck interpreter would execute.
 - **Tape** is unbounded to the right, zero-filled on first touch.
 - **Cell 0 is the floor.** Moving left of it is a hard error (`bfi` exits 3).
   bfsodium code never does this; the check turns a pointer-discipline slip into

@@ -15,7 +15,11 @@
  *   - ',' at end-of-input leaves the current cell UNCHANGED (primitives read an
  *     exact, known byte count, so this never fires mid-input);
  *   - '.' and ',' are raw bytes — no newline translation, no encoding;
- *   - every byte that is not one of ><+-.,[] is a comment and ignored.
+ *   - a ';' starts a comment that runs to end of line: every byte up to the
+ *     newline is ignored, command bytes included. This is what lets bfsodium
+ *     write real prose (with commas and periods, which are otherwise the ','
+ *     and '.' instructions) in tape maps and block contracts. Outside a
+ *     comment, every byte that is not one of ><+-.,[] is still ignored.
  *
  * Usage:  bfi program.bf < input > output
  * Exit:   0 ok; 2 usage/parse/OOM; 3 pointer moved left of cell 0.
@@ -36,8 +40,10 @@ int main(int argc, char **argv) {
     size_t cap = 1u << 16, n = 0;
     char *prog = malloc(cap);
     if (!prog) die("out of memory");
-    int ch;
+    int ch, in_comment = 0;
     while ((ch = fgetc(f)) != EOF) {
+        if (in_comment) { if (ch == '\n') in_comment = 0; continue; }
+        if (ch == ';') { in_comment = 1; continue; }
         if (ch=='>'||ch=='<'||ch=='+'||ch=='-'||ch=='.'||ch==','||ch=='['||ch==']') {
             if (n == cap) { cap <<= 1; prog = realloc(prog, cap); if (!prog) die("out of memory"); }
             prog[n++] = (char)ch;

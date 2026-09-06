@@ -5,3 +5,4 @@
 # Build cruft
 *.o
 *.out
+/tools/bflint

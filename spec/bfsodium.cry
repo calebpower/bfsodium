@@ -1,0 +1,30 @@
+// bfsodium reference oracle (Cryptol).
+//
+// This is oracle B: a bit-precise, independent specification the brainfuck is
+// checked against, byte-for-byte, alongside the published standard vectors
+// (oracle A). Each `*Run` function takes and returns the exact wire bytes a
+// bfsodium primitive reads on stdin and writes on stdout, so the driver can
+// compare raw byte sequences with no marshaling of its own. The little-endian
+// word handling lives here on purpose: it means the tests also prove the
+// brainfuck's LE handling matches the spec.
+
+module bfsodium where
+
+// A 32-bit word is four little-endian bytes on the wire (LSB first).
+leWord : [4][8] -> [32]
+leWord bs = join (reverse bs)
+
+leBytes : [32] -> [4][8]
+leBytes w = reverse (split w)
+
+// ADD32: in = a(4 LE) # b(4 LE); out = (a + b mod 2^32)(4 LE).
+add32Run : [8][8] -> [4][8]
+add32Run inb = leBytes (leWord (take`{4} inb) + leWord (drop`{4} inb))
+
+// ROTL32 by n: in = w(4 LE); out = (w <<< n)(4 LE).
+rotl32Run : [8] -> [4][8] -> [4][8]
+rotl32Run n inb = leBytes (leWord inb <<< n)
+
+// XOR32: in = x(4 LE) # y(4 LE); out = (x ^ y)(4 LE).
+xor32Run : [8][8] -> [4][8]
+xor32Run inb = leBytes (leWord (take`{4} inb) ^ leWord (drop`{4} inb))
