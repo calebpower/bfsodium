@@ -74,6 +74,8 @@ dk chacha20/xor32.bf 1234567812345678 00000000 xor32Run "xor32 self is zero"
 dk chacha20/xor32.bf 78563412efbeadde 97e899cc xor32Run "xor32 mixed"
 dk chacha20/xor32.bf aa55aa5555aa55aa ffffffff xor32Run "xor32 alternating"
 
+dk chacha20/quarterround.bf 1111111104030201436f8d9b67452301 f4922aeacef81ccb2e478145bbc48158 qrRun "quarterround RFC 8439 section 2.2.1"
+
 echo
 echo "== summary =="
 echo "passed $pass, failed $fail"

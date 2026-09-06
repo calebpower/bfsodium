@@ -33,3 +33,22 @@ rotl32nRun inb = leBytes (leWord (take`{4} inb) <<< (inb @ 4))
 // XOR32: in = x(4 LE) # y(4 LE); out = (x ^ y)(4 LE).
 xor32Run : [8][8] -> [4][8]
 xor32Run inb = leBytes (leWord (take`{4} inb) ^ leWord (drop`{4} inb))
+
+// The ChaCha20 quarter round (RFC 8439 section 2.2.1).
+// in = a # b # c # d, each 4 LE bytes; out = the same four words, updated.
+qrRun : [16][8] -> [16][8]
+qrRun inb = leBytes a2 # leBytes b2 # leBytes c2 # leBytes d2
+  where
+    ws = [ leWord w | w <- split`{4} inb ]
+    a  = ws @ (0 : [8])
+    b  = ws @ (1 : [8])
+    c  = ws @ (2 : [8])
+    d  = ws @ (3 : [8])
+    a1 = a  + b
+    d1 = (d  ^ a1) <<< 16
+    c1 = c  + d1
+    b1 = (b  ^ c1) <<< 12
+    a2 = a1 + b1
+    d2 = (d1 ^ a2) <<< 8
+    c2 = c1 + d2
+    b2 = (b1 ^ c2) <<< 7
