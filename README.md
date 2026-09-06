@@ -15,13 +15,27 @@ replayable.
 
 Start with **[CONVENTIONS.md](CONVENTIONS.md)** — the rulebook every `.bf` file
 obeys: the frozen machine model, tape maps, pointer discipline, the idiom
-vocabulary, and the testing protocol.
+vocabulary, and the testing protocol. **[IDIOMS.md](IDIOMS.md)** is the
+vocabulary itself: the handful of patterns everything is built from, each with
+its tape contract.
 
 ## Status
 
-Early. v1 targets the symmetric set (ChaCha20, Poly1305, ChaCha20-Poly1305,
-SHA-256, HKDF-SHA-256); **ChaCha20 is first**. Keccak and the ML-KEM / ML-DSA
-lattice math are the later mountain.
+The ChaCha20 **quarter round** works and matches RFC 8439 §2.2.1.
+
+| | |
+|---|---|
+| [`chacha20/add32.bf`](chacha20/add32.bf) | 32-bit little-endian add |
+| [`chacha20/rotl32.bf`](chacha20/rotl32.bf) | rotate left by n |
+| [`chacha20/xor32.bf`](chacha20/xor32.bf) | bitwise exclusive or |
+| [`chacha20/quarterround.bf`](chacha20/quarterround.bf) | the ChaCha20 quarter round |
+
+Next: the full ChaCha20 block function (state setup, ten double rounds, the
+final add). Then Poly1305, ChaCha20-Poly1305, SHA-256, HKDF-SHA-256. Keccak and
+the ML-KEM / ML-DSA lattice math are the later mountain.
+
+Run the suite with `sh tests/run.sh` (needs a C compiler and
+[Cryptol](https://cryptol.net); `reaper test` provisions both).
 
 ## Correctness
 

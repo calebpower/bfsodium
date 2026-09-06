@@ -1,0 +1,37 @@
+# bfsodium reaper tenant.
+#
+# Host execution rather than a container: the suite needs a C compiler (for the
+# pinned interpreter and the lint) and the Cryptol toolchain plus z3 (the
+# second oracle), and Cryptol ships as a release tarball rather than as a
+# digest-pinned image we already trust. The guest is disposable, so installing
+# both there is honest and reproducible; guest-setup.sh pins the Cryptol
+# version explicitly.
+schema = 1
+project = "bfsodium"
+
+guests = ["ubuntu-26.04"]
+exec = "host"
+
+[build]
+cmd = "sh tools/guest-setup.sh"
+
+[run]
+# No pipe into tee: /bin/sh may be dash (no pipefail, no PIPESTATUS) and the
+# suite's exit status is the whole point. Redirect, capture the real status,
+# echo the log for the live view, then re-raise.
+cmd = "sh tests/run.sh > \"$REAPER_OUT\"/suite.log 2>&1; s=$?; cat \"$REAPER_OUT\"/suite.log; exit $s"
+
+[sync]
+# Never copy host-built binaries onto the guest: a FreeBSD-built bfi looks
+# present to the suite's rebuild and then fails to exec. The guest builds its
+# own from the committed C sources.
+exclude = [
+  "/tools/bfi",
+  "/tools/hx",
+  "/tools/bflint",
+  "/.git/",
+]
+
+[resources]
+cores = 2
+ram_gb = 4
