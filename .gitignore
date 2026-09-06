@@ -1,5 +1,6 @@
-# Compiled reference interpreter — the source of truth is tools/bfi.c
+# Compiled tools — the sources of truth are the .c files in tools/
 /tools/bfi
+/tools/hx
 
 # Build cruft
 *.o
