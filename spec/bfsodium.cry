@@ -25,6 +25,11 @@ add32Run inb = leBytes (leWord (take`{4} inb) + leWord (drop`{4} inb))
 rotl32Run : [8] -> [4][8] -> [4][8]
 rotl32Run n inb = leBytes (leWord inb <<< n)
 
+// ROTL32 with the rotation count supplied on the wire, as chacha20/rotl32.bf
+// reads it: in = w(4 LE) # n(1); out = (w <<< n)(4 LE).
+rotl32nRun : [5][8] -> [4][8]
+rotl32nRun inb = leBytes (leWord (take`{4} inb) <<< (inb @ 4))
+
 // XOR32: in = x(4 LE) # y(4 LE); out = (x ^ y)(4 LE).
 xor32Run : [8][8] -> [4][8]
 xor32Run inb = leBytes (leWord (take`{4} inb) ^ leWord (drop`{4} inb))
