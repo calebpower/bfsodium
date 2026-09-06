@@ -21,17 +21,20 @@ its tape contract.
 
 ## Status
 
-The ChaCha20 **quarter round** works and matches RFC 8439 §2.2.1.
+The ChaCha20 **block function** works and matches RFC 8439 §2.3.2 — a real
+post-quantum-era stream cipher core, in brainfuck, checked against two
+independent oracles.
 
 | | |
 |---|---|
 | [`chacha20/add32.bf`](chacha20/add32.bf) | 32-bit little-endian add |
 | [`chacha20/rotl32.bf`](chacha20/rotl32.bf) | rotate left by n |
 | [`chacha20/xor32.bf`](chacha20/xor32.bf) | bitwise exclusive or |
-| [`chacha20/quarterround.bf`](chacha20/quarterround.bf) | the ChaCha20 quarter round |
+| [`chacha20/quarterround.bf`](chacha20/quarterround.bf) | the quarter round (RFC 8439 §2.2.1) |
+| [`chacha20/block.bf`](chacha20/block.bf) | the block function (RFC 8439 §2.3.2) |
 
-Next: the full ChaCha20 block function (state setup, ten double rounds, the
-final add). Then Poly1305, ChaCha20-Poly1305, SHA-256, HKDF-SHA-256. Keccak and
+Next: the ChaCha20 stream cipher (counter mode over the block function). Then
+Poly1305, ChaCha20-Poly1305, SHA-256, HKDF-SHA-256. Keccak and
 the ML-KEM / ML-DSA lattice math are the later mountain.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and

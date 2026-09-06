@@ -34,6 +34,42 @@ rotl32nRun inb = leBytes (leWord (take`{4} inb) <<< (inb @ 4))
 xor32Run : [8][8] -> [4][8]
 xor32Run inb = leBytes (leWord (take`{4} inb) ^ leWord (drop`{4} inb))
 
+// The quarter round on four words.
+qr4 : ([32],[32],[32],[32]) -> ([32],[32],[32],[32])
+qr4 (a,b,c,d) = (a2,b2,c2,d2)
+  where
+    a1 = a  + b
+    d1 = (d  ^ a1) <<< 16
+    c1 = c  + d1
+    b1 = (b  ^ c1) <<< 12
+    a2 = a1 + b1
+    d2 = (d1 ^ a2) <<< 8
+    c2 = c1 + d2
+    b2 = (b1 ^ c2) <<< 7
+
+applyQR : [16][32] -> ([8],[8],[8],[8]) -> [16][32]
+applyQR s (i,j,k,l) =
+    update (update (update (update s i a') j b') k c') l d'
+  where (a',b',c',d') = qr4 (s@i, s@j, s@k, s@l)
+
+doubleRound : [16][32] -> [16][32]
+doubleRound s = foldl applyQR s
+    [ (0,4,8,12), (1,5,9,13), (2,6,10,14), (3,7,11,15)
+    , (0,5,10,15),(1,6,11,12),(2,7,8,13), (3,4,9,14) ]
+
+// The ChaCha20 block function (RFC 8439 section 2.3), taking and returning the
+// exact wire bytes chacha20/block.bf reads and writes:
+// in = key(32) # counter(4 LE) # nonce(12); out = the 64 byte keystream block.
+blockRun : [48][8] -> [64][8]
+blockRun inb = join [ leBytes w | w <- out ]
+  where
+    kws  = [ leWord w | w <- split`{8} (take`{32} inb) ]
+    cw   = leWord (take`{4} (drop`{32} inb))
+    nws  = [ leWord w | w <- split`{3} (drop`{36} inb) ]
+    st0  = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574] # kws # [cw] # nws
+    sts  = [st0] # [ doubleRound s | s <- sts ]
+    out  = [ x + y | x <- sts @ (10 : [8]) | y <- st0 ]
+
 // The ChaCha20 quarter round (RFC 8439 section 2.2.1).
 // in = a # b # c # d, each 4 LE bytes; out = the same four words, updated.
 qrRun : [16][8] -> [16][8]

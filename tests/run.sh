@@ -74,6 +74,8 @@ dk chacha20/xor32.bf 1234567812345678 00000000 xor32Run "xor32 self is zero"
 dk chacha20/xor32.bf 78563412efbeadde 97e899cc xor32Run "xor32 mixed"
 dk chacha20/xor32.bf aa55aa5555aa55aa ffffffff xor32Run "xor32 alternating"
 
+dk chacha20/block.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e blockRun "block function RFC 8439 section 2.3.2"
+
 dk chacha20/quarterround.bf 1111111104030201436f8d9b67452301 f4922aeacef81ccb2e478145bbc48158 qrRun "quarterround RFC 8439 section 2.2.1"
 
 echo
