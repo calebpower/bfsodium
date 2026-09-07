@@ -180,3 +180,11 @@ poly1305Run34 inb = leBytesN`{16} (drop`{144} ((a2 + s) && ((1 << 128) - 1)))
 rowrotRun : [64][8] -> [64][8]
 rowrotRun inb = join [ join [ leBytes w | w <- (r <<< 1) ]
                      | r <- split`{4} [ leWord w | w <- split`{16} inb ] ]
+
+// STAGGER: rotate row r left by r. This is what turns the diagonal round into
+// another column round. Applying it four times is the identity, which is how
+// the block function undoes it.
+staggerRun : [64][8] -> [64][8]
+staggerRun inb = join [ join [ leBytes w | w <- (r <<< n) ]
+                      | r <- split`{4} [ leWord w | w <- split`{16} inb ]
+                      | n <- [0,1,2,3] : [4][8] ]
