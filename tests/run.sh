@@ -56,14 +56,33 @@ echo "== tier 9: legibility and portability =="
 run "bfstyle self-test" ./tools/bfstyle --selftest
 run "bflint self-test" ./tools/bflint --selftest
 run "bffoot self-test" ./tools/bffoot --selftest
-for f in chacha20/*.bf poly1305/*.bf; do run "lint $f" ./tools/bflint "$f"; done
-for f in chacha20/*.bf poly1305/*.bf; do run "style $f" ./tools/bfstyle "$f"; done
+# Every committed .bf, not a named list of directories. index/ sat outside the
+# old "chacha20 poly1305" globs and so was linted, styled and footprint-checked
+# by nothing at all -- it passes when run by hand, which is exactly the state in
+# which a regression goes unseen. A new directory is covered by construction.
+for f in */*.bf; do run "lint $f" ./tools/bflint "$f"; done
+for f in */*.bf; do run "style $f" ./tools/bfstyle "$f"; done
 # A routine is pasted into its callers on the strength of its INTERFACE line, so
 # that line has to be a fact and not a promise. stagger understated its footprint
 # by four cells, quietly borrowed them from the block function's saved copy of
 # the original state, and put one wrong word in every block; the arithmetic was
 # perfect and every other tier passed. This is the check that saw it.
-for f in chacha20/*.bf poly1305/*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
+for f in */*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
+
+# bffoot returns success on a file with no INTERFACE line -- it declines to
+# judge what does not claim to be pasteable, which is right, but it means
+# "footprint" above is a pass that asserts nothing on those files. So the set of
+# them is pinned. chacha20/stream.bf is a whole program rather than a routine,
+# and index/ is the unpasted escape hatch; a NEW routine that forgets its
+# INTERFACE line joins this list and fails here, instead of collecting a
+# vacuous PASS from the loop above.
+run "the files declaring no INTERFACE are exactly the known ones" sh -c '
+    got=$(for f in */*.bf; do grep -q "^; INTERFACE" "$f" || echo "$f"; done)
+    want="chacha20/stream.bf
+index/fetch8.bf
+index/fetchword.bf
+index/store8.bf"
+    test "$got" = "$want"'
 
 # The committed brainfuck must be exactly what its skeleton expands to. Nothing
 # is hand-edited downstream of bfexpand, and this is the check that says so --
