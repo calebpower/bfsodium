@@ -374,3 +374,72 @@ qr() {    # quarter round on word indices $1 $2 $3 $4
     add_op $_qa $_qb; xor_op $_qd $_qa; rot_op $_qd 8
     add_op $_qc $_qd; xor_op $_qb $_qc; rot_op $_qb 7
 }
+
+# iszero_at: leave $2 (a flag) equal to 1 exactly when the byte at $1 is zero,
+# using $3 as scratch and $4 as a staging temp. Entered and left at cell 0.
+# Ordering: $2 < $3, and $4 above both $1 and $3, so every move has a known
+# direction. The tested byte is copied out and put back, not consumed.
+iszero_at() {
+    _zc=$1; _zf=$2; _zs=$3; _zt=$4
+    note "$(printf 'flag @%03x := 1 assuming @%03x is zero' "$_zf" "$_zc")"
+    goto 0 "$_zf"; code '+'
+    goto "$_zf" "$_zc"
+    code '[-'; erun ">" $(( _zs - _zc )); code '+'; erun ">" $(( _zt - _zs )); code '+'
+    erun "<" $(( _zt - _zc )); code ']'
+    goto "$_zc" "$_zt"
+    code '[-'; erun "<" $(( _zt - _zc )); code '+'; erun ">" $(( _zt - _zc )); code ']'
+    note "if the copy was nonzero  clear it and clear the flag"
+    goto "$_zt" "$_zs"
+    code '[[-]'; erun "<" $(( _zs - _zf )); code '-'; erun ">" $(( _zs - _zf )); code ']'
+    goto "$_zs" 0
+}
+
+# and15_op: keep only the low four bits of the byte at $1, using the five cell
+# halve frame $2 and four bit cells at $3. Poly1305 clamps r by masking, and
+# masking is not an instruction here, so the byte is taken apart and rebuilt
+# from the bits that survive.
+and15_op() {
+    _ac=$1; _af=$2; _ab=$3
+    note "$(printf 'AND15 : @%03x keeps only its low four bits' "$_ac")"
+    goto 0 "$_ac"; mvn "$_ac" "$_af" 1
+    _ak=0
+    while [ $_ak -lt 4 ]; do
+        note "$(printf 'peel off bit %d' "$_ak")"
+        goto $(( _ak == 0 ? _ac : _af + 1 )) "$_af"; code "$HALVEK"
+        goto "$_af" $(( _af + 2 )); mvn $(( _af + 2 )) $(( _ab + _ak )) 1
+        goto $(( _af + 2 )) $(( _af + 1 ))
+        if [ $_ak -lt 3 ]; then mvn $(( _af + 1 )) "$_af" 1; fi
+        _ak=$(( _ak + 1 ))
+    done
+    note "discard what was above the low four bits"
+    goto $(( _af + 1 )) $(( _af + 1 )); code '[-]'
+    goto $(( _af + 1 )) 0
+    note "rebuild the byte from the four bits that survived"
+    _ak=0
+    while [ $_ak -lt 4 ]; do
+        goto 0 $(( _ab + _ak ))
+        code '[-'; goto $(( _ab + _ak )) "$_ac"; erun "+" $(( 1 << _ak ))
+        goto "$_ac" $(( _ab + _ak )); code ']'
+        goto $(( _ab + _ak )) 0
+        _ak=$(( _ak + 1 ))
+    done
+}
+
+# and252_op: clear the low two bits of the byte at $1, using the halve frame $2.
+and252_op() {
+    _cc=$1; _cf=$2
+    note "$(printf 'AND252 : @%03x loses its low two bits' "$_cc")"
+    goto 0 "$_cc"; mvn "$_cc" "$_cf" 1
+    goto "$_cc" "$_cf"; code "$HALVEK"
+    note "discard the first bit"
+    goto "$_cf" $(( _cf + 2 )); code '[-]'
+    goto $(( _cf + 2 )) $(( _cf + 1 )); mvn $(( _cf + 1 )) "$_cf" 1
+    goto $(( _cf + 1 )) "$_cf"; code "$HALVEK"
+    note "discard the second bit"
+    goto "$_cf" $(( _cf + 2 )); code '[-]'
+    goto $(( _cf + 2 )) $(( _cf + 1 ))
+    note "what is left is worth four times as much as it now reads"
+    code '[-'; goto $(( _cf + 1 )) "$_cc"; code '++++'
+    goto "$_cc" $(( _cf + 1 )); code ']'
+    goto $(( _cf + 1 )) 0
+}

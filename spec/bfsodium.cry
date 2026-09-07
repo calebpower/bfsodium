@@ -150,3 +150,26 @@ qrRun inb = leBytes a2 # leBytes b2 # leBytes c2 # leBytes d2
     d2 = (d1 ^ a2) <<< 8
     c2 = c1 + d2
     b2 = (b1 ^ c2) <<< 7
+
+// Poly1305 (RFC 8439 section 2.5) over a 34 byte message, which is the size of
+// the section 2.5.2 vector: two full blocks and a two byte tail.
+//   in = key(32) # len(2 LE) # msg(34); out = tag(16)
+// Written out block by block rather than folded, so it stays readable and
+// stays independent of how the brainfuck loops.
+wide : {k} (fin k, 272 >= k) => [k] -> [272]
+wide x = zero # x
+
+poly1305Run34 : [68][8] -> [16][8]
+poly1305Run34 inb = leBytesN`{16} (drop`{144} ((a2 + s) && ((1 << 128) - 1)))
+  where
+    key = take`{32} inb
+    msg = drop`{34} inb
+    r   = wide (leN (take`{16} key) && 0x0ffffffc0ffffffc0ffffffc0fffffff)
+    s   = wide (leN (drop`{16} key))
+    pp  = ((1 : [272]) << 130) - 5
+    b0  = wide (leN (take`{16} msg))              + (1 << 128)
+    b1  = wide (leN (take`{16} (drop`{16} msg)))  + (1 << 128)
+    b2  = wide (leN (drop`{32} msg))              + (1 << 16)
+    a0  = ((0  + b0) * r) % pp
+    a1  = ((a0 + b1) * r) % pp
+    a2  = ((a1 + b2) * r) % pp

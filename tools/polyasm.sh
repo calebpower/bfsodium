@@ -1,5 +1,5 @@
 #!/bin/sh
-# polyasm.sh — assemble the Poly1305 pieces (RFC 8439 section 2.5).
+# polyasm.sh — assemble the Poly1305 pieces (RFC 8439 one time authenticator).
 #
 # Poly1305 is arithmetic modulo 2^130 minus 5, so unlike ChaCha20 it needs wide
 # numbers: the accumulator is 130 bits, which is 17 bytes on the wire. This
@@ -196,3 +196,136 @@ echo "assembled $repo/poly1305/fold136.bf ($(grep -c "" "$repo/poly1305/fold136.
 echo "assembled $repo/poly1305/halve136.bf ($(grep -c "" "$repo/poly1305/halve136.bf") lines)"
 
 echo "assembled $repo/poly1305/add136.bf ($(grep -c '' "$repo/poly1305/add136.bf") lines)"
+
+# ---- the authenticator itself (RFC 8439 one time authenticator) ----
+ACC=0; RR=17; SS=34; NN=51; RC=68
+REMLO=85; REMHI=86; PLACED=87; RNZ=88; GG=90; TMPC=91; BLK=92
+F1=93; Z1=94; F2=95; Z2=96; F3=97; Z3=98
+IT=100; HF=102; AF=107; CPT=113; MS=132; AB=318
+
+# nonzero_remaining: leave $1 nonzero exactly when the length counter is not
+# zero, by asking whether each of its two bytes is zero.
+nonzero_remaining() {
+    iszero_at $REMLO $F1 $Z1 $IT
+    iszero_at $REMHI $F2 $Z2 $IT
+    note "$(printf 'flag @%03x counts how many length bytes were NOT zero' "$1")"
+    goto 0 "$1"; code '++'
+    goto "$1" $F1
+    code '[[-]'; erun "<" $(( F1 - $1 )); code '-'; erun ">" $(( F1 - $1 )); code ']'
+    goto $F1 $F2
+    code '[[-]'; erun "<" $(( F2 - $1 )); code '-'; erun ">" $(( F2 - $1 )); code ']'
+    goto $F2 0
+}
+
+{
+cat <<'PHDR'
+; bfsodium POLY1305 : the one time authenticator (RFC 8439 one time authenticator)
+;
+; ASSEMBLED FILE: emitted by tools/polyasm from the shared emitter and the wide
+; arithmetic already proven by add136  fold136  reducep136 and mulmod136;
+;
+; IO  in:  key{32}  len{2} LE  msg{len}
+;     out: tag{16}
+;
+; The length prefix is how the program knows when to stop; a bfsodium primitive
+; never relies on end of input (CONVENTIONS section 7);
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x010  acc{17}   u8   the accumulator  reduced below p each block
+;   @0x011:0x021  r{17}     u8   the clamped multiplier  kept for every block
+;   @0x022:0x032  s{17}     u8   the second half of the key  added at the end
+;   @0x033:0x043  n{17}     u8   this block as a number  with its high one
+;   @0x044:0x054  rc{17}    u8   a copy of r  since the multiply consumes it
+;   @0x055:0x056  remaining{2} u16 LE  message bytes still to absorb
+;   @0x057        placed    u8   whether this block's high one has been placed
+;   @0x058        rnz       u8   nonzero while bytes remain
+;   @0x05a:0x05c  gg tmp blk     gating cells
+;   @0x05d:0x062  flags and their scratch
+;   @0x064        iszero staging temp
+;   @0x066:0x06a  halve frame
+;   @0x06b:0x070  adder frame
+;   @0x071:0x081  copy temps
+;   @0x084:0x138  multiply scratch
+;   @0x13e:0x141  bit cells for the clamp
+;
+; Each 16 byte block becomes a number with a one appended above it  is added to
+; the accumulator  and the accumulator is multiplied by r modulo 2^130 minus 5;
+; a short final block puts its one directly above whatever bytes it had;
+PHDR
+
+note "read the key: sixteen bytes of r then sixteen of s"
+goto 0 $RR
+printf '  ,'; k=1; while [ $k -lt 16 ]; do printf '>,'; k=$(( k + 1 )); done; printf '\n'
+goto $(( RR + 15 )) $SS
+printf '  ,'; k=1; while [ $k -lt 16 ]; do printf '>,'; k=$(( k + 1 )); done; printf '\n'
+note "read the two length bytes"
+goto $(( SS + 15 )) $REMLO
+printf '  ,>,\n'
+goto $REMHI 0
+
+note "clamp r  which is the masking the RFC requires"
+for c in 3 7 11 15; do and15_op $(( RR + c )) $HF $AB; done
+for c in 4 8 12; do and252_op $(( RR + c )) $HF; done
+
+note "absorb the message one block at a time"
+nonzero_remaining $BLK
+goto 0 $BLK
+note "while bytes remain"
+code '['
+code '[-]'
+goto $BLK 0
+
+k=0
+while [ $k -lt 16 ]; do
+    note "======== byte slot $k of this block ========"
+    nonzero_remaining $RNZ
+    iszero_at $RNZ $F3 $Z3 $IT
+    note "when bytes remain  take one into the block and count it off"
+    goto 0 $RNZ; code '['; code '[-]'; goto $RNZ 0
+    goto 0 $(( NN + k )); code ','; goto $(( NN + k )) 0
+    iszero_at $REMLO $F1 $Z1 $IT
+    goto 0 $REMLO; code '-'; goto $REMLO 0
+    note "borrow into the high byte when the low byte wrapped"
+    goto 0 $F1; code '[[-]'; erun "<" $(( F1 - REMHI )); code '-'; erun ">" $(( F1 - REMHI )); code ']'
+    goto $F1 $RNZ; code ']'; goto $RNZ 0
+    note "otherwise this is where the high one goes  if it is not placed yet"
+    cpn_at $F3 $GG 1 $IT
+    cpn_at $PLACED $TMPC 1 $IT
+    goto 0 $TMPC; code '[[-]'; erun "<" $(( TMPC - GG )); code '[-]'; erun ">" $(( TMPC - GG )); code ']'
+    goto $TMPC 0
+    goto 0 $GG; code '['; code '[-]'
+    goto $GG $(( NN + k )); code '+'
+    goto $(( NN + k )) $PLACED; code '+'
+    goto $PLACED $GG; code ']'; goto $GG 0
+    note "clear the leftover flag"
+    goto 0 $F3; code '[-]'; goto $F3 0
+    k=$(( k + 1 ))
+done
+
+note "a full block puts its high one in the seventeenth byte"
+iszero_at $PLACED $F3 $Z3 $IT
+goto 0 $F3; code '['; code '[-]'
+goto $F3 $(( NN + 16 )); code '+'
+goto $(( NN + 16 )) $F3; code ']'; goto $F3 0
+note "reset for the next block"
+goto 0 $PLACED; code '[-]'; goto $PLACED 0
+
+note "the accumulator absorbs this block  then is multiplied by r"
+addn_op $ACC $NN 17 $AF
+cpn_at $RR $RC 17 $CPT
+mulmod_op $ACC $RC 17 $MS
+
+nonzero_remaining $BLK
+goto 0 $BLK
+code ']'
+goto $BLK 0
+
+note "finally add s  the tag is the low sixteen bytes of the result"
+addn_op $ACC $SS 17 $AF
+
+printf '\n'; note "emit the sixteen byte tag"
+printf '  .'
+k=1; while [ $k -lt 16 ]; do printf '>.'; k=$(( k + 1 )); done
+printf '\n'
+} > "$repo/poly1305/poly1305.bf"
+echo "assembled $repo/poly1305/poly1305.bf ($(grep -c '' "$repo/poly1305/poly1305.bf") lines)"
