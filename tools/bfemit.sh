@@ -366,8 +366,12 @@ mulmod_op() {
     goto 0 "$_mres"; mvn "$_mres" "$_macc" "$_mn"; goto $(( _mres + _mn - 1 )) 0
 }
 
+# SB is the base of the 16 word state the quarter round addresses. It stays 0
+# for the standalone ChaCha programs; the AEAD sets it so a keystream block can
+# live above the buffers it needs alongside it.
+: "${SB:=0}"
 qr() {    # quarter round on word indices $1 $2 $3 $4
-    _qa=$(( $1 * 4 )); _qb=$(( $2 * 4 )); _qc=$(( $3 * 4 )); _qd=$(( $4 * 4 ))
+    _qa=$(( SB + $1 * 4 )); _qb=$(( SB + $2 * 4 )); _qc=$(( SB + $3 * 4 )); _qd=$(( SB + $4 * 4 ))
     printf '\n'; note "======== QUARTERROUND on words $1 $2 $3 $4 ========"
     add_op $_qa $_qb; xor_op $_qd $_qa; rot_op $_qd 16
     add_op $_qc $_qd; xor_op $_qb $_qc; rot_op $_qb 12
@@ -442,4 +446,61 @@ and252_op() {
     code '[-'; goto $(( _cf + 1 )) "$_cc"; code '++++'
     goto "$_cc" $(( _cf + 1 )); code ']'
     goto $(( _cf + 1 )) 0
+}
+
+# chacha_block_op: compute one ChaCha20 keystream block into $1 (64 cells),
+# from the key at $2 (32), the counter at $3 (4 LE) and the nonce at $4 (12).
+# The key, counter and nonce are PRESERVED, so the caller can ask for the next
+# block. $5 is the 64 cell copy of the state kept for the final add, $6 the 64
+# staging temps for duplicating it, $7 the round counter, $8 staging temps for
+# copying the key in, and SB must already be set to $1.
+#
+# This is blockasm's body lifted into a function so the AEAD can ask for a
+# keystream block without being a separate program.
+chacha_block_op() {
+    _cb=$1; _cbk=$2; _cbc=$3; _cbn=$4; _cbo=$5; _cbst=$6; _cbr=$7; _cbht=$8
+    note "CHACHA20 BLOCK : build the state  then ten double rounds  then add back"
+    note "the constant  which is the ASCII of expand 32 byte k"
+    _cbp=$_cb; _cbi=0
+    for _cbv in 101 120 112 97 110 100 32 51 50 45 98 121 116 101 32 107; do
+        goto "$_cbp" $(( _cb + _cbi ))
+        note "$(printf '@%03x gets %d' $(( _cb + _cbi )) "$_cbv")"; erun "+" "$_cbv"
+        _cbp=$(( _cb + _cbi )); _cbi=$(( _cbi + 1 ))
+    done
+    goto "$_cbp" 0
+    goto 0 "$_cbk"; cpn "$_cbk" $(( _cb + 16 )) 32 "$_cbht"; goto $(( _cbht + 31 )) 0
+    goto 0 "$_cbc"; cpn "$_cbc" $(( _cb + 48 )) 4 "$_cbht"; goto $(( _cbht + 3 )) 0
+    goto 0 "$_cbn"; cpn "$_cbn" $(( _cb + 52 )) 12 "$_cbht"; goto $(( _cbht + 11 )) 0
+    note "duplicate the state  the copy is added back at the end"
+    goto 0 "$_cb"
+    _cbi=0
+    while [ $_cbi -lt 64 ]; do
+        note "$(printf 'byte @%03x to @%03x and to a temp' $(( _cb + _cbi )) $(( _cbo + _cbi )))"
+        code '[-'; erun ">" $(( _cbo - _cb )); code '+'; erun ">" $(( _cbst - _cbo )); code '+'
+        erun "<" $(( _cbst - _cb )); code ']'
+        if [ $_cbi -lt 63 ]; then code '>'; fi
+        _cbi=$(( _cbi + 1 ))
+    done
+    goto $(( _cb + 63 )) "$_cbst"
+    _cbi=0
+    while [ $_cbi -lt 64 ]; do
+        note "$(printf 'temp back into @%03x' $(( _cb + _cbi )))"
+        code '[-'; erun "<" $(( _cbst - _cb )); code '+'; erun ">" $(( _cbst - _cb )); code ']'
+        if [ $_cbi -lt 63 ]; then code '>'; fi
+        _cbi=$(( _cbi + 1 ))
+    done
+    goto $(( _cbst + 63 )) "$_cbr"
+    note "ten double rounds"; code '++++++++++'
+    note "one double round"; code '[-'
+    goto "$_cbr" 0
+    qr 0 4 8 12 ; qr 1 5 9 13 ; qr 2 6 10 14 ; qr 3 7 11 15
+    qr 0 5 10 15 ; qr 1 6 11 12 ; qr 2 7 8 13 ; qr 3 4 9 14
+    goto 0 "$_cbr"; code ']'
+    goto "$_cbr" 0
+    note "add the original state back  which is what makes the block one way"
+    _cbi=0
+    while [ $_cbi -lt 16 ]; do
+        add_mv_op $(( _cb + _cbi * 4 )) $(( _cbo + _cbi * 4 ))
+        _cbi=$(( _cbi + 1 ))
+    done
 }
