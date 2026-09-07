@@ -1,0 +1,1046 @@
+; bfsodium POLY1305 : the one time authenticator  RFC 8439 section 2 point 5
+;
+; HAND WRITTEN; acc starts at nought and each sixteen byte block of the message
+; with a ONE appended after its bytes is added in and multiplied by the clamped
+; r; the tag is the low sixteen bytes of acc plus s;
+;
+; INTERFACE entry=34 exit=0 footprint=0:413
+; IO  in:  key{32}  len{2} LE  msg{len}
+;     out: tag{16}
+;
+; The key is r{16} then s{16}; r is clamped as the RFC requires: bytes 3 7 11
+; and 15 keep only their low four bits  and bytes 4 8 and 12 lose their low two;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x11e  the work frame; mulmod136 runs HERE at this file's own zero
+;                 and its footprint is 0:286  which is what sets the size of it
+;   @0x12c:0x13c  r{17}    the clamped r  copied into the work frame each block
+;   @0x140:0x150  s{17}    added in once at the very end
+;   @0x154:0x164  acc{17}  the accumulator
+;   @0x168:0x178  blk{17}  this block  with the ONE already appended
+;   @0x17c:0x17d  rem{2} u16 LE  message bytes not yet taken
+;   @0x17e        nz       set while rem is not zero
+;   @0x17f        pl       set while this block's ONE still needs placing
+;   @0x180        e        the else arm of a choice
+;   @0x181        t        a copy  so a count can be tested without being eaten
+;   @0x182        u        puts that copy back
+;   @0x184        k        sixteen rounds  one per byte position
+;   @0x186:0x196  tmp{17}  hands r back after it has been copied
+;   @0x19a:0x19d  the clamping halve frame
+;
+; A byte always lands on the TOP of the block  at blk{16}  and the block then
+; slides down one; So a byte taken in round k is shifted sixteen minus k more
+; times and comes to rest at blk{k}  which is where it belongs  and the write
+; needs no index; Sixteen rounds happen whether or not there are bytes left  so
+; the positions come out right for a short block too;
+;
+; The ONE that ends a block is placed by a flag rather than by an index; pl
+; starts at one each block  and the FIRST round that finds no message byte left
+; spends it on the top of the block  where it rides down to exactly the place
+; the message stopped; A block that fills completely spends it afterwards  just
+; past its sixteenth byte;
+
+; read the key and the length prefix
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
+; ASSERT ptr=34
+; ASSERT zero 34:413
+; to the head of the key
+L34
+; ASSERT ptr=0
+
+; ==== the key and the length go where they belong ====
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; the next byte
+R1
+  [-R300+L300]
+; to the second half of the key
+R1
+; ASSERT ptr=16
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; the next byte
+R1
+  [-R304+L304]
+; to the length prefix
+R1
+; ASSERT ptr=32
+  [-R348+L348]
+; the next byte
+R1
+  [-R348+L348]
+; to the first byte the clamp touches
+R270
+; ASSERT ptr=303
+; the byte steps into the halving frame
+  [-R107+L107]
+R107
+; ASSERT ptr=410
+; halving  and the bit that falls off is worth 1 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L109+R109]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 2 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L109++R109]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 4 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L109++++R109]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 8 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L109++++++++R109]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=410
+; what is left above bit three is what the clamp throws away
+  [-]
+L106
+; ASSERT ptr=304
+; the byte steps into the halving frame
+  [-R106+L106]
+R106
+; ASSERT ptr=410
+; halving  and the bit that falls off is one the clamp throws away
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is one the clamp throws away
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=410
+; four times what is left is the byte with its two low bits cleared
+  [-L106++++R106]
+L103
+; ASSERT ptr=307
+; the byte steps into the halving frame
+  [-R103+L103]
+R103
+; ASSERT ptr=410
+; halving  and the bit that falls off is worth 1 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L105+R105]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 2 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L105++R105]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 4 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L105++++R105]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 8 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L105++++++++R105]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=410
+; what is left above bit three is what the clamp throws away
+  [-]
+L102
+; ASSERT ptr=308
+; the byte steps into the halving frame
+  [-R102+L102]
+R102
+; ASSERT ptr=410
+; halving  and the bit that falls off is one the clamp throws away
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is one the clamp throws away
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=410
+; four times what is left is the byte with its two low bits cleared
+  [-L102++++R102]
+L99
+; ASSERT ptr=311
+; the byte steps into the halving frame
+  [-R99+L99]
+R99
+; ASSERT ptr=410
+; halving  and the bit that falls off is worth 1 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L101+R101]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 2 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L101++R101]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 4 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L101++++R101]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 8 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L101++++++++R101]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=410
+; what is left above bit three is what the clamp throws away
+  [-]
+L98
+; ASSERT ptr=312
+; the byte steps into the halving frame
+  [-R98+L98]
+R98
+; ASSERT ptr=410
+; halving  and the bit that falls off is one the clamp throws away
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is one the clamp throws away
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=410
+; four times what is left is the byte with its two low bits cleared
+  [-L98++++R98]
+L95
+; ASSERT ptr=315
+; the byte steps into the halving frame
+  [-R95+L95]
+R95
+; ASSERT ptr=410
+; halving  and the bit that falls off is worth 1 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L97+R97]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 2 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L97++R97]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 4 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L97++++R97]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; halving  and the bit that falls off is worth 8 here
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+R2
+  [-L97++++++++R97]
+; the half goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=410
+; what is left above bit three is what the clamp throws away
+  [-]
+; to the byte count
+L30
+; ASSERT ptr=380
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=382
+
+; ==== one turn is one block of up to sixteen bytes ====
+[
+; the ONE that ends this block still needs placing
+R1
+; ASSERT ptr=383
+  [-]
+  +
+; sixteen rounds  one for each byte position in a block
+R5
+; ASSERT ptr=388
+  [-]
+  ++++++++++++++++
+[
+  -
+; is there another message byte
+L8
+; ASSERT ptr=380
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=382
+; the else arm is armed  and taking a byte disarms it
+R2
+  [-]
+  +
+L2
+[
+  -
+; a message byte lands on the top of the block
+L6
+; ASSERT ptr=376
+  ,
+; disarm the else
+R8
+  -
+; one fewer byte to go
+L4
+; ASSERT ptr=380
+; the low byte is copied out and handed back  so it survives being tested
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+; the else arm is armed
+L2
+; ASSERT ptr=384
+  [-]
+  +
+; a low byte that is not nought simply comes down  and disarms the else
+R1
+  [[-]L5-R4-R1]
+; otherwise the high byte comes down and the low byte wraps to 255
+L1
+; ASSERT ptr=384
+  [-L3-L1-R4]
+; back to the flag the loop is testing
+L2
+]
+; the message ran out here  so the ONE goes on top  if it is still to be placed
+R2
+; ASSERT ptr=384
+[
+  -
+L1
+; ASSERT ptr=383
+  [
+    -
+L7
+    +
+R7
+  ]
+R1
+]
+; the block slides down one  so the next byte lands on the top again
+L23
+; ASSERT ptr=361
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; back to the round counter
+R12
+]
+; ASSERT ptr=388
+
+; ==== a block that filled completely spends its ONE just past its last byte ====
+L5
+; ASSERT ptr=383
+[
+  -
+L7
+  +
+R7
+]
+
+; ==== the accumulator gains this block  and is multiplied by r ====
+L43
+; ASSERT ptr=340
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; to the block
+R4
+; ASSERT ptr=360
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; the next byte
+R1
+  [-L343+R343]
+; to the work frame
+L376
+; ASSERT ptr=0
+; ASSERT zero 34:39
+@@ADD136@@ 0
+; ASSERT ptr=0
+; r is copied  not moved  because every later block needs it too
+R300
+; ASSERT ptr=300
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the next byte
+R1
+  [-L283+R373+L90]
+; the temps hand r straight back
+R74
+; ASSERT ptr=390
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; the next byte
+R1
+  [-L90+R90]
+; to the work frame
+L406
+; ASSERT ptr=0
+; ASSERT zero 34:286
+@@MULMOD136@@ 0
+; ASSERT ptr=0
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; the next byte
+R1
+  [-R340+L340]
+; to the byte count  to see whether another block follows
+R364
+; ASSERT ptr=380
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=382
+]
+
+; ==== the tag is the low sixteen bytes of the accumulator plus s ====
+L42
+; ASSERT ptr=340
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; the next byte
+R1
+  [-L340+R340]
+; to s
+L36
+; ASSERT ptr=320
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; the next byte
+R1
+  [-L303+R303]
+; to the work frame
+L336
+; ASSERT ptr=0
+; ASSERT zero 34:39
+@@ADD136@@ 0
+; ASSERT ptr=0
+; the seventeenth byte is above the tag and is not emitted
+R16
+  [-]
+; r has done its work
+R284
+; ASSERT ptr=300
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; back to the head of the tag
+L316
+; ASSERT ptr=0
+; ASSERT zero 16:413
+; emit the tag little endian
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

@@ -205,3 +205,60 @@ oneDblRun inb = join [ leBytes w | w <- doubleRound st0 ]
 // bit that is dropped is always nought.
 dbl136Run : [17][8] -> [17][8]
 dbl136Run inb = leBytesN`{17} (leN inb << 1)
+
+// ---------------------------------------------------------------------------
+// Poly1305 for message lengths other than the RFC's 34 bytes.
+//
+// poly1305Run34 above stays as it is: it spells its three blocks out longhand,
+// so it is an independent second formulation of the same thing rather than a
+// re-export of what follows.
+//
+// A block is its bytes little endian with a ONE appended after them, so a full
+// block carries 2^128 and a tail of m bytes carries 2^(8m). Getting that
+// boundary wrong is the classic Poly1305 defect, which is why the lengths
+// tested below straddle it.
+
+polyBlock : {m} (fin m, m <= 16) => [m][8] -> [272]
+polyBlock b = wide (leN b) + ((1 : [272]) << (8 * `m))
+
+polyCore : {nb} (fin nb) => [32][8] -> [nb][272] -> [16][8]
+polyCore key ns = leBytesN`{16} (drop`{144} ((acc + s) && ((1 << 128) - 1)))
+  where
+    r    = wide (leN (take`{16} key) && 0x0ffffffc0ffffffc0ffffffc0fffffff)
+    s    = wide (leN (drop`{16} key))
+    pp   = ((1 : [272]) << 130) - 5
+    accs = [0] # [ ((a + n) * r) % pp | a <- accs | n <- ns ]
+    acc  = last accs
+
+// One byte: a single block whose one sits at 2^8.
+poly1305Run1 : [35][8] -> [16][8]
+poly1305Run1 inb = polyCore (take`{32} inb) [polyBlock`{1} (drop`{34} inb)]
+
+// Exactly one full block: the one sits at 2^128 and no second block exists.
+poly1305Run16 : [50][8] -> [16][8]
+poly1305Run16 inb = polyCore (take`{32} inb) [polyBlock`{16} (drop`{34} inb)]
+
+// One byte past a full block: the first block's one is at 2^128 and the
+// second's at 2^8.
+poly1305Run17 : [51][8] -> [16][8]
+poly1305Run17 inb = polyCore (take`{32} inb)
+                             [ polyBlock`{16} (take`{16} (drop`{34} inb))
+                             , polyBlock`{1}  (drop`{50} inb) ]
+
+// Two full blocks.
+poly1305Run32 : [66][8] -> [16][8]
+poly1305Run32 inb = polyCore (take`{32} inb)
+                             [ polyBlock`{16} (take`{16} (drop`{34} inb))
+                             , polyBlock`{16} (drop`{50} inb) ]
+
+// The RFC's own length, built the general way. poly1305Run34 spells the same
+// three blocks out longhand, so if the two ever disagree one of them is wrong;
+// an oracle that is only ever compared against itself proves nothing.
+poly1305Run34g : [68][8] -> [16][8]
+poly1305Run34g inb = polyCore (take`{32} inb)
+                              [ polyBlock`{16} (take`{16} (drop`{34} inb))
+                              , polyBlock`{16} (take`{16} (drop`{50} inb))
+                              , polyBlock`{2}  (drop`{66} inb) ]
+
+longhand_agrees_with_general : [68][8] -> Bit
+property longhand_agrees_with_general inb = poly1305Run34 inb == poly1305Run34g inb

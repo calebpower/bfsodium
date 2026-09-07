@@ -179,6 +179,15 @@ dk poly1305/dbl136.bf deadbeefcafebabe0102030405060708fe bc5b7ddf95fd757d0304060
 
 dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b220043727970746f6772617068696320466f72756d2052657365617263682047726f7570 a8061dc1305136c6c22b8baf0c0127a9 poly1305Run34 "poly1305 RFC 8439 section 2.5.2"
 
+# Where the appended ONE goes is the classic Poly1305 defect, so the lengths
+# below straddle the block edge: one byte, exactly one block, one byte past it,
+# and two full blocks. The oracles for these are built the general way in
+# spec/bfsodium.cry and are cross-checked against the longhand poly1305Run34.
+dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b010041 d0ffca815a0cca49cb9e1ea593ae862c poly1305Run1 "poly1305 one byte"
+dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b1000414c57626d78838e99a4afbac5d0dbe6 31fac2d1f5457273ffbf25f9aaef8f01 poly1305Run16 "poly1305 exactly one block"
+dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b1100414c57626d78838e99a4afbac5d0dbe6f1 8f21e6c721b96021a8b06f67a139a7c7 poly1305Run17 "poly1305 one byte past a block"
+dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b2000414c57626d78838e99a4afbac5d0dbe6f1fc07121d28333e49545f6a75808b96 f95a1a6d12a410808813eddc733aa92a poly1305Run32 "poly1305 two full blocks"
+
 echo
 echo "== tier 5: declared contracts enforced =="
 tmpc=$(mktemp -d)
@@ -222,6 +231,16 @@ if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Coun
 :prove tail_alone_is_not_enough
 ICRY
 ); then echo "PASS dropping the fold as well is refuted by counterexample"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
+
+# The general Poly1305 oracle and the longhand one are two formulations of the
+# same thing. An oracle only ever compared against itself proves nothing, so
+# they are compared against each other.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Passed 2000 tests"
+:l bfsodium.cry
+:set tests=2000
+:check longhand_agrees_with_general
+ICRY
+); then echo "PASS the two Poly1305 oracles agree with each other"; pass=$((pass+1)); else echo "FAIL the Poly1305 oracles disagree"; fail=$((fail+1)); fi
 
 echo
 echo "== summary =="
