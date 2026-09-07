@@ -84,6 +84,8 @@ import() {
 
 while IFS= read -r line; do
     case "$line" in
+        '@@ADD136@@'*)  import "$repo/poly1305/add136.bf" "${line##* }"; continue ;;
+        '@@FOLD136@@'*) import "$repo/poly1305/fold136.bf" "${line##* }"; continue ;;
         '@@ADD32@@'*)   import "$repo/chacha20/add32.bf"  "${line##* }"; continue ;;
         '@@XOR32@@'*)   import "$repo/chacha20/xor32.bf"  "${line##* }"; continue ;;
         '@@ROTL32@@'*)  import "$repo/chacha20/rotl32.bf" "${line##* }"; continue ;;

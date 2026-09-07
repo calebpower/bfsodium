@@ -1,1964 +1,568 @@
 ; bfsodium FOLD136 : one Poly1305 reduction step  using 2^130 = 5 modulo p
 ;
-; ASSEMBLED FILE: emitted by tools/polyasm using the shared emitter;
+; HAND WRITTEN; The split is at bit 130  and 130 is 128 plus 2  so the part of
+; the value at or above the split is simply the TOP BYTE shifted right twice  and
+; the part below it is that byte with all but its bottom two bits removed; No
+; shifting of the whole seventeen bytes is needed anywhere;
 ;
+; INTERFACE entry=16 exit=0 footprint=0:46
 ; IO  in:  x{17} LE                     (17 bytes)
 ;     out: (L plus 5H){17} LE           (17 bytes)  where x = L plus H times 2^130
 ;
 ; TAPE MAP  (home @0)
-;   @0x00:0x10  x{17}     u8   the value  and the result
-;   @0x11:0x38  scratch{40}    the fold workspace; see fold_op in tools/bfemit
+;   @0x00:0x10  x{17}   u8   the value  and the result; also add136's accumulator
+;   @0x11:0x21  b{17}   u8   add136's addend
+;   @0x22:0x27  add136's carry and ADD8 frame; its footprint is 0:39 pasted here
+;   @0x28       H       u8   the part of the value at or above bit 130; at most 63
+;   @0x29       tmp     u8   puts H back after it has been copied
+;   @0x2a       h       u8   HALVE frame: the byte being halved
+;   @0x2b       q       u8   HALVE frame: that byte shifted right one
+;   @0x2c       bit     u8   HALVE frame: that byte low bit
+;   @0x2d       f       u8   HALVE frame scratch  restored to nought
+;   @0x2e       n       u8   five turns of the adder
 ;
-; The split is at bit 130  and 130 is 128 plus 2  so the part above the split
-; is simply the top byte shifted right two and no multi byte shift is needed;
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; travel 16 cells left
-  <<<<<<<<<<<<<<<<
-; FOLD : reduce using 2^130 = 5 modulo p
-; the split is at bit 130  which is the top byte shifted right two
-; travel 16 cells right
-  >>>>>>>>>>>>>>>>
-; move byte 0 of @010 to @028
-  [-
-; travel 24 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 24 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 24 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>
-; first halving  the low bit here is bit 128
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-; travel 2 cells right
-  >>
-; move byte 0 of @02a to @02d
-  [-
-; travel 3 cells right
-  >>>
-  +
-; travel 3 cells left
-  <<<
-  ]
-; travel 1 cells left
-  <
-; move byte 0 of @029 to @028
-  [-
-; travel 1 cells left
-  <
-  +
-; travel 1 cells right
-  >
-  ]
-; travel 1 cells left
-  <
-; second halving  the low bit here is bit 129
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-; travel 2 cells right
-  >>
-; move byte 0 of @02a to @02e
-  [-
-; travel 4 cells right
-  >>>>
-  +
-; travel 4 cells left
-  <<<<
-  ]
-; travel 1 cells left
-  <
-; move byte 0 of @029 to @02f
-  [-
-; travel 6 cells right
-  >>>>>>
-  +
-; travel 6 cells left
-  <<<<<<
-  ]
-; travel 41 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <
-; the top byte keeps only bits 128 and 129
-; travel 45 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>
-; move byte 0 of @02d to @010
-  [-
-; travel 29 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 29 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 1 cells right
-  >
-; bit 129 is worth two in the top byte
-  [-
-; travel 30 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ++
-; travel 30 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 46 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<
-; build 5H by adding H to a two byte buffer five times
-; travel 47 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>
-; copy byte 0 of @02f to @030 and to a temp
-  [-
-; travel 1 cells right
-  >
-  +
-; travel 8 cells right
-  >>>>>>>>
-  +
-; travel 9 cells left
-  <<<<<<<<<
-  ]
-; walk to the temps
-; travel 9 cells right
-  >>>>>>>>>
-; put temp byte 0 back into @02f
-  [-
-; travel 9 cells left
-  <<<<<<<<<
-  +
-; travel 9 cells right
-  >>>>>>>>>
-  ]
-; travel 56 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<
-; ADD16 : @011 gets @030  little endian
-; byte 0
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @011 to @033
-  [-
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @030 to @034
-  [-
-; travel 4 cells right
-  >>>>
-  +
-; travel 4 cells left
-  <<<<
-  ]
-; travel 4 cells right
-  >>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @011
-  [-
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; byte 1
-; travel 18 cells right
-  >>>>>>>>>>>>>>>>>>
-; move byte 0 of @012 to @033
-  [-
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @031 to @034
-  [-
-; travel 3 cells right
-  >>>
-  +
-; travel 3 cells left
-  <<<
-  ]
-; travel 3 cells right
-  >>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @012
-  [-
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; drop the carry out of the top byte
-; travel 50 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>
-  [-]
-; travel 50 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<
-; travel 47 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>
-; copy byte 0 of @02f to @030 and to a temp
-  [-
-; travel 1 cells right
-  >
-  +
-; travel 8 cells right
-  >>>>>>>>
-  +
-; travel 9 cells left
-  <<<<<<<<<
-  ]
-; walk to the temps
-; travel 9 cells right
-  >>>>>>>>>
-; put temp byte 0 back into @02f
-  [-
-; travel 9 cells left
-  <<<<<<<<<
-  +
-; travel 9 cells right
-  >>>>>>>>>
-  ]
-; travel 56 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<
-; ADD16 : @011 gets @030  little endian
-; byte 0
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @011 to @033
-  [-
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @030 to @034
-  [-
-; travel 4 cells right
-  >>>>
-  +
-; travel 4 cells left
-  <<<<
-  ]
-; travel 4 cells right
-  >>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @011
-  [-
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; byte 1
-; travel 18 cells right
-  >>>>>>>>>>>>>>>>>>
-; move byte 0 of @012 to @033
-  [-
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @031 to @034
-  [-
-; travel 3 cells right
-  >>>
-  +
-; travel 3 cells left
-  <<<
-  ]
-; travel 3 cells right
-  >>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @012
-  [-
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; drop the carry out of the top byte
-; travel 50 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>
-  [-]
-; travel 50 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<
-; travel 47 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>
-; copy byte 0 of @02f to @030 and to a temp
-  [-
-; travel 1 cells right
-  >
-  +
-; travel 8 cells right
-  >>>>>>>>
-  +
-; travel 9 cells left
-  <<<<<<<<<
-  ]
-; walk to the temps
-; travel 9 cells right
-  >>>>>>>>>
-; put temp byte 0 back into @02f
-  [-
-; travel 9 cells left
-  <<<<<<<<<
-  +
-; travel 9 cells right
-  >>>>>>>>>
-  ]
-; travel 56 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<
-; ADD16 : @011 gets @030  little endian
-; byte 0
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @011 to @033
-  [-
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @030 to @034
-  [-
-; travel 4 cells right
-  >>>>
-  +
-; travel 4 cells left
-  <<<<
-  ]
-; travel 4 cells right
-  >>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @011
-  [-
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; byte 1
-; travel 18 cells right
-  >>>>>>>>>>>>>>>>>>
-; move byte 0 of @012 to @033
-  [-
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @031 to @034
-  [-
-; travel 3 cells right
-  >>>
-  +
-; travel 3 cells left
-  <<<
-  ]
-; travel 3 cells right
-  >>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @012
-  [-
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; drop the carry out of the top byte
-; travel 50 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>
-  [-]
-; travel 50 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<
-; travel 47 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>
-; copy byte 0 of @02f to @030 and to a temp
-  [-
-; travel 1 cells right
-  >
-  +
-; travel 8 cells right
-  >>>>>>>>
-  +
-; travel 9 cells left
-  <<<<<<<<<
-  ]
-; walk to the temps
-; travel 9 cells right
-  >>>>>>>>>
-; put temp byte 0 back into @02f
-  [-
-; travel 9 cells left
-  <<<<<<<<<
-  +
-; travel 9 cells right
-  >>>>>>>>>
-  ]
-; travel 56 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<
-; ADD16 : @011 gets @030  little endian
-; byte 0
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @011 to @033
-  [-
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @030 to @034
-  [-
-; travel 4 cells right
-  >>>>
-  +
-; travel 4 cells left
-  <<<<
-  ]
-; travel 4 cells right
-  >>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @011
-  [-
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; byte 1
-; travel 18 cells right
-  >>>>>>>>>>>>>>>>>>
-; move byte 0 of @012 to @033
-  [-
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @031 to @034
-  [-
-; travel 3 cells right
-  >>>
-  +
-; travel 3 cells left
-  <<<
-  ]
-; travel 3 cells right
-  >>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @012
-  [-
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; drop the carry out of the top byte
-; travel 50 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>
-  [-]
-; travel 50 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<
-; travel 47 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>
-; copy byte 0 of @02f to @030 and to a temp
-  [-
-; travel 1 cells right
-  >
-  +
-; travel 8 cells right
-  >>>>>>>>
-  +
-; travel 9 cells left
-  <<<<<<<<<
-  ]
-; walk to the temps
-; travel 9 cells right
-  >>>>>>>>>
-; put temp byte 0 back into @02f
-  [-
-; travel 9 cells left
-  <<<<<<<<<
-  +
-; travel 9 cells right
-  >>>>>>>>>
-  ]
-; travel 56 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<
-; ADD16 : @011 gets @030  little endian
-; byte 0
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @011 to @033
-  [-
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @030 to @034
-  [-
-; travel 4 cells right
-  >>>>
-  +
-; travel 4 cells left
-  <<<<
-  ]
-; travel 4 cells right
-  >>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @011
-  [-
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; byte 1
-; travel 18 cells right
-  >>>>>>>>>>>>>>>>>>
-; move byte 0 of @012 to @033
-  [-
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; move byte 0 of @031 to @034
-  [-
-; travel 3 cells right
-  >>>
-  +
-; travel 3 cells left
-  <<<
-  ]
-; travel 3 cells right
-  >>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @032 to @034
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @033 to @012
-  [-
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @035 to @032
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 53 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<
-; drop the carry out of the top byte
-; travel 50 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>
-  [-]
-; travel 50 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<
-; discard H now that 5H is built
-; travel 47 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>
-  [-]
-; travel 47 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<
-; add 5H back into the value
-; ADD136 : @000 gets @011  little endian
-; byte 0
-; move byte 0 of @000 to @023
-  [-
-; travel 35 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 35 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @011 to @024
-  [-
-; travel 19 cells right
-  >>>>>>>>>>>>>>>>>>>
-  +
-; travel 19 cells left
-  <<<<<<<<<<<<<<<<<<<
-  ]
-; travel 19 cells right
-  >>>>>>>>>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @000
-  [-
-; travel 35 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 35 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 1
-; travel 1 cells right
-  >
-; move byte 0 of @001 to @023
-  [-
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @012 to @024
-  [-
-; travel 18 cells right
-  >>>>>>>>>>>>>>>>>>
-  +
-; travel 18 cells left
-  <<<<<<<<<<<<<<<<<<
-  ]
-; travel 18 cells right
-  >>>>>>>>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @001
-  [-
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 2
-; travel 2 cells right
-  >>
-; move byte 0 of @002 to @023
-  [-
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @013 to @024
-  [-
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-  +
-; travel 17 cells left
-  <<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @002
-  [-
-; travel 33 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 33 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 3
-; travel 3 cells right
-  >>>
-; move byte 0 of @003 to @023
-  [-
-; travel 32 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 32 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @014 to @024
-  [-
-; travel 16 cells right
-  >>>>>>>>>>>>>>>>
-  +
-; travel 16 cells left
-  <<<<<<<<<<<<<<<<
-  ]
-; travel 16 cells right
-  >>>>>>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @003
-  [-
-; travel 32 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 32 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 4
-; travel 4 cells right
-  >>>>
-; move byte 0 of @004 to @023
-  [-
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 31 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @015 to @024
-  [-
-; travel 15 cells right
-  >>>>>>>>>>>>>>>
-  +
-; travel 15 cells left
-  <<<<<<<<<<<<<<<
-  ]
-; travel 15 cells right
-  >>>>>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @004
-  [-
-; travel 31 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 31 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 5
-; travel 5 cells right
-  >>>>>
-; move byte 0 of @005 to @023
-  [-
-; travel 30 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 30 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @016 to @024
-  [-
-; travel 14 cells right
-  >>>>>>>>>>>>>>
-  +
-; travel 14 cells left
-  <<<<<<<<<<<<<<
-  ]
-; travel 14 cells right
-  >>>>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @005
-  [-
-; travel 30 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 30 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 6
-; travel 6 cells right
-  >>>>>>
-; move byte 0 of @006 to @023
-  [-
-; travel 29 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 29 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @017 to @024
-  [-
-; travel 13 cells right
-  >>>>>>>>>>>>>
-  +
-; travel 13 cells left
-  <<<<<<<<<<<<<
-  ]
-; travel 13 cells right
-  >>>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @006
-  [-
-; travel 29 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 29 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 7
-; travel 7 cells right
-  >>>>>>>
-; move byte 0 of @007 to @023
-  [-
-; travel 28 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 28 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @018 to @024
-  [-
-; travel 12 cells right
-  >>>>>>>>>>>>
-  +
-; travel 12 cells left
-  <<<<<<<<<<<<
-  ]
-; travel 12 cells right
-  >>>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @007
-  [-
-; travel 28 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 28 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 8
-; travel 8 cells right
-  >>>>>>>>
-; move byte 0 of @008 to @023
-  [-
-; travel 27 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 27 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @019 to @024
-  [-
-; travel 11 cells right
-  >>>>>>>>>>>
-  +
-; travel 11 cells left
-  <<<<<<<<<<<
-  ]
-; travel 11 cells right
-  >>>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @008
-  [-
-; travel 27 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 27 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 9
-; travel 9 cells right
-  >>>>>>>>>
-; move byte 0 of @009 to @023
-  [-
-; travel 26 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 26 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @01a to @024
-  [-
-; travel 10 cells right
-  >>>>>>>>>>
-  +
-; travel 10 cells left
-  <<<<<<<<<<
-  ]
-; travel 10 cells right
-  >>>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @009
-  [-
-; travel 26 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 26 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 10
-; travel 10 cells right
-  >>>>>>>>>>
-; move byte 0 of @00a to @023
-  [-
-; travel 25 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 25 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @01b to @024
-  [-
-; travel 9 cells right
-  >>>>>>>>>
-  +
-; travel 9 cells left
-  <<<<<<<<<
-  ]
-; travel 9 cells right
-  >>>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @00a
-  [-
-; travel 25 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 25 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 11
-; travel 11 cells right
-  >>>>>>>>>>>
-; move byte 0 of @00b to @023
-  [-
-; travel 24 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 24 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @01c to @024
-  [-
-; travel 8 cells right
-  >>>>>>>>
-  +
-; travel 8 cells left
-  <<<<<<<<
-  ]
-; travel 8 cells right
-  >>>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @00b
-  [-
-; travel 24 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 24 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 12
-; travel 12 cells right
-  >>>>>>>>>>>>
-; move byte 0 of @00c to @023
-  [-
-; travel 23 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 23 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @01d to @024
-  [-
-; travel 7 cells right
-  >>>>>>>
-  +
-; travel 7 cells left
-  <<<<<<<
-  ]
-; travel 7 cells right
-  >>>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @00c
-  [-
-; travel 23 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 23 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 13
-; travel 13 cells right
-  >>>>>>>>>>>>>
-; move byte 0 of @00d to @023
-  [-
-; travel 22 cells right
-  >>>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 22 cells left
-  <<<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @01e to @024
-  [-
-; travel 6 cells right
-  >>>>>>
-  +
-; travel 6 cells left
-  <<<<<<
-  ]
-; travel 6 cells right
-  >>>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @00d
-  [-
-; travel 22 cells left
-  <<<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 22 cells right
-  >>>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 14
-; travel 14 cells right
-  >>>>>>>>>>>>>>
-; move byte 0 of @00e to @023
-  [-
-; travel 21 cells right
-  >>>>>>>>>>>>>>>>>>>>>
-  +
-; travel 21 cells left
-  <<<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @01f to @024
-  [-
-; travel 5 cells right
-  >>>>>
-  +
-; travel 5 cells left
-  <<<<<
-  ]
-; travel 5 cells right
-  >>>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @00e
-  [-
-; travel 21 cells left
-  <<<<<<<<<<<<<<<<<<<<<
-  +
-; travel 21 cells right
-  >>>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 15
-; travel 15 cells right
-  >>>>>>>>>>>>>>>
-; move byte 0 of @00f to @023
-  [-
-; travel 20 cells right
-  >>>>>>>>>>>>>>>>>>>>
-  +
-; travel 20 cells left
-  <<<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @020 to @024
-  [-
-; travel 4 cells right
-  >>>>
-  +
-; travel 4 cells left
-  <<<<
-  ]
-; travel 4 cells right
-  >>>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @00f
-  [-
-; travel 20 cells left
-  <<<<<<<<<<<<<<<<<<<<
-  +
-; travel 20 cells right
-  >>>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; byte 16
-; travel 16 cells right
-  >>>>>>>>>>>>>>>>
-; move byte 0 of @010 to @023
-  [-
-; travel 19 cells right
-  >>>>>>>>>>>>>>>>>>>
-  +
-; travel 19 cells left
-  <<<<<<<<<<<<<<<<<<<
-  ]
-; travel 17 cells right
-  >>>>>>>>>>>>>>>>>
-; move byte 0 of @021 to @024
-  [-
-; travel 3 cells right
-  >>>
-  +
-; travel 3 cells left
-  <<<
-  ]
-; travel 3 cells right
-  >>>
-; add the addend byte into the accumulator byte
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 2 cells left
-  <<
-; move byte 0 of @022 to @024
-  [-
-; travel 2 cells right
-  >>
-  +
-; travel 2 cells left
-  <<
-  ]
-; travel 2 cells right
-  >>
-; add the carry coming in from the byte below
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; travel 1 cells left
-  <
-; move byte 0 of @023 to @010
-  [-
-; travel 19 cells left
-  <<<<<<<<<<<<<<<<<<<
-  +
-; travel 19 cells right
-  >>>>>>>>>>>>>>>>>>>
-  ]
-; travel 2 cells right
-  >>
-; move byte 0 of @025 to @022
-  [-
-; travel 3 cells left
-  <<<
-  +
-; travel 3 cells right
-  >>>
-  ]
-; travel 37 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; drop the carry out of the top byte
-; travel 34 cells right
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  [-]
-; travel 34 cells left
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; H is at most 63  so five times H is at most 315 and the value below the split
+; is under 2^130; their sum cannot reach 2^136  so the adder's dropped top carry
+; is never reached and folding never loses anything;
+;
+; The five is done as FIVE TURNS of one pasted adder rather than as a multiply
+; or as five pasted adders; add136 clears its own frame on the way out and
+; asserts it clear on the way in  which is what makes entering it five times
+; mean the same thing as entering it once;
 
+; read the value little endian
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+
+; ==== split the top byte at bit 130 ====
+; ASSERT ptr=16
+; ASSERT zero 17:46
+; the top byte steps into the halving frame
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+; ASSERT ptr=42
+; the first halving; the bit it drops is bit 128
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; which is worth one in what is left below the split
+>>
+; ASSERT ptr=44
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the half steps back into the frame to be halved again
+<
+; ASSERT ptr=43
+  [-<+>]
+<
+; ASSERT ptr=42
+; the second halving; the bit it drops is bit 129
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; which is worth two
+>>
+; ASSERT ptr=44
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; and what is left in the quotient is everything at bit 130 and above
+<
+; ASSERT ptr=43
+  [-<<<+>>>]
+
+; ==== two to the hundred and thirtieth is five  so add that part five times ====
+>>>
+; ASSERT ptr=46
+  +++++
+[
+  -
+; the part above the split is copied into the addend and kept for the next turn
+<<<<<<
+; ASSERT ptr=40
+  [-<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>+<]
+>
+; ASSERT ptr=41
+  [-<+>]
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <
+; ASSERT ptr=0
+; ASSERT zero 34:39
+; walk in to this routine entry offset
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+; ASSERT ptr=34
+; ASSERT zero 34:39
+
+; ==== byte 0 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 1 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=1
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 2 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=2
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 3 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=3
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 4 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=4
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 5 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=5
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 6 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=6
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>+<<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 7 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=7
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>+<<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 8 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=8
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>+<<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 9 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=9
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>+<<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 10 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=10
+  [->>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>>+<<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 11 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=11
+  [->>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>>+<<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 12 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=12
+  [->>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>>+<<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 13 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=13
+  [->>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>>+<<<<<<]
+; add the addend into the accumulator byte
+>>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 14 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=14
+  [->>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>>+<<<<<]
+; add the addend into the accumulator byte
+>>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 15 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=15
+  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>>+<<<<]
+; add the addend into the accumulator byte
+>>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; ==== byte 16 ====
+; ASSERT ptr=34
+; the accumulator byte steps into the adder
+<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=16
+  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
+; the addend byte follows it
+>>>>>>>>>>>>>>>>>
+  [->>>+<<<]
+; add the addend into the accumulator byte
+>>>
+; ASSERT ptr=36
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the carry in follows it
+<<
+  [->>+<<]
+; add that in too
+>>
+  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; the low byte of the sum goes back where it came from
+<
+  [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
+; the carry out becomes the carry in of the byte above
+>>
+  [-<<<+>>>]
+<<<
+
+; the carry out of the top byte is dropped  and cleared so the frame is as
+; empty as it was found
+; ASSERT ptr=34
+  [-]
+; ASSERT zero 17:39
+; walk back out to the routine base
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=0
+; back to the turn counter
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>
+]
+; ASSERT ptr=46
+; the part above the split has been spent five times over
+<<<<<<
+; ASSERT ptr=40
+  [-]
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=0
+; ASSERT zero 17:46
 ; emit the folded value little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

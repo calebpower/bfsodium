@@ -1,0 +1,375 @@
+; bfsodium REDUCEP136 : bring a 17 byte value below p = 2^130 minus 5
+;
+; HAND WRITTEN; ONE fold  then a tail: add five  and look at bit 130; If it
+; came up  the value wanted reducing and what is left below the split IS the
+; answer; if it did not  it did not  and the answer is the copy kept from
+; before the five was added; Clearing bit 130 and above is subtracting 2^130
+; which is why no subtractor had to be written;
+;
+; This folded TWICE for a while; Deleting the second fold changed no answer
+; that any vector could see  which is the signal that it was unreachable and
+; not merely untested; The reason is a bound: after ONE fold a seventeen byte
+; value is at most 2^130 minus one plus five times sixty three  which is under
+; 2p  and the tail is exactly the reduction for anything under 2p; So the
+; second fold could never have had work to do; spec/perm_cry states that as
+; one_fold_suffices and Cryptol PROVES it  Q;E;D;  over every one of the 2^136
+; inputs; The companion property tail_alone_is_not_enough is refuted by
+; counterexample  so the pair is a real distinction and not a claim that would
+; have held whatever was deleted;
+;
+; INTERFACE entry=16 exit=0 footprint=0:96
+; IO  in:  x{17} LE           (17 bytes)
+;     out: (x mod p){17} LE   (17 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  x{17}   u8   the value  and the result
+;   @0x11:0x2e  the pasted routines' frames; fold136 is 0:46 and add136 is 0:39
+;               and both are pasted at this file's own zero
+;   @0x30:0x40  S{17}   u8   the value as it stood before five was added
+;   @0x41       g       u8   bit 130 after the add; nought or one
+;   @0x42       e       u8   the else arm of that choice
+;   @0x43       h       u8   HALVE frame: the top byte being halved
+;   @0x44       q       u8   HALVE frame: that byte shifted right one
+;   @0x45       bit     u8   HALVE frame: that byte low bit
+;   @0x46       f       u8   HALVE frame scratch  restored to nought
+;   @0x50:0x60  temps{17}    hand the value back after it has been copied
+
+; read the value little endian
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=16
+; ASSERT zero 17:96
+
+; ==== one fold is all this needs  and spec/perm_cry proves it ====
+L16
+; ASSERT ptr=0
+; ASSERT zero 17:46
+@@FOLD136@@ 0
+; ASSERT ptr=0
+
+; ==== keep a copy  because the five may have to be taken back off ====
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the next byte
+R1
+  [-R48+R32+L80]
+; the temps hand the value straight back
+R64
+; ASSERT ptr=80
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+L96
+; ASSERT ptr=0
+
+; ==== add five ====
+R17
+; ASSERT ptr=17
+  +++++
+L17
+; ASSERT ptr=0
+; ASSERT zero 34:39
+@@ADD136@@ 0
+; ASSERT ptr=0
+
+; ==== did bit 130 come up ====
+R16
+; ASSERT ptr=16
+; the top byte steps into the halving frame
+  [-R51+L51]
+R51
+; ASSERT ptr=67
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; bit 128 is worth one below the split
+R2
+; ASSERT ptr=69
+  [-L53+R53]
+; and the half is halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=67
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; bit 129 is worth two
+R2
+; ASSERT ptr=69
+  [-L53++R53]
+; what is left is bit 130  which is nought or one because the value was below
+; two to the hundred and thirtieth before five was added to it
+L1
+  [-L3+R3]
+L3
+; ASSERT ptr=65
+
+; ==== if it came up  the value had to be reduced and this IS the answer ====
+; the else arm is armed first  and the then arm disarms it
+R1
+  [-]
+  +
+L1
+; ASSERT ptr=65
+[
+  -
+; the saved copy is not wanted
+L17
+; ASSERT ptr=48
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; disarm the else and go back to the flag
+R2
+  -
+L1
+]
+; ==== if it did not  the value is the copy from before the five ====
+R1
+; ASSERT ptr=66
+[
+  -
+L66
+; ASSERT ptr=0
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the saved copy comes back
+R32
+; ASSERT ptr=48
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; the next byte
+R1
+  [-L48+R48]
+; back to the else flag
+R2
+]
+; ASSERT ptr=66
+L66
+; ASSERT ptr=0
+; ASSERT zero 17:96
+; emit the reduced value little endian
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

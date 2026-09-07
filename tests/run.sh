@@ -186,6 +186,24 @@ if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Pass
 ICRY
 ); then echo "PASS row rotated double round checked against the double round"; pass=$((pass+1)); else echo "FAIL row rotated double round check"; fail=$((fail+1)); fi
 
+# reducep136 folded twice until a mutation showed the second fold changed no
+# answer any vector could see. This is why: after one fold a 17 byte value is
+# under 2p, and the tail reduces anything under 2p.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
+:l perm.cry
+:prove one_fold_suffices
+ICRY
+); then echo "PASS one fold proved sufficient for reducep136"; pass=$((pass+1)); else echo "FAIL one fold proof"; fail=$((fail+1)); fi
+
+# and the companion, which must be REFUTED: without it, one_fold_suffices could
+# be a claim that would hold whatever we deleted. A property that cannot fail is
+# not evidence, so this asks for the counterexample and fails if none is found.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Counterexample"
+:l perm.cry
+:prove tail_alone_is_not_enough
+ICRY
+); then echo "PASS dropping the fold as well is refuted by counterexample"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
+
 echo
 echo "== summary =="
 echo "passed $pass, failed $fail"

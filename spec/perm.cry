@@ -42,3 +42,39 @@ dblRotated : [16][32] -> [16][32]
 dblRotated s = rotRows (fourAtFixed (rotRows (fourAtFixed s) [0,1,2,3])) [0,3,2,1]
 
 property rotated_matches s = dblRotated s == doubleRound s
+
+// ---------------------------------------------------------------------------
+// How many folds does reducep136 need?
+//
+// reducep136 folded TWICE and then ran its tail: add five, and if bit 130 came
+// up, clear it. Deleting the second fold changed no answer that any vector
+// could see, which is the signal that it was unreachable rather than merely
+// untested. The reason is a bound: after ONE fold a 17 byte value is at most
+// (2^130 - 1) + 5*63, which is under 2p, and the tail is exactly the reduction
+// for anything under 2p. So the second fold could never have work to do.
+//
+// This is the claim, stated so it can be proved rather than argued.
+
+p136 : [140]
+p136 = (1 << 130) - 5
+
+foldOnce : [140] -> [140]
+foldOnce x = lo + 5 * hi
+  where hi = x >> 130
+        lo = x && ((1 << 130) - 1)
+
+// The tail as the brainfuck actually does it: add five, look at bit 130, and
+// clear bits 130 and above if it came up -- which is subtracting 2^130.
+reduceTail : [140] -> [140]
+reduceTail x = if (y >> 130) != 0 then y && ((1 << 130) - 1) else x
+  where y = x + 5
+
+// One fold is enough for any seventeen byte input.
+one_fold_suffices : [136] -> Bit
+property one_fold_suffices x = reduceTail (foldOnce (zext x)) == (zext x) % p136
+
+// And the tail alone is NOT enough: the claim is about the fold, not a licence
+// to drop that too. This must FAIL, and is stated so the pair is a real
+// distinction rather than a property that would hold whatever we deleted.
+tail_alone_is_not_enough : [136] -> Bit
+property tail_alone_is_not_enough x = reduceTail (zext x) == (zext x) % p136
