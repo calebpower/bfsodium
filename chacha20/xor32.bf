@@ -2,6 +2,7 @@
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
+; INTERFACE entry=8 exit=8 footprint=0:25
 ; IO  in:  x{4} LE  followed by  y{4} LE       (8 bytes)
 ;     out: (x xor y){4} LE                     (4 bytes)
 ;

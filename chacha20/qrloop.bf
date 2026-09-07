@@ -112,10 +112,12 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>]
-; to the adder entry
-<<<<<<<<<<<<<<<<<<<<<
-; ASSERT ptr=32
+; to the adder base
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=24
 ; ASSERT zero 32:37
+; walk in to this routine entry offset
+  >>>>>>>>
 
 ; ==== byte 0 : a @0x00  b @0x04 ====
 ; move a0 into x
@@ -189,9 +191,12 @@
 ; back to cin (dropped)
   <<<
 
-; drop the carry out of the top byte
+; walk back out to the routine base
+  <<<<<<<<
+; ASSERT ptr=24
+; to the carry cell and drop it
+>>>>>>>>
   [-]
-; to the workspace start
 <<<<<<<<
 ; move the sum back into a
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
@@ -258,10 +263,12 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>]
-; to the exclusive or entry
-<<<<<<<<<<<<<<<<<<<<<
-; ASSERT ptr=32
+; to the exclusive or base
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=24
 ; ASSERT zero 32:49
+; walk in to this routine entry offset
+  >>>>>>>>
 
 ; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
 ; move x0 into a
@@ -408,6 +415,11 @@
 ; back to r0
   <<<<<<<<<<<<<<
 
+; walk back out to the routine base
+  <<<<<<<<
+; ASSERT ptr=24
+; to the result
+>>>>>>>>
 ; move the result back into d
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
 ; the next byte
@@ -441,10 +453,12 @@
 ; put the temp back
 <<<<
   [->>>>+<<<<]
-; to the rotate entry
-<<<<<<<<<<<<<<<<<<<<<<
-; ASSERT ptr=28
+; to the rotate base
+<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=24
 ; ASSERT zero 29:37
+; walk in to this routine entry offset
+  >>>>
 
 ; ==== rotate one bit  n times ====
 [
@@ -520,8 +534,9 @@
   <<<
 ]
 
-; to the workspace start
-<<<<
+; walk back out to the routine base
+  <<<<
+; ASSERT ptr=24
 ; move the rotated word back into d
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]
 ; the next byte

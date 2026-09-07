@@ -2,6 +2,7 @@
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
+; INTERFACE entry=4 exit=4 footprint=0:13
 ; IO  in:  w{4} LE  followed by  n{1}          (5 bytes)
 ;     out: (w rotated left by n){4} LE         (4 bytes)
 ;

@@ -98,14 +98,15 @@ R1
 ; the next byte
 R1
   [-L46+R46]
-; to the adder entry
-L21
-; ASSERT ptr=32
+; to the adder base
+L29
+; ASSERT ptr=24
 ; ASSERT zero 32:37
 @@ADD32@@
-; drop the carry out of the top byte
+; ASSERT ptr=24
+; to the carry cell and drop it
+R8
   [-]
-; to the workspace start
 L8
 ; move the sum back into a
   [-L24+R24]
@@ -159,11 +160,14 @@ R1
 ; the next byte
 R1
   [-L50+R50]
-; to the exclusive or entry
-L21
-; ASSERT ptr=32
+; to the exclusive or base
+L29
+; ASSERT ptr=24
 ; ASSERT zero 32:49
 @@XOR32@@
+; ASSERT ptr=24
+; to the result
+R8
 ; move the result back into d
   [-L20+R20]
 ; the next byte
@@ -197,13 +201,12 @@ R39
 ; put the temp back
 L4
   [-R4+L4]
-; to the rotate entry
-L22
-; ASSERT ptr=28
+; to the rotate base
+L26
+; ASSERT ptr=24
 ; ASSERT zero 29:37
 @@ROTL32@@
-; to the workspace start
-L4
+; ASSERT ptr=24
 ; move the rotated word back into d
   [-L12+R12]
 ; the next byte
