@@ -97,6 +97,6 @@ while IFS= read -r line; do
     case "$line" in
         '; ASSERT '*) printf '%s\n' "$line" | rebase 0 ;;
         ';'*)         printf '%s\n' "$line" ;;
-        *)            printf '%s\n' "$line" | perl -pe 's/R(\d+)/">" x $1/ge; s/L(\d+)/"<" x $1/ge; s/([><]{40})(?=[><])/$1 . "\n  "/ge' ;;
+        *)            printf '%s\n' "$line" | perl -pe 's/R(\d+)/">" x $1/ge; s/L(\d+)/"<" x $1/ge; s/([><]{40})(?=[><])/$1 . "\n; continued\n  "/ge' ;;
     esac
 done < "$1"

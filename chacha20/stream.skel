@@ -56,20 +56,28 @@ R336
 ; The count is two bytes  so the flag is set if EITHER is not zero; each byte is
 ; copied out through a temp and put straight back  so testing does not eat it;
 ; ASSERT ptr=336
+; the flag starts down
 R2
   [-]
+; the low byte is copied into a temp and into a spare
 L2
   [-R5+R1+L6]
+; the spare hands it straight back  so the count survives being looked at
 R6
   [-L6+R6]
+; and if the temp is not nought the flag goes up
 L1
   [[-]L3+R3]
+; now the high byte  the same way
 L4
   [-R4+R1+L5]
+; and the same hand back
 R5
   [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
 L1
   [[-]L3+R3]
+; to the flag  where the loop tests it
 L3
 ; ASSERT ptr=338
 
@@ -673,20 +681,28 @@ L4
 ; The count is two bytes  so the flag is set if EITHER is not zero; each byte is
 ; copied out through a temp and put straight back  so testing does not eat it;
 ; ASSERT ptr=336
+; the flag starts down
 R2
   [-]
+; the low byte is copied into a temp and into a spare
 L2
   [-R5+R1+L6]
+; the spare hands it straight back  so the count survives being looked at
 R6
   [-L6+R6]
+; and if the temp is not nought the flag goes up
 L1
   [[-]L3+R3]
+; now the high byte  the same way
 L4
   [-R4+R1+L5]
+; and the same hand back
 R5
   [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
 L1
   [[-]L3+R3]
+; to the flag  where the loop tests it
 L3
 ; ASSERT ptr=338
 ]

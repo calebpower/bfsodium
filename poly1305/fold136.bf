@@ -77,6 +77,7 @@
 ; ASSERT ptr=41
   [-<+>]
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; continued
   <
 ; ASSERT ptr=0
 ; ASSERT zero 34:39
@@ -554,6 +555,7 @@
 ; ASSERT ptr=0
 ; back to the turn counter
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+; continued
   >>>>>>
 ]
 ; ASSERT ptr=46

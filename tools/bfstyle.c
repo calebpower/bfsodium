@@ -20,6 +20,9 @@
  *   3. Annotation lines begin at column 0 with ';'.
  *   4. No run of more than MAXRUN consecutive code lines without an
  *      annotation, so no block goes unexplained.
+ *   5. No more than MAXLINES lines -- counted on the sibling .skel when there
+ *      is one, because that is the file a person writes; see the note at
+ *      MAXLINES for why that is not a loophole.
  *
  * Usage:
  *   bfstyle FILE...        check; exit 1 if any file diverges
@@ -32,15 +35,68 @@
 
 #define MAXRUN 12
 
-/* A file longer than this is not something a person will read, whatever its
- * form. The project exists to commit brainfuck a human can follow, so size is
- * part of legibility, not separate from it. The hand-written primitives sit
- * between 50 and 200 lines; the wide arithmetic reaches about 2000. Anything
- * past that stopped being written and started being generated. */
+/* The budget was never a claim about 2000 lines. It was a claim about
+ * PROVENANCE, measured with the only signal available when it was written: at
+ * that point 0.19% of the committed brainfuck was hand-written and one
+ * generated file ran to 903,110 lines, and nothing in the suite could tell a
+ * written file from a generated one. Size stood in for that, on the reasoning
+ * that anything past about 2000 lines had stopped being written and started
+ * being generated.
+ *
+ * There is a direct signal now, so the budget follows the file a person
+ * actually writes. A composite is inherently long: blockloop.bf is 4,209 lines
+ * because qrloop, rowrot and stagger are spliced into it bodily, and no amount
+ * of care would bring it under, while blockloop.skel -- what I wrote, and what
+ * I would edit -- is 1,247. Budgeting the .bf there measures the splice, not
+ * the writing.
+ *
+ * So a .bf with a sibling .skel is budgeted on the .skel. A .bf WITHOUT one
+ * gets no exemption and no provenance, which is what keeps the rule biting on
+ * transpiler output: mulmod136.bf and poly1305.bf have no skeleton and still
+ * fail, at 15,826 and 27,811 lines.
+ *
+ * This is only sound because tests/run.sh separately proves that every .bf
+ * equals bfexpand of its skeleton BYTE FOR BYTE, globbing every directory so
+ * none can slip the net. Without that, a one line skeleton dropped beside a
+ * generated file would buy an exemption it had not earned. The two are one
+ * check in two halves; neither is worth much alone, and removing either
+ * reopens the hole this budget exists to close.
+ *
+ * Rules 1 to 4 apply to the committed .bf in every case. Nothing about the
+ * brainfuck's readability is traded away here -- rule 4, the cap on
+ * unannotated runs, is what actually forbids a wall of command bytes, and it
+ * still reads the .bf. */
 #define MAXLINES 2000
 
 static int is_cmd(int c) {
     return c=='>'||c=='<'||c=='+'||c=='-'||c=='.'||c==','||c=='['||c==']';
+}
+
+/* Count the lines of PATH, or -1 if it cannot be opened. */
+static long count_lines(const char *path) {
+    FILE *h = fopen(path, "rb");
+    if (!h) return -1;
+    long n = 0; int c, last = '\n';
+    while ((c = fgetc(h)) != EOF) { if (c == '\n') n++; last = c; }
+    if (last != '\n') n++;            /* a final line with no newline still counts */
+    fclose(h);
+    return n;
+}
+
+/* The file the budget applies to: a sibling .skel if there is one, else the
+ * file itself. Writes the chosen path into buf. */
+static const char *budget_target(const char *path, char *buf, size_t cap) {
+    const char *dot = strrchr(path, '.');
+    if (dot && strcmp(dot, ".bf") == 0) {
+        size_t stem = (size_t)(dot - path);
+        if (stem + sizeof ".skel" <= cap) {
+            memcpy(buf, path, stem);
+            memcpy(buf + stem, ".skel", sizeof ".skel");
+            FILE *h = fopen(buf, "rb");
+            if (h) { fclose(h); return buf; }
+        }
+    }
+    return path;
 }
 
 struct fp { int has_title, io_line, map_line, trailing, badcomment, longrun, code, cmt; };
@@ -101,12 +157,24 @@ static int scan(const char *path, struct fp *f, int quiet) {
     }
     fclose(fh);
 
-    if (lineno > MAXLINES) {
+    /* The budget measures the hand-written file: a sibling .skel if there is
+     * one, otherwise this file. Which one was measured is always printed, so
+     * an exemption can never be silent. */
+    char tbuf[4096];
+    const char *target = budget_target(path, tbuf, sizeof tbuf);
+    long tlines = (target == path) ? lineno : count_lines(target);
+    if (tlines > MAXLINES) {
         bad = 1;
-        if (!quiet)
-            printf("FAIL %s: %d lines exceeds the %d line budget; a file this long is\n"
-                   "     generated output, not brainfuck a person can read\n",
-                   path, lineno, MAXLINES);
+        if (!quiet) {
+            if (target == path)
+                printf("FAIL %s: %ld lines exceeds the %d line budget  and there is no\n"
+                       "     skeleton beside it  so this is generated output rather than\n"
+                       "     brainfuck a person wrote\n", path, tlines, MAXLINES);
+            else
+                printf("FAIL %s: its skeleton %s is %ld lines  which exceeds the %d line\n"
+                       "     budget; the expansion may be long but the writing may not be\n",
+                       path, target, tlines, MAXLINES);
+        }
     }
     if (f->io_line < 0) { if (!quiet) printf("FAIL %s: no IO section\n", path); bad = 1; }
     if (f->map_line < 0) { if (!quiet) printf("FAIL %s: no TAPE MAP section\n", path); bad = 1; }
@@ -157,7 +225,9 @@ static int selftest(void) {
     if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: missed a long unannotated run\n"); fails++; }
     else printf("selftest ok: caught a long unannotated run\n");
 
-    /* an over-budget file is caught */
+    /* an over-budget file with NO skeleton beside it is caught */
+    const char *skel = "/tmp/bfstyle_selftest.skel";
+    remove(skel);
     h = fopen(tmp, "wb");
     fputs("; title\n; IO  in: none\n; TAPE MAP\n", h);
     for (int i = 0; i < MAXLINES + 10; i++) fputs("; filler\n", h);
@@ -165,6 +235,24 @@ static int selftest(void) {
     if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: missed an over-budget file\n"); fails++; }
     else printf("selftest ok: caught a file past the line budget\n");
 
+    /* the same file, with a SHORT skeleton beside it, is a composite: long
+     * because routines were spliced into it, not because anyone wrote it. The
+     * budget follows the writing. */
+    h = fopen(skel, "wb"); fputs("; a short skeleton\n@@SOMETHING@@ 0\n", h); fclose(h);
+    if (scan(tmp, &f, 1) != 0) { printf("SELFTEST FAIL: a composite with a short skeleton was rejected\n"); fails++; }
+    else printf("selftest ok: a long expansion of a short skeleton passes\n");
+
+    /* and the exemption is not a blank cheque: a long skeleton still fails,
+     * so the rule reaches the writing rather than being switched off by the
+     * mere presence of a file. */
+    h = fopen(skel, "wb");
+    fputs("; a long skeleton\n", h);
+    for (int i = 0; i < MAXLINES + 10; i++) fputs("; filler\n", h);
+    fclose(h);
+    if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: an over-budget skeleton was let through\n"); fails++; }
+    else printf("selftest ok: caught a skeleton past the line budget\n");
+
+    remove(skel);
     remove(tmp);
     if (fails) { printf("SELFTEST FAILED (%d)\n", fails); return 1; }
     printf("SELFTEST PASSED\n");
