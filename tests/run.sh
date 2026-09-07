@@ -78,7 +78,8 @@ for f in */*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
 # vacuous PASS from the loop above.
 run "the files declaring no INTERFACE are exactly the known ones" sh -c '
     got=$(for f in */*.bf; do grep -q "^; INTERFACE" "$f" || echo "$f"; done)
-    want="chacha20/stream.bf
+    want="aead/chacha20poly1305.bf
+chacha20/stream.bf
 index/fetch8.bf
 index/fetchword.bf
 index/store8.bf"
@@ -102,6 +103,13 @@ run "a paste site with no base is refused" \
 printf '@@ADD32@@ 0\n' > "$tmpb/base.skel"
 run "a paste site with a base is accepted" \
     sh -c "sh tools/bfexpand.sh $tmpb/base.skel >/dev/null 2>&1"
+# An unknown paste name used to fall through to the plain code path, carry no
+# command bytes, and expand to nothing at all: the routine silently did not
+# appear. That cost real time during the AEAD, so it is an error now, and this
+# is the check that says so.
+printf '@@NOSUCHROUTINE@@ 0\n' > "$tmpb/unknown.skel"
+run "a paste site naming no known routine is refused" \
+    sh -c "! sh tools/bfexpand.sh $tmpb/unknown.skel >/dev/null 2>&1"
 rm -rf "$tmpb"
 
 echo
@@ -136,6 +144,14 @@ dk chacha20/stream.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c
 dk chacha20/stream.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000000000004a000000004100030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3 214540eb5f3df4d5149c6e3fef3d7881ff699e0ab2ba9b46d5fd732c593d1aa469d1fb5b8d660786ae5b5dfdda15d6782a16db28a948494961b3b5ec57d3f40baa streamRun "stream cipher one byte into the second block"
 
 dk chacha20/blockloop.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e blockRun "block function RFC 8439 section 2.3.2"
+
+# BLOCKKEEP is blockloop with the key and nonce surviving the call, which is
+# what lets a stream make a second block. Its own arithmetic is blockloop's and
+# is tested there; what only this can show is the preservation, so the expected
+# output is the keystream FOLLOWED BY the input bytes. A copy that leaked, or
+# temps left dirty inside the block frame, changes the second half.
+dk chacha20/blockkeep.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 blockkeepRun "blockkeep RFC 8439 section 2.3.2 with its input intact"
+dk chacha20/blockkeep.bf 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 76b8e0ada0f13d90405d6ae55386bd28bdd219b8a08ded1aa836efcc8b770dc7da41597c5157488d7724e03fb8d84a376a43b8f41518a11cc387b669b2ee6586000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 blockkeepRun "blockkeep an all nought input"
 
 dk chacha20/rowrot.bf 000000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000 0100000002000000030000000000000005000000060000000700000004000000090000000a0000000b000000080000000d0000000e0000000f0000000c000000 rowrotRun "row rotation  each row left by one word"
 
@@ -241,6 +257,20 @@ dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af
 dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b1100414c57626d78838e99a4afbac5d0dbe6f1 8f21e6c721b96021a8b06f67a139a7c7 poly1305Run17 "poly1305 one byte past a block"
 dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b2000414c57626d78838e99a4afbac5d0dbe6f1fc07121d28333e49545f6a75808b96 f95a1a6d12a410808813eddc733aa92a poly1305Run32 "poly1305 two full blocks"
 
+# The AEAD, RFC 8439 section 2.8. The published vector is the 2.8.2 one; the
+# rest straddle the two block edges this construction has, which are not the
+# same edge: sixteen bytes is a Poly1305 block and sixty four is a ChaCha one.
+# An empty AAD and an empty plaintext still authenticate the length block, so
+# that case is not a no-op and is the one a short circuit would break.
+# The oracles are written out per length in spec/bfsodium.cry, as the
+# Poly1305 ones are, because the padding and the block count are type level.
+dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f07000000404142434445464700000000 a0784d7a4716f3feb4f64e7f4b39bf04 aeadRun_0_0 "aead nothing at all  the tag is over the lengths alone"
+dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546470000010041 de347688a05e3b9aeba6705004e548832e aeadRun_0_1 "aead one byte of plaintext and no AAD"
+dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546471000404142434445464748494a4b4c4d4e4f1000505152535455565758595a5b5c5d5e5f cf2abb0e55a816ed4dbbd5a06adc54f1eccc7d3f135062d404e19c140bfaa259 aeadRun_16_16 "aead AAD and plaintext each exactly one block"
+dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f07000000404142434445464700004000404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f df3aab1e45b806fd5dabc5b07acc44e19191da6c5d54388985d38adc09df5dfa2effa95bc8eb384cd0b3d86496b63c870575c01dca1c1b3818ddffb46dc56526a3bc51ff51fe458434760962ba0d690d aeadRun_0_64 "aead plaintext exactly one ChaCha block"
+dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f07000000404142434445464700004100404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80 df3aab1e45b806fd5dabc5b07acc44e19191da6c5d54388985d38adc09df5dfa2effa95bc8eb384cd0b3d86496b63c870575c01dca1c1b3818ddffb46dc565267cf71ef96ef8d3409d16f805340d14ccde aeadRun_0_65 "aead one byte into the second ChaCha block"
+dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546470c0050515253c0c1c2c3c4c5c6c772004c616469657320616e642047656e746c656d656e206f662074686520636c617373206f66202739393a204966204920636f756c64206f6666657220796f75206f6e6c79206f6e652074697020666f7220746865206675747572652c2073756e73637265656e20776f756c642062652069742e d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d63dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b3692ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc3ff4def08e4b7a9de576d26586cec64b61161ae10b594f09e26a7e902ecbd0600691 aeadRun_12_114 "aead RFC 8439 section 2.8.2"
+
 echo
 echo "== tier 5: declared contracts enforced =="
 tmpc=$(mktemp -d)
@@ -256,6 +286,12 @@ run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d
 # so "the counter is still nought" is a claim about the prologue that only the
 # contract checker can test. Pinning the wrong counter would still produce a
 # perfectly valid looking 32 bytes.
+# The AEAD's own contracts are what caught its worst defect: it parked the two
+# lengths at cells 48 and 50, which are INSIDE blockkeep's declared footprint,
+# and blockkeep asserts that region clear on entry. The arithmetic was fine on
+# the first block and would have gone wrong on the second. No output test saw it.
+run "the AEAD honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546471000404142434445464748494a4b4c4d4e4f1000505152535455565758595a5b5c5d5e5f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/chacha20poly1305.bf >/dev/null"
+run "blockkeep honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockkeep.bf >/dev/null"
 run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"
 run "clamp honours its declared contracts" sh -c "printf ffffffffffffffffffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/clamp.bf >/dev/null"
 run "absorb honours its declared contracts" sh -c "printf 0123456789abcdef112233445566778802deadbeefcafebabe01020304050607ff01fedcba9876543210ffeeddccbbaa998801 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/absorb.bf >/dev/null"
@@ -264,6 +300,37 @@ run "absorb honours its declared contracts" sh -c "printf 0123456789abcdef112233
 # on the SECOND block. A single block vector runs the same code with an
 # accumulator of nought and notices nothing.
 run "poly1305 honours its declared contracts" sh -c "printf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b2000414c57626d78838e99a4afbac5d0dbe6f1fc07121d28333e49545f6a75808b96 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/poly1305.bf >/dev/null"
+
+echo
+echo "== tier 7: metamorphic, which needs no oracle at all =="
+# CONVENTIONS section 8 has declared this tier since the beginning and the suite
+# has never had it. It earns its place here because the AEAD makes it cheap: the
+# checks below pin NOTHING. They compare two separately written programs against
+# each other, and a construction against its own inverse, so they stay true even
+# if the vectors and the Cryptol spec are both wrong in the same way -- which is
+# the one failure a dual oracle cannot see.
+m7key=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+m7non=000000090000004a00000000
+m7pt=4c616469657320616e642047656e746c
+# With no AAD, the AEAD's ciphertext must be exactly what the stream cipher
+# produces for the same key and nonce starting at counter one. Two programs
+# written at different times from the same RFC; neither is the other's oracle
+# by construction, so agreement is evidence.
+run "the AEAD ciphertext is the stream cipher at counter one" sh -c '
+  a=$(printf %s "$1$2""0000""1000""$3" | ./tools/hx -r \
+      | ./tools/bfi aead/chacha20poly1305.bf | ./tools/hx | cut -c1-32)
+  b=$(printf %s "$1""01000000""$2""1000""$3" | ./tools/hx -r \
+      | ./tools/bfi chacha20/stream.bf | ./tools/hx)
+  test "$a" = "$b"' _ "$m7key" "$m7non" "$m7pt"
+# ChaCha20 is a stream cipher, so encrypting the ciphertext again with the same
+# key and nonce returns the plaintext. The tag differs -- it is taken over a
+# different message -- so only the ciphertext half is compared.
+run "encrypting the ciphertext again returns the plaintext" sh -c '
+  a=$(printf %s "$1$2""0000""1000""$3" | ./tools/hx -r \
+      | ./tools/bfi aead/chacha20poly1305.bf | ./tools/hx | cut -c1-32)
+  c=$(printf %s "$1$2""0000""1000""$a" | ./tools/hx -r \
+      | ./tools/bfi aead/chacha20poly1305.bf | ./tools/hx | cut -c1-32)
+  test "$c" = "$3"' _ "$m7key" "$m7non" "$m7pt"
 
 echo
 echo "== design proofs (Cryptol) =="

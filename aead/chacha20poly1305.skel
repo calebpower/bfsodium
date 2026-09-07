@@ -1,0 +1,1533 @@
+; bfsodium ChaCha20_Poly1305 AEAD  RFC 8439 section 2 point 8
+;
+; HAND WRITTEN skeleton; The block function that keeps its key  the exclusive
+; or  the adder that steps the block counter  the r clamp  the Poly1305 absorb
+; step and the wide adder that finishes the tag are each PASTED from their own
+; verified files  so this file is the plumbing that joins them and nothing else;
+;
+; IO  in:  key{32}  nonce{12}  alen{2} LE  aad{alen}  plen{2} LE  pt{plen}
+;     out: ciphertext{plen}  tag{16}
+;
+; Both lengths are read before the bytes they count  and a bfsodium primitive
+; never relies on end of input;
+;
+; The ciphertext is never stored; sixteen bytes are encrypted  written out and
+; folded into the authenticator  and then the next sixteen; So the tape does
+; not grow with the message  which is the point: the AEAD that was never
+; committed reached 903k lines by unrolling over the message instead;
+;
+; The padded message the tag is taken over is
+;   AAD  pad16  ciphertext  pad16  len(AAD){8} LE  len(C){8} LE
+; and EVERY piece of that is padded to a multiple of sixteen  so every block is
+; full and the ONE that ends a block always sits at blk{16}; None of the flag
+; driven part block machinery poly1305 needs is needed here; padding is landing
+; a nought when the input has run out;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x02f  saved{48}  key{32} @0x000  ctr{4} @0x020  nonce{12} @0x024;
+;                 blockkeep wants them at ITS base and hands them back intact
+;   @0x040:0x14f  blockkeep's frame; it runs HERE at this file's own zero and
+;                 its footprint 0:335 is what sets the size of it; a keystream
+;                 block comes back at @0x040:0x07f
+;   @0x0d0:0x0f7  the tag frame; add136 runs at @0x0d0 for the one addition
+;                 this file makes itself  the s at the end; it sits above the
+;                 keystream  in tape the block function has already given back
+;   @0x154:0x155  alen{2} u16 LE  kept  because the length block needs it after
+;                 the count has been run down to nought
+;   @0x156:0x157  plen{2} u16 LE  kept  for the same reason; BOTH sit above
+;                 blockkeep's frame  not below it: cells 0x030 upward are
+;                 inside that footprint  and blockkeep asserts them clear on
+;                 entry  so a length parked there is caught on the second block
+;   @0x160:0x179  the exclusive or frame; xor32 footprint 0:25 at @0x160
+;   @0x180:0x18d  the adder frame; add32 footprint 0:13 at @0x180
+;   @0x190:0x196  the AAD count frame
+;   @0x198:0x19e  the plaintext count frame; the two frames have the SAME shape
+;                 inside  which is what lets one piece of counting code serve
+;                 both: rem{2} at plus 0  nz at plus 2  a spare at plus 3  the
+;                 else arm at plus 4  and a copy and its spare at plus 5 and 6
+;   @0x1a0        k     sixteen rounds  one per byte position of a block
+;   @0x1a1        j     keystream bytes left in this block
+;   @0x1a2        t     a copy  so j can be tested without being eaten
+;   @0x1a3        u     puts that copy back
+;   @0x1a4        f     set while the keystream is spent
+;   @0x1b0:0x1c0  r{17}    the clamped r  copied into absorb's slot each block
+;   @0x1c4:0x1d4  s{17}    added in once at the very end
+;   @0x1d8:0x1e8  tmp{17}  hands r back  and hands a length back
+;   @0x200:0x32f  the absorb frame; poly1305/absorb runs HERE and its footprint
+;                 0:303 sets the size of it; absorb takes r at @0x200  and the
+;                 accumulator at @0x211 and the block at @0x222 LIVE there
+;                 between calls  so only r is handed in afresh each time;
+;                 clamp borrows the head of this frame once  before any block
+;
+; The accumulator and the block live inside absorb's own slots rather than
+; being carried in and out  so the glue for one block is the copy of r and
+; nothing else; absorb consumes r  which is why a master copy is kept apart;
+;
+; A byte always lands on the TOP of the block  at blk{16}  and the block then
+; slides down one; a byte taken in round k is shifted sixteen minus k more
+; times and comes to rest at blk{k}  so the write needs no index; When the
+; input has run out no byte lands  and the nought that was there rides down
+; instead  which is exactly pad16 and costs nothing;
+;
+; saved sits at the bottom because blockkeep wants it at its own base  and
+; because a read prologue may hold only reads and single steps: a long run of
+; steps before the first read is split across lines by the layout pass and a
+; paste begins at the prologue  so those steps would be dropped;
+
+; read the key  step over the counter  then read the nonce
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>>>>>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=47
+; ASSERT zero 48:815
+
+; ==== the AAD length  read above blockkeep's frame and copied ====
+; It is read here rather than in the prologue because it must live above that
+; frame  and a prologue may hold only reads and single steps;
+R293
+; ASSERT ptr=340
+  ,>,
+; ASSERT ptr=341
+L1
+; ASSERT ptr=340
+  [-R60+R72+L132]
+; the next byte
+R1
+  [-R60+R72+L132]
+; the temps hand the length straight back
+R131
+; ASSERT ptr=472
+  [-L132+R132]
+; the next byte
+R1
+  [-L132+R132]
+
+; ==== the block that makes the one time key  RFC section 2 point 6 ====
+; The counter is still nought  which is what the one time key is made with; it
+; steps to one before any plaintext is encrypted  so this block is never reused
+; as keystream;
+L473
+; ASSERT ptr=0
+@@BLOCKKEEP@@ 0
+; ASSERT ptr=0
+
+; ==== r is the first sixteen bytes of it  clamped ====
+; The clamp wants its bytes at its own base  and the absorb frame is idle until
+; the first block is taken  so it is borrowed here and given back clear;
+R64
+; ASSERT ptr=64
+; ASSERT zero 512:533
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; the next byte
+R1
+  [-R448+L448]
+; to the clamp's base
+R433
+; ASSERT ptr=512
+@@CLAMP@@ 512
+; ASSERT ptr=512
+; the clamped r goes where it is kept
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; the next byte
+R1
+  [-L80+R80]
+; back to the second half of the block
+L448
+; ASSERT ptr=80
+; ==== s is the next sixteen bytes  and is not clamped ====
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the next byte
+R1
+  [-R372+L372]
+; the rest of the block is not the one time key and must not be left behind
+R1
+; ASSERT ptr=96
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the next byte
+R1
+  [-]
+; the keystream is spent  so the first plaintext byte makes a fresh block
+L63
+; ASSERT ptr=64
+; ASSERT zero 64:335
+
+; ==== the AAD  padded to a multiple of sixteen  goes into the tag ====
+R336
+; ASSERT ptr=400
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=402
+
+; ==== one turn is one block of the AAD ====
+[
+; sixteen rounds  one for each byte position in a block
+R14
+; ASSERT ptr=416
+  [-]
+  ++++++++++++++++
+[
+  -
+; is there another AAD byte
+L16
+; ASSERT ptr=400
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=402
+; the else arm is armed  and taking a byte disarms it
+R2
+  [-]
+  +
+L2
+[
+  -
+; an AAD byte lands on the top of the block
+R160
+; ASSERT ptr=562
+  ,
+; disarm the else
+L158
+; ASSERT ptr=404
+  -
+; one fewer byte to go
+L4
+; ASSERT ptr=400
+; the low byte is copied out and handed back  so it survives being tested
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+; the else arm is armed
+L2
+  [-]
+  +
+; a low byte that is not nought simply comes down  and disarms the else
+R1
+  [[-]L5-R4-R1]
+; otherwise the high byte comes down and the low byte wraps to 255
+L1
+  [-L3-L1-R4]
+; back to the flag the loop is testing
+L2
+; ASSERT ptr=402
+]
+; the AAD ran out here  so no byte landed and the nought on top rides down
+; instead  which is exactly pad16
+; the block slides down one  so the next byte lands on the top again
+R145
+; ASSERT ptr=547
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; back to the round counter
+L146
+; ASSERT ptr=416
+]
+; ASSERT ptr=416
+; ==== the block is full  so its ONE sits just past its sixteenth byte ====
+R146
+; ASSERT ptr=562
+  [-]
+  +
+; ==== the accumulator takes this block ====
+; r is copied  not moved  because absorb consumes it and later blocks need it
+L130
+; ASSERT ptr=432
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the temps hand r straight back
+R24
+; ASSERT ptr=472
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; to absorb's base  which is where a paste site always stands
+R24
+; ASSERT ptr=512
+@@ABSORB@@ 512
+; ASSERT ptr=512
+; to the AAD count  to see whether another block follows
+L112
+; ASSERT ptr=400
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=402
+]
+
+; ==== the length of the plaintext ====
+; The AAD has been taken  so the next two bytes on the wire are this length;
+L60
+; ASSERT ptr=342
+  ,>,
+; ASSERT ptr=343
+; it is copied  because the length block needs it after the count is spent
+L1
+; ASSERT ptr=342
+  [-R66+R64+L130]
+; the next byte
+R1
+  [-R66+R64+L130]
+; the temps hand the length straight back
+R129
+; ASSERT ptr=472
+  [-L130+R130]
+; the next byte
+R1
+  [-L130+R130]
+
+; ==== encryption starts at counter one ====
+; The one time key was made with the counter at nought  and that block must
+; never serve as keystream too  which is what starting the cipher at one means;
+L441
+; ASSERT ptr=32
+  +
+; to the plaintext count
+R376
+; ASSERT ptr=408
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=410
+
+; ==== one turn is one block of ciphertext ====
+[
+; sixteen rounds  one for each byte position in a block
+R6
+; ASSERT ptr=416
+  [-]
+  ++++++++++++++++
+[
+  -
+; is there another plaintext byte
+L8
+; ASSERT ptr=408
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=410
+; the else arm is armed  and taking a byte disarms it
+R2
+  [-]
+  +
+L2
+[
+  -
+; ==== if the keystream is spent  make another block ====
+; j is copied out and put straight back  because it is still the count of
+; keystream bytes left; the flag is armed first and the copy disarms it  so a
+; block is made only when j has reached nought
+R7
+; ASSERT ptr=417
+  [-R1+R1+L2]
+R2
+  [-L2+R2]
+R1
+; ASSERT ptr=420
+  [-]
+  +
+L2
+; ASSERT ptr=418
+  [[-]R2-L2]
+R2
+; ASSERT ptr=420
+[
+  -
+; blockkeep hands the key and nonce back  so the next block can use them again
+L420
+; ASSERT ptr=0
+@@BLOCKKEEP@@ 0
+; ASSERT ptr=0
+
+; ==== the block counter steps by one ====
+R32
+; ASSERT ptr=32
+  [-R352+L352]
+; the next byte
+R1
+  [-R352+L352]
+; the next byte
+R1
+  [-R352+L352]
+; the next byte
+R1
+  [-R352+L352]
+; the addend is one
+R353
+; ASSERT ptr=388
+  +
+L4
+; ASSERT ptr=384
+; ASSERT zero 392:397
+@@ADD32@@ 384
+; ASSERT ptr=384
+; a counter that wrapped past two to the thirty second is out of keystream  and
+; the RFC leaves that to the caller  so the carry is simply dropped
+R8
+  [-]
+L8
+; the stepped counter goes back where it came from
+  [-L352+R352]
+; the next byte
+R1
+  [-L352+R352]
+; the next byte
+R1
+  [-L352+R352]
+; the next byte
+R1
+  [-L352+R352]
+; sixty four fresh keystream bytes
+R30
+; ASSERT ptr=417
+  ++++++++++++++++++++++++++++++++
+; continued  sixty four in all
+  ++++++++++++++++++++++++++++++++
+; back to the spent flag
+R3
+; ASSERT ptr=420
+]
+
+; ==== the leading keystream byte and the plaintext byte meet ====
+L356
+; ASSERT ptr=64
+  [-R292+L292]
+R288
+; ASSERT ptr=352
+; ASSERT zero 353:355
+  ,
+@@XOR32@@ 352
+; ASSERT ptr=352
+; the cipher byte is the low byte of the result  the other three being zero
+; exclusive or zero
+R8
+; ASSERT ptr=360
+; it goes out  and the SAME byte lands on the top of the block  because the tag
+; is taken over the ciphertext and not over the plaintext
+  .
+  [-R202+L202]
+
+; ==== the keystream slides down one  so the next byte is again at the head ====
+L295
+; ASSERT ptr=65
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; ==== one fewer byte in this block ====
+R290
+; ASSERT ptr=417
+  -
+; disarm the else
+L5
+; ASSERT ptr=412
+  -
+; ==== one fewer byte to go  borrowing from the high byte when the low runs out
+L4
+; ASSERT ptr=408
+; the low byte is copied out and handed back  so it survives being tested
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+; the else arm is armed
+L2
+  [-]
+  +
+; a low byte that is not nought simply comes down  and disarms the else
+R1
+  [[-]L5-R4-R1]
+; otherwise the high byte comes down and the low byte wraps to 255
+L1
+  [-L3-L1-R4]
+; back to the flag the loop is testing
+L2
+; ASSERT ptr=410
+]
+; the plaintext ran out here  so no byte landed and the nought on top rides
+; down instead  which is exactly pad16
+; the block slides down one  so the next byte lands on the top again
+R137
+; ASSERT ptr=547
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; back to the round counter
+L146
+; ASSERT ptr=416
+]
+; ASSERT ptr=416
+; ==== the block is full  so its ONE sits just past its sixteenth byte ====
+R146
+; ASSERT ptr=562
+  [-]
+  +
+; ==== the accumulator takes this block ====
+; r is copied  not moved  because absorb consumes it and later blocks need it
+L130
+; ASSERT ptr=432
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the temps hand r straight back
+R24
+; ASSERT ptr=472
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; to absorb's base  which is where a paste site always stands
+R24
+; ASSERT ptr=512
+@@ABSORB@@ 512
+; ASSERT ptr=512
+; to the plaintext count  to see whether another block follows
+L104
+; ASSERT ptr=408
+; the flag goes down first
+R2
+  [-]
+; the low byte is copied out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and a low byte that is not nought raises the flag
+L1
+  [[-]L3[-]+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  so EITHER byte being set is enough
+L1
+  [[-]L3[-]+R3]
+; to the flag
+L3
+; ASSERT ptr=410
+]
+
+; ==== the last block is the two lengths  eight bytes each  little endian ====
+; Both are sixteen bit counts  so the six bytes above each are already nought
+; and are simply left alone; This block is taken whatever the lengths were  so
+; an empty message and empty AAD still authenticate something;
+L70
+; ASSERT ptr=340
+  [-R206+L206]
+; the next byte
+R1
+  [-R206+L206]
+; to the length of the ciphertext  which is the length of the plaintext
+R1
+; ASSERT ptr=342
+  [-R212+L212]
+; the next byte
+R1
+  [-R212+L212]
+; to the round counter  which is where the shared closing block starts from
+R73
+; ASSERT ptr=416
+; ==== the block is full  so its ONE sits just past its sixteenth byte ====
+R146
+; ASSERT ptr=562
+  [-]
+  +
+; ==== the accumulator takes this block ====
+; r is copied  not moved  because absorb consumes it and later blocks need it
+L130
+; ASSERT ptr=432
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the next byte
+R1
+  [-R80+L40+L40]
+; the temps hand r straight back
+R24
+; ASSERT ptr=472
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; the next byte
+R1
+  [-L40+R40]
+; to absorb's base  which is where a paste site always stands
+R24
+; ASSERT ptr=512
+@@ABSORB@@ 512
+; ASSERT ptr=512
+
+; ==== the tag is the low sixteen bytes of the accumulator plus s ====
+; add136 runs above the keystream  in tape blockkeep has already given back;
+R17
+; ASSERT ptr=529
+; ASSERT zero 208:247
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; the next byte
+R1
+  [-L321+R321]
+; and s follows it  which is the layout add136 wants
+L93
+; ASSERT ptr=452
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; the next byte
+R1
+  [-L227+R227]
+; to the tag frame's base
+L260
+; ASSERT ptr=208
+@@ADD136@@ 208
+; ASSERT ptr=208
+
+; emit
+; the tag is the low sixteen bytes of that sum; the seventeenth is dropped
+; which is the modulo two to the 128 the RFC asks for
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

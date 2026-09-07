@@ -106,9 +106,21 @@ while IFS= read -r line; do
         '@@XOR32@@'*)   import "$repo/chacha20/xor32.bf"  "${line##* }"; continue ;;
         '@@ROTL32@@'*)  import "$repo/chacha20/rotl32.bf" "${line##* }"; continue ;;
         '@@BLOCK@@'*)   import "$repo/chacha20/blockloop.bf" "${line##* }"; continue ;;
+        '@@BLOCKKEEP@@'*) import "$repo/chacha20/blockkeep.bf" "${line##* }"; continue ;;
         '@@QR@@'*)      import "$repo/chacha20/qrloop.bf"  "${line##* }"; continue ;;
         '@@ROWROT@@'*)  import "$repo/chacha20/rowrot.bf"  "${line##* }"; continue ;;
         '@@STAGGER@@'*) import "$repo/chacha20/stagger.bf" "${line##* }"; continue ;;
+    esac
+    # An unknown paste name used to fall through to the plain code path, where
+    # it carries no command bytes and so expands to NOTHING: the routine simply
+    # did not appear, silently, and only a failing vector said so. A paste site
+    # names a routine or it is an error, exactly as one with no base is.
+    case "$line" in
+        '@@'*)
+            echo "bfexpand: $1: no routine is registered for this paste site:" >&2
+            echo "          $line" >&2
+            echo "          add it to the case list in tools/bfexpand.sh" >&2
+            exit 1 ;;
     esac
     case "$line" in
         '; ASSERT '*) printf '%s\n' "$line" | rebase 0 ;;

@@ -1,0 +1,341 @@
+; bfsodium BLOCKKEEP : the ChaCha20 block  keeping the bytes it was made from
+;
+; HAND WRITTEN skeleton; The block function is PASTED from its own verified
+; file; what is here is the copy that lets it be called more than once;
+;
+; INTERFACE entry=47 exit=64 footprint=0:335
+; IO  in:  key{32}  ctr{4} LE  nonce{12}    (48 bytes)
+;     out: keystream{64}  then the same forty eight bytes  unchanged
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x02f  saved{48}  key{32} @0x000  ctr{4} @0x020  nonce{12} @0x024;
+;                 the caller puts them here once and they are still here after
+;   @0x040:0x14f  the block routine's whole frame; blockloop runs at @0x040 and
+;                 its footprint 0:271 is what sets the size of it; the forty
+;                 eight bytes it works from go in at @0x050:0x07f and the
+;                 keystream comes back at @0x040:0x07f
+;   @0x0a0:0x0cf  copy temps{48}; these live INSIDE that frame  and are emptied
+;                 before it is entered  which is what makes that safe
+;
+; blockloop CONSUMES the forty eight bytes it is given  which is right for a
+; routine called once and wrong for a stream  where every block after the first
+; wants the same key and nonce again and only the counter has moved; So they
+; are kept at saved and copied in each time; The copy goes to the block's input
+; AND to a temp in one pass  and the temp hands the original straight back;
+;
+; The temps sit inside the block function's own frame on purpose: there is no
+; other free tape below it  and they are empty again before it is entered  so
+; the cell it wants is the cell it gets;
+;
+; saved is at the BOTTOM of the tape and not above the frame  because a read
+; prologue may hold only reads and single steps; a long run of steps before the
+; first read is split across lines by the layout pass  and a paste starts at
+; the prologue  so those steps would be silently dropped; tools/bffoot refuses
+; a routine shaped that way  which is how this was found;
+
+; read the key  the counter and the nonce into saved
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=47
+; ASSERT zero 48:335
+; to the head of saved
+L47
+; ASSERT ptr=0
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the next byte
+R1
+  [-R80+R80+L160]
+; the temps hand the saved bytes straight back
+R113
+; ASSERT ptr=160
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the next byte
+R1
+  [-L160+R160]
+; the temps are empty again  which is what lets them live in there
+; ASSERT zero 160:207
+; to the block routine's base
+L143
+; ASSERT ptr=64
+; ASSERT zero 128:335
+@@BLOCK@@ 64
+; ASSERT ptr=64
+
+; emit
+; the keystream  and then the forty eight bytes  to show they survived
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

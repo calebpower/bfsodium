@@ -317,3 +317,98 @@ keygenRun inb = take`{32} (chachaBlock (take`{32} inb) 0 (drop`{32} inb))
 clampRun : [16][8] -> [17][8]
 clampRun inb =
     leBytesN`{17} ((zero # (leN inb && 0x0ffffffc0ffffffc0ffffffc0fffffff)) : [136])
+
+// BLOCKKEEP: the ChaCha20 block, with the forty eight bytes it was made from
+// still intact afterwards. blockloop consumes them, which is right for a
+// routine called once and wrong for a stream; this is the form the AEAD and
+// any multi block caller wants.
+//   in  = key(32) # ctr(4 LE) # nonce(12)
+//   out = keystream(64) # the same forty eight bytes
+blockkeepRun : [48][8] -> [112][8]
+blockkeepRun inb = blockRun inb # inb
+
+// ---------------------------------------------------------------------------
+// ChaCha20-Poly1305 AEAD (RFC 8439 section 2.8), taking and returning the exact
+// wire bytes aead/chacha20poly1305.bf reads and writes:
+//   in  = key(32) # nonce(12) # alen(2 LE) # aad # plen(2 LE) # pt
+//   out = ciphertext # tag(16)
+//
+// Written out per length rather than once polymorphically, exactly as the
+// Poly1305 oracles above are. The padding and the block count are type level
+// facts, and spelling each case out keeps the oracle readable and keeps it
+// independent of how the brainfuck loops -- which is the whole job of oracle B.
+//
+// The one time key comes from counter NOUGHT and the keystream from counter
+// one onward, so the block that made the key is never reused. The tag is taken
+// over the ciphertext, never the plaintext.
+
+aeadRun_0_0 : [48][8] -> [16][8]
+aeadRun_0_0 inb = polyCore otk [ polyBlock`{16} b | b <- split`{1} macd ]
+  where
+    key  = take`{32} inb
+    non  = take`{12} (drop`{32} inb)
+    otk  = take`{32} (chachaBlock key 0 non)
+    macd = leBytesN`{8} (0 : [64]) # leBytesN`{8} (0 : [64])
+
+aeadRun_0_1 : [49][8] -> [17][8]
+aeadRun_0_1 inb = ct # tag
+  where
+    key  = take`{32} inb
+    non  = take`{12} (drop`{32} inb)
+    pt   = drop`{48} inb
+    otk  = take`{32} (chachaBlock key 0 non)
+    ct   = [ x ^ y | x <- pt | y <- take`{1} (chachaBlock key 1 non) ]
+    macd = ct # (zero : [15][8])
+           # leBytesN`{8} (0 : [64]) # leBytesN`{8} (1 : [64])
+    tag  = polyCore otk [ polyBlock`{16} b | b <- split`{2} macd ]
+
+aeadRun_16_16 : [80][8] -> [32][8]
+aeadRun_16_16 inb = ct # tag
+  where
+    key  = take`{32} inb
+    non  = take`{12} (drop`{32} inb)
+    aad  = take`{16} (drop`{46} inb)
+    pt   = drop`{64} inb
+    otk  = take`{32} (chachaBlock key 0 non)
+    ct   = [ x ^ y | x <- pt | y <- take`{16} (chachaBlock key 1 non) ]
+    macd = aad # ct
+           # leBytesN`{8} (16 : [64]) # leBytesN`{8} (16 : [64])
+    tag  = polyCore otk [ polyBlock`{16} b | b <- split`{3} macd ]
+
+aeadRun_0_64 : [112][8] -> [80][8]
+aeadRun_0_64 inb = ct # tag
+  where
+    key  = take`{32} inb
+    non  = take`{12} (drop`{32} inb)
+    pt   = drop`{48} inb
+    otk  = take`{32} (chachaBlock key 0 non)
+    ct   = [ x ^ y | x <- pt | y <- chachaBlock key 1 non ]
+    macd = ct # leBytesN`{8} (0 : [64]) # leBytesN`{8} (64 : [64])
+    tag  = polyCore otk [ polyBlock`{16} b | b <- split`{5} macd ]
+
+aeadRun_0_65 : [113][8] -> [81][8]
+aeadRun_0_65 inb = ct # tag
+  where
+    key  = take`{32} inb
+    non  = take`{12} (drop`{32} inb)
+    pt   = drop`{48} inb
+    otk  = take`{32} (chachaBlock key 0 non)
+    ct   = [ x ^ y | x <- pt
+                   | y <- take`{65} (chachaBlock key 1 non # chachaBlock key 2 non) ]
+    macd = ct # (zero : [15][8])
+           # leBytesN`{8} (0 : [64]) # leBytesN`{8} (65 : [64])
+    tag  = polyCore otk [ polyBlock`{16} b | b <- split`{6} macd ]
+
+aeadRun_12_114 : [174][8] -> [130][8]
+aeadRun_12_114 inb = ct # tag
+  where
+    key  = take`{32} inb
+    non  = take`{12} (drop`{32} inb)
+    aad  = take`{12} (drop`{46} inb)
+    pt   = drop`{60} inb
+    otk  = take`{32} (chachaBlock key 0 non)
+    ct   = [ x ^ y | x <- pt
+                   | y <- take`{114} (chachaBlock key 1 non # chachaBlock key 2 non) ]
+    macd = aad # (zero : [4][8]) # ct # (zero : [14][8])
+           # leBytesN`{8} (12 : [64]) # leBytesN`{8} (114 : [64])
+    tag  = polyCore otk [ polyBlock`{16} b | b <- split`{10} macd ]

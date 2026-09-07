@@ -22,9 +22,14 @@ its tape contract.
 
 ## Status
 
-**ChaCha20 and Poly1305 both work.** The stream cipher matches RFC 8439 §2.4.2
-and the authenticator matches §2.5.2 — real, standards-conformant crypto, in
-brainfuck, checked against two independent oracles.
+**The ChaCha20-Poly1305 AEAD works.** The stream cipher matches RFC 8439
+§2.4.2, the authenticator matches §2.5.2, and the AEAD that combines them
+matches §2.8.2 — ciphertext and tag both — in brainfuck, checked against two
+independent oracles.
+
+It is **correct, not safe**: brainfuck branches on data, so there is no
+constant-time story and cannot be one, and nothing is zeroized. See
+*Named non-goals* in CONVENTIONS.md. Do not encrypt anything you care about.
 
 | | |
 |---|---|
@@ -33,6 +38,7 @@ brainfuck, checked against two independent oracles.
 | [`chacha20/xor32.bf`](chacha20/xor32.bf) | bitwise exclusive or |
 | [`chacha20/qrloop.bf`](chacha20/qrloop.bf) | the quarter round (RFC 8439 §2.2.1) |
 | [`chacha20/blockloop.bf`](chacha20/blockloop.bf) | the block function (RFC 8439 §2.3.2) |
+| [`chacha20/blockkeep.bf`](chacha20/blockkeep.bf) | the block, keeping the key and nonce |
 | [`chacha20/stream.bf`](chacha20/stream.bf) | the stream cipher (RFC 8439 §2.4.2) |
 | [`poly1305/add136.bf`](poly1305/add136.bf) | 17-byte addition |
 | [`poly1305/halve136.bf`](poly1305/halve136.bf) | 17-byte shift-right-one |
@@ -44,11 +50,10 @@ brainfuck, checked against two independent oracles.
 | [`poly1305/absorb.bf`](poly1305/absorb.bf) | one block: acc = (acc + blk) · r mod p |
 | [`poly1305/poly1305.bf`](poly1305/poly1305.bf) | **the authenticator (RFC 8439 §2.5.2)** |
 | [`aead/keygen.bf`](aead/keygen.bf) | the Poly1305 one-time key (RFC 8439 §2.6) |
+| [`aead/chacha20poly1305.bf`](aead/chacha20poly1305.bf) | **the AEAD (RFC 8439 §2.8.2)** |
 
-Next: the ChaCha20-Poly1305 AEAD, whose pieces — the keystream, the one-time
-key, and `absorb`, the step every Poly1305 block takes — are each verified
-routines already. Then SHA-256 and HKDF-SHA-256. Keccak and the ML-KEM / ML-DSA
-lattice math are the later mountain.
+Next: SHA-256, then HKDF-SHA-256. Keccak and the ML-KEM / ML-DSA lattice math
+are the later mountain.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and
 [Cryptol](https://cryptol.net); `reaper test` provisions both).
