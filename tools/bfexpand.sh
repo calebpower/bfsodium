@@ -38,7 +38,7 @@ rep() { _i=0; while [ "$_i" -lt "$2" ]; do printf '%s' "$1"; _i=$((_i+1)); done;
 # the paste but the "; continued" chatter of its read does not.
 body() {
     awk '
-        !f && /^ *,[>,]/            { f = 1; pre = 1; next }
+        !f && /^[ \t]*[,>]+[ \t]*$/ && /,/ { f = 1; pre = 1; next }
         !f                          { next }
         pre && /^[ \t]*[,>]+[ \t]*$/ && /,/ { nb = 0; next }
         pre && /^[ \t]*;/           { buf[nb++] = $0; next }
@@ -87,6 +87,7 @@ while IFS= read -r line; do
         '@@ADD32@@'*)   import "$repo/chacha20/add32.bf"  "${line##* }"; continue ;;
         '@@XOR32@@'*)   import "$repo/chacha20/xor32.bf"  "${line##* }"; continue ;;
         '@@ROTL32@@'*)  import "$repo/chacha20/rotl32.bf" "${line##* }"; continue ;;
+        '@@BLOCK@@'*)   import "$repo/chacha20/blockloop.bf" "${line##* }"; continue ;;
         '@@QR@@'*)      import "$repo/chacha20/qrloop.bf"  "${line##* }"; continue ;;
         '@@ROWROT@@'*)  import "$repo/chacha20/rowrot.bf"  "${line##* }"; continue ;;
         '@@STAGGER@@'*) import "$repo/chacha20/stagger.bf" "${line##* }"; continue ;;

@@ -3,6 +3,8 @@
 ; HAND WRITTEN skeleton; @@QR@@ @@ROWROT@@ and @@STAGGER@@ paste routines that
 ; are each already verified on their own  and each appears ONCE;
 ;
+; INTERFACE entry=63 exit=0 footprint=0:271
+;
 ; IO  in:  key{32}  counter{4} LE  nonce{12}        (48 bytes)
 ;     out: keystream block{64}                      (64 bytes)
 ;
@@ -26,6 +28,19 @@
 ;   @0xc8:0xcd  counters            columns @0xc8  passes @0xc9  staggers @0xcb
 ;                                   rounds @0xcc  words @0xcd
 ;   @0xd0:0x10f copytmp{64} u8      temps for duplicating the state
+; read the key  counter and nonce into words four through fifteen
+; The sixteen arrows step over the constant  which is written below rather than
+; above; A routine is pasted from its read onwards  so the read must come first
+; and no instruction may precede it  or a caller would silently lose it;
+  >>>>>>>>>>>>>>>>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; continued
+  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; continued
+  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; to the start of the state
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=0
 ; the constant  which is the ASCII of expand 32 byte k
 ; @00 gets 101
   ++++++++++++++++++++++++++++++++++++++++
@@ -126,16 +141,8 @@
   ++++++++++++++++++++++++++++++++++++++++
 ; continued
   +++++++++++++++++++++++++++
-; read the key  counter and nonce into words four through fifteen
->
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; continued
-  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; continued
-  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; to the start of the state
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<
+; back to the head of the state
+<<<<<<<<<<<<<<<
 ; ASSERT ptr=0
 
 ; ==== duplicate the state into orig ====
@@ -3787,24 +3794,12 @@
   [-]
 <<<<<<<<
 ; ASSERT ptr=136
-; emit the finished word and empty the frame behind it
-  .[-]
-; the next byte
->
-  .[-]
-; the next byte
->
-  .[-]
-; the next byte
->
-  .[-]
 ; back to the head of the state
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<
 ; ASSERT ptr=0
-; ASSERT zero 136:149
 ; the fifteen words that are left slide down four cells
 >>>>
   [-<<<<+>>>>]
@@ -4166,9 +4161,33 @@
 ; the next byte
 >
   [-<<<<+>>>>]
+; The finished word goes on the TAIL of the state; Taking the head off and
+; putting the result on the tail is a rotation  so after sixteen turns the state
+; holds the sixteen sums in their original order and the caller finds the block
+; where the state has always been  rather than having had it printed at it;
+>
+; ASSERT ptr=136
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the next byte
+>
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the next byte
+>
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
+; the next byte
+>
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
 ; back to the word counter
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>
 ; ASSERT ptr=205
 ]
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -4178,4 +4197,13 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<
 ; ASSERT ptr=0
-; ASSERT zero 0:205
+; ASSERT zero 64:205
+
+; emit the keystream block
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; continued
+  >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; continued
+  >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; continued
+  >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

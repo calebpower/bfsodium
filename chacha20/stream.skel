@@ -1,0 +1,695 @@
+; bfsodium ChaCha20 STREAM CIPHER  RFC 8439 section 2 point 4
+;
+; HAND WRITTEN skeleton; The block function  the exclusive or and the adder that
+; steps the block counter are each PASTED ONCE from their own verified files
+; rather than written out again  so this file is the plumbing and nothing else;
+;
+; IO  in:  key{32}  counter{4} LE  nonce{12}  len{2} LE  plaintext{len}
+;     out: ciphertext{len}
+;
+; The length prefix is how the program knows when to stop; a bfsodium primitive
+; never relies on end of input;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x10f  the block routine's whole frame; its footprint is 0:271 and
+;                 tools/bffoot proves that against its instruction stream; the
+;                 forty eight bytes it works from go in at @0x010:0x03f and the
+;                 keystream comes back at @0x000:0x03f
+;   @0x060:0x08f  copy temps; these live INSIDE that frame and are emptied
+;                 before it is entered  which the contract below states
+;   @0x120:0x14f  saved{48}  key{32} @0x120  counter{4} @0x140  nonce{12} @0x144
+;   @0x150:0x151  remaining{2} u16 LE  message bytes still to emit
+;   @0x152        nz     set while remaining is not zero
+;   @0x153        j      keystream bytes left in this block
+;   @0x154        e      the else arm of the borrowing decrement
+;   @0x155        t      a copy  so a count can be tested without being eaten
+;   @0x156        u      puts that copy back
+;   @0x157        f      set while the keystream is spent
+;   @0x160:0x179  the exclusive or frame; xor32 footprint 0:25 at @0x160
+;   @0x180:0x18d  the adder frame; add32 footprint 0:13 at @0x180
+;
+; One turn of the loop is ONE message byte; a block is made only when the last
+; one has been used up  so the tail of a message needs no special case and no
+; division: the count simply runs out partway through a block;
+;
+; The exclusive or is xor32 rather than a byte sized one  with the upper three
+; bytes of both operands left at zero; It costs four times the bit work for one
+; byte  which against ten double rounds of ChaCha per sixty four bytes is not
+; measurable  and it means no new bitwise routine had to be written and proved;
+
+; ==== read the key  counter  nonce and the length ====
+R288
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; continued
+  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; continued
+  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; the two byte length prefix
+R1
+  ,>,
+; back to home
+L337
+; ASSERT ptr=0
+
+; ==== is there anything to do ====
+R336
+; The count is two bytes  so the flag is set if EITHER is not zero; each byte is
+; copied out through a temp and put straight back  so testing does not eat it;
+; ASSERT ptr=336
+R2
+  [-]
+L2
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L1
+  [[-]L3+R3]
+L4
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L3+R3]
+L3
+; ASSERT ptr=338
+
+; ==== one turn is one message byte ====
+[
+
+; ==== if the keystream is spent  make another block ====
+; j is copied out and put straight back  because it is still the count of
+; keystream bytes left; the flag is armed first and the copy disarms it  so the
+; block is made only when j has reached nought
+R1
+; ASSERT ptr=339
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+R1
+; ASSERT ptr=343
+  [-]
+  +
+L2
+; ASSERT ptr=341
+  [[-]R2-L2]
+R2
+; ASSERT ptr=343
+[
+  -
+; the saved key  counter and nonce are copied  not moved  because the block
+; function consumes what it is given and the next block needs them again
+L55
+; ASSERT ptr=288
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the next byte
+R1
+  [-L272+R80+R192]
+; the temps hand the saved bytes straight back
+L239
+; ASSERT ptr=96
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; the next byte
+R1
+  [-R192+L192]
+; to the head of the block frame
+L143
+; ASSERT ptr=0
+; ASSERT zero 64:271
+@@BLOCK@@ 0
+; ASSERT ptr=0
+; the block is sixty four bytes long
+R339
+; ASSERT ptr=339
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; ==== the block counter steps by one ====
+L19
+; ASSERT ptr=320
+  [-R64+L64]
+; the next byte
+R1
+  [-R64+L64]
+; the next byte
+R1
+  [-R64+L64]
+; the next byte
+R1
+  [-R64+L64]
+; the addend is one
+R65
+; ASSERT ptr=388
+  +
+L4
+; ASSERT ptr=384
+; ASSERT zero 392:397
+@@ADD32@@ 384
+; ASSERT ptr=384
+; a counter that wrapped past two to the thirty second is out of keystream  and
+; the RFC leaves that to the caller  so the carry is simply dropped
+R8
+  [-]
+L8
+; the stepped counter goes back where it came from
+  [-L64+R64]
+; the next byte
+R1
+  [-L64+R64]
+; the next byte
+R1
+  [-L64+R64]
+; the next byte
+R1
+  [-L64+R64]
+; back to the spent flag
+L44
+; ASSERT ptr=343
+]
+
+; ==== the leading keystream byte and the message byte meet ====
+L343
+; ASSERT ptr=0
+  [-R356+L356]
+R352
+; ASSERT ptr=352
+; ASSERT zero 353:355
+  ,
+@@XOR32@@ 352
+; ASSERT ptr=352
+; the cipher byte is the low byte of the result  the other three being zero
+; exclusive or zero
+R8
+; ASSERT ptr=360
+  .
+  [-]
+; ASSERT zero 352:377
+
+; ==== the keystream slides down one  so the next byte is again at the head ====
+L359
+; ASSERT ptr=1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; ASSERT ptr=63
+; ==== one fewer byte in this block ====
+R276
+; ASSERT ptr=339
+  -
+; ==== one fewer byte to go  borrowing from the high byte when the low runs out
+L3
+; ASSERT ptr=336
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L2
+; ASSERT ptr=340
+  [-]
+  +
+R1
+  [[-]L5-R4-R1]
+L1
+; ASSERT ptr=340
+  [-L3-L1-R4]
+L4
+; ==== is there anything left to do ====
+; The count is two bytes  so the flag is set if EITHER is not zero; each byte is
+; copied out through a temp and put straight back  so testing does not eat it;
+; ASSERT ptr=336
+R2
+  [-]
+L2
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L1
+  [[-]L3+R3]
+L4
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L3+R3]
+L3
+; ASSERT ptr=338
+]
+L338
+; ASSERT ptr=0
+; ASSERT zero 0:397
