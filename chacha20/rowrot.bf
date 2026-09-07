@@ -18,344 +18,222 @@
 ; steps aside  the other three slide down  and the one that stepped aside comes
 ; back as the last;
 
-; read the state
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,                            ; read the state
 ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; to the start of the state
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; to the start of the state
+  <<<                                                          ; continued
 ; ASSERT ptr=0
 ; ==== row at @00 ====
 ; ASSERT ptr=0
-; the first word steps aside into the temp
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]
-; the other three words each slide down one word
->
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the first word steps aside into the temp
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<]                                             ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<]                                             ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<]                                             ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<]                                             ; continued
+>                                                              ; the other three words each slide down one word
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the temp becomes the last word
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>              ; the temp becomes the last word
 ; ASSERT ptr=64
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>]
-; the next byte
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>]
-; the next byte
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>]
-; the next byte
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>>>>>]
-; back to the start of the state
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]           ; continued
+>                                                              ; the next byte
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]           ; continued
+>                                                              ; the next byte
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]           ; continued
+>                                                              ; the next byte
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]           ; continued
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
+  <<<<<<<                                                      ; continued
 ; ASSERT ptr=0
 ; ==== row at @10 ====
-; to this row
->>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>                                               ; to this row
 ; ASSERT ptr=16
-; the first word steps aside into the temp
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<]
-; the other three words each slide down one word
->
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<   ; the first word steps aside into the temp
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                   ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                   ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                   ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                   ; continued
+>                                                              ; the other three words each slide down one word
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the temp becomes the last word
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                              ; the temp becomes the last word
 ; ASSERT ptr=64
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the next byte
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the next byte
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the next byte
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; back to the start of the state
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>]                                           ; continued
+>                                                              ; the next byte
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>]                                           ; continued
+>                                                              ; the next byte
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>]                                           ; continued
+>                                                              ; the next byte
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>]                                           ; continued
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
+  <<<<<<<                                                      ; continued
 ; ASSERT ptr=0
 ; ==== row at @20 ====
-; to this row
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                               ; to this row
 ; ASSERT ptr=32
-; the first word steps aside into the temp
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the other three words each slide down one word
->
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<   ; the first word steps aside into the temp
+  <<<<<<<<<]                                                   ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<]                                                   ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<]                                                   ; continued
+>                                                              ; the next byte
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<]                                                   ; continued
+>                                                              ; the other three words each slide down one word
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the temp becomes the last word
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the temp becomes the last word
 ; ASSERT ptr=64
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
-; back to the start of the state
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
+  <<<<<<<                                                      ; continued
 ; ASSERT ptr=0
 ; ==== row at @30 ====
-; to this row
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; continued
-  >>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>               ; to this row
 ; ASSERT ptr=48
-; the first word steps aside into the temp
+  [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]                         ; the first word steps aside into the temp
+>                                                              ; the next byte
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
-; the next byte
->
+>                                                              ; the next byte
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
-; the next byte
->
+>                                                              ; the next byte
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
-; the next byte
->
-  [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
-; the other three words each slide down one word
->
+>                                                              ; the other three words each slide down one word
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the temp becomes the last word
->
+>                                                              ; the temp becomes the last word
 ; ASSERT ptr=64
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; the next byte
->
+>                                                              ; the next byte
   [-<<<<+>>>>]
-; back to the start of the state
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
+  <<<<<<<                                                      ; continued
 ; ASSERT ptr=0
 
 ; emit the rotated state

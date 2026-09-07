@@ -38,9 +38,10 @@ rep() { _i=0; while [ "$_i" -lt "$2" ]; do printf '%s' "$1"; _i=$((_i+1)); done;
 # the paste but the "; continued" chatter of its read does not.
 body() {
     awk '
-        !f && /^[ \t]*[,>]+[ \t]*$/ && /,/ { f = 1; pre = 1; next }
+        { c = $0; sub(/;.*/, "", c); sub(/[ \t]+$/, "", c) }
+        !f && c ~ /^[ \t]*[,>]+$/ && c ~ /,/ { f = 1; pre = 1; next }
         !f                          { next }
-        pre && /^[ \t]*[,>]+[ \t]*$/ && /,/ { nb = 0; next }
+        pre && c ~ /^[ \t]*[,>]+$/ && c ~ /,/ { nb = 0; next }
         pre && /^[ \t]*;/           { buf[nb++] = $0; next }
         pre                         { pre = 0
                                       for (i = 0; i < nb; i++) print buf[i]
@@ -82,6 +83,15 @@ import() {
     printf '; walk back out to the routine base\n  '; rep '<' "$_ex"; printf '\n'
 }
 
+# The expansion is written to a file and laid out afterwards, rather than piped
+# straight into the layout pass. A pipeline runs its left hand side in a subshell,
+# so the hard error for a paste site with no base exited that subshell and the
+# pipeline reported the layout's success instead. A redirection keeps the loop in
+# THIS shell, where "exit 1" still means what it says.
+raw=$(mktemp)
+trap 'rm -f "$raw"' EXIT HUP INT TERM
+
+{
 while IFS= read -r line; do
     case "$line" in
         '@@ADD136@@'*)  import "$repo/poly1305/add136.bf" "${line##* }"; continue ;;
@@ -97,6 +107,9 @@ while IFS= read -r line; do
     case "$line" in
         '; ASSERT '*) printf '%s\n' "$line" | rebase 0 ;;
         ';'*)         printf '%s\n' "$line" ;;
-        *)            printf '%s\n' "$line" | perl -pe 's/R(\d+)/">" x $1/ge; s/L(\d+)/"<" x $1/ge; s/([><]{40})(?=[><])/$1 . "\n; continued\n  "/ge' ;;
+        *)            printf '%s\n' "$line" | perl -pe 's{^([^;]*)}{ my $c = $1; $c =~ s/R(\d+)/">" x $1/ge; $c =~ s/L(\d+)/"<" x $1/ge; $c }e' ;;
     esac
 done < "$1"
+} > "$raw"
+
+perl "$here/bflayout.pl" < "$raw"

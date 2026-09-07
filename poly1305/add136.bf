@@ -30,8 +30,8 @@
 ; is asserted clear on entry as well  so this routine may be pasted inside a
 ; loop and entered again and again; fold136 does exactly that  five times over;
 
-; read a{0:16} then b{0:16}  leaving the pointer on the carry in
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>                     ; read a{0:16} then b{0:16}  leaving the pointer on the
+                                                               ; carry in
 ; continued
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>
 ; ASSERT ptr=34
@@ -39,460 +39,357 @@
 
 ; ==== byte 0 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                             ; the accumulator byte steps into the adder
 ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<]                                             ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>                                            ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>]                                             ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 1 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                              ; the accumulator byte steps into the adder
 ; ASSERT ptr=1
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<]                                               ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>                                             ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>]                                               ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 2 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                               ; the accumulator byte steps into the adder
 ; ASSERT ptr=2
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<]                                                 ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>]                                                 ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 3 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                ; the accumulator byte steps into the adder
 ; ASSERT ptr=3
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<]                                                   ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>                                               ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>]                                                   ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 4 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                 ; the accumulator byte steps into the adder
 ; ASSERT ptr=4
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<]                                                     ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>                                                ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>]                                                     ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 5 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; the accumulator byte steps into the adder
 ; ASSERT ptr=5
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<]                                                       ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>>>
+>>>>>>>>>>>>>>                                                 ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>]                                                       ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 6 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                   ; the accumulator byte steps into the adder
 ; ASSERT ptr=6
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<]                                                         ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>+<<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>>
+>>>>>>>>>>>>>                                                  ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>]                                                         ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 7 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; the accumulator byte steps into the adder
 ; ASSERT ptr=7
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <]                                                           ; continued
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>+<<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>>
+>>>>>>>>>>>>                                                   ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+<                                                              ; the low byte of the sum goes back where it came from
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >]                                                           ; continued
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 8 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<<                                     ; the accumulator byte steps into the adder
 ; ASSERT ptr=8
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>+<<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>>
+>>>>>>>>>>>                                                    ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 9 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<<                                      ; the accumulator byte steps into the adder
 ; ASSERT ptr=9
   [->>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>+<<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>>
+>>>>>>>>>>                                                     ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 10 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<<                                       ; the accumulator byte steps into the adder
 ; ASSERT ptr=10
   [->>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>+<<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>>
+>>>>>>>>>                                                      ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 11 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<<                                        ; the accumulator byte steps into the adder
 ; ASSERT ptr=11
   [->>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>+<<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>>
+>>>>>>>>                                                       ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 12 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<<                                         ; the accumulator byte steps into the adder
 ; ASSERT ptr=12
   [->>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>+<<<<<<<]
-; add the addend into the accumulator byte
->>>>>>>
+>>>>>>>                                                        ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 13 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<<                                          ; the accumulator byte steps into the adder
 ; ASSERT ptr=13
   [->>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>+<<<<<<]
-; add the addend into the accumulator byte
->>>>>>
+>>>>>>                                                         ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 14 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<<                                           ; the accumulator byte steps into the adder
 ; ASSERT ptr=14
   [->>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>+<<<<<]
-; add the addend into the accumulator byte
->>>>>
+>>>>>                                                          ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 15 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<<                                            ; the accumulator byte steps into the adder
 ; ASSERT ptr=15
   [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>+<<<<]
-; add the addend into the accumulator byte
->>>>
+>>>>                                                           ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 
 ; ==== byte 16 ====
 ; ASSERT ptr=34
-; the accumulator byte steps into the adder
-<<<<<<<<<<<<<<<<<<
+<<<<<<<<<<<<<<<<<<                                             ; the accumulator byte steps into the adder
 ; ASSERT ptr=16
   [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
-; the addend byte follows it
->>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>+<<<]
-; add the addend into the accumulator byte
->>>
+>>>                                                            ; add the addend into the accumulator byte
 ; ASSERT ptr=36
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the carry in follows it
-<<
+<<                                                             ; the carry in follows it
   [->>+<<]
-; add that in too
->>
+>>                                                             ; add that in too
   [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; the low byte of the sum goes back where it came from
-<
+<                                                              ; the low byte of the sum goes back where it came from
   [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
-; the carry out becomes the carry in of the byte above
->>
+>>                                                             ; the carry out becomes the carry in of the byte above
   [-<<<+>>>]
 <<<
 

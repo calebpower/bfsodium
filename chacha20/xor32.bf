@@ -38,153 +38,88 @@
 ; ends as the exclusive or  then adds the current weight p into res when t is
 ; set  and doubles p for the next bit;
 
-; read x{0:3} then y{0:3}  leaving the pointer on r0 @0x08
-,>,>,>,>,>,>,>,>
+,>,>,>,>,>,>,>,>                                               ; read x{0:3} then y{0:3}  leaving the pointer on r0
+                                                               ; @0x08
 
 ; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
-; move x0 into a
-  <<<<<<<< [->>>>>>>>>>>>+<<<<<<<<<<<<]
-; move y0 into b
-  >>>> [->>>>>>>>>>>>+<<<<<<<<<<<<]
-; p := 1
-  >>>>>>>>>>>>>>>>>>> +
-; cnt := 8
-  > ++++++++
-; ____ eight bit steps ____
-  [-
-; HALVE a  giving qa and pa
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]
-; HALVE b  giving qb and pb
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]
-; low bit of a toggles t
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]
-; low bit of b toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]
-; if t then res gets p
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
-; a := qa
-  <<<<<<< [-<+>]
-; b := qb
-  >>>> [-<+>]
-; p into tmp
-  >>>>>> [->>+<<]
-; p := tmp doubled
-  >> [-<<++>>]
-; back to cnt
-  <
+  <<<<<<<< [->>>>>>>>>>>>+<<<<<<<<<<<<]                        ; move x0 into a
+  >>>> [->>>>>>>>>>>>+<<<<<<<<<<<<]                            ; move y0 into b
+  >>>>>>>>>>>>>>>>>>> +                                        ; p := 1
+  > ++++++++                                                   ; cnt := 8
+  [-                                                           ; ____ eight bit steps ____
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets p
+  <<<<<<< [-<+>]                                               ; a := qa
+  >>>> [-<+>]                                                  ; b := qb
+  >>>>>> [->>+<<]                                              ; p into tmp
+  >> [-<<++>>]                                                 ; p := tmp doubled
+  <                                                            ; back to cnt
   ]
-; store res into r0
-  << [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
-; back to r0
-  <<<<<<<<<<<<<<
+  << [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]                          ; store res into r0
+  <<<<<<<<<<<<<<                                               ; back to r0
 
 ; ==== byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09 ====
-; move x1 into a
-  <<<<<<< [->>>>>>>>>>>+<<<<<<<<<<<]
-; move y1 into b
-  >>>> [->>>>>>>>>>>+<<<<<<<<<<<]
-; p := 1
-  >>>>>>>>>>>>>>>>>> +
-; cnt := 8
-  > ++++++++
+  <<<<<<< [->>>>>>>>>>>+<<<<<<<<<<<]                           ; move x1 into a
+  >>>> [->>>>>>>>>>>+<<<<<<<<<<<]                              ; move y1 into b
+  >>>>>>>>>>>>>>>>>> +                                         ; p := 1
+  > ++++++++                                                   ; cnt := 8
   [-
-; HALVE a  giving qa and pa
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]
-; HALVE b  giving qb and pb
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]
-; low bit of a toggles t
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]
-; low bit of b toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]
-; if t then res gets p
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
-; a := qa
-  <<<<<<< [-<+>]
-; b := qb
-  >>>> [-<+>]
-; p into tmp
-  >>>>>> [->>+<<]
-; p := tmp doubled
-  >> [-<<++>>]
-; back to cnt
-  <
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets p
+  <<<<<<< [-<+>]                                               ; a := qa
+  >>>> [-<+>]                                                  ; b := qb
+  >>>>>> [->>+<<]                                              ; p into tmp
+  >> [-<<++>>]                                                 ; p := tmp doubled
+  <                                                            ; back to cnt
   ]
-; store res into r1
-  << [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-; back to r0
-  <<<<<<<<<<<<<<
+  << [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]                            ; store res into r1
+  <<<<<<<<<<<<<<                                               ; back to r0
 
 ; ==== byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a ====
-; move x2 into a
-  <<<<<< [->>>>>>>>>>+<<<<<<<<<<]
-; move y2 into b
-  >>>> [->>>>>>>>>>+<<<<<<<<<<]
-; p := 1
-  >>>>>>>>>>>>>>>>> +
-; cnt := 8
-  > ++++++++
+  <<<<<< [->>>>>>>>>>+<<<<<<<<<<]                              ; move x2 into a
+  >>>> [->>>>>>>>>>+<<<<<<<<<<]                                ; move y2 into b
+  >>>>>>>>>>>>>>>>> +                                          ; p := 1
+  > ++++++++                                                   ; cnt := 8
   [-
-; HALVE a  giving qa and pa
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]
-; HALVE b  giving qb and pb
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]
-; low bit of a toggles t
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]
-; low bit of b toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]
-; if t then res gets p
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
-; a := qa
-  <<<<<<< [-<+>]
-; b := qb
-  >>>> [-<+>]
-; p into tmp
-  >>>>>> [->>+<<]
-; p := tmp doubled
-  >> [-<<++>>]
-; back to cnt
-  <
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets p
+  <<<<<<< [-<+>]                                               ; a := qa
+  >>>> [-<+>]                                                  ; b := qb
+  >>>>>> [->>+<<]                                              ; p into tmp
+  >> [-<<++>>]                                                 ; p := tmp doubled
+  <                                                            ; back to cnt
   ]
-; store res into r2
-  << [-<<<<<<<<<<<<+>>>>>>>>>>>>]
-; back to r0
-  <<<<<<<<<<<<<<
+  << [-<<<<<<<<<<<<+>>>>>>>>>>>>]                              ; store res into r2
+  <<<<<<<<<<<<<<                                               ; back to r0
 
 ; ==== byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b ====
-; move x3 into a
-  <<<<< [->>>>>>>>>+<<<<<<<<<]
-; move y3 into b
-  >>>> [->>>>>>>>>+<<<<<<<<<]
-; p := 1
-  >>>>>>>>>>>>>>>> +
-; cnt := 8
-  > ++++++++
+  <<<<< [->>>>>>>>>+<<<<<<<<<]                                 ; move x3 into a
+  >>>> [->>>>>>>>>+<<<<<<<<<]                                  ; move y3 into b
+  >>>>>>>>>>>>>>>> +                                           ; p := 1
+  > ++++++++                                                   ; cnt := 8
   [-
-; HALVE a  giving qa and pa
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]
-; HALVE b  giving qb and pb
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]
-; low bit of a toggles t
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]
-; low bit of b toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]
-; if t then res gets p
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
-; a := qa
-  <<<<<<< [-<+>]
-; b := qb
-  >>>> [-<+>]
-; p into tmp
-  >>>>>> [->>+<<]
-; p := tmp doubled
-  >> [-<<++>>]
-; back to cnt
-  <
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets p
+  <<<<<<< [-<+>]                                               ; a := qa
+  >>>> [-<+>]                                                  ; b := qb
+  >>>>>> [->>+<<]                                              ; p into tmp
+  >> [-<<++>>]                                                 ; p := tmp doubled
+  <                                                            ; back to cnt
   ]
-; store res into r3
-  << [-<<<<<<<<<<<+>>>>>>>>>>>]
-; back to r0
-  <<<<<<<<<<<<<<
+  << [-<<<<<<<<<<<+>>>>>>>>>>>]                                ; store res into r3
+  <<<<<<<<<<<<<<                                               ; back to r0
 
 ; emit the result little endian
 .>.>.>.

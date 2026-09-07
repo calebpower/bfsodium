@@ -14,10 +14,13 @@
  * The canonical style, enforced here:
  *   1. The file opens with a comment, and carries an "IO " section and a
  *      "TAPE MAP" section, in that order.
- *   2. Annotations live on their own line. A code line never contains ';'
- *      (a trailing annotation), because a chunked multi-line operation cannot
- *      carry one, and one form everywhere beats two forms sometimes.
- *   3. Annotation lines begin at column 0 with ';'.
+ *   2. An annotation on a code line sits in the annotation column, so that
+ *      brainfuck reads straight down the left and English straight down the
+ *      right. A chunked multi-line operation carries one on each of its lines,
+ *      which is what made this form workable at all.
+ *   3. A standalone annotation -- header, tape map row, section banner, or a
+ *      contract that binds to the next instruction -- starts at column 0. An
+ *      annotation that wrapped starts at the annotation column.
  *   4. No run of more than MAXRUN consecutive code lines without an
  *      annotation, so no block goes unexplained.
  *   5. No more than MAXLINES lines -- counted on the sibling .skel when there
@@ -32,6 +35,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* The column an annotation starts in. tools/bflayout.pl lays the files out
+ * to this column; the number is written again HERE, deliberately, rather than
+ * shared. A checker that read its expectation from the thing it checks would
+ * agree with itself whatever either did. If the two ever disagree, one of them
+ * changed without the other, and that is exactly what should be reported. */
+#define STYLECOL 64
 
 #define MAXRUN 12
 
@@ -126,25 +136,42 @@ static int scan(const char *path, struct fp *f, int quiet) {
             if (!is_comment) bad = 1;
         }
 
+        char *semi = strchr(line, ';');
+
         if (is_comment) {
             f->cmt++;
             run = 0;
-            /* rule 3: annotations start at column 0 */
-            if (p != line) {
+            /* rule 3: a standalone annotation -- a header, a tape map row, a
+             * section banner, a contract -- starts at column 0. An annotation
+             * that ran past the width and wrapped down the right hand column
+             * starts at the annotation column. Nothing sits anywhere else. */
+            long col = p - line;
+            if (col != 0 && col != STYLECOL - 1) {
                 f->badcomment++;
-                if (!quiet) printf("FAIL %s:%d: annotation is indented; annotations start at column 0\n", path, lineno);
+                if (!quiet) printf("FAIL %s:%d: annotation starts at column %ld; a standalone one starts at\n"
+                                   "     column 1 and a wrapped one at column %d\n",
+                                   path, lineno, col + 1, STYLECOL);
                 bad = 1;
             }
             if (f->io_line < 0 && strstr(line, "IO ")) f->io_line = lineno;
             if (f->map_line < 0 && strstr(line, "TAPE MAP")) f->map_line = lineno;
         } else {
-            /* rule 2: a code line must not carry a trailing annotation */
             int has_cmd = 0;
-            for (char *q = line; *q; q++) if (is_cmd((unsigned char)*q)) { has_cmd = 1; break; }
-            if (strchr(line, ';')) {
-                f->trailing++;
-                if (!quiet) printf("FAIL %s:%d: trailing annotation on a code line; put it on its own line above\n", path, lineno);
-                bad = 1;
+            for (char *q = line; *q && (!semi || q < semi); q++)
+                if (is_cmd((unsigned char)*q)) { has_cmd = 1; break; }
+            /* rule 2: an annotation on a code line sits in the annotation
+             * column, so that brainfuck reads straight down the left and
+             * English straight down the right. */
+            if (semi) {
+                long col = semi - line;
+                if (col != STYLECOL - 1) {
+                    f->trailing++;
+                    if (!quiet) printf("FAIL %s:%d: annotation is at column %ld  not %d; the right hand\n"
+                                       "     column has to line up or there is no column to read\n",
+                                       path, lineno, col + 1, STYLECOL);
+                    bad = 1;
+                }
+                run = 0;   /* the line explains itself */
             }
             if (has_cmd) { f->code++; run++; }
             if (run > MAXRUN) {
@@ -198,19 +225,41 @@ static int selftest(void) {
     if (scan(tmp, &f, 1) != 0) { printf("SELFTEST FAIL: good file rejected\n"); fails++; }
     else printf("selftest ok: canonical file passes\n");
 
-    /* trailing annotation is caught */
+    /* a column is only a column if everything lines up, so an annotation that
+     * sits anywhere else is caught */
     h = fopen(tmp, "wb");
     fputs("; title\n; IO  in: none\n; TAPE MAP\n  ,   ; read a byte\n", h);
     fclose(h);
-    if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: missed a trailing annotation\n"); fails++; }
-    else printf("selftest ok: caught a trailing annotation\n");
+    if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: missed an annotation off the column\n"); fails++; }
+    else printf("selftest ok: caught an annotation off the column\n");
 
-    /* indented annotation is caught */
+    /* and one ON the column passes, so the rule is a position and not a ban */
+    char pad[STYLECOL + 32];
+    memset(pad, ' ', sizeof pad);
+    memcpy(pad, "  ,", 3);
+    memcpy(pad + STYLECOL - 1, "; read a byte\n", sizeof "; read a byte\n");
+    h = fopen(tmp, "wb");
+    fputs("; title\n; IO  in: none\n; TAPE MAP\n", h); fputs(pad, h);
+    fclose(h);
+    if (scan(tmp, &f, 1) != 0) { printf("SELFTEST FAIL: an annotation on the column was rejected\n"); fails++; }
+    else printf("selftest ok: an annotation on the column passes\n");
+
+    /* a standalone annotation indented to no particular column is caught */
     h = fopen(tmp, "wb");
     fputs("; title\n; IO  in: none\n; TAPE MAP\n   ; an indented note\n  ,\n", h);
     fclose(h);
     if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: missed an indented annotation\n"); fails++; }
     else printf("selftest ok: caught an indented annotation\n");
+
+    /* but an annotation that WRAPPED down the column is not indented, it is
+     * aligned, and it passes */
+    memset(pad, ' ', sizeof pad);
+    memcpy(pad + STYLECOL - 1, "; and the rest of the remark\n", sizeof "; and the rest of the remark\n");
+    h = fopen(tmp, "wb");
+    fputs("; title\n; IO  in: none\n; TAPE MAP\n", h); fputs(pad, h); fputs("  ,\n", h);
+    fclose(h);
+    if (scan(tmp, &f, 1) != 0) { printf("SELFTEST FAIL: a wrapped annotation was rejected\n"); fails++; }
+    else printf("selftest ok: a wrapped annotation on the column passes\n");
 
     /* missing sections are caught */
     h = fopen(tmp, "wb"); fputs("; just a title\n  ,\n", h); fclose(h);
