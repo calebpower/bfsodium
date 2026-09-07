@@ -173,3 +173,10 @@ poly1305Run34 inb = leBytesN`{16} (drop`{144} ((a2 + s) && ((1 << 128) - 1)))
     a0  = ((0  + b0) * r) % pp
     a1  = ((a0 + b1) * r) % pp
     a2  = ((a1 + b2) * r) % pp
+
+// ROWROT: rotate each of the four rows of a ChaCha state left by one word.
+// This is what makes every column quarter round land on the same four words,
+// so the block function needs no indexed access.
+rowrotRun : [64][8] -> [64][8]
+rowrotRun inb = join [ join [ leBytes w | w <- (r <<< 1) ]
+                     | r <- split`{4} [ leWord w | w <- split`{16} inb ] ]
