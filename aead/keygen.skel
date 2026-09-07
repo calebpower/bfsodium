@@ -1,0 +1,44 @@
+; bfsodium KEYGEN : the Poly1305 one time key  RFC 8439 section 2 point 6
+;
+; HAND WRITTEN skeleton; The block function is PASTED from its own verified
+; file; what is here is the placement of the forty four bytes it works from and
+; the truncation of its answer  and nothing else;
+;
+; INTERFACE entry=63 exit=0 footprint=0:271
+; IO  in:  key{32}  nonce{12}     (44 bytes)
+;     out: otk{32}                (32 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x10f  the block routine's whole frame; blockloop runs HERE at this
+;                 file's own zero and its footprint 0:271 is what sets the size
+;                 of it; the forty eight bytes it works from go in at
+;                 @0x010:0x03f and the keystream comes back at @0x000:0x03f
+;   @0x010:0x02f  key{32}    u8  the ChaCha20 key
+;   @0x030:0x033  ctr{4} LE  u8  the block counter; NEVER WRITTEN  so it stays
+;                 nought  which is exactly what section 2 point 6 asks for; the
+;                 read prologue steps over these four cells rather than filling
+;                 them  and the contract below is what says they are still clear
+;   @0x034:0x03f  nonce{12}  u8
+;
+; The one time key is the first thirty two bytes of the block that the counter
+; nought produces; the second thirty two are discarded  which is the whole of
+; the difference between this and the block function itself; The AEAD calls
+; this once  before it encrypts anything  because encryption starts at counter
+; one and must not reuse the block this consumed;
+
+; read the key  step over the counter  then read the nonce
+  >>>>>>>>>>>>>>>>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>>>>>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=+63
+; to the block routine's base  which is where a paste site always stands
+L63
+; ASSERT ptr=+0
+; the counter was stepped over and not written  so it is still nought
+; ASSERT zero +48:+51
+; and nothing above the forty eight input bytes has been touched
+; ASSERT zero +64:+271
+@@BLOCK@@ 0
+; ASSERT ptr=+0
+
+; emit
+; the one time key  the first thirty two bytes of the block
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

@@ -143,6 +143,16 @@ dk chacha20/stagger.bf 000000000100000002000000030000000400000005000000060000000
 
 dk chacha20/qrloop.bf 1111111104030201436f8d9b67452301 f4922aeacef81ccb2e478145bbc48158 qrRun "quarter round as a loop  RFC 8439 section 2.2.1"
 
+# KEYGEN is the block function with the counter pinned at nought and the second
+# half of its answer discarded, so its own edges are blockloop's and are tested
+# there. What these add is the published one time key itself, quoted rather
+# than derived: section 2.6.2, and the two section A.4 generation vectors.
+# A.4 test vector 3 is deliberately absent -- it could not be quoted with
+# confidence, and a pin nobody can source is worse than no pin.
+dk aead/keygen.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 8ad5a08b905f81cc815040274ab29471a833b637e3fd0da508dbb8e2fdd1a646 keygenRun "keygen RFC 8439 section 2.6.2"
+dk aead/keygen.bf 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 76b8e0ada0f13d90405d6ae55386bd28bdd219b8a08ded1aa836efcc8b770dc7 keygenRun "keygen RFC 8439 A.4 vector 1  an all nought key"
+dk aead/keygen.bf 0000000000000000000000000000000000000000000000000000000000000001000000000000000000000002 ecfa254f845f647473d3cb140da9e87606cb33066c447b87bc2666dde3fbb739 keygenRun "keygen RFC 8439 A.4 vector 2"
+
 dk poly1305/add136.bf 01000000000000000000000000000000000100000000000000000000000000000000 0200000000000000000000000000000000 add136Run "add136 one plus one"
 dk poly1305/add136.bf ffffffffffffffffffffffffffffffffff0100000000000000000000000000000000 0000000000000000000000000000000000 add136Run "add136 full carry cascade"
 dk poly1305/add136.bf ff000000000000000000000000000000000100000000000000000000000000000000 0001000000000000000000000000000000 add136Run "add136 cross byte carry"
@@ -230,6 +240,11 @@ run "contracts are inert without the flag" sh -c "./tools/bfi $tmpc/bad.bf </dev
 rm -rf "$tmpc"
 run "blockloop honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockloop.bf >/dev/null"
 run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d9b67452301 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/qrloop.bf >/dev/null"
+# The counter cells are stepped over by the read prologue rather than written,
+# so "the counter is still nought" is a claim about the prologue that only the
+# contract checker can test. Pinning the wrong counter would still produce a
+# perfectly valid looking 32 bytes.
+run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"
 run "absorb honours its declared contracts" sh -c "printf 0123456789abcdef112233445566778802deadbeefcafebabe01020304050607ff01fedcba9876543210ffeeddccbbaa998801 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/absorb.bf >/dev/null"
 # Two full blocks, not one: poly1305's glue hands absorb its operands and takes
 # the accumulator back, and "absorb's frame is empty again" can only be false

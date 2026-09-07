@@ -300,3 +300,11 @@ property absorb_folds_to_the_rfc_tag inb = tag == poly1305Run34 inb
     a2   = absorbRun (r17 # a1 # b2)
     s    = (zero # leN (drop`{16} key)) : [136]
     tag  = leBytesN`{16} (drop`{8} ((leN a2 + s) : [136]))
+
+// KEYGEN: the Poly1305 one time key (RFC 8439 section 2.6). It is the first
+// half of the block the counter NOUGHT produces; the AEAD encrypts from
+// counter one, so the block this consumes is never reused as keystream.
+//   in  = key(32) # nonce(12)
+//   out = otk(32)
+keygenRun : [44][8] -> [32][8]
+keygenRun inb = take`{32} (chachaBlock (take`{32} inb) 0 (drop`{32} inb))

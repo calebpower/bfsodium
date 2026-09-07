@@ -42,10 +42,12 @@ brainfuck, checked against two independent oracles.
 | [`poly1305/mulmod136.bf`](poly1305/mulmod136.bf) | multiply mod 2^130-5 |
 | [`poly1305/absorb.bf`](poly1305/absorb.bf) | one block: acc = (acc + blk) · r mod p |
 | [`poly1305/poly1305.bf`](poly1305/poly1305.bf) | **the authenticator (RFC 8439 §2.5.2)** |
+| [`aead/keygen.bf`](aead/keygen.bf) | the Poly1305 one-time key (RFC 8439 §2.6) |
 
-Next: the ChaCha20-Poly1305 AEAD, which is now assembly of two working halves,
-then SHA-256 and HKDF-SHA-256. Keccak and
-the ML-KEM / ML-DSA lattice math are the later mountain.
+Next: the ChaCha20-Poly1305 AEAD, whose pieces — the keystream, the one-time
+key, and `absorb`, the step every Poly1305 block takes — are each verified
+routines already. Then SHA-256 and HKDF-SHA-256. Keccak and the ML-KEM / ML-DSA
+lattice math are the later mountain.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and
 [Cryptol](https://cryptol.net); `reaper test` provisions both).
