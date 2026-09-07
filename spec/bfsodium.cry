@@ -412,3 +412,14 @@ aeadRun_12_114 inb = ct # tag
     macd = aad # (zero : [4][8]) # ct # (zero : [14][8])
            # leBytesN`{8} (12 : [64]) # leBytesN`{8} (114 : [64])
     tag  = polyCore otk [ polyBlock`{16} b | b <- split`{10} macd ]
+
+// ADD8: the carry detecting adder every wide adder in the library is built
+// from. Shipped as idiom/add8.bf.
+//   in  = x(1) # y(1)
+//   out = sum(1) # carry(1)
+add8Run : [2][8] -> [2][8]
+add8Run inb = [ x + y, take`{8} wide ]
+  where
+    x    = inb @ (0 : [8])
+    y    = inb @ (1 : [8])
+    wide = ((zero # x) : [16]) + (zero # y)

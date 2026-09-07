@@ -114,6 +114,37 @@ rm -rf "$tmpb"
 
 echo
 echo "== tiers 2 and 4: primitives, dual oracle =="
+# ADD8 is the kernel every wide adder is built from and was the slowest thing
+# in the library: the old one tested for the carry once per unit of the addend,
+# and that test cost a copy of the accumulator, so the kernel cost the PRODUCT
+# of the two bytes -- three quarters of a million instructions at 255 plus 255.
+# idiom/add8 computes the carry instead, from bit 7 of the two halves added.
+# The edges are the ones a carry can turn on: the wrap itself, either operand
+# nought, and the pairs either side of 256.
+dk idiom/add8.bf 0000 0000 add8Run "add8 nothing plus nothing"
+dk idiom/add8.bf ff01 0001 add8Run "add8 the wrap at 255 plus 1"
+dk idiom/add8.bf ff00 ff00 add8Run "add8 255 plus nothing does not carry"
+dk idiom/add8.bf 00ff ff00 add8Run "add8 nothing plus 255 does not carry"
+dk idiom/add8.bf 8080 0001 add8Run "add8 128 plus 128 is exactly 256"
+dk idiom/add8.bf 807f ff00 add8Run "add8 one short of the wrap"
+dk idiom/add8.bf ffff fe01 add8Run "add8 255 plus 255"
+dk idiom/add8.bf 01ff 0001 add8Run "add8 1 plus 255  the low bits both set"
+dk idiom/add8.bf 0101 0200 add8Run "add8 both low bits set with no carry"
+dk idiom/add8.bf 7f7f fe00 add8Run "add8 127 plus 127 is one short of the wrap"
+
+# Ten vectors are not 65536, and this kernel is the one place in the library
+# where every input can actually be tried. Four full sweeps: nought, either
+# side of the halfway point, and the top. Each is 256 runs of a 166 line file.
+run "add8 swept over every addend at 0, 127, 128 and 255" sh -c '
+  for x in 00 7f 80 ff; do
+    for y in $(seq 0 255); do
+      yh=$(printf %02x "$y")
+      got=$(printf "%s%s" "$x" "$yh" | ./tools/hx -r | ./tools/bfi idiom/add8.bf | ./tools/hx)
+      want=$(printf "%02x%02x" $(( (0x$x + y) % 256 )) $(( (0x$x + y) / 256 )))
+      [ "$got" = "$want" ] || { echo "add8 $x + $yh gave $got not $want"; exit 1; }
+    done
+  done'
+
 dk chacha20/add32.bf 1200000034000000 46000000 add32Run "add32 18+52"
 dk chacha20/add32.bf ffffffff01000000 00000000 add32Run "add32 carry cascade"
 dk chacha20/add32.bf ff00000001000000 00010000 add32Run "add32 cross byte carry"
@@ -291,6 +322,8 @@ run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d
 # and blockkeep asserts that region clear on entry. The arithmetic was fine on
 # the first block and would have gone wrong on the second. No output test saw it.
 run "the AEAD honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546471000404142434445464748494a4b4c4d4e4f1000505152535455565758595a5b5c5d5e5f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/chacha20poly1305.bf >/dev/null"
+run "add8 honours its declared contracts" sh -c "printf ffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/add8.bf >/dev/null"
+run "rotl32 honours its declared contracts" sh -c "printf 7856341210 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/rotl32.bf >/dev/null"
 run "blockkeep honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockkeep.bf >/dev/null"
 run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"
 run "clamp honours its declared contracts" sh -c "printf ffffffffffffffffffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/clamp.bf >/dev/null"
@@ -385,6 +418,25 @@ if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Pass
 :check absorb_folds_to_the_rfc_tag
 ICRY
 ); then echo "PASS absorb folded over the blocks reaches the RFC tag"; pass=$((pass+1)); else echo "FAIL absorb does not fold to the RFC tag"; fail=$((fail+1)); fi
+# The adder's two identities, proved over every one of the 65536 pairs rather
+# than sampled: the carry is bit 7 of the halves added, and the sum comes back
+# from those same halves. The brainfuck rests on both.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -c "Q.E.D." | grep -q 2
+:l perm.cry
+:prove add8_carry_is_bit7
+:prove add8_sum_from_halves
+ICRY
+); then echo "PASS the adder's carry and sum identities proved"; pass=$((pass+1)); else echo "FAIL the adder's identities"; fail=$((fail+1)); fi
+
+# and the companion that must be REFUTED, so the first is not a claim that
+# would hold whatever was deleted: drop the term for both low bits set and the
+# carry is wrong for 128 of the pairs.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Counterexample"
+:l perm.cry
+:prove add8_low_bit_term_is_needed
+ICRY
+); then echo "PASS dropping the low bit term is refuted by counterexample"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
+
 echo
 echo "== summary =="
 echo "passed $pass, failed $fail"

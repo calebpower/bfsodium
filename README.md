@@ -33,6 +33,7 @@ constant-time story and cannot be one, and nothing is zeroized. See
 
 | | |
 |---|---|
+| [`idiom/add8.bf`](idiom/add8.bf) | add with carry, the kernel under everything |
 | [`chacha20/add32.bf`](chacha20/add32.bf) | 32-bit little-endian add |
 | [`chacha20/rotl32.bf`](chacha20/rotl32.bf) | rotate left by n |
 | [`chacha20/xor32.bf`](chacha20/xor32.bf) | bitwise exclusive or |

@@ -1,30 +1,32 @@
-; bfsodium ROTL32 : rotate a 32 bit little endian word left by n bits
+; bfsodium ROTL32 : rotate a 32 bit little endian word left by n
 ;
-; NOTE square brackets are brainfuck loops  so comments use braces for counts;
-;
-; INTERFACE entry=4 exit=4 footprint=0:13
-; IO  in:  w{4} LE  followed by  n{1}          (5 bytes)
-;     out: (w rotated left by n){4} LE         (4 bytes)
+; INTERFACE entry=4 exit=4 footprint=0:19
+; IO  in:  w{4} LE  followed by  n{1}      (5 bytes)
+;     out: (w rotated left by n){4} LE     (4 bytes)
 ;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x03  w{4}   u8   the word  LSB at @0x00
 ;   @0x04       n      u8   remaining rotation steps  the loop counter
 ;   @0x05:0x08  c{4}   u8   carry out of doubling each byte
-;   @0x09       x      u8   ADD8 frame: accumulator
-;   @0x0a       y      u8   ADD8 frame: addend  consumed to 0
-;   @0x0b       c      u8   ADD8 frame: carry out
-;   @0x0c       t0     u8   ADD8 frame scratch  restored 0
-;   @0x0d       t1     u8   ADD8 frame scratch  restored 0
+;   @0x09:0x13  idiom/add8's frame  pasted at @0x09; its footprint is 0:10 and
+;               that is what sets the size of this one; x is at @0x09  y at
+;               @0x0a and the carry out at @0x0b
 ;
-; A rotation by n is n single bit rotations  driven by the counter at @0x04;
-; One single bit rotation doubles every byte and feeds each carry into the
-; next byte cyclically; doubling byte i yields bit 7 of byte i as its carry
-; and leaves the byte even  so adding the neighbour carry cannot overflow;
-; The doubling reuses the proven ADD8 kernel with y set to a copy of x  since
-; x plus x is exactly 2x with carry equal to bit 7 of x;
+; One bit of rotation DOUBLES all four bytes and feeds each carry into the next
+; byte cyclically; a doubled byte is even  so adding the neighbour's carry bit
+; cannot overflow and no second carry pass is needed;
+;
+; Doubling is ADD8 of a byte with itself  which is why this file is where the
+; adder's cost lands hardest: a rotate by sixteen is sixty four of them; With
+; the old kernel  whose cost was the PRODUCT of the operands  a doubling of a
+; large byte cost about half a million instructions and this routine was the
+; slowest thing in ChaCha20 by an order of magnitude; idiom/add8 computes the
+; carry from bit 7 instead  at a cost that does not depend on the operands;
 
 ; read w{0:3} then n  leaving the pointer on n @0x04
 ,>,>,>,>,
+; ASSERT ptr=4
+; ASSERT zero 5:19
 
 ; ==== rotate one bit  n times ====
 [
@@ -32,73 +34,122 @@
   -
 
 ; ____ double byte 0 @0x00  carry into c0 @0x05 ____
-; move w0 into x
-  <<<< [->>>>>>>>>+<<<<<<<<<]
-; y := x  x restored
-  >>>>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
-; ADD8 y into x
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; store x into w0
-  < [-<<<<<<<<<+>>>>>>>>>]
-; carry into c0
-  >> [-<<<<<<+>>>>>>]
-; back to n
-  <<<<<<<
+; move w0 into the accumulator
+L4
+  [-R9+L9]
+; to the kernel's base  which is where a paste site always stands
+R9
+; ASSERT ptr=9
+; the addend is the accumulator itself  copied and handed straight back
+  [-R1+R2+L3]
+R3
+  [-L3+R3]
+L3
+; ASSERT ptr=9
+@@ADD8@@ 9
+; ASSERT ptr=9
+; store the doubled byte back into w0
+  [-L9+R9]
+; and its top bit  which fell out  into c0
+R2
+  [-L6+R6]
+; back to the step counter
+L7
+; ASSERT ptr=4
 
 ; ____ double byte 1 @0x01  carry into c1 @0x06 ____
-; move w1 into x
-  <<< [->>>>>>>>+<<<<<<<<]
-; y := x  x restored
-  >>>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
-; ADD8 y into x
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; store x into w1
-  < [-<<<<<<<<+>>>>>>>>]
-; carry into c1
-  >> [-<<<<<+>>>>>]
-; back to n
-  <<<<<<<
+; move w1 into the accumulator
+L3
+  [-R8+L8]
+; to the kernel's base  which is where a paste site always stands
+R8
+; ASSERT ptr=9
+; the addend is the accumulator itself  copied and handed straight back
+  [-R1+R2+L3]
+R3
+  [-L3+R3]
+L3
+; ASSERT ptr=9
+@@ADD8@@ 9
+; ASSERT ptr=9
+; store the doubled byte back into w1
+  [-L8+R8]
+; and its top bit  which fell out  into c1
+R2
+  [-L5+R5]
+; back to the step counter
+L7
+; ASSERT ptr=4
 
 ; ____ double byte 2 @0x02  carry into c2 @0x07 ____
-; move w2 into x
-  << [->>>>>>>+<<<<<<<]
-; y := x  x restored
-  >>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
-; ADD8 y into x
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; store x into w2
-  < [-<<<<<<<+>>>>>>>]
-; carry into c2
-  >> [-<<<<+>>>>]
-; back to n
-  <<<<<<<
+; move w2 into the accumulator
+L2
+  [-R7+L7]
+; to the kernel's base  which is where a paste site always stands
+R7
+; ASSERT ptr=9
+; the addend is the accumulator itself  copied and handed straight back
+  [-R1+R2+L3]
+R3
+  [-L3+R3]
+L3
+; ASSERT ptr=9
+@@ADD8@@ 9
+; ASSERT ptr=9
+; store the doubled byte back into w2
+  [-L7+R7]
+; and its top bit  which fell out  into c2
+R2
+  [-L4+R4]
+; back to the step counter
+L7
+; ASSERT ptr=4
 
 ; ____ double byte 3 @0x03  carry into c3 @0x08 ____
-; move w3 into x
-  < [->>>>>>+<<<<<<]
-; y := x  x restored
-  >>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
-; ADD8 y into x
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-; store x into w3
-  < [-<<<<<<+>>>>>>]
-; carry into c3
-  >> [-<<<+>>>]
-; back to n
-  <<<<<<<
+; move w3 into the accumulator
+L1
+  [-R6+L6]
+; to the kernel's base  which is where a paste site always stands
+R6
+; ASSERT ptr=9
+; the addend is the accumulator itself  copied and handed straight back
+  [-R1+R2+L3]
+R3
+  [-L3+R3]
+L3
+; ASSERT ptr=9
+@@ADD8@@ 9
+; ASSERT ptr=9
+; store the doubled byte back into w3
+  [-L6+R6]
+; and its top bit  which fell out  into c3
+R2
+  [-L3+R3]
+; back to the step counter
+L7
+; ASSERT ptr=4
 
 ; ____ feed the carries around the cycle ____
 ; w0 gets c3
-  >>>> [-<<<<<<<<+>>>>>>>>]
+R4
+  [-L8+R8]
 ; w1 gets c0
-  <<< [-<<<<+>>>>]
+L3
+  [-L4+R4]
 ; w2 gets c1
-  > [-<<<<+>>>>]
+R1
+  [-L4+R4]
 ; w3 gets c2
-  > [-<<<<+>>>>]
-; back to n
-  <<<
+R1
+  [-L4+R4]
+; back to the step counter
+L3
+; ASSERT ptr=4
+; ASSERT zero 5:19
 ]
+; ASSERT ptr=4
 
-; emit the rotated word little endian
-<<<< .>.>.>.
+; emit
+; the rotated word little endian
+L4
+  .>.>.>.

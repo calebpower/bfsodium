@@ -78,3 +78,30 @@ property one_fold_suffices x = reduceTail (foldOnce (zext x)) == (zext x) % p136
 // distinction rather than a property that would hold whatever we deleted.
 tail_alone_is_not_enough : [136] -> Bit
 property tail_alone_is_not_enough x = reduceTail (zext x) == (zext x) % p136
+
+// The adder does not WATCH for the carry, which is what made the old kernel
+// cost the product of its operands; it computes the carry once, as bit 7 of
+// the two halves added, and rebuilds the sum from those same halves. Both
+// identities are proved here over every one of the 65536 pairs, before any
+// brainfuck relies on them.
+//
+// The halves cannot overflow -- each is at most 127, so their sum is at most
+// 254 -- which is what makes bit 7 of that sum meaningful at all.
+add8_carry_is_bit7 : [8] -> [8] -> Bit
+property add8_carry_is_bit7 x y = carry == (h >> 7)
+  where
+    h     = (x >> 1) + (y >> 1) + ((x && 1) && (y && 1))
+    carry = take`{8} (((zero # x) : [16]) + (zero # y))
+
+add8_sum_from_halves : [8] -> [8] -> Bit
+property add8_sum_from_halves x y =
+    x + y == 2 * ((x >> 1) + (y >> 1)) + (x && 1) + (y && 1)
+
+// And the companion that must be REFUTED, so the first is not a claim that
+// would hold whatever was deleted: without the term for both low bits set, the
+// carry is wrong somewhere.
+add8_low_bit_term_is_needed : [8] -> [8] -> Bit
+property add8_low_bit_term_is_needed x y = carry == (h >> 7)
+  where
+    h     = (x >> 1) + (y >> 1)
+    carry = take`{8} (((zero # x) : [16]) + (zero # y))
