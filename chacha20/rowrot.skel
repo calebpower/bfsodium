@@ -29,7 +29,7 @@
 ; to the start of the state
 L63
 ; ASSERT ptr=0
-; ---- row at @00 ----
+; ==== row at @00 ====
 ; ASSERT ptr=0
 ; the first word steps aside into the temp
   [-R64+L64]
@@ -94,7 +94,7 @@ R1
 ; back to the start of the state
 L67
 ; ASSERT ptr=0
-; ---- row at @10 ----
+; ==== row at @10 ====
 ; to this row
 R16
 ; ASSERT ptr=16
@@ -161,7 +161,7 @@ R1
 ; back to the start of the state
 L67
 ; ASSERT ptr=0
-; ---- row at @20 ----
+; ==== row at @20 ====
 ; to this row
 R32
 ; ASSERT ptr=32
@@ -228,7 +228,7 @@ R1
 ; back to the start of the state
 L67
 ; ASSERT ptr=0
-; ---- row at @30 ----
+; ==== row at @30 ====
 ; to this row
 R48
 ; ASSERT ptr=48
