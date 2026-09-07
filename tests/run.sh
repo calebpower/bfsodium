@@ -196,6 +196,18 @@ dk poly1305/dbl136.bf ffffffffffffffffffffffffffffffffff fefffffffffffffffffffff
 dk poly1305/dbl136.bf 0000000000000000000000000000000080 0000000000000000000000000000000000 dbl136Run "dbl136 the top bit falls off"
 dk poly1305/dbl136.bf deadbeefcafebabe0102030405060708fe bc5b7ddf95fd757d030406080a0c0e10fc dbl136Run "dbl136 mixed"
 
+# ABSORB is the step every Poly1305 block takes, and now the only place the
+# multiply lives -- poly1305 pastes it rather than carrying its own copy. Its
+# edges are the two that a block can actually reach: an accumulator that comes
+# out exactly p, which must reduce to nought, and one that wraps the seventeen
+# byte adder at 2^136.
+dk poly1305/absorb.bf 010000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000 0100000000000000000000000000000000 absorbRun "absorb one plus nothing times one"
+dk poly1305/absorb.bf 393000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000 absorbRun "absorb nothing at all"
+dk poly1305/absorb.bf 0100000000000000000000000000000000faffffffffffffffffffffffffffffff030100000000000000000000000000000000 0000000000000000000000000000000000 absorbRun "absorb a sum of exactly p reduces to nought"
+dk poly1305/absorb.bf 0100000000000000000000000000000000ffffffffffffffffffffffffffffffffff0100000000000000000000000000000000 0000000000000000000000000000000000 absorbRun "absorb the accumulator wraps at 2^136"
+dk poly1305/absorb.bf 85d6be0854556d037c44520e40d5060800000000000000000000000000000000000043727970746f6772617068696320466f01 fc839ce688ebdd4791ae649d84778cc802 absorbRun "absorb the first block of the RFC message"
+dk poly1305/absorb.bf 0123456789abcdef112233445566778802deadbeefcafebabe01020304050607ff01fedcba9876543210ffeeddccbbaa998801 3e15723c32f0108b274b7bce595c431803 absorbRun "absorb a full width r and every operand top bit set"
+
 dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b220043727970746f6772617068696320466f72756d2052657365617263682047726f7570 a8061dc1305136c6c22b8baf0c0127a9 poly1305Run34 "poly1305 RFC 8439 section 2.5.2"
 
 # Where the appended ONE goes is the classic Poly1305 defect, so the lengths
@@ -218,6 +230,12 @@ run "contracts are inert without the flag" sh -c "./tools/bfi $tmpc/bad.bf </dev
 rm -rf "$tmpc"
 run "blockloop honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockloop.bf >/dev/null"
 run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d9b67452301 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/qrloop.bf >/dev/null"
+run "absorb honours its declared contracts" sh -c "printf 0123456789abcdef112233445566778802deadbeefcafebabe01020304050607ff01fedcba9876543210ffeeddccbbaa998801 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/absorb.bf >/dev/null"
+# Two full blocks, not one: poly1305's glue hands absorb its operands and takes
+# the accumulator back, and "absorb's frame is empty again" can only be false
+# on the SECOND block. A single block vector runs the same code with an
+# accumulator of nought and notices nothing.
+run "poly1305 honours its declared contracts" sh -c "printf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b2000414c57626d78838e99a4afbac5d0dbe6f1fc07121d28333e49545f6a75808b96 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/poly1305.bf >/dev/null"
 
 echo
 echo "== design proofs (Cryptol) =="
@@ -261,6 +279,17 @@ if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Pass
 ICRY
 ); then echo "PASS the two Poly1305 oracles agree with each other"; pass=$((pass+1)); else echo "FAIL the Poly1305 oracles disagree"; fail=$((fail+1)); fi
 
+# absorbRun could be wrong in exactly the way the brainfuck is wrong and the
+# two would still agree, so it is also required to reach the published section
+# 2.5.2 tag by another route: folded over that message's three blocks, with the
+# tag finished as the RFC finishes it. poly1305Run34 spells the same
+# computation out longhand and neither is built from the other.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Passed 2000 tests"
+:l bfsodium.cry
+:set tests=2000
+:check absorb_folds_to_the_rfc_tag
+ICRY
+); then echo "PASS absorb folded over the blocks reaches the RFC tag"; pass=$((pass+1)); else echo "FAIL absorb does not fold to the RFC tag"; fail=$((fail+1)); fi
 echo
 echo "== summary =="
 echo "passed $pass, failed $fail"

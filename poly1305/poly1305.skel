@@ -4,7 +4,7 @@
 ; with a ONE appended after its bytes is added in and multiplied by the clamped
 ; r; the tag is the low sixteen bytes of acc plus s;
 ;
-; INTERFACE entry=34 exit=0 footprint=0:413
+; INTERFACE entry=34 exit=0 footprint=0:717
 ; IO  in:  key{32}  len{2} LE  msg{len}
 ;     out: tag{16}
 ;
@@ -12,9 +12,10 @@
 ; and 15 keep only their low four bits  and bytes 4 8 and 12 lose their low two;
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x11e  the work frame; mulmod136 runs HERE at this file's own zero
-;                 and its footprint is 0:286  which is what sets the size of it
-;   @0x12c:0x13c  r{17}    the clamped r  copied into the work frame each block
+;   @0x000:0x027  the tag frame; add136 runs HERE at this file's own zero for
+;                 the one addition this file still makes itself  the s at the
+;                 end; its footprint 0:39 is what sets the size of it
+;   @0x12c:0x13c  r{17}    the clamped r  copied into absorb's slot each block
 ;   @0x140:0x150  s{17}    added in once at the very end
 ;   @0x154:0x164  acc{17}  the accumulator
 ;   @0x168:0x178  blk{17}  this block  with the ONE already appended
@@ -27,6 +28,11 @@
 ;   @0x184        k        sixteen rounds  one per byte position
 ;   @0x186:0x196  tmp{17}  hands r back after it has been copied
 ;   @0x19a:0x19d  the clamping halve frame
+;   @0x19e:0x2cd  the absorb frame; poly1305/absorb runs HERE  and its
+;                 footprint 0:303 is what sets the size of it; while a call is
+;                 in progress the accumulator sits at @0x1af and the block it
+;                 consumes at @0x1c0; it is placed past everything this file
+;                 keeps  so no operand of it overlaps r  s  acc  blk or a count
 ;
 ; A byte always lands on the TOP of the block  at blk{16}  and the block then
 ; slides down one; So a byte taken in round k is shifted sixteen minus k more
@@ -43,7 +49,7 @@
 ; read the key and the length prefix
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
 ; ASSERT ptr=34
-; ASSERT zero 34:413
+; ASSERT zero 34:717
 ; to the head of the key
 L34
 ; ASSERT ptr=0
@@ -576,167 +582,72 @@ R7
 ]
 
 ; ==== the accumulator gains this block  and is multiplied by r ====
-L43
-; ASSERT ptr=340
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; the next byte
-R1
-  [-L340+R340]
-; to the block
-R4
-; ASSERT ptr=360
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; the next byte
-R1
-  [-L343+R343]
-; to the work frame
-L376
-; ASSERT ptr=0
-; ASSERT zero 34:39
-@@ADD136@@ 0
-; ASSERT ptr=0
-; r is copied  not moved  because every later block needs it too
-R300
+; The step itself is poly1305/absorb  pasted; what is left here is the glue
+; that hands it its three operands and takes the accumulator back; absorb runs
+; at @0x19e  which is past everything this file keeps  so nothing it touches
+; overlaps r  s  the accumulator  the block or the counters;
+;
+; r is copied and not moved  because absorb consumes it and every later block
+; needs it again; the copy goes to absorb's r slot and to a temp in one pass
+; and the temp hands the original straight back;
+; absorb hands its frame back empty  so this holds at the top of every block;
+; It catches the glue LEAVING something behind: taking the accumulator home
+; from the wrong cell strands seventeen bytes here  and the next block then
+; adds them in; It does not catch a glue offset that merely lands wrong INSIDE
+; the frame  since absorb consumes whatever is in there either way; the two
+; block vectors are what catch that;
+; ASSERT zero 414:717
+L83
 ; ASSERT ptr=300
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the next byte
 R1
-  [-L283+R373+L90]
+  [-R114+L24+L90]
 ; the temps hand r straight back
 R74
 ; ASSERT ptr=390
@@ -789,63 +700,169 @@ R1
 ; the next byte
 R1
   [-L90+R90]
-; to the work frame
-L406
-; ASSERT ptr=0
-; ASSERT zero 34:286
-@@MULMOD136@@ 0
-; ASSERT ptr=0
-  [-R340+L340]
+; the accumulator moves into absorb's accumulator slot
+L66
+; ASSERT ptr=340
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
 ; the next byte
 R1
-  [-R340+L340]
+  [-R91+L91]
+; and the block into its block slot  which absorb consumes
+R4
+; ASSERT ptr=360
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; the next byte
+R1
+  [-R88+L88]
+; to absorb's base  which is where a paste site always stands
+R38
+; ASSERT ptr=414
+@@ABSORB@@ 414
+; ASSERT ptr=414
+; absorb left the accumulator in its own slot  so it comes home
+R17
+; ASSERT ptr=431
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
+; the next byte
+R1
+  [-L91+R91]
 ; to the byte count  to see whether another block follows
-R364
+L67
 ; ASSERT ptr=380
 ; the flag goes down first
 R2
@@ -1041,6 +1058,6 @@ R1
 ; back to the head of the tag
 L316
 ; ASSERT ptr=0
-; ASSERT zero 16:413
+; ASSERT zero 16:717
 ; emit the tag little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

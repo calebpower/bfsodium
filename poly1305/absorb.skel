@@ -1,0 +1,127 @@
+; bfsodium ABSORB : one Poly1305 block  acc := (acc plus blk) times r mod p
+;
+; HAND WRITTEN; This is the step every Poly1305 message block takes and the
+; only place the accumulator changes; It was lifted out of poly1305 so the AEAD
+; can take the same step without a second copy of it existing;
+;
+; INTERFACE entry=50 exit=17 footprint=0:303
+; IO  in:  r{17} LE  acc{17} LE  blk{17} LE    (51 bytes)
+;     out: acc{17} LE                          (17 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  r{17}    u8  the clamped r; CONSUMED  so a caller with more
+;                           than one block to take keeps its own lasting copy
+;                           and hands a fresh one in each time
+;   @0x11:0x21  acc{17}  u8  the accumulator  in and out
+;   @0x22:0x32  blk{17}  u8  this block  with its ONE already appended;
+;                           CONSUMED by the addition
+;   @0x11:0x12f  the work frame; BOTH pasted routines run at @0x11  add136
+;                           reaching 0x11:0x38 and mulmod136 0x11:0x12f  whose
+;                           footprint 0:286 is what sets the size of it
+;
+; The three operands are laid out so that neither pasted routine needs its
+; arguments moved to reach it; add136 wants its accumulator and its addend
+; adjacent and finds them at acc and blk  and mulmod136 wants the same two
+; cells for the accumulator and r; Since add136 consumes its addend  the block
+; slot is empty by the time r needs it  so r simply moves in and the whole step
+; costs one seventeen byte move of glue rather than four;
+;
+; r is MOVED rather than copied  because a copy needs a temp and a hand back
+; and the caller has to keep a lasting copy either way; the caller is the only
+; place that knows how many blocks are still to come;
+
+; read r  then the accumulator  then the block  each seventeen bytes little endian
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=+50
+; to the accumulator  which is where both pasted routines run from
+L33
+; ASSERT ptr=+17
+; nothing above the two operands has been touched yet
+; ASSERT zero +51:+303
+; the block is added into the accumulator  modulo two to the 136
+@@ADD136@@ 17
+; ASSERT ptr=+17
+; add136 consumes its addend  so the block slot is clear for r to take; the
+; whole layout rests on that  so it is asserted here rather than trusted;
+; ASSERT zero +34:+50
+; to r
+L17
+; ASSERT ptr=+0
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; the next byte
+R1
+; r moves into the slot the block has just left
+  [-R34+L34]
+; back to the accumulator
+R1
+; ASSERT ptr=+17
+; r was moved and not copied  so its own slot is empty again
+; ASSERT zero +0:+16
+; the accumulator is multiplied by r  modulo two to the 130 minus five
+@@MULMOD136@@ 17
+; ASSERT ptr=+17
+
+; emit
+; the accumulator  seventeen bytes little endian
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

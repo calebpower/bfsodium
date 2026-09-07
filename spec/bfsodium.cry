@@ -262,3 +262,41 @@ poly1305Run34g inb = polyCore (take`{32} inb)
 
 longhand_agrees_with_general : [68][8] -> Bit
 property longhand_agrees_with_general inb = poly1305Run34 inb == poly1305Run34g inb
+
+// ---------------------------------------------------------------------------
+// ABSORB: the one step every Poly1305 block takes, lifted out of poly1305 so
+// the AEAD can take it too. Shipped as poly1305/absorb.bf.
+//   in  = r(17 LE) # acc(17 LE) # blk(17 LE)
+//   out = acc(17 LE)
+// The addition is the seventeen byte one add136 performs, so it wraps at 2^136
+// rather than reducing; the reduction to below p is mulmod136's, afterwards.
+absorbRun : [51][8] -> [17][8]
+absorbRun inb = leBytesN`{17} (drop`{136} ((tot * r) % pp))
+  where
+    r   = (zero # leN (take`{17} inb))              : [272]
+    acc = (zero # leN (take`{17} (drop`{17} inb)))  : [272]
+    blk = (zero # leN (drop`{34} inb))              : [272]
+    pp  = ((1 : [272]) << 130) - 5
+    tot = (acc + blk) % (1 << 136)
+
+// The new oracle tied back to the published one. absorbRun could be wrong in
+// exactly the way the brainfuck is wrong and the two would still agree, so it
+// is also required to reproduce the RFC section 2.5.2 tag by a different route:
+// fold it over the three blocks of that message and finish the tag as the RFC
+// does. poly1305Run34 spells the same computation out longhand and neither is
+// built from the other.
+absorb_folds_to_the_rfc_tag : [68][8] -> Bit
+property absorb_folds_to_the_rfc_tag inb = tag == poly1305Run34 inb
+  where
+    key  = take`{32} inb
+    msg  = drop`{34} inb
+    r17  = leBytesN`{17}
+             ((zero # (leN (take`{16} key) && 0x0ffffffc0ffffffc0ffffffc0fffffff)) : [136])
+    b0   = leBytesN`{17} (((zero # leN (take`{16} msg))             + (1 << 128)) : [136])
+    b1   = leBytesN`{17} (((zero # leN (take`{16} (drop`{16} msg))) + (1 << 128)) : [136])
+    b2   = leBytesN`{17} (((zero # leN (drop`{32} msg))             + (1 <<  16)) : [136])
+    a0   = absorbRun (r17 # leBytesN`{17} (zero : [136]) # b0)
+    a1   = absorbRun (r17 # a0 # b1)
+    a2   = absorbRun (r17 # a1 # b2)
+    s    = (zero # leN (drop`{16} key)) : [136]
+    tag  = leBytesN`{16} (drop`{8} ((leN a2 + s) : [136]))

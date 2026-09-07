@@ -31,14 +31,16 @@ brainfuck, checked against two independent oracles.
 | [`chacha20/add32.bf`](chacha20/add32.bf) | 32-bit little-endian add |
 | [`chacha20/rotl32.bf`](chacha20/rotl32.bf) | rotate left by n |
 | [`chacha20/xor32.bf`](chacha20/xor32.bf) | bitwise exclusive or |
-| [`chacha20/quarterround.bf`](chacha20/quarterround.bf) | the quarter round (RFC 8439 §2.2.1) |
-| [`chacha20/block.bf`](chacha20/block.bf) | the block function (RFC 8439 §2.3.2) |
+| [`chacha20/qrloop.bf`](chacha20/qrloop.bf) | the quarter round (RFC 8439 §2.2.1) |
+| [`chacha20/blockloop.bf`](chacha20/blockloop.bf) | the block function (RFC 8439 §2.3.2) |
 | [`chacha20/stream.bf`](chacha20/stream.bf) | the stream cipher (RFC 8439 §2.4.2) |
 | [`poly1305/add136.bf`](poly1305/add136.bf) | 17-byte addition |
 | [`poly1305/halve136.bf`](poly1305/halve136.bf) | 17-byte shift-right-one |
 | [`poly1305/fold136.bf`](poly1305/fold136.bf) | the modular fold, 2^130 = 5 |
 | [`poly1305/reducep136.bf`](poly1305/reducep136.bf) | canonical reduction below p |
+| [`poly1305/dbl136.bf`](poly1305/dbl136.bf) | 17-byte shift-left-one |
 | [`poly1305/mulmod136.bf`](poly1305/mulmod136.bf) | multiply mod 2^130-5 |
+| [`poly1305/absorb.bf`](poly1305/absorb.bf) | one block: acc = (acc + blk) · r mod p |
 | [`poly1305/poly1305.bf`](poly1305/poly1305.bf) | **the authenticator (RFC 8439 §2.5.2)** |
 
 Next: the ChaCha20-Poly1305 AEAD, which is now assembly of two working halves,
