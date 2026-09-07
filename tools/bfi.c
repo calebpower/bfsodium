@@ -81,8 +81,10 @@ int main(int argc, char **argv) {
     unsigned char *tape = calloc(tcap, 1);
     if (!tape) die("out of memory");
     size_t p = 0;
+    unsigned long long steps = 0;
 
     for (size_t ip = 0; ip < n; ip++) {
+        steps++;
         switch (prog[ip]) {
             case '>':
                 if (++p == tcap) {
@@ -105,6 +107,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (getenv("BFI_COUNT")) fprintf(stderr, "bfi: %llu instructions executed\n", (unsigned long long)steps);
     fflush(stdout);
     free(tape); free(jump); free(prog);
     return 0;

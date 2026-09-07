@@ -1,0 +1,44 @@
+module perm where
+import bfsodium
+
+// The quarter round as four identical steps. Each step is always
+//   a := a + b ; d := (d xor a) rotated left r
+// and the four words are then permuted (a,b,c,d) -> (c,d,a,b). Applying that
+// permutation twice is the identity, so after four steps the words are back in
+// their natural order and no step ever needs a different pair of operands.
+// If this holds, a brainfuck quarter round needs ONE add, ONE xor and ONE
+// rotate in a loop, at fixed tape positions, instead of twelve unrolled ops.
+qrLooped : ([32],[32],[32],[32]) -> ([32],[32],[32],[32])
+qrLooped t0 = ts @ (4 : [8])
+  where
+    rots = [16, 12, 8, 7] : [4][8]
+    ts   = [t0] # [ stp t r | t <- ts | r <- rots ]
+    stp (a, b, c, d) r = (c, dd, aa, b)
+      where aa = a + b
+            dd = (d ^ aa) <<< r
+
+// The claim: the looped form equals the quarter round, for every input.
+property looped_matches a b c d = qrLooped (a,b,c,d) == qr4 (a,b,c,d)
+
+// Rotate each of the four rows of the state left by its own amount.
+rotRows : [16][32] -> [4][8] -> [16][32]
+rotRows s ns = join [ r <<< n | r <- split`{4} s | n <- ns ]
+
+// A quarter round applied to the four words that sit at 0, 4, 8 and 12.
+qrCol : [16][32] -> [16][32]
+qrCol s = update (update (update (update s 0 a) 4 b) 8 c) 12 d
+  where (a, b, c, d) = qr4 (s @ (0:[8]), s @ (4:[8]), s @ (8:[8]), s @ (12:[8]))
+
+// Four quarter rounds at FIXED positions, rotating every row left by one in
+// between. Four such rotations return each row to where it started.
+fourAtFixed : [16][32] -> [16][32]
+fourAtFixed s0 = ss @ (4 : [8])
+  where ss = [s0] # [ rotRows (qrCol s) [1,1,1,1] | s <- ss ]
+
+// The whole double round with no indexed access anywhere: the column round is
+// four fixed quarter rounds, then the rows are staggered so the diagonal round
+// IS a column round, then the stagger is undone.
+dblRotated : [16][32] -> [16][32]
+dblRotated s = rotRows (fourAtFixed (rotRows (fourAtFixed s) [0,1,2,3])) [0,3,2,1]
+
+property rotated_matches s = dblRotated s == doubleRound s

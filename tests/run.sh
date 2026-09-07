@@ -118,6 +118,20 @@ dk poly1305/mulmod136.bf deadbeefcafebabe0102030405060708030123456789abcdef11223
 dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b220043727970746f6772617068696320466f72756d2052657365617263682047726f7570 a8061dc1305136c6c22b8baf0c0127a9 poly1305Run34 "poly1305 RFC 8439 section 2.5.2"
 
 echo
+echo "== design proofs (Cryptol) =="
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
+:l perm.cry
+:prove looped_matches
+ICRY
+); then echo "PASS looped quarter round proved equal to the quarter round"; pass=$((pass+1)); else echo "FAIL looped quarter round proof"; fail=$((fail+1)); fi
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Passed 2000 tests"
+:l perm.cry
+:set tests=2000
+:check rotated_matches
+ICRY
+); then echo "PASS row rotated double round checked against the double round"; pass=$((pass+1)); else echo "FAIL row rotated double round check"; fail=$((fail+1)); fi
+
+echo
 echo "== summary =="
 echo "passed $pass, failed $fail"
 [ "$fail" -eq 0 ] || exit 1
