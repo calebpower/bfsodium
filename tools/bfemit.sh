@@ -250,6 +250,122 @@ cpn_at() {
     goto 0 "$1"; cpn "$1" "$2" "$3" "$4"; goto $(( $4 + $3 - 1 )) 0
 }
 
+# reducep_op: bring x{$2} into the canonical range below p = 2^130 minus 5.
+# $3 is a 105 cell scratch region:
+#   +0:+39    fold scratch (see fold_op)
+#   +40:+56   dbuf{17}   x plus 5, used to decide whether x is at least p
+#   +57:+62   adder frame
+#   +63:+67   halve frame
+#   +68 b0  +69 b1  +70 q
+#   +71:+87   copy temps
+#   +88:+104  fivebuf{17}, the constant 5 padded so the wide adder can add it
+#
+# Two folds bring any 17 byte value below 2^130: the first leaves it under
+# 2^130 plus 315, and the second turns any value at or above 2^130 into
+# something under 325. That leaves only the five values between p and 2^130 to
+# deal with, and the trick for those is that x minus p equals x plus 5 minus
+# 2^130. So add 5, and if that crossed bit 130 the value was at least p: keep
+# the sum with bit 130 cleared. Otherwise keep x untouched.
+reducep_op() {
+    _rx=$1; _rn=$2; _rs=$3
+    _rd=$(( _rs + 40 )); _raf=$(( _rs + 57 )); _rhf=$(( _rs + 63 ))
+    _rb0=$(( _rs + 68 )); _rb1=$(( _rs + 69 )); _rq=$(( _rs + 70 ))
+    _rcpt=$(( _rs + 71 )); _rfive=$(( _rs + 88 ))
+    _rtop=$(( _rd + _rn - 1 ))
+    note "REDUCE : bring the value below p = 2^130 minus 5"
+    fold_op "$_rx" "$_rn" "$_rs"
+    fold_op "$_rx" "$_rn" "$_rs"
+    note "copy the value and add five to it  to test whether it reaches p"
+    cpn_at "$_rx" "$_rd" "$_rn" "$_rcpt"
+    goto 0 "$_rfive"; erun "+" 5; goto "$_rfive" 0
+    addn_op "$_rd" "$_rfive" "$_rn" "$_raf"
+    note "split the sum's top byte  bit 130 tells us whether x was at least p"
+    goto 0 "$_rtop"; mvn "$_rtop" "$_rhf" 1
+    goto "$_rtop" "$_rhf"; code "$HALVEK"
+    goto "$_rhf" $(( _rhf + 2 )); mvn $(( _rhf + 2 )) "$_rb0" 1
+    goto $(( _rhf + 2 )) $(( _rhf + 1 )); mvn $(( _rhf + 1 )) "$_rhf" 1
+    goto $(( _rhf + 1 )) "$_rhf"; code "$HALVEK"
+    goto "$_rhf" $(( _rhf + 2 )); mvn $(( _rhf + 2 )) "$_rb1" 1
+    goto $(( _rhf + 2 )) $(( _rhf + 1 )); mvn $(( _rhf + 1 )) "$_rq" 1
+    goto $(( _rhf + 1 )) 0
+    note "put the two low bits back  so the sum has bit 130 cleared"
+    goto 0 "$_rb0"; mvn "$_rb0" "$_rtop" 1
+    goto "$_rb0" "$_rb1"
+    code '[-'
+    goto "$_rb1" "$_rtop"; code '++'; goto "$_rtop" "$_rb1"
+    code ']'
+    goto "$_rb1" 0
+    note "if the sum crossed bit 130  the value was at least p  so take the sum"
+    goto 0 "$_rq"; code '['; code '[-]'; goto "$_rq" 0
+    _rk=0
+    while [ $_rk -lt $_rn ]; do
+        goto 0 $(( _rx + _rk )); code '[-]'; goto $(( _rx + _rk )) 0
+        _rk=$(( _rk + 1 ))
+    done
+    goto 0 "$_rd"; mvn "$_rd" "$_rx" "$_rn"; goto $(( _rd + _rn - 1 )) "$_rq"
+    code ']'
+    goto "$_rq" 0
+    note "discard the trial sum  it is already empty when it was taken"
+    _rk=0
+    while [ $_rk -lt $_rn ]; do
+        goto 0 $(( _rd + _rk )); code '[-]'; goto $(( _rd + _rk )) 0
+        _rk=$(( _rk + 1 ))
+    done
+}
+
+# mulmod_op: acc{$3} := acc times r modulo p, where p = 2^130 minus 5. The
+# multiplier r{$3} is CONSUMED. $4 is a 185 cell scratch region:
+#   +0:+16   t{17}     the running value, doubled each step
+#   +17:+33  res{17}   the accumulating product
+#   +34:+50  tmp{17}   a copy buffer, since the wide adder consumes its source
+#   +51:+55  halve frame for r; its carry cell holds the bit just shifted out
+#   +56      the step counter
+#   +57:+62  adder frame
+#   +63:+79  copy temps
+#   +80:+184 reduce scratch, which contains the fold scratch
+#
+# There is no multiply instruction, so this is double and add, walking the bits
+# of r out of the BOTTOM: at each step the low bit of r says whether to add the
+# running value into the product, then the running value doubles and r shifts
+# right. A fold after every add and every doubling keeps both operands under
+# 2^130 plus a little, so their sum always fits in 17 bytes and nothing has to
+# widen. The product is reduced to canonical form only at the end, because
+# intermediate values need only be congruent, not least.
+mulmod_op() {
+    _macc=$1; _mr=$2; _mn=$3; _ms=$4
+    _mt=$_ms; _mres=$(( _ms + 17 )); _mtmp=$(( _ms + 34 ))
+    _mhf=$(( _ms + 51 )); _mbit=$(( _ms + 55 )); _mctr=$(( _ms + 56 ))
+    _maf=$(( _ms + 57 )); _mcpt=$(( _ms + 63 )); _mrs=$(( _ms + 80 ))
+    note "MULMOD : the accumulator times r  modulo 2^130 minus 5"
+    note "the accumulator moves into the running value  leaving room for the product"
+    goto 0 "$_macc"; mvn "$_macc" "$_mt" "$_mn"; goto $(( _macc + _mn - 1 )) 0
+    note "one step per bit of r  all 136 of them  since r is 17 bytes wide"
+    note "stopping at 128 would silently ignore any bits in the top byte"
+    goto 0 "$_mctr"; erun "+" 136; goto "$_mctr" 0
+    goto 0 "$_mctr"; code '[-'; goto "$_mctr" 0
+    halven_keep_op "$_mr" "$_mn" "$_mhf"
+    note "when the bit shifted out was set  add the running value into the product"
+    goto 0 "$_mbit"; code '['; code '[-]'; goto "$_mbit" 0
+    cpn_at "$_mt" "$_mtmp" "$_mn" "$_mcpt"
+    addn_op "$_mres" "$_mtmp" "$_mn" "$_maf"
+    fold_op "$_mres" "$_mn" "$_mrs"
+    goto 0 "$_mbit"; code ']'; goto "$_mbit" 0
+    note "double the running value for the next bit  then fold it back down"
+    cpn_at "$_mt" "$_mtmp" "$_mn" "$_mcpt"
+    addn_op "$_mt" "$_mtmp" "$_mn" "$_maf"
+    fold_op "$_mt" "$_mn" "$_mrs"
+    goto 0 "$_mctr"; code ']'; goto "$_mctr" 0
+    note "the running value is spent  discard it"
+    _mk=0
+    while [ $_mk -lt $_mn ]; do
+        goto 0 $(( _mt + _mk )); code '[-]'; goto $(( _mt + _mk )) 0
+        _mk=$(( _mk + 1 ))
+    done
+    note "only now does the product need to be least  not merely congruent"
+    reducep_op "$_mres" "$_mn" "$_mrs"
+    goto 0 "$_mres"; mvn "$_mres" "$_macc" "$_mn"; goto $(( _mres + _mn - 1 )) 0
+}
+
 qr() {    # quarter round on word indices $1 $2 $3 $4
     _qa=$(( $1 * 4 )); _qb=$(( $2 * 4 )); _qc=$(( $3 * 4 )); _qd=$(( $4 * 4 ))
     printf '\n'; note "======== QUARTERROUND on words $1 $2 $3 $4 ========"

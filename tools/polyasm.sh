@@ -127,6 +127,70 @@ printf "  ."
 k=1; while [ $k -lt $N ]; do printf ">."; k=$(( k + 1 )); done
 printf "\n"
 } > "$repo/poly1305/fold136.bf"
+{
+cat <<REDHDR
+; bfsodium REDUCEP136 : bring a 17 byte value below p = 2^130 minus 5
+;
+; ASSEMBLED FILE: emitted by tools/polyasm using the shared emitter;
+;
+; IO  in:  x{17} LE      (17 bytes)
+;     out: (x mod p){17} LE   (17 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  x{17}      u8   the value  and the result
+;   @0x11:0x79  scratch{105}    see reducep_op in tools/bfemit
+;
+; Two folds bring any 17 byte value below 2^130; only the five values between
+; p and 2^130 then remain  and for those x minus p is x plus 5 minus 2^130;
+REDHDR
+
+printf "  ,"
+k=1; while [ $k -lt $N ]; do printf ">,"; k=$(( k + 1 )); done
+printf "\n"
+goto $(( N - 1 )) 0
+
+reducep_op 0 $N 17
+
+printf "\n"; note "emit the reduced value little endian"
+printf "  ."
+k=1; while [ $k -lt $N ]; do printf ">."; k=$(( k + 1 )); done
+printf "\n"
+} > "$repo/poly1305/reducep136.bf"
+{
+cat <<MULHDR
+; bfsodium MULMOD136 : multiply modulo p = 2^130 minus 5
+;
+; ASSEMBLED FILE: emitted by tools/polyasm using the shared emitter;
+;
+; IO  in:  a{17} LE  followed by  r{17} LE     (34 bytes)
+;     out: (a times r mod p){17} LE            (17 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  a{17}       u8   the accumulator  and the result
+;   @0x11:0x21  r{17}       u8   the multiplier  consumed bit by bit
+;   @0x22:0xda  scratch{185}     see mulmod_op in tools/bfemit
+;
+; There is no multiply instruction  so this is double and add over the bits of
+; r  walked out of the bottom; a fold after every add and every doubling keeps
+; both operands under 2^130 plus a little  so 17 bytes always suffice;
+MULHDR
+
+printf "  ,"
+k=1; while [ $k -lt 34 ]; do printf ">,"; [ $(( k % 30 )) -eq 0 ] && printf "\n  "; k=$(( k + 1 )); done
+printf "\n"
+goto 33 0
+
+mulmod_op 0 17 $N 34
+
+printf "\n"; note "emit the product little endian"
+printf "  ."
+k=1; while [ $k -lt $N ]; do printf ">."; k=$(( k + 1 )); done
+printf "\n"
+} > "$repo/poly1305/mulmod136.bf"
+echo "assembled $repo/poly1305/mulmod136.bf ($(grep -c "" "$repo/poly1305/mulmod136.bf") lines)"
+
+echo "assembled $repo/poly1305/reducep136.bf ($(grep -c "" "$repo/poly1305/reducep136.bf") lines)"
+
 echo "assembled $repo/poly1305/fold136.bf ($(grep -c "" "$repo/poly1305/fold136.bf") lines)"
 
 echo "assembled $repo/poly1305/halve136.bf ($(grep -c "" "$repo/poly1305/halve136.bf") lines)"

@@ -37,6 +37,20 @@ fold136Run inb = leBytesN`{17} (lo + 5 * hi)
     hi = x >> 130
     lo = x && ((1 << 130) - 1)
 
+// REDUCEP: in = x(17 LE); out = (x mod p)(17 LE) where p = 2^130 - 5.
+reducep136Run : [17][8] -> [17][8]
+reducep136Run inb = leBytesN`{17} (leN inb % ((1 << 130) - 5))
+
+// MULMOD: in = a(17 LE) # r(17 LE); out = (a * r mod p)(17 LE), p = 2^130 - 5.
+// Computed in a wider type so the product is not truncated before reduction.
+mulmod136Run : [34][8] -> [17][8]
+mulmod136Run inb = leBytesN`{17} (drop`{136} prod)
+  where
+    a    = (zero # leN (take`{17} inb)) : [272]
+    r    = (zero # leN (drop`{17} inb)) : [272]
+    pp   = ((1 : [272]) << 130) - 5
+    prod = (a * r) % pp
+
 // A 32-bit word is four little-endian bytes on the wire (LSB first).
 leWord : [4][8] -> [32]
 leWord bs = join (reverse bs)
