@@ -142,6 +142,44 @@ addn_op() {
     goto 0 "$_cin"; code '[-]'; goto "$_cin" 0
 }
 
+# HALVEK is the proven halving step from chacha20/xor32.bf, lifted verbatim.
+# Entered at the value, with the quotient at +1, the low bit at +2 and scratch
+# at +3: it leaves the value shifted right one and its low bit beside it.
+HALVEK='[->>>+<[-<+>>-<]>[-<+>]<<<]'
+
+# halven_op: x{$2} := x shifted right one, little endian, where $3 is a five
+# cell frame: h, q, bit, scratch, carry. Entered and left at cell 0.
+#
+# Bytes are walked from the TOP down, because the bit leaving a byte enters the
+# byte below it: each byte is halved, the bit carried in from above is put back
+# as the top bit, and this byte's own low bit becomes the carry for the next.
+# The reduction modulo 2^130 minus 5 needs a shift, and 130 bits is not a whole
+# number of bytes, so this is how the odd two bits are reached.
+halven_op() {
+    _hx=$1; _hn=$2; _hf=$3
+    _hh=$_hf; _hq=$(( _hf + 1 )); _hb=$(( _hf + 2 )); _hc=$(( _hf + 4 ))
+    note "$(printf 'HALVE%d : @%03x shifted right one  little endian' $(( _hn * 8 )) "$_hx")"
+    _hi=$(( _hn - 1 ))
+    while [ $_hi -ge 0 ]; do
+        note "$(printf 'byte %d  the top byte first' "$_hi")"
+        goto 0 $(( _hx + _hi )); mvn $(( _hx + _hi )) "$_hh" 1
+        goto $(( _hx + _hi )) "$_hh"
+        note "halve it  leaving the quotient and this byte's low bit"
+        code "$HALVEK"
+        goto "$_hh" "$_hc"
+        note "a bit carried in from the byte above becomes the top bit here"
+        code '[-'
+        goto "$_hc" "$_hq"; erun "+" 128; goto "$_hq" "$_hc"
+        code ']'
+        goto "$_hc" "$_hq"; mvn "$_hq" $(( _hx + _hi )) 1
+        goto "$_hq" "$_hb"; mvn "$_hb" "$_hc" 1
+        goto "$_hb" 0
+        _hi=$(( _hi - 1 ))
+    done
+    note "discard the bit shifted out of the bottom byte"
+    goto 0 "$_hc"; code '[-]'; goto "$_hc" 0
+}
+
 qr() {    # quarter round on word indices $1 $2 $3 $4
     _qa=$(( $1 * 4 )); _qb=$(( $2 * 4 )); _qc=$(( $3 * 4 )); _qd=$(( $4 * 4 ))
     printf '\n'; note "======== QUARTERROUND on words $1 $2 $3 $4 ========"

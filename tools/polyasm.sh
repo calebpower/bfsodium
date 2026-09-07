@@ -63,4 +63,41 @@ k=1; while [ $k -lt $N ]; do printf '>.'; k=$(( k + 1 )); done
 printf '\n'
 } > "$repo/poly1305/add136.bf"
 
+{
+cat <<HALVEHDR
+; bfsodium HALVE136 : 17 byte little endian shift right one
+;
+; ASSEMBLED FILE: emitted by tools/polyasm using the shared emitter;
+;
+; IO  in:  x{17} LE      (17 bytes)
+;     out: (x shifted right one){17} LE   (17 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  x{17}  u8   the value  and the result  LSB at @0x00
+;   @0x11       h      u8   HALVE frame: the byte being halved
+;   @0x12       q      u8   HALVE frame: the quotient
+;   @0x13       bit    u8   HALVE frame: this byte low bit
+;   @0x14       f      u8   HALVE frame scratch  restored 0
+;   @0x15       carry  u8   the bit coming down from the byte above
+;
+; Bytes are walked from the top down  because the bit leaving a byte enters
+; the byte below it;
+
+; read x  leaving the pointer on its last byte
+HALVEHDR
+
+printf "  ,"
+k=1; while [ $k -lt $N ]; do printf ">,"; k=$(( k + 1 )); done
+printf "\n"
+goto $(( N - 1 )) 0
+
+halven_op 0 $N 17
+
+printf "\n"; note "emit the shifted value little endian"
+printf "  ."
+k=1; while [ $k -lt $N ]; do printf ">."; k=$(( k + 1 )); done
+printf "\n"
+} > "$repo/poly1305/halve136.bf"
+echo "assembled $repo/poly1305/halve136.bf ($(grep -c "" "$repo/poly1305/halve136.bf") lines)"
+
 echo "assembled $repo/poly1305/add136.bf ($(grep -c '' "$repo/poly1305/add136.bf") lines)"

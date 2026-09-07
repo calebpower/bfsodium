@@ -24,6 +24,10 @@ leBytesN w = reverse (split w)
 add136Run : [34][8] -> [17][8]
 add136Run inb = leBytesN`{17} (leN (take`{17} inb) + leN (drop`{17} inb))
 
+// HALVEN: in = x(17 LE); out = (x >> 1)(17 LE).
+halve136Run : [17][8] -> [17][8]
+halve136Run inb = leBytesN`{17} (leN inb >> 1)
+
 // A 32-bit word is four little-endian bytes on the wire (LSB first).
 leWord : [4][8] -> [32]
 leWord bs = join (reverse bs)
