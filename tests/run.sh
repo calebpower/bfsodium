@@ -69,7 +69,7 @@ for f in chacha20/*.bf poly1305/*.bf; do run "footprint $f" ./tools/bffoot "$f";
 # is hand-edited downstream of bfexpand, and this is the check that says so --
 # it is also what caught bfexpand dropping all but the first line of a
 # multi-line read prologue, which pasted 47 stray reads into a caller.
-for s in chacha20/*.skel; do
+for s in chacha20/*.skel poly1305/*.skel; do
     run "regenerates ${s%.skel}.bf" \
         sh -c "sh tools/bfexpand.sh '$s' | cmp -s - '${s%.skel}.bf'"
 done
