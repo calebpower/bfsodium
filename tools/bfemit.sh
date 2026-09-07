@@ -155,10 +155,21 @@ HALVEK='[->>>+<[-<+>>-<]>[-<+>]<<<]'
 # as the top bit, and this byte's own low bit becomes the carry for the next.
 # The reduction modulo 2^130 minus 5 needs a shift, and 130 bits is not a whole
 # number of bytes, so this is how the odd two bits are reached.
+# It is halven_keep_op with the shifted-out bit discarded, so the shift itself
+# has exactly one implementation.
 halven_op() {
+    halven_keep_op "$1" "$2" "$3"
+    note "discard the bit shifted out of the bottom byte"
+    goto 0 $(( $3 + 4 )); code '[-]'; goto $(( $3 + 4 )) 0
+}
+
+# halven_keep_op: like halven_op but LEAVES the bit shifted out of the bottom
+# byte in the frame's carry cell ($3 plus 4) instead of discarding it. The
+# multiply walks the bits of r out of the bottom this way.
+halven_keep_op() {
     _hx=$1; _hn=$2; _hf=$3
     _hh=$_hf; _hq=$(( _hf + 1 )); _hb=$(( _hf + 2 )); _hc=$(( _hf + 4 ))
-    note "$(printf 'HALVE%d : @%03x shifted right one  little endian' $(( _hn * 8 )) "$_hx")"
+    note "$(printf 'HALVE%d : @%03x shifted right one  keeping the bit shifted out' $(( _hn * 8 )) "$_hx")"
     _hi=$(( _hn - 1 ))
     while [ $_hi -ge 0 ]; do
         note "$(printf 'byte %d  the top byte first' "$_hi")"
@@ -176,8 +187,67 @@ halven_op() {
         goto "$_hb" 0
         _hi=$(( _hi - 1 ))
     done
-    note "discard the bit shifted out of the bottom byte"
-    goto 0 "$_hc"; code '[-]'; goto "$_hc" 0
+}
+
+# fold_op: reduce x{$2} towards the range of Poly1305, using 2^130 = 5 mod p.
+# $3 is a 40 cell scratch region:
+#   +0:+16  hbuf{17}   the value 5H, padded, so the shared adder can add it
+#   +17:+22 adder frame for the wide add
+#   +23:+27 halve frame
+#   +28 b0   +29 b1    the two bits that stay below the split
+#   +30 h              the part above bit 130
+#   +31:+32 hbuf2{2}   h staged for the small add
+#   +33:+38 adder frame for the small add
+#   +39 copy temp
+#
+# The split is at bit 130, and 130 is 128 plus 2, so the part above the split is
+# simply the TOP BYTE shifted right two: no multi-byte shifting is needed. What
+# stays behind is that byte's low two bits. Then x = L + 5H modulo p.
+fold_op() {
+    _fx=$1; _fn=$2; _fs=$3
+    _fhb=$_fs; _ff3=$(( _fs + 17 )); _ffh=$(( _fs + 23 ))
+    _fb0=$(( _fs + 28 )); _fb1=$(( _fs + 29 )); _fh=$(( _fs + 30 ))
+    _fhb2=$(( _fs + 31 )); _ff2=$(( _fs + 33 )); _fcpt=$(( _fs + 39 ))
+    _ftop=$(( _fx + _fn - 1 ))
+    note "FOLD : reduce using 2^130 = 5 modulo p"
+    note "the split is at bit 130  which is the top byte shifted right two"
+    goto 0 "$_ftop"; mvn "$_ftop" "$_ffh" 1
+    goto "$_ftop" "$_ffh"
+    note "first halving  the low bit here is bit 128"
+    code "$HALVEK"
+    goto "$_ffh" $(( _ffh + 2 )); mvn $(( _ffh + 2 )) "$_fb0" 1
+    goto $(( _ffh + 2 )) $(( _ffh + 1 )); mvn $(( _ffh + 1 )) "$_ffh" 1
+    goto $(( _ffh + 1 )) "$_ffh"
+    note "second halving  the low bit here is bit 129"
+    code "$HALVEK"
+    goto "$_ffh" $(( _ffh + 2 )); mvn $(( _ffh + 2 )) "$_fb1" 1
+    goto $(( _ffh + 2 )) $(( _ffh + 1 )); mvn $(( _ffh + 1 )) "$_fh" 1
+    goto $(( _ffh + 1 )) 0
+    note "the top byte keeps only bits 128 and 129"
+    goto 0 "$_fb0"; mvn "$_fb0" "$_ftop" 1
+    goto "$_fb0" "$_fb1"
+    note "bit 129 is worth two in the top byte"
+    code '[-'
+    goto "$_fb1" "$_ftop"; code '++'; goto "$_ftop" "$_fb1"
+    code ']'
+    goto "$_fb1" 0
+    note "build 5H by adding H to a two byte buffer five times"
+    _fk=0
+    while [ $_fk -lt 5 ]; do
+        cpn_at "$_fh" "$_fhb2" 1 "$_fcpt"
+        addn_op "$_fhb" "$_fhb2" 2 "$_ff2"
+        _fk=$(( _fk + 1 ))
+    done
+    note "discard H now that 5H is built"
+    goto 0 "$_fh"; code '[-]'; goto "$_fh" 0
+    note "add 5H back into the value"
+    addn_op "$_fx" "$_fhb" "$_fn" "$_ff3"
+}
+
+# cpn_at: cpn, but it walks to the source first and returns to cell 0, so it can
+# be called from the pointer-at-zero convention the ops use.
+cpn_at() {
+    goto 0 "$1"; cpn "$1" "$2" "$3" "$4"; goto $(( $4 + $3 - 1 )) 0
 }
 
 qr() {    # quarter round on word indices $1 $2 $3 $4

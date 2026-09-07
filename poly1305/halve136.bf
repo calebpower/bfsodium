@@ -20,7 +20,7 @@
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 ; travel 16 cells left
   <<<<<<<<<<<<<<<<
-; HALVE136 : @000 shifted right one  little endian
+; HALVE136 : @000 shifted right one  keeping the bit shifted out
 ; byte 16  the top byte first
 ; travel 16 cells right
   >>>>>>>>>>>>>>>>

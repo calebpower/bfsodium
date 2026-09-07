@@ -98,6 +98,37 @@ printf "  ."
 k=1; while [ $k -lt $N ]; do printf ">."; k=$(( k + 1 )); done
 printf "\n"
 } > "$repo/poly1305/halve136.bf"
+{
+cat <<FOLDHDR
+; bfsodium FOLD136 : one Poly1305 reduction step  using 2^130 = 5 modulo p
+;
+; ASSEMBLED FILE: emitted by tools/polyasm using the shared emitter;
+;
+; IO  in:  x{17} LE                     (17 bytes)
+;     out: (L plus 5H){17} LE           (17 bytes)  where x = L plus H times 2^130
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  x{17}     u8   the value  and the result
+;   @0x11:0x38  scratch{40}    the fold workspace; see fold_op in tools/bfemit
+;
+; The split is at bit 130  and 130 is 128 plus 2  so the part above the split
+; is simply the top byte shifted right two and no multi byte shift is needed;
+FOLDHDR
+
+printf "  ,"
+k=1; while [ $k -lt $N ]; do printf ">,"; k=$(( k + 1 )); done
+printf "\n"
+goto $(( N - 1 )) 0
+
+fold_op 0 $N 17
+
+printf "\n"; note "emit the folded value little endian"
+printf "  ."
+k=1; while [ $k -lt $N ]; do printf ">."; k=$(( k + 1 )); done
+printf "\n"
+} > "$repo/poly1305/fold136.bf"
+echo "assembled $repo/poly1305/fold136.bf ($(grep -c "" "$repo/poly1305/fold136.bf") lines)"
+
 echo "assembled $repo/poly1305/halve136.bf ($(grep -c "" "$repo/poly1305/halve136.bf") lines)"
 
 echo "assembled $repo/poly1305/add136.bf ($(grep -c '' "$repo/poly1305/add136.bf") lines)"

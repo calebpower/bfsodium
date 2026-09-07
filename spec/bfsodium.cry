@@ -28,6 +28,15 @@ add136Run inb = leBytesN`{17} (leN (take`{17} inb) + leN (drop`{17} inb))
 halve136Run : [17][8] -> [17][8]
 halve136Run inb = leBytesN`{17} (leN inb >> 1)
 
+// FOLD: one reduction step using 2^130 = 5 (mod 2^130 - 5).
+// in = x(17 LE); out = (L + 5H)(17 LE) where x = L + H*2^130.
+fold136Run : [17][8] -> [17][8]
+fold136Run inb = leBytesN`{17} (lo + 5 * hi)
+  where
+    x  = leN inb
+    hi = x >> 130
+    lo = x && ((1 << 130) - 1)
+
 // A 32-bit word is four little-endian bytes on the wire (LSB first).
 leWord : [4][8] -> [32]
 leWord bs = join (reverse bs)
