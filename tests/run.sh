@@ -6,6 +6,8 @@
 #   2 idiom boundary KATs        edges: carry cascade, top bit wrap, identities
 #   4 golden vector, dual oracle  brainfuck == pinned vector == Cryptol spec
 #   9 legibility and portability  bflint, itself self-tested first
+#   9 declared interfaces true    bffoot proves each INTERFACE line against the
+#                                 instruction stream, itself self-tested first
 set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -28,6 +30,7 @@ cc -O2 -std=c99 -o tools/bfi tools/bfi.c
 cc -O2 -std=c99 -o tools/hx  tools/hx.c
 cc -O2 -std=c99 -o tools/bflint tools/bflint.c
 cc -O2 -std=c99 -o tools/bfstyle tools/bfstyle.c
+cc -O2 -std=c99 -o tools/bffoot tools/bffoot.c
 chmod +x tools/kat.sh tools/dkat.sh
 echo "built"
 
@@ -52,8 +55,35 @@ echo
 echo "== tier 9: legibility and portability =="
 run "bfstyle self-test" ./tools/bfstyle --selftest
 run "bflint self-test" ./tools/bflint --selftest
+run "bffoot self-test" ./tools/bffoot --selftest
 for f in chacha20/*.bf poly1305/*.bf; do run "lint $f" ./tools/bflint "$f"; done
 for f in chacha20/*.bf poly1305/*.bf; do run "style $f" ./tools/bfstyle "$f"; done
+# A routine is pasted into its callers on the strength of its INTERFACE line, so
+# that line has to be a fact and not a promise. stagger understated its footprint
+# by four cells, quietly borrowed them from the block function's saved copy of
+# the original state, and put one wrong word in every block; the arithmetic was
+# perfect and every other tier passed. This is the check that saw it.
+for f in chacha20/*.bf poly1305/*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
+
+# The committed brainfuck must be exactly what its skeleton expands to. Nothing
+# is hand-edited downstream of bfexpand, and this is the check that says so --
+# it is also what caught bfexpand dropping all but the first line of a
+# multi-line read prologue, which pasted 47 stray reads into a caller.
+for s in chacha20/*.skel; do
+    run "regenerates ${s%.skel}.bf" \
+        sh -c "sh tools/bfexpand.sh '$s' | cmp -s - '${s%.skel}.bf'"
+done
+# A routine's contracts are written relative to its own base, so a paste site
+# that does not say where the routine's zero lands cannot have them rewritten.
+# Guessing zero is how a wrong contract passes quietly, so it is a hard error.
+tmpb=$(mktemp -d)
+printf '@@ADD32@@\n' > "$tmpb/nobase.skel"
+run "a paste site with no base is refused" \
+    sh -c "! sh tools/bfexpand.sh $tmpb/nobase.skel >/dev/null 2>&1"
+printf '@@ADD32@@ 0\n' > "$tmpb/base.skel"
+run "a paste site with a base is accepted" \
+    sh -c "sh tools/bfexpand.sh $tmpb/base.skel >/dev/null 2>&1"
+rm -rf "$tmpb"
 
 echo
 echo "== tiers 2 and 4: primitives, dual oracle =="
@@ -77,11 +107,9 @@ dk chacha20/xor32.bf 1234567812345678 00000000 xor32Run "xor32 self is zero"
 dk chacha20/xor32.bf 78563412efbeadde 97e899cc xor32Run "xor32 mixed"
 dk chacha20/xor32.bf aa55aa5555aa55aa ffffffff xor32Run "xor32 alternating"
 
-dk chacha20/blockcore.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e blockRun "block function through the emitter"
-
 dk chacha20/stream.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000000000004a0000000072004c616469657320616e642047656e746c656d656e206f662074686520636c617373206f66202739393a204966204920636f756c64206f6666657220796f75206f6e6c79206f6e652074697020666f7220746865206675747572652c2073756e73637265656e20776f756c642062652069742e 6e2e359a2568f98041ba0728dd0d6981e97e7aec1d4360c20a27afccfd9fae0bf91b65c5524733ab8f593dabcd62b3571639d624e65152ab8f530c359f0861d807ca0dbf500d6a6156a38e088a22b65e52bc514d16ccf806818ce91ab77937365af90bbf74a35be6b40b8eedf2785e42874d streamRun "stream cipher RFC 8439 section 2.4.2"
 
-dk chacha20/block.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e blockRun "block function RFC 8439 section 2.3.2"
+dk chacha20/blockloop.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e blockRun "block function RFC 8439 section 2.3.2"
 
 dk chacha20/rowrot.bf 000000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000 0100000002000000030000000000000005000000060000000700000004000000090000000a0000000b000000080000000d0000000e0000000f0000000c000000 rowrotRun "row rotation  each row left by one word"
 
@@ -130,6 +158,7 @@ run "contract checker catches a wrong pointer" sh -c "BFI_CONTRACTS=1 ./tools/bf
 run "contract checker catches dirty scratch" sh -c "BFI_CONTRACTS=1 ./tools/bfi $tmpc/dirty.bf </dev/null 2>/dev/null; test \$? -eq 4"
 run "contracts are inert without the flag" sh -c "./tools/bfi $tmpc/bad.bf </dev/null >/dev/null 2>&1"
 rm -rf "$tmpc"
+run "blockloop honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockloop.bf >/dev/null"
 run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d9b67452301 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/qrloop.bf >/dev/null"
 
 echo

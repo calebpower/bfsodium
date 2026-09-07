@@ -27,27 +27,73 @@ here=$(cd "$(dirname "$0")" && pwd); repo=$(cd "$here/.." && pwd)
 
 rep() { _i=0; while [ "$_i" -lt "$2" ]; do printf '%s' "$1"; _i=$((_i+1)); done; }
 
-# the computational middle of a routine: after its input line, before its output
-body() { awk '/^,>,/{f=1;next} /^; emit/{f=0} f' "$1"; }
+# The computational middle of a routine: after its input, before its output.
+#
+# A routine's read is not always one line -- rowrot reads sixty four bytes over
+# four lines with a comment between each -- and stopping at the first of them
+# left forty seven ",>" pairs in the paste, which walked the caller's pointer
+# forty seven cells off its base. So the prologue ends at the first line that is
+# neither a read line nor a comment; comments seen meanwhile are held back and
+# printed only if that line arrives, so the routine's own first remark survives
+# the paste but the "; continued" chatter of its read does not.
+body() {
+    awk '
+        !f && /^ *,[>,]/            { f = 1; pre = 1; next }
+        !f                          { next }
+        pre && /^[ \t]*[,>]+[ \t]*$/ && /,/ { nb = 0; next }
+        pre && /^[ \t]*;/           { buf[nb++] = $0; next }
+        pre                         { pre = 0
+                                      for (i = 0; i < nb; i++) print buf[i]
+                                      nb = 0 }
+        /^; emit/                   { f = 0 }
+        f' "$1"
+}
+
+# A routine states its contracts relative to its own base, as "ptr=+24", so the
+# same line is true wherever the routine is pasted. The committed brainfuck must
+# not carry that notation: '+' is an instruction, and a canonical interpreter
+# with no ';' rule would execute every one of them. So the offsets are resolved
+# to absolute numbers here -- by the paste base when imported, and by zero when
+# a routine is written out on its own.
+rebase() {
+    awk -v b="$1" '
+        /^; ASSERT ptr=/  { n=$3; sub(/ptr=/,"",n); sub(/^\+/,"",n)
+                            print "; ASSERT ptr=" n+b; next }
+        /^; ASSERT zero / { split($4,p,":"); sub(/^\+/,"",p[1]); sub(/^\+/,"",p[2])
+                            print "; ASSERT zero " p[1]+b ":" p[2]+b; next }
+        { print }'
+}
 
 import() {
+    _base=$2
+    case "$_base" in
+        ''|*[!0-9]*)
+            echo "bfexpand: $1 pasted with no base; every paste site states the" >&2
+            echo "          cell its routine's zero lands on, so the routine's" >&2
+            echo "          contracts can be rewritten to that base" >&2
+            exit 1 ;;
+    esac
     _if=$(grep -m1 '^; INTERFACE' "$1" || true)
     _en=$(printf '%s' "$_if" | sed -n 's/.*entry=\([0-9]*\).*/\1/p')
     _ex=$(printf '%s' "$_if" | sed -n 's/.*exit=\([0-9]*\).*/\1/p')
     [ -n "$_en" ] || { echo "bfexpand: $1 has no INTERFACE line" >&2; exit 1; }
     printf '; walk in to this routine entry offset\n  '; rep '>' "$_en"; printf '\n'
-    body "$1"
+    body "$1" | rebase "$_base"
     printf '; walk back out to the routine base\n  '; rep '<' "$_ex"; printf '\n'
 }
 
 while IFS= read -r line; do
     case "$line" in
-        '@@ADD32@@')  import "$repo/chacha20/add32.bf";  continue ;;
-        '@@XOR32@@')  import "$repo/chacha20/xor32.bf";  continue ;;
-        '@@ROTL32@@') import "$repo/chacha20/rotl32.bf"; continue ;;
+        '@@ADD32@@'*)   import "$repo/chacha20/add32.bf"  "${line##* }"; continue ;;
+        '@@XOR32@@'*)   import "$repo/chacha20/xor32.bf"  "${line##* }"; continue ;;
+        '@@ROTL32@@'*)  import "$repo/chacha20/rotl32.bf" "${line##* }"; continue ;;
+        '@@QR@@'*)      import "$repo/chacha20/qrloop.bf"  "${line##* }"; continue ;;
+        '@@ROWROT@@'*)  import "$repo/chacha20/rowrot.bf"  "${line##* }"; continue ;;
+        '@@STAGGER@@'*) import "$repo/chacha20/stagger.bf" "${line##* }"; continue ;;
     esac
     case "$line" in
-        ';'*) printf '%s\n' "$line" ;;
-        *)    printf '%s\n' "$line" | perl -pe 's/R(\d+)/">" x $1/ge; s/L(\d+)/"<" x $1/ge; s/([><]{40})(?=[><])/$1 . "\n  "/ge' ;;
+        '; ASSERT '*) printf '%s\n' "$line" | rebase 0 ;;
+        ';'*)         printf '%s\n' "$line" ;;
+        *)            printf '%s\n' "$line" | perl -pe 's/R(\d+)/">" x $1/ge; s/L(\d+)/"<" x $1/ge; s/([><]{40})(?=[><])/$1 . "\n  "/ge' ;;
     esac
 done < "$1"

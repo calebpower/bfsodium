@@ -1,12 +1,13 @@
 # Compiled tools — the sources of truth are the .c files in tools/
 /tools/bfi
 /tools/hx
+/tools/bflint
+/tools/bfstyle
+/tools/bffoot
 
 # Build cruft
 *.o
 *.out
-/tools/bflint
 
 # reaper run artifacts collected back from the guest
 /out/
-/tools/bfstyle

@@ -1,0 +1,1232 @@
+; bfsodium BLOCKLOOP : the ChaCha20 block function as loops
+;
+; HAND WRITTEN skeleton; @@QR@@ @@ROWROT@@ and @@STAGGER@@ paste routines that
+; are each already verified on their own  and each appears ONCE;
+;
+; IO  in:  key{32}  counter{4} LE  nonce{12}        (48 bytes)
+;     out: keystream block{64}                      (64 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x3f  state{16}   u32 LE  the sixteen words  row major
+;   @0x40:0x47  rowtmp{8}   u8      rowrot and stagger stage words here; their
+;                                   footprint is @0x00:0x47  which is EIGHT
+;                                   temps and not four  because stagger's row 2
+;                                   exchanges the row's two halves in one go;
+;                                   orig used to sit at @0x44 while stagger's
+;                                   own header claimed four  and one word of
+;                                   every block came out with the ASCII of
+;                                   expand added to it; tools/bffoot now proves
+;                                   every declared footprint against the
+;                                   instruction stream  so the numbers here rest
+;                                   on a check and not on a promise;
+;   @0x48:0x87  orig{16}    u32 LE  a copy  added back at the end
+;   @0x88:0xc2  QR frame            its operands are @0x88:0x97
+;   @0xc3:0xc7  a gap               so a routine that grew would land in nothing
+;                                   rather than in the counters
+;   @0xc8:0xcd  counters            columns @0xc8  passes @0xc9  staggers @0xcb
+;                                   rounds @0xcc  words @0xcd
+;   @0xd0:0x10f copytmp{64} u8      temps for duplicating the state
+; the constant  which is the ASCII of expand 32 byte k
+; @00 gets 101
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  +++++++++++++++++++++
+R1
+; @01 gets 120
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+R1
+; @02 gets 112
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++
+R1
+; @03 gets 97
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  +++++++++++++++++
+R1
+; @04 gets 110
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++
+R1
+; @05 gets 100
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++
+R1
+; @06 gets 32
+  ++++++++++++++++++++++++++++++++
+R1
+; @07 gets 51
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  +++++++++++
+R1
+; @08 gets 50
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++
+R1
+; @09 gets 45
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  +++++
+R1
+; @0a gets 98
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++
+R1
+; @0b gets 121
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  +
+R1
+; @0c gets 116
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++
+R1
+; @0d gets 101
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  +++++++++++++++++++++
+R1
+; @0e gets 32
+  ++++++++++++++++++++++++++++++++
+R1
+; @0f gets 107
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  ++++++++++++++++++++++++++++++++++++++++
+; continued
+  +++++++++++++++++++++++++++
+; read the key  counter and nonce into words four through fifteen
+R1
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; continued
+  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; continued
+  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; to the start of the state
+L63
+; ASSERT ptr=0
+
+; ==== duplicate the state into orig ====
+; state byte 0 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 1 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 2 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 3 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 4 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 5 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 6 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 7 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 8 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 9 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 10 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 11 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 12 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 13 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 14 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 15 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 16 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 17 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 18 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 19 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 20 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 21 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 22 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 23 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 24 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 25 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 26 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 27 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 28 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 29 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 30 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 31 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 32 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 33 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 34 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 35 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 36 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 37 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 38 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 39 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 40 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 41 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 42 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 43 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 44 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 45 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 46 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 47 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 48 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 49 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 50 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 51 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 52 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 53 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 54 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 55 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 56 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 57 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 58 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 59 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 60 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 61 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 62 to orig and to a temp
+  [-R72+R136+L208]
+; the next byte
+R1
+; state byte 63 to orig and to a temp
+  [-R72+R136+L208]
+; walk to the temps
+R145
+; ASSERT ptr=208
+; temp byte 0 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 1 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 2 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 3 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 4 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 5 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 6 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 7 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 8 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 9 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 10 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 11 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 12 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 13 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 14 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 15 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 16 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 17 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 18 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 19 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 20 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 21 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 22 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 23 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 24 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 25 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 26 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 27 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 28 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 29 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 30 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 31 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 32 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 33 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 34 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 35 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 36 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 37 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 38 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 39 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 40 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 41 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 42 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 43 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 44 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 45 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 46 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 47 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 48 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 49 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 50 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 51 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 52 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 53 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 54 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 55 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 56 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 57 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 58 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 59 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 60 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 61 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 62 back into the state
+  [-L208+R208]
+; the next byte
+R1
+; temp byte 63 back into the state
+  [-L208+R208]
+L271
+; ASSERT ptr=0
+
+
+; ==== twenty rounds  which is ten double rounds ====
+R204
+  ++++++++++
+[
+  -
+; two passes: the column round  then the diagonal round
+L3
+  ++
+[
+  -
+; four columns
+L1
+  ++++
+  [
+    -
+; bring this column into the quarter round frame
+L200
+; ASSERT ptr=0
+  [-R136+L136]
+; the next byte
+R1
+  [-R136+L136]
+; the next byte
+R1
+  [-R136+L136]
+; the next byte
+R1
+  [-R136+L136]
+; to word four
+R13
+  [-R124+L124]
+; the next byte
+R1
+  [-R124+L124]
+; the next byte
+R1
+  [-R124+L124]
+; the next byte
+R1
+  [-R124+L124]
+; to word eight
+R13
+  [-R112+L112]
+; the next byte
+R1
+  [-R112+L112]
+; the next byte
+R1
+  [-R112+L112]
+; the next byte
+R1
+  [-R112+L112]
+; to word twelve
+R13
+  [-R100+L100]
+; the next byte
+R1
+  [-R100+L100]
+; the next byte
+R1
+  [-R100+L100]
+; the next byte
+R1
+  [-R100+L100]
+; to the quarter round base
+R85
+; ASSERT ptr=136
+@@QR@@ 136
+; ASSERT ptr=136
+; put the column back
+  [-L136+R136]
+; the next byte
+R1
+  [-L136+R136]
+; the next byte
+R1
+  [-L136+R136]
+; the next byte
+R1
+  [-L136+R136]
+; the next byte
+R1
+  [-L124+R124]
+; the next byte
+R1
+  [-L124+R124]
+; the next byte
+R1
+  [-L124+R124]
+; the next byte
+R1
+  [-L124+R124]
+; the next byte
+R1
+  [-L112+R112]
+; the next byte
+R1
+  [-L112+R112]
+; the next byte
+R1
+  [-L112+R112]
+; the next byte
+R1
+  [-L112+R112]
+; the next byte
+R1
+  [-L100+R100]
+; the next byte
+R1
+  [-L100+R100]
+; the next byte
+R1
+  [-L100+R100]
+; the next byte
+R1
+  [-L100+R100]
+; back to the state start
+L151
+; ASSERT ptr=0
+; rotate every row left by one  bringing the next column into place
+@@ROWROT@@ 0
+; ASSERT ptr=0
+; back to the column counter
+R200
+  ]
+; stagger the rows so the next pass is the diagonal round
+L200
+@@STAGGER@@ 0
+R201
+]
+; two more staggers undo the round  four staggers being the identity
+R2
+  ++
+[
+  -
+L203
+@@STAGGER@@ 0
+R203
+]
+; back to the round counter
+R1
+]
+L204
+; ASSERT ptr=0
+
+; ==== the block is the state plus the state it started from ====
+; Sixteen words  one a turn; The adder is pasted ONCE  so it sits at a fixed
+; place and the data comes to it: the leading word of each array is moved into
+; the adder frame  added  emitted  and then both arrays slide down four cells so
+; the next word is leading; After sixteen turns both arrays have run out  which
+; is the same conveyor the column loop uses  and needs no indexed access;
+R205
+  ++++++++++++++++
+[
+  -
+; the state word goes to the adder accumulator
+L205
+; ASSERT ptr=0
+  [-R136+L136]
+; the next byte
+R1
+  [-R136+L136]
+; the next byte
+R1
+  [-R136+L136]
+; the next byte
+R1
+  [-R136+L136]
+; to the leading word of the original state
+R69
+; ASSERT ptr=72
+; the original word goes to the adder addend
+  [-R68+L68]
+; the next byte
+R1
+  [-R68+L68]
+; the next byte
+R1
+  [-R68+L68]
+; the next byte
+R1
+  [-R68+L68]
+; to the adder base
+R61
+; ASSERT ptr=136
+; ASSERT zero 144:149
+@@ADD32@@ 136
+; ASSERT ptr=136
+; the carry out of the top byte is discarded  the sum being modulo two to the
+; thirty second
+R8
+  [-]
+L8
+; ASSERT ptr=136
+; emit the finished word and empty the frame behind it
+  .[-]
+; the next byte
+R1
+  .[-]
+; the next byte
+R1
+  .[-]
+; the next byte
+R1
+  .[-]
+; back to the head of the state
+L139
+; ASSERT ptr=0
+; ASSERT zero 136:149
+; the fifteen words that are left slide down four cells
+R4
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; to the original state  which slides down too
+R13
+; ASSERT ptr=76
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; the next byte
+R1
+  [-L4+R4]
+; back to the word counter
+R70
+; ASSERT ptr=205
+]
+L205
+; ASSERT ptr=0
+; ASSERT zero 0:205

@@ -188,3 +188,13 @@ staggerRun : [64][8] -> [64][8]
 staggerRun inb = join [ join [ leBytes w | w <- (r <<< n) ]
                       | r <- split`{4} [ leWord w | w <- split`{16} inb ]
                       | n <- [0,1,2,3] : [4][8] ]
+
+// One double round applied to the state built from the block function's input,
+// so the brainfuck can be checked a round at a time rather than only at the end.
+oneDblRun : [48][8] -> [64][8]
+oneDblRun inb = join [ leBytes w | w <- doubleRound st0 ]
+  where
+    kws = [ leWord w | w <- split`{8} (take`{32} inb) ]
+    cw  = leWord (take`{4} (drop`{32} inb))
+    nws = [ leWord w | w <- split`{3} (drop`{36} inb) ]
+    st0 = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574] # kws # [cw] # nws

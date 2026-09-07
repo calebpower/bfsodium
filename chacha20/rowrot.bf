@@ -5,7 +5,7 @@
 ; four column quarter rounds land on the same four words  words 0 4 8 and 12;
 ; four rotations return each row to where it started;
 ;
-; INTERFACE entry=0 exit=0 footprint=0:67
+; INTERFACE entry=63 exit=0 footprint=0:67
 ;
 ; IO  in:  state{64}   sixteen words of four little endian bytes  row major
 ;     out: state{64}   each row rotated left by one word

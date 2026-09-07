@@ -9,6 +9,7 @@
 ; The three arithmetic routines are the already verified bodies of add32
 ; xor32 and rotl32  pasted in ONCE each rather than twelve times;
 ;
+; INTERFACE entry=15 exit=0 footprint=0:58
 ; IO  in:  a{4} LE  b{4} LE  c{4} LE  d{4} LE   (16 bytes)
 ;     out: the same four words after one quarter round   (16 bytes)
 ;
@@ -35,6 +36,13 @@
 
 ; read a b c d
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; Everything above the four operands must be clear on entry; A caller that
+; pastes this routine into a loop enters it many times  and the rotation table
+; below is built by adding to whatever is already in those cells  so a routine
+; that left them dirty would quietly rotate by the wrong count on every entry
+; after the first;
+; ASSERT ptr=15
+; ASSERT zero 16:58
 ; to the rotation table
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 ; the counts sixteen twelve eight seven
@@ -649,8 +657,27 @@
 ; ASSERT zero 16:23
 ]
 
+; Four rotations put the four counts back exactly where they started  so they
+; are still sitting in the table; Clear them; The step counter is already zero
+; and the workspace and the temps are emptied as they are used  so once the
+; table is gone every cell above the four operands is clear and the routine can
+; be entered again with the same effect as the first time;
+; ASSERT ptr=58
+<<<<
+  [-]
+; the next byte
+>
+  [-]
+; the next byte
+>
+  [-]
+; the next byte
+>
+  [-]
 ; to the start of the state
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<
+; ASSERT ptr=0
+; ASSERT zero 16:58
 ; emit a b c d
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

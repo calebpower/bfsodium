@@ -6,14 +6,23 @@
 ; quarter round is pasted once and never reached through an index;
 ; applying a stagger four times is the identity  which is how it is undone;
 ;
-; INTERFACE entry=0 exit=0 footprint=0:67
+; INTERFACE entry=63 exit=0 footprint=0:71
 ;
 ; IO  in:  state{64}   sixteen words of four little endian bytes  row major
 ;     out: state{64}   row r rotated left by r
 ;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x3f  state{16}  u32 LE  four rows of four words
-;   @0x40:0x43  temp{4}    u8      a word in transit
+;   @0x40:0x47  temp{8}    u8      words in transit; EIGHT cells and not four:
+;                                  row 2 exchanges the row's two halves  and
+;                                  stages all eight of their bytes at once;
+;                                  This file declared four for a while; Alone
+;                                  that is invisible because 68 to 71 are free
+;                                  zeros  but the block function had parked its
+;                                  saved copy of the original state at @0x44
+;                                  and one word of every block came out with
+;                                  the ASCII of expand added to it; tools/bffoot
+;                                  now checks this line against the code;
 ;
 ; Row 0 does not move; row 1 rotates left one  the same shape as rowrot;
 ; row 2 rotates left two  which is an exchange of the row's two halves;
