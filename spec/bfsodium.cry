@@ -198,3 +198,10 @@ oneDblRun inb = join [ leBytes w | w <- doubleRound st0 ]
     cw  = leWord (take`{4} (drop`{32} inb))
     nws = [ leWord w | w <- split`{3} (drop`{36} inb) ]
     st0 = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574] # kws # [cw] # nws
+
+// Shift left one, the mirror of halve136Run. The bit leaving the top byte is
+// dropped, which is what makes this a doubling modulo 2^136 rather than a
+// widening one; mulmod136 only ever doubles values already under 2^131, so the
+// bit that is dropped is always nought.
+dbl136Run : [17][8] -> [17][8]
+dbl136Run inb = leBytesN`{17} (leN inb << 1)

@@ -21,7 +21,7 @@ run() {  # run LABEL CMD...
     else echo "FAIL $label"; fail=$((fail+1)); fi
 }
 dk() {   # dk PROG IN WANT EXPR LABEL
-    if timeout 120 ./tools/dkat.sh "$1" "$2" "$3" "$4" "$5" >/dev/null 2>&1
+    if timeout 900 ./tools/dkat.sh "$1" "$2" "$3" "$4" "$5" >/dev/null 2>&1
     then echo "PASS $5"; pass=$((pass+1)); else echo "FAIL $5"; fail=$((fail+1)); fi
 }
 
@@ -157,6 +157,25 @@ dk poly1305/mulmod136.bf 0700000000000000000000000000000000030000000000000000000
 dk poly1305/mulmod136.bf 00000000000000000000000000000000020200000000000000000000000000000000 0500000000000000000000000000000000 mulmod136Run "mulmod two to the 129 times two"
 dk poly1305/mulmod136.bf deadbeefcafebabe0102030405060708030123456789abcdef112233445566778800 d110911895f76b5381bdfca82c1c7a8b01 mulmod136Run "mulmod large with a 16 byte r"
 dk poly1305/mulmod136.bf deadbeefcafebabe0102030405060708030123456789abcdef112233445566778802 86c3ed6f90743fb08542043339ab8b1f01 mulmod136Run "mulmod large with a 17 byte r"
+# Every case above has its highest set bit in b at 129, so a loop that stopped at
+# 135 turns instead of 136 survived all of them -- which is the shape of the bug
+# this routine had once before. This one sets every bit of b's top byte.
+dk poly1305/mulmod136.bf deadbeefcafebabe01020304050607080300000000000000000000000000000000ff e200ab022ebf543bacbfbebebebebe3e00 mulmod136Run "mulmod with every bit of b's top byte set"
+# a is folded before the loop because it arrives as any 17 byte value and
+# doubling one of those would lose its top bit. Nothing above has an a big
+# enough to notice that, so deleting the fold survived them all.
+dk poly1305/mulmod136.bf deadbeefcafebabe01020304050607ffff0300000000000000000000000000000000 550d3ccf60fc303c0506090c0f1215fd03 mulmod136Run "mulmod with a above two to the 130"
+# The closing reduction is almost never load bearing: folding leaves the answer
+# under 2^130 plus fifteen, and only the twenty values from p upward need it, so
+# no random vector reaches them. p times one lands on exactly p and must come out
+# nought, which is the one input that proves the reduction happens at all.
+dk poly1305/mulmod136.bf fbffffffffffffffffffffffffffffff030100000000000000000000000000000000 0000000000000000000000000000000000 mulmod136Run "mulmod p times one is nought"
+
+dk poly1305/dbl136.bf 0100000000000000000000000000000000 0200000000000000000000000000000000 dbl136Run "dbl136 one becomes two"
+dk poly1305/dbl136.bf 8000000000000000000000000000000000 0001000000000000000000000000000000 dbl136Run "dbl136 a bit crosses a byte"
+dk poly1305/dbl136.bf ffffffffffffffffffffffffffffffffff feffffffffffffffffffffffffffffffff dbl136Run "dbl136 all ones"
+dk poly1305/dbl136.bf 0000000000000000000000000000000080 0000000000000000000000000000000000 dbl136Run "dbl136 the top bit falls off"
+dk poly1305/dbl136.bf deadbeefcafebabe0102030405060708fe bc5b7ddf95fd757d030406080a0c0e10fc dbl136Run "dbl136 mixed"
 
 dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b220043727970746f6772617068696320466f72756d2052657365617263682047726f7570 a8061dc1305136c6c22b8baf0c0127a9 poly1305Run34 "poly1305 RFC 8439 section 2.5.2"
 

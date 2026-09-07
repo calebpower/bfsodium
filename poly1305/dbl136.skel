@@ -1,0 +1,763 @@
+; bfsodium DBL136 : 17 byte little endian shift left one
+;
+; HAND WRITTEN; the mirror of halve136  walked from the BOTTOM up  because the
+; bit that leaves a byte at the top is the bit that arrives at the bottom of the
+; byte above;
+;
+; This exists so that mulmod136 can double its running value without calling the
+; adder; add136 costs work proportional to the PRODUCT of the two byte values it
+; is adding  which on full bytes is about twelve million instructions  while this
+; is about a hundred and fifty thousand; Doubling is a shift  so it should cost
+; what a shift costs;
+;
+; INTERFACE entry=16 exit=0 footprint=0:24
+; IO  in:  x{17} LE                     (17 bytes)
+;     out: (x shifted left one){17} LE  (17 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  x{17}  u8   the value  and the result  LSB at @0x00
+;   @0x11       v      u8   the byte being reduced to its top bit
+;   @0x12       q      u8   HALVE frame: v shifted right one
+;   @0x13       bit    u8   HALVE frame: v low bit  discarded here
+;   @0x14       f      u8   HALVE frame scratch  restored to nought
+;   @0x15       out    u8   the byte doubled  which wraps modulo 256 by itself
+;   @0x16       cin    u8   the bit coming up from the byte below
+;   @0x17       d      u8   a second copy of the byte  consumed by the doubling
+;   @0x18       n      u8   seven turns of the halving
+;
+; The top bit is found by halving SEVEN times rather than by detecting the wrap
+; of the doubling; a wrap test needs the value copied out and compared on every
+; step  and seven halvings of a byte costs about two times the byte  which is
+; cheaper and reuses an idiom that is already proved;
+;
+; The doubled byte needs no wrap test at all: a cell wraps modulo 256 on its own
+; and that is exactly the low byte wanted;
+
+; read the value little endian
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=16
+; ASSERT zero 17:24
+; to the bottom of the value  which is where a shift left starts
+L16
+
+; ==== byte 0 ====
+; ASSERT ptr=0
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R17+R6+L23]
+; to the copy that will be doubled
+R23
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L21+R21]
+; byte nought receives no carry: nothing is below it  and the frame is clear
+; on entry  so this step could never have run
+L4
+; this byte top bit is what goes up to the byte above
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L16
+
+; ==== byte 1 ====
+; ASSERT ptr=1
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R16+R6+L22]
+; to the copy that will be doubled
+R22
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L20+R20]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L21+R21]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L15
+
+; ==== byte 2 ====
+; ASSERT ptr=2
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R15+R6+L21]
+; to the copy that will be doubled
+R21
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L19+R19]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L20+R20]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L14
+
+; ==== byte 3 ====
+; ASSERT ptr=3
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R14+R6+L20]
+; to the copy that will be doubled
+R20
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L18+R18]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L19+R19]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L13
+
+; ==== byte 4 ====
+; ASSERT ptr=4
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R13+R6+L19]
+; to the copy that will be doubled
+R19
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L17+R17]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L18+R18]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L12
+
+; ==== byte 5 ====
+; ASSERT ptr=5
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R12+R6+L18]
+; to the copy that will be doubled
+R18
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L16+R16]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L17+R17]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L11
+
+; ==== byte 6 ====
+; ASSERT ptr=6
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R11+R6+L17]
+; to the copy that will be doubled
+R17
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L15+R15]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L16+R16]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L10
+
+; ==== byte 7 ====
+; ASSERT ptr=7
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R10+R6+L16]
+; to the copy that will be doubled
+R16
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L14+R14]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L15+R15]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L9
+
+; ==== byte 8 ====
+; ASSERT ptr=8
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R9+R6+L15]
+; to the copy that will be doubled
+R15
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L13+R13]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L14+R14]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L8
+
+; ==== byte 9 ====
+; ASSERT ptr=9
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R8+R6+L14]
+; to the copy that will be doubled
+R14
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L12+R12]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L13+R13]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L7
+
+; ==== byte 10 ====
+; ASSERT ptr=10
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R7+R6+L13]
+; to the copy that will be doubled
+R13
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L11+R11]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L12+R12]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L6
+
+; ==== byte 11 ====
+; ASSERT ptr=11
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R6+R6+L12]
+; to the copy that will be doubled
+R12
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L10+R10]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L11+R11]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L5
+
+; ==== byte 12 ====
+; ASSERT ptr=12
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R5+R6+L11]
+; to the copy that will be doubled
+R11
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L9+R9]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L10+R10]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L4
+
+; ==== byte 13 ====
+; ASSERT ptr=13
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R4+R6+L10]
+; to the copy that will be doubled
+R10
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L8+R8]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L9+R9]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L3
+
+; ==== byte 14 ====
+; ASSERT ptr=14
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R3+R6+L9]
+; to the copy that will be doubled
+R9
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L7+R7]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L8+R8]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L2
+
+; ==== byte 15 ====
+; ASSERT ptr=15
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R2+R6+L8]
+; to the copy that will be doubled
+R8
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L6+R6]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L7+R7]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+; to the byte above
+L1
+
+; ==== byte 16 ====
+; ASSERT ptr=16
+; the byte is taken twice: once to be doubled and once to give up its top bit
+  [-R1+R6+L7]
+; to the copy that will be doubled
+R7
+; ASSERT ptr=23
+; doubling wraps modulo 256 by itself  and that wrap IS the low byte wanted
+  [-L2++R2]
+; seven turns of halving leave nothing but the top bit
+R1
+  +++++++
+[
+  -
+; to the value
+L7
+; ASSERT ptr=17
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the bit that falls off is not wanted here
+R2
+  [-]
+; the half becomes the value for the next turn
+L1
+  [-L1+R1]
+; back to the turn counter
+R6
+]
+; ASSERT ptr=24
+; the doubled byte goes back where it came from
+L3
+; ASSERT ptr=21
+  [-L5+R5]
+; and the bit that came up from the byte below is added to it
+R1
+  [-L6+R6]
+; this byte top bit is what goes up to the byte above
+L5
+; ASSERT ptr=17
+  [-R5+L5]
+
+; the bit shifted out of the top byte is discarded
+R5
+; ASSERT ptr=22
+  [-]
+; back to the head of the value
+L22
+; ASSERT ptr=0
+; ASSERT zero 17:24
+; emit the shifted value little endian
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

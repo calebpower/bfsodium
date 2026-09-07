@@ -95,6 +95,9 @@ trap 'rm -f "$raw"' EXIT HUP INT TERM
 while IFS= read -r line; do
     case "$line" in
         '@@ADD136@@'*)  import "$repo/poly1305/add136.bf" "${line##* }"; continue ;;
+        '@@DBL136@@'*)   import "$repo/poly1305/dbl136.bf" "${line##* }"; continue ;;
+        '@@HALVE136@@'*) import "$repo/poly1305/halve136.bf" "${line##* }"; continue ;;
+        '@@REDUCEP136@@'*) import "$repo/poly1305/reducep136.bf" "${line##* }"; continue ;;
         '@@FOLD136@@'*) import "$repo/poly1305/fold136.bf" "${line##* }"; continue ;;
         '@@ADD32@@'*)   import "$repo/chacha20/add32.bf"  "${line##* }"; continue ;;
         '@@XOR32@@'*)   import "$repo/chacha20/xor32.bf"  "${line##* }"; continue ;;
