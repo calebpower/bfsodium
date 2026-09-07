@@ -6,3 +6,6 @@
 *.o
 *.out
 /tools/bflint
+
+# reaper run artifacts collected back from the guest
+/out/
