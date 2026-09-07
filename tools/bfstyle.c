@@ -32,6 +32,13 @@
 
 #define MAXRUN 12
 
+/* A file longer than this is not something a person will read, whatever its
+ * form. The project exists to commit brainfuck a human can follow, so size is
+ * part of legibility, not separate from it. The hand-written primitives sit
+ * between 50 and 200 lines; the wide arithmetic reaches about 2000. Anything
+ * past that stopped being written and started being generated. */
+#define MAXLINES 2000
+
 static int is_cmd(int c) {
     return c=='>'||c=='<'||c=='+'||c=='-'||c=='.'||c==','||c=='['||c==']';
 }
@@ -94,6 +101,13 @@ static int scan(const char *path, struct fp *f, int quiet) {
     }
     fclose(fh);
 
+    if (lineno > MAXLINES) {
+        bad = 1;
+        if (!quiet)
+            printf("FAIL %s: %d lines exceeds the %d line budget; a file this long is\n"
+                   "     generated output, not brainfuck a person can read\n",
+                   path, lineno, MAXLINES);
+    }
     if (f->io_line < 0) { if (!quiet) printf("FAIL %s: no IO section\n", path); bad = 1; }
     if (f->map_line < 0) { if (!quiet) printf("FAIL %s: no TAPE MAP section\n", path); bad = 1; }
     if (f->io_line > 0 && f->map_line > 0 && f->io_line > f->map_line) {
@@ -142,6 +156,14 @@ static int selftest(void) {
     fclose(h);
     if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: missed a long unannotated run\n"); fails++; }
     else printf("selftest ok: caught a long unannotated run\n");
+
+    /* an over-budget file is caught */
+    h = fopen(tmp, "wb");
+    fputs("; title\n; IO  in: none\n; TAPE MAP\n", h);
+    for (int i = 0; i < MAXLINES + 10; i++) fputs("; filler\n", h);
+    fclose(h);
+    if (scan(tmp, &f, 1) == 0) { printf("SELFTEST FAIL: missed an over-budget file\n"); fails++; }
+    else printf("selftest ok: caught a file past the line budget\n");
 
     remove(tmp);
     if (fails) { printf("SELFTEST FAILED (%d)\n", fails); return 1; }

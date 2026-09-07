@@ -504,3 +504,51 @@ chacha_block_op() {
         _cbi=$(( _cbi + 1 ))
     done
 }
+
+# xor8_op: dst byte at $1 gets dst xor src, where $2 is the source byte and $3
+# is the fourteen cell XOR frame. The source is CONSUMED. X8K must be set to the
+# inner loop lifted from chacha20/xor32.bf.
+xor8_op() {
+    _xd=$1; _xs=$2; _xf=$3
+    note "$(printf 'XOR8 : @%03x gets @%03x' "$_xd" "$_xs")"
+    goto 0 "$_xd"; mvn "$_xd" "$_xf" 1
+    goto "$_xd" "$_xs"; mvn "$_xs" $(( _xf + 4 )) 1
+    goto "$_xs" $(( _xf + 11 ))
+    note "the bit weight starts at one"; code '+'
+    goto $(( _xf + 11 )) $(( _xf + 12 ))
+    note "eight bits"; code '++++++++'
+    printf '%s\n' "$X8K"
+    goto $(( _xf + 12 )) $(( _xf + 10 )); mvn $(( _xf + 10 )) "$_xd" 1
+    goto $(( _xf + 10 )) 0
+}
+
+# setbytes_op: write the compile time constant bytes $2.. into consecutive cells
+# starting at $1. Used for the AEAD length block, whose value is known when the
+# program is assembled.
+setbytes_op() {
+    _sb=$1; shift
+    _si=0
+    for _sv in "$@"; do
+        if [ "$_sv" -gt 0 ]; then
+            goto 0 $(( _sb + _si ))
+            note "$(printf '@%03x gets %d' $(( _sb + _si )) "$_sv")"; erun "+" "$_sv"
+            goto $(( _sb + _si )) 0
+        fi
+        _si=$(( _si + 1 ))
+    done
+}
+
+# shiftdown_op: move the $3 cells starting at $1 down by 16, which is how the
+# authenticator walks a message buffer without indexed addressing: the block it
+# is about to absorb is always at the same place.
+shiftdown_op() {
+    _sd=$1; _sn=$3
+    note "$(printf 'shift %d cells at @%03x down by 16  so the next block is in place' "$_sn" "$_sd")"
+    _sk=0
+    while [ $_sk -lt $_sn ]; do
+        goto 0 $(( _sd + 16 + _sk ))
+        code '[-'; erun "<" 16; code '+'; erun ">" 16; code ']'
+        goto $(( _sd + 16 + _sk )) 0
+        _sk=$(( _sk + 1 ))
+    done
+}
