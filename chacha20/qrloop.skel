@@ -1,0 +1,312 @@
+; bfsodium QRLOOP : the ChaCha20 quarter round as a LOOP  not twelve unrolled ops
+;
+; HAND WRITTEN; Every tape offset below is one I worked out and wrote as a
+; number; the tokens Rn and Ln mean n steps right and n steps left and are
+; expanded literally by tools/bfexpand; That is a NOTATION  not a compiler: it
+; makes no decision and computes no offset  it only saves me miscounting a run
+; of forty six arrows  which is exactly the error that broke the first draft;
+;
+; The three arithmetic routines are the already verified bodies of add32
+; xor32 and rotl32  pasted in ONCE each rather than twelve times;
+;
+; IO  in:  a{4} LE  b{4} LE  c{4} LE  d{4} LE   (16 bytes)
+;     out: the same four words after one quarter round   (16 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x03  a{4}   u8 LE
+;   @0x04:0x07  b{4}   u8 LE
+;   @0x08:0x0b  c{4}   u8 LE
+;   @0x0c:0x0f  d{4}   u8 LE
+;   @0x10:0x17  swap{8}     temps for exchanging the two halves of the state
+;   @0x18:0x31  W{26}       the workspace; the pasted routines address it as
+;                           their own cell zero  which is @0x18 here
+;   @0x32:0x35  T{4}        temps  so an operand can be read without being eaten
+;   @0x36:0x39  rot{4}      the counts 16 12 8 7  rotated left by one each step
+;                           so a step always reads @0x36
+;   @0x3a       cnt         four steps
+;
+; Cryptol PROVES (spec/perm_cry  looped_matches  Q;E;D; over every input) that
+; the quarter round is four IDENTICAL steps: a gets a plus b  then d gets
+; d xor a rotated left r  and the four words are then permuted (a b c d) to
+; (c d a b); That permutation is its own inverse  so after four steps the words
+; are back in place and no step ever needs a different pair of operands; Since
+; a b is the low half of the state and c d the high half  the permutation is
+; just an exchange of the two halves;
+
+; read a b c d
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; to the rotation table
+R39
+; the counts sixteen twelve eight seven
+  ++++++++++++++++
+; the next byte
+R1
+  ++++++++++++
+; the next byte
+R1
+  ++++++++
+; the next byte
+R1
+  +++++++
+; four steps
+; the next byte
+R1
+  ++++
+
+[
+  -
+
+; ================ a gets a plus b ================
+; to a
+L58
+; move a into the workspace
+  [-R24+L24]
+; the next byte
+R1
+  [-R24+L24]
+; the next byte
+R1
+  [-R24+L24]
+; the next byte
+R1
+  [-R24+L24]
+; to b
+; the next byte
+R1
+; copy b beside it  keeping b by passing each byte through a temp
+  [-R24+R22+L46]
+; the next byte
+R1
+  [-R24+R22+L46]
+; the next byte
+R1
+  [-R24+R22+L46]
+; the next byte
+R1
+  [-R24+R22+L46]
+; to the temps
+R43
+; put them back into b
+  [-L46+R46]
+; the next byte
+R1
+  [-L46+R46]
+; the next byte
+R1
+  [-L46+R46]
+; the next byte
+R1
+  [-L46+R46]
+; to the adder entry
+L21
+@@ADD32@@
+; drop the carry out of the top byte
+  [-]
+; to the workspace start
+L8
+; move the sum back into a
+  [-L24+R24]
+; the next byte
+R1
+  [-L24+R24]
+; the next byte
+R1
+  [-L24+R24]
+; the next byte
+R1
+  [-L24+R24]
+
+; ================ d gets d xor a ================
+; to d
+L15
+; move d into the workspace
+  [-R12+L12]
+; the next byte
+R1
+  [-R12+L12]
+; the next byte
+R1
+  [-R12+L12]
+; the next byte
+R1
+  [-R12+L12]
+; to a
+L15
+; copy a beside it  keeping a
+  [-R28+R22+L50]
+; the next byte
+R1
+  [-R28+R22+L50]
+; the next byte
+R1
+  [-R28+R22+L50]
+; the next byte
+R1
+  [-R28+R22+L50]
+; to the temps
+R47
+; put them back into a
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; to the exclusive or entry
+L21
+@@XOR32@@
+; move the result back into d
+  [-L20+R20]
+; the next byte
+R1
+  [-L20+R20]
+; the next byte
+R1
+  [-L20+R20]
+; the next byte
+R1
+  [-L20+R20]
+
+; ================ d rotates left by this step's count ================
+; to d
+L23
+; move d into the workspace
+  [-R12+L12]
+; the next byte
+R1
+  [-R12+L12]
+; the next byte
+R1
+  [-R12+L12]
+; the next byte
+R1
+  [-R12+L12]
+; to the rotation table
+R39
+; copy this step's count beside the word  keeping the table
+  [-L26+R22+R4]
+; put the temp back
+L4
+  [-R4+L4]
+; to the rotate entry
+L22
+@@ROTL32@@
+; to the workspace start
+L4
+; move the rotated word back into d
+  [-L12+R12]
+; the next byte
+R1
+  [-L12+R12]
+; the next byte
+R1
+  [-L12+R12]
+; the next byte
+R1
+  [-L12+R12]
+
+; ================ permute: exchange the low and high halves ================
+; to a
+L27
+; byte 0
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+; the next byte
+R1
+; byte 1
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+; the next byte
+R1
+; byte 2
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+; the next byte
+R1
+; byte 3
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+; the next byte
+R1
+; byte 4
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+; the next byte
+R1
+; byte 5
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+; the next byte
+R1
+; byte 6
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+; the next byte
+R1
+; byte 7
+  [-R16+L16]
+R8
+  [-L8+R8]
+R8
+  [-L8+R8]
+L16
+
+; ================ rotate the count table left by one ================
+; to the table
+R47
+; the used count goes to a temp
+  [-L4+R4]
+; the other three shuffle down
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; to the temp
+L7
+; and the used count becomes the last
+  [-R7+L7]
+; back to the step counter
+R8
+]
+
+; to the start of the state
+L58
+; emit a b c d
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
