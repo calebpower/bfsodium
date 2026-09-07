@@ -40,6 +40,7 @@ brainfuck, checked against two independent oracles.
 | [`poly1305/reducep136.bf`](poly1305/reducep136.bf) | canonical reduction below p |
 | [`poly1305/dbl136.bf`](poly1305/dbl136.bf) | 17-byte shift-left-one |
 | [`poly1305/mulmod136.bf`](poly1305/mulmod136.bf) | multiply mod 2^130-5 |
+| [`poly1305/clamp.bf`](poly1305/clamp.bf) | the r clamp (RFC 8439 §2.5) |
 | [`poly1305/absorb.bf`](poly1305/absorb.bf) | one block: acc = (acc + blk) · r mod p |
 | [`poly1305/poly1305.bf`](poly1305/poly1305.bf) | **the authenticator (RFC 8439 §2.5.2)** |
 | [`aead/keygen.bf`](aead/keygen.bf) | the Poly1305 one-time key (RFC 8439 §2.6) |

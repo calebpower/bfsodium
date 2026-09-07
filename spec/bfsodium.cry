@@ -308,3 +308,12 @@ property absorb_folds_to_the_rfc_tag inb = tag == poly1305Run34 inb
 //   out = otk(32)
 keygenRun : [44][8] -> [32][8]
 keygenRun inb = take`{32} (chachaBlock (take`{32} inb) 0 (drop`{32} inb))
+
+// CLAMP: r as RFC 8439 section 2.5 requires it. Bytes 3 7 11 and 15 keep only
+// their low four bits and bytes 4 8 and 12 lose their low two. Stated here as
+// the mask the RFC states, which is independent of the repeated halving the
+// brainfuck uses to achieve it -- brainfuck has no AND.
+//   in = r(16); out = r(17 LE), the seventeenth byte always nought
+clampRun : [16][8] -> [17][8]
+clampRun inb =
+    leBytesN`{17} ((zero # (leN inb && 0x0ffffffc0ffffffc0ffffffc0fffffff)) : [136])

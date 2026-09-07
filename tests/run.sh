@@ -211,6 +211,18 @@ dk poly1305/dbl136.bf deadbeefcafebabe0102030405060708fe bc5b7ddf95fd757d0304060
 # edges are the two that a block can actually reach: an accumulator that comes
 # out exactly p, which must reduce to nought, and one that wraps the seventeen
 # byte adder at 2^136.
+# CLAMP is where r is masked, and poly1305 and the AEAD both need it, so it is
+# a routine rather than two copies. The mask is pinned from BOTH sides: a value
+# of only the bits the clamp removes must come out nought, and a value of only
+# the bits it keeps must come out untouched. Either alone would pass a clamp
+# that masked too much or too little.
+dk poly1305/clamp.bf 85d6be7857556d337f4452fe42d506a8 85d6be0854556d037c44520e40d5060800 clampRun "clamp the RFC section 2.5.2 key half"
+dk poly1305/clamp.bf ffffffffffffffffffffffffffffffff ffffff0ffcffff0ffcffff0ffcffff0f00 clampRun "clamp every bit set"
+dk poly1305/clamp.bf 00000000000000000000000000000000 0000000000000000000000000000000000 clampRun "clamp nothing set"
+dk poly1305/clamp.bf 000000f0030000f0030000f0030000f0 0000000000000000000000000000000000 clampRun "clamp only the bits the clamp removes"
+dk poly1305/clamp.bf ffffff0ffcffff0ffcffff0ffcffff0f ffffff0ffcffff0ffcffff0ffcffff0f00 clampRun "clamp only the bits the clamp keeps"
+dk poly1305/clamp.bf 8ad5a08b905f81cc815040274ab29471 8ad5a00b905f810c8050400748b2940100 clampRun "clamp the A.4 one time key half"
+
 dk poly1305/absorb.bf 010000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000 0100000000000000000000000000000000 absorbRun "absorb one plus nothing times one"
 dk poly1305/absorb.bf 393000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000 absorbRun "absorb nothing at all"
 dk poly1305/absorb.bf 0100000000000000000000000000000000faffffffffffffffffffffffffffffff030100000000000000000000000000000000 0000000000000000000000000000000000 absorbRun "absorb a sum of exactly p reduces to nought"
@@ -245,6 +257,7 @@ run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d
 # contract checker can test. Pinning the wrong counter would still produce a
 # perfectly valid looking 32 bytes.
 run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"
+run "clamp honours its declared contracts" sh -c "printf ffffffffffffffffffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/clamp.bf >/dev/null"
 run "absorb honours its declared contracts" sh -c "printf 0123456789abcdef112233445566778802deadbeefcafebabe01020304050607ff01fedcba9876543210ffeeddccbbaa998801 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/absorb.bf >/dev/null"
 # Two full blocks, not one: poly1305's glue hands absorb its operands and takes
 # the accumulator back, and "absorb's frame is empty again" can only be false

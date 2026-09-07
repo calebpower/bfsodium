@@ -15,7 +15,9 @@
 ;   @0x000:0x027  the tag frame; add136 runs HERE at this file's own zero for
 ;                 the one addition this file still makes itself  the s at the
 ;                 end; its footprint 0:39 is what sets the size of it
-;   @0x12c:0x13c  r{17}    the clamped r  copied into absorb's slot each block
+;   @0x12c:0x13c  r{17}    the clamped r  copied into absorb's slot each block;
+;                          poly1305/clamp does the clamping  borrowing the
+;                          absorb frame below  which is idle until the first block
 ;   @0x140:0x150  s{17}    added in once at the very end
 ;   @0x154:0x164  acc{17}  the accumulator
 ;   @0x168:0x178  blk{17}  this block  with the ONE already appended
@@ -27,7 +29,6 @@
 ;   @0x182        u        puts that copy back
 ;   @0x184        k        sixteen rounds  one per byte position
 ;   @0x186:0x196  tmp{17}  hands r back after it has been copied
-;   @0x19a:0x19d  the clamping halve frame
 ;   @0x19e:0x2cd  the absorb frame; poly1305/absorb runs HERE  and its
 ;                 footprint 0:303 is what sets the size of it; while a call is
 ;                 in progress the accumulator sits at @0x1af and the block it
@@ -157,248 +158,119 @@ R1
 ; the next byte
 R1
   [-R348+L348]
-; to the first byte the clamp touches
-R270
-; ASSERT ptr=303
-; the byte steps into the halving frame
-  [-R107+L107]
-R107
-; ASSERT ptr=410
-; halving  and the bit that falls off is worth 1 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L109+R109]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 2 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L109++R109]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 4 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L109++++R109]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 8 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L109++++++++R109]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; ASSERT ptr=410
-; what is left above bit three is what the clamp throws away
-  [-]
-L106
-; ASSERT ptr=304
-; the byte steps into the halving frame
-  [-R106+L106]
-R106
-; ASSERT ptr=410
-; halving  and the bit that falls off is one the clamp throws away
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is one the clamp throws away
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; ASSERT ptr=410
-; four times what is left is the byte with its two low bits cleared
-  [-L106++++R106]
-L103
-; ASSERT ptr=307
-; the byte steps into the halving frame
-  [-R103+L103]
-R103
-; ASSERT ptr=410
-; halving  and the bit that falls off is worth 1 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L105+R105]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 2 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L105++R105]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 4 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L105++++R105]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 8 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L105++++++++R105]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; ASSERT ptr=410
-; what is left above bit three is what the clamp throws away
-  [-]
-L102
-; ASSERT ptr=308
-; the byte steps into the halving frame
-  [-R102+L102]
-R102
-; ASSERT ptr=410
-; halving  and the bit that falls off is one the clamp throws away
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is one the clamp throws away
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; ASSERT ptr=410
-; four times what is left is the byte with its two low bits cleared
-  [-L102++++R102]
-L99
-; ASSERT ptr=311
-; the byte steps into the halving frame
-  [-R99+L99]
+; ==== r is clamped ====
+; The clamp is poly1305/clamp  pasted; it wants its sixteen bytes at its own
+; base  so they travel to absorb's frame and the clamped seventeen come back;
+; that frame is idle until the first block is taken  and clamp leaves it as it
+; found it  which the contract at the top of the block loop then re_checks;
+; to the head of r
+R267
+; ASSERT ptr=300
+; the frame the clamp will borrow is clear
+; ASSERT zero 414:435
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; the next byte
+R1
+  [-R114+L114]
+; to the clamp's base  which is where a paste site always stands
 R99
-; ASSERT ptr=410
-; halving  and the bit that falls off is worth 1 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L101+R101]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 2 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L101++R101]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 4 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L101++++R101]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 8 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L101++++++++R101]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; ASSERT ptr=410
-; what is left above bit three is what the clamp throws away
-  [-]
-L98
-; ASSERT ptr=312
-; the byte steps into the halving frame
-  [-R98+L98]
-R98
-; ASSERT ptr=410
-; halving  and the bit that falls off is one the clamp throws away
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is one the clamp throws away
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; ASSERT ptr=410
-; four times what is left is the byte with its two low bits cleared
-  [-L98++++R98]
-L95
-; ASSERT ptr=315
-; the byte steps into the halving frame
-  [-R95+L95]
-R95
-; ASSERT ptr=410
-; halving  and the bit that falls off is worth 1 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L97+R97]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 2 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L97++R97]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 4 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L97++++R97]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; halving  and the bit that falls off is worth 8 here
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-R2
-  [-L97++++++++R97]
-; the half goes back to be halved again
-L1
-  [-L1+R1]
-L1
-; ASSERT ptr=410
-; what is left above bit three is what the clamp throws away
-  [-]
+; ASSERT ptr=414
+@@CLAMP@@ 414
+; ASSERT ptr=414
+; the clamped r comes home  seventeen bytes now  the top one nought
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
+; the next byte
+R1
+  [-L114+R114]
 ; to the byte count
-L30
+L50
 ; ASSERT ptr=380
 ; the flag goes down first
 R2
