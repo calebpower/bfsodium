@@ -118,6 +118,17 @@ dk poly1305/mulmod136.bf deadbeefcafebabe0102030405060708030123456789abcdef11223
 dk poly1305/poly1305.bf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b220043727970746f6772617068696320466f72756d2052657365617263682047726f7570 a8061dc1305136c6c22b8baf0c0127a9 poly1305Run34 "poly1305 RFC 8439 section 2.5.2"
 
 echo
+echo "== tier 5: declared contracts enforced =="
+tmpc=$(mktemp -d)
+printf "; IO none\n; TAPE MAP @0x00\n; three right\n  >>>\n; ASSERT ptr=5\n  +\n" > "$tmpc/bad.bf"
+printf "; IO none\n; TAPE MAP @0x00\n; dirty a cell\n  >>>+<<<\n; ASSERT zero 0:5\n  +\n" > "$tmpc/dirty.bf"
+run "contract checker catches a wrong pointer" sh -c "BFI_CONTRACTS=1 ./tools/bfi $tmpc/bad.bf </dev/null 2>/dev/null; test \$? -eq 4"
+run "contract checker catches dirty scratch" sh -c "BFI_CONTRACTS=1 ./tools/bfi $tmpc/dirty.bf </dev/null 2>/dev/null; test \$? -eq 4"
+run "contracts are inert without the flag" sh -c "./tools/bfi $tmpc/bad.bf </dev/null >/dev/null 2>&1"
+rm -rf "$tmpc"
+run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d9b67452301 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/qrloop.bf >/dev/null"
+
+echo
 echo "== design proofs (Cryptol) =="
 if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
 :l perm.cry

@@ -60,6 +60,7 @@
 ; to a
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<
+; ASSERT ptr=0
 ; move a into the workspace
   [->>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<]
 ; the next byte
@@ -113,6 +114,8 @@
   >>>>>>]
 ; to the adder entry
 <<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=32
+; ASSERT zero 32:37
 
 ; ==== byte 0 : a @0x00  b @0x04 ====
 ; move a0 into x
@@ -257,6 +260,8 @@
   >>>>>>>>>>]
 ; to the exclusive or entry
 <<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=32
+; ASSERT zero 32:49
 
 ; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
 ; move x0 into a
@@ -438,6 +443,8 @@
   [->>>>+<<<<]
 ; to the rotate entry
 <<<<<<<<<<<<<<<<<<<<<<
+; ASSERT ptr=28
+; ASSERT zero 29:37
 
 ; ==== rotate one bit  n times ====
 [
@@ -623,6 +630,8 @@
   [->>>>>>>+<<<<<<<]
 ; back to the step counter
 >>>>>>>>
+; ASSERT ptr=58
+; ASSERT zero 16:23
 ]
 
 ; to the start of the state

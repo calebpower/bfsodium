@@ -36,25 +36,68 @@ int main(int argc, char **argv) {
     FILE *f = fopen(argv[1], "rb");
     if (!f) { perror("bfi: open program"); return 2; }
 
+    /* Contract assertions. A bfsodium routine states where the pointer must be
+     * and which cells must be clear at a given point; those statements live in
+     * comments, so a plain interpreter ignores them, and BFI_CONTRACTS makes
+     * this one check them EVERY time execution reaches that point, which is
+     * what turns an interface from a comment that might lie into a fact. */
+    struct Assertion { int kind; size_t a, b; size_t line; };
+    struct Assertion *asr = NULL; size_t nasr = 0, casr = 0;
+    size_t *astart = NULL, *acount = NULL;
+    size_t pend_first = 0, pend_n = 0;
+    int contracts = (getenv("BFI_CONTRACTS") != NULL);
+
     /* Load the program, keeping only command bytes (everything else is comment). */
     size_t cap = 1u << 16, n = 0;
     char *prog = malloc(cap);
     size_t *srcline = malloc(cap * sizeof *srcline);   /* for diagnostics */
-    if (!prog || !srcline) die("out of memory");
+    astart = malloc(cap * sizeof *astart);
+    acount = malloc(cap * sizeof *acount);
+    if (!prog || !srcline || !astart || !acount) die("out of memory");
     int ch, in_comment = 0;
     size_t line = 1;
+    char cbuf[512]; size_t clen = 0;
     while ((ch = fgetc(f)) != EOF) {
-        if (ch == '\n') { line++; in_comment = 0; continue; }
-        if (in_comment) continue;
-        if (ch == ';') { in_comment = 1; continue; }
+        if (ch == '\n') {
+            if (in_comment) {
+                cbuf[clen] = 0;
+                /* "; ASSERT ptr=N" and "; ASSERT zero A:B" attach to the NEXT
+                 * instruction, so they are checked wherever execution reaches
+                 * it, including on every pass through a loop. */
+                char *s = cbuf; while (*s == ' ') s++;
+                if (strncmp(s, "ASSERT ", 7) == 0) {
+                    s += 7; while (*s == ' ') s++;
+                    struct Assertion na; na.line = line; na.a = na.b = 0; na.kind = -1;
+                    if (strncmp(s, "ptr=", 4) == 0) { na.kind = 0; na.a = (size_t)strtoul(s + 4, NULL, 10); }
+                    else if (strncmp(s, "zero ", 5) == 0) {
+                        char *colon = strchr(s + 5, ':');
+                        if (colon) { na.kind = 1; na.a = (size_t)strtoul(s + 5, NULL, 10);
+                                     na.b = (size_t)strtoul(colon + 1, NULL, 10); }
+                    }
+                    if (na.kind >= 0) {
+                        if (nasr == casr) { casr = casr ? casr * 2 : 64;
+                                            asr = realloc(asr, casr * sizeof *asr);
+                                            if (!asr) die("out of memory"); }
+                        if (pend_n == 0) pend_first = nasr;
+                        asr[nasr++] = na; pend_n++;
+                    }
+                }
+            }
+            clen = 0; line++; in_comment = 0; continue;
+        }
+        if (in_comment) { if (clen + 1 < sizeof cbuf) cbuf[clen++] = (char)ch; continue; }
+        if (ch == ';') { in_comment = 1; clen = 0; continue; }
         if (ch=='>'||ch=='<'||ch=='+'||ch=='-'||ch=='.'||ch==','||ch=='['||ch==']') {
             if (n == cap) {
                 cap <<= 1;
                 prog = realloc(prog, cap);
                 srcline = realloc(srcline, cap * sizeof *srcline);
-                if (!prog || !srcline) die("out of memory");
+                astart = realloc(astart, cap * sizeof *astart);
+                acount = realloc(acount, cap * sizeof *acount);
+                if (!prog || !srcline || !astart || !acount) die("out of memory");
             }
             srcline[n] = line;
+            astart[n] = pend_first; acount[n] = pend_n; pend_first = 0; pend_n = 0;
             prog[n++] = (char)ch;
         }
     }
@@ -85,6 +128,24 @@ int main(int argc, char **argv) {
 
     for (size_t ip = 0; ip < n; ip++) {
         steps++;
+        if (contracts && acount[ip]) {
+            for (size_t k = 0; k < acount[ip]; k++) {
+                struct Assertion *A = &asr[astart[ip] + k];
+                if (A->kind == 0 && p != A->a) {
+                    fprintf(stderr, "bfi: %s:%zu: CONTRACT pointer is at %zu  expected %zu\n",
+                            argv[1], A->line, p, A->a);
+                    return 4;
+                }
+                if (A->kind == 1) {
+                    for (size_t q = A->a; q <= A->b && q < tcap; q++)
+                        if (tape[q]) {
+                            fprintf(stderr, "bfi: %s:%zu: CONTRACT cell %zu should be clear  holds %u\n",
+                                    argv[1], A->line, q, (unsigned)tape[q]);
+                            return 4;
+                        }
+                }
+            }
+        }
         switch (prog[ip]) {
             case '>':
                 if (++p == tcap) {

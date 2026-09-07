@@ -59,6 +59,7 @@ R1
 ; ================ a gets a plus b ================
 ; to a
 L58
+; ASSERT ptr=0
 ; move a into the workspace
   [-R24+L24]
 ; the next byte
@@ -99,6 +100,8 @@ R1
   [-L46+R46]
 ; to the adder entry
 L21
+; ASSERT ptr=32
+; ASSERT zero 32:37
 @@ADD32@@
 ; drop the carry out of the top byte
   [-]
@@ -158,6 +161,8 @@ R1
   [-L50+R50]
 ; to the exclusive or entry
 L21
+; ASSERT ptr=32
+; ASSERT zero 32:49
 @@XOR32@@
 ; move the result back into d
   [-L20+R20]
@@ -194,6 +199,8 @@ L4
   [-R4+L4]
 ; to the rotate entry
 L22
+; ASSERT ptr=28
+; ASSERT zero 29:37
 @@ROTL32@@
 ; to the workspace start
 L4
@@ -304,6 +311,8 @@ L7
   [-R7+L7]
 ; back to the step counter
 R8
+; ASSERT ptr=58
+; ASSERT zero 16:23
 ]
 
 ; to the start of the state
