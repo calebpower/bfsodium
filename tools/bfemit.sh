@@ -28,11 +28,14 @@ erun() {
         '-') printf '; subtract %d\n' "$2" ;;
         *)   printf '; %d steps\n' "$2" ;;
     esac
-    _n=$2
-    while [ "$_n" -gt 0 ]; do
-        _c=$_n; [ "$_c" -gt "$CHUNK" ] && _c=$CHUNK
-        printf '  '; _i=0; while [ $_i -lt $_c ]; do printf '%s' "$1"; _i=$((_i+1)); done
-        printf '\n'; _n=$(( _n - _c ))
+    # sh has no local variables, so every helper here prefixes its own working
+    # names. A collision is not a syntax error, it silently truncates a caller's
+    # loop: erun once used _i and cut the 17 byte adder down to 6 bytes.
+    _en=$2
+    while [ "$_en" -gt 0 ]; do
+        _ec=$_en; [ "$_ec" -gt "$CHUNK" ] && _ec=$CHUNK
+        printf '  '; _ei=0; while [ $_ei -lt $_ec ]; do printf '%s' "$1"; _ei=$((_ei+1)); done
+        printf '\n'; _en=$(( _en - _ec ))
     done
 }
 # note: a standalone annotation line
@@ -103,6 +106,42 @@ rot_op() {
     note "the rotation count"; erun "+" "$2"
     printf '%s\n' "$ROTL"; goto $(( W + 4 )) "$W"; mv4 "$W" "$1"; goto $(( W + 3 )) 0
 }
+# ADD8K is the proven byte adder from chacha20/add32.bf, lifted verbatim rather
+# than retyped so a widened adder cannot drift from the one the KATs cover.
+# Entered at y, with x at y-1, the carry out at y+1 and scratch at y+2 and y+3.
+ADD8K='[-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]'
+
+# addn_op: dst{$3} := dst plus src modulo 2^(8*$3), little endian, where $4 is a
+# six cell frame: cin, x, y, carry out, and two scratch. The final carry is
+# dropped, exactly as add32 drops it. Entered and left at cell 0.
+#
+# Poly1305 needs a 17 byte accumulator, so the adder has to widen; the shape is
+# add32's, byte block by byte block, with the carry threaded between them.
+addn_op() {
+    _ad=$1; _as=$2; _an=$3; _f=$4
+    _cin=$_f; _x=$(( _f + 1 )); _y=$(( _f + 2 )); _cy=$(( _f + 3 ))
+    note "$(printf 'ADD%d : @%03x gets @%03x  little endian' $(( _an * 8 )) "$_ad" "$_as")"
+    _ai=0
+    while [ $_ai -lt $_an ]; do
+        note "$(printf 'byte %d' "$_ai")"
+        goto 0 $(( _ad + _ai )); mvn $(( _ad + _ai )) "$_x" 1
+        goto $(( _ad + _ai )) $(( _as + _ai )); mvn $(( _as + _ai )) "$_y" 1
+        goto $(( _as + _ai )) "$_y"
+        note "add the addend byte into the accumulator byte"
+        code "$ADD8K"
+        goto "$_y" "$_cin"; mvn "$_cin" "$_y" 1
+        goto "$_cin" "$_y"
+        note "add the carry coming in from the byte below"
+        code "$ADD8K"
+        goto "$_y" "$_x"; mvn "$_x" $(( _ad + _ai )) 1
+        goto "$_x" "$_cy"; mvn "$_cy" "$_cin" 1
+        goto "$_cy" 0
+        _ai=$(( _ai + 1 ))
+    done
+    note "drop the carry out of the top byte"
+    goto 0 "$_cin"; code '[-]'; goto "$_cin" 0
+}
+
 qr() {    # quarter round on word indices $1 $2 $3 $4
     _qa=$(( $1 * 4 )); _qb=$(( $2 * 4 )); _qc=$(( $3 * 4 )); _qd=$(( $4 * 4 ))
     printf '\n'; note "======== QUARTERROUND on words $1 $2 $3 $4 ========"

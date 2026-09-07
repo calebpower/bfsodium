@@ -10,6 +10,20 @@
 
 module bfsodium where
 
+// Little-endian conversion for a number of any byte width. Poly1305 works on
+// 130-bit values, which are 17 bytes on the wire, so the 32-bit helpers below
+// are not enough on their own.
+leN : {n} (fin n) => [n][8] -> [n * 8]
+leN bs = join (reverse bs)
+
+leBytesN : {n} (fin n) => [n * 8] -> [n][8]
+leBytesN w = reverse (split w)
+
+// ADDN: in = a(n LE) # b(n LE); out = (a + b mod 2^(8n))(n LE).
+// Exercised at 17 bytes, the width the Poly1305 accumulator needs.
+add136Run : [34][8] -> [17][8]
+add136Run inb = leBytesN`{17} (leN (take`{17} inb) + leN (drop`{17} inb))
+
 // A 32-bit word is four little-endian bytes on the wire (LSB first).
 leWord : [4][8] -> [32]
 leWord bs = join (reverse bs)
