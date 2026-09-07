@@ -44,6 +44,15 @@
  *   bffoot --selftest   feed it the four defects it exists to catch, and one
  *                       clean routine, and confirm it calls each correctly
  */
+/* mkstemp and fdopen are POSIX, not ISO C. tests/run.sh compiles with
+ * -std=c99, which on glibc defines __STRICT_ANSI__ and so hides both; the
+ * compiler then assumed int returns, and from GCC 14 an implicit declaration
+ * is an error rather than a warning, so the suite would not build at all on a
+ * current Linux guest. FreeBSD headers expose them regardless, which is why
+ * this only ever failed off the development host. Ask for POSIX explicitly.
+ */
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

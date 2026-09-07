@@ -29,6 +29,8 @@ exclude = [
   "/tools/bfi",
   "/tools/hx",
   "/tools/bflint",
+  "/tools/bfstyle",
+  "/tools/bffoot",
   "/.git/",
 ]
 
