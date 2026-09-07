@@ -1,6 +1,6 @@
 #!/bin/sh
 # blockasm.sh — assemble chacha20/block.bf, the ChaCha20 block function
-# (RFC 8439 section 2.3), from the verified primitive bodies.
+# (RFC 8439 block function), from the verified primitive bodies.
 #
 # Same principle as qrasm.sh: brainfuck is position independent, so the bodies
 # of add32.bf, xor32.bf and rotl32.bf -- each already checked against RFC
@@ -36,82 +36,15 @@ CHUNK=40       # command bytes per emitted line
 body() { awk '/^,>,/{f=1;next} /^; emit/{f=0} f' "$repo/chacha20/$1.bf"; }
 ADD=$(body add32); XOR=$(body xor32); ROTL=$(body rotl32)
 
-# erun: emit a run of $2 copies of $1, one chunked line at a time.
-erun() {
-    _n=$2
-    while [ "$_n" -gt 0 ]; do
-        _c=$_n; [ "$_c" -gt "$CHUNK" ] && _c=$CHUNK
-        printf '  '
-        _i=0; while [ $_i -lt $_c ]; do printf '%s' "$1"; _i=$((_i+1)); done
-        printf '\n'
-        _n=$(( _n - _c ))
-    done
-}
-goto() {
-    [ "$1" -eq "$2" ] && return 0
-    printf '; pointer to @%02x\n' "$2"
-    if [ "$2" -gt "$1" ]; then erun ">" $(( $2 - $1 )); else erun "<" $(( $1 - $2 )); fi
-}
-mv4() {   # move 4 bytes $1 -> $2, source consumed
-    if [ "$2" -gt "$1" ]; then _d=$(( $2 - $1 )); _f=">"; _b="<"; else _d=$(( $1 - $2 )); _f="<"; _b=">"; fi
-    _j=0; while [ $_j -lt 4 ]; do
-        printf '; byte %d of @%02x to @%02x\n' "$_j" $(( $1 + _j )) $(( $2 + _j ))
-        printf '  [-\n'; erun "$_f" "$_d"; printf '  +\n'; erun "$_b" "$_d"
-        printf '  ]'; [ $_j -lt 3 ] && printf '>'; printf '\n'
-        _j=$((_j+1))
-    done
-}
-cp4() {   # copy 4 bytes $1 -> $2, source preserved, staged through TB
-    _d=$(( $2 - $1 )); _t=$(( TB - $1 )); _g=$(( TB - $2 ))
-    _j=0; while [ $_j -lt 4 ]; do
-        printf '; byte %d of @%02x to @%02x and to a temp\n' "$_j" $(( $1 + _j )) $(( $2 + _j ))
-        printf '  [-\n'; erun ">" "$_d"; printf '  +\n'; erun ">" "$_g"; printf '  +\n'; erun "<" "$_t"
-        printf '  ]'; [ $_j -lt 3 ] && printf '>'; printf '\n'
-        _j=$((_j+1))
-    done
-    printf '; walk to the temps\n'; erun ">" $(( TB - $1 - 3 ))
-    _j=0; while [ $_j -lt 4 ]; do
-        printf '; temp byte %d back into @%02x\n' "$_j" $(( $1 + _j ))
-        printf '  [-\n'; erun "<" "$_t"; printf '  +\n'; erun ">" "$_t"
-        printf '  ]'; [ $_j -lt 3 ] && printf '>'; printf '\n'
-        _j=$((_j+1))
-    done
-}
+. "$here/bfemit.sh"
 
-# Ops: entered with the pointer at cell 0, left at cell 0, so they compose by
-# concatenation (CONVENTIONS section 4).
-add_op() {
-    echo "; ---- ADD32 : @$(printf '0x%02x' $1) gets @$(printf '0x%02x' $2) ----"
-    goto 0 "$1"; mv4 "$1" "$W"; goto $(( $1 + 3 )) "$2"; cp4 "$2" $(( W + 4 )); goto $(( TB + 3 )) $(( W + 8 ))
-    printf '%s\n' "$ADD"; echo "[-]   ; drop the final carry"
-    goto $(( W + 8 )) "$W"; mv4 "$W" "$1"; goto $(( W + 3 )) 0
-}
-xor_op() {
-    echo "; ---- XOR32 : @$(printf '0x%02x' $1) gets @$(printf '0x%02x' $2) ----"
-    goto 0 "$1"; mv4 "$1" "$W"; goto $(( $1 + 3 )) "$2"; cp4 "$2" $(( W + 4 )); goto $(( TB + 3 )) $(( W + 8 ))
-    printf '%s\n' "$XOR"; mv4 $(( W + 8 )) "$1"; goto $(( W + 11 )) 0
-}
-rot_op() {
-    echo "; ---- ROTL32 : @$(printf '0x%02x' $1) rotates left $2 ----"
-    goto 0 "$1"; mv4 "$1" "$W"; goto $(( $1 + 3 )) $(( W + 4 ))
-    printf '; rotation count %d\n' "$2"; erun "+" "$2"
-    printf '%s\n' "$ROTL"; goto $(( W + 4 )) "$W"; mv4 "$W" "$1"; goto $(( W + 3 )) 0
-}
-qr() {    # quarter round on word indices $1 $2 $3 $4
-    _qa=$(( $1 * 4 )); _qb=$(( $2 * 4 )); _qc=$(( $3 * 4 )); _qd=$(( $4 * 4 ))
-    echo; echo "; ======== QUARTERROUND on words $1 $2 $3 $4 ========"
-    add_op $_qa $_qb; xor_op $_qd $_qa; rot_op $_qd 16
-    add_op $_qc $_qd; xor_op $_qb $_qc; rot_op $_qb 12
-    add_op $_qa $_qb; xor_op $_qd $_qa; rot_op $_qd 8
-    add_op $_qc $_qd; xor_op $_qb $_qc; rot_op $_qb 7
-}
 
 {
 cat <<'HDR'
-; bfsodium ChaCha20 BLOCK FUNCTION (RFC 8439 section 2.3)
+; bfsodium ChaCha20 BLOCK FUNCTION (RFC 8439 block function)
 ;
-; ASSEMBLED FILE: emitted by tools/blockasm.sh from the verified bodies of
-; add32.bf  xor32.bf and rotl32.bf; brainfuck is position independent  so those
+; ASSEMBLED FILE: emitted by tools/blockasm from the verified bodies of
+; add32  xor32 and rotl32; brainfuck is position independent  so those
 ; bodies are reused here verbatim rather than retyped at new offsets;
 ;
 ; IO  in:  key{32}  counter{4} LE  nonce{12}        (48 bytes)
@@ -165,17 +98,17 @@ k=0; while [ $k -lt 64 ]; do
     k=$(( k + 1 ))
 done
 goto $(( ST + 63 )) $CTR
-printf '  ++++++++++   ; ten double rounds\n'
+note "ten double rounds"; code "++++++++++"
 
 echo; echo "; ==== ten double rounds ===="
-echo "[-   ; one double round"
+note "one double round"; code "[-"
 goto $CTR 0
-echo; echo "; ---------------- the column round ----------------"
+echo; echo "; ==== the column round ===="
 qr 0 4 8 12 ; qr 1 5 9 13 ; qr 2 6 10 14 ; qr 3 7 11 15
-echo; echo "; ---------------- the diagonal round ----------------"
+echo; echo "; ==== the diagonal round ===="
 qr 0 5 10 15 ; qr 1 6 11 12 ; qr 2 7 8 13 ; qr 3 4 9 14
 goto 0 $CTR
-echo "]"
+code "]"
 
 echo; echo "; ==== add the original state back  word by word ===="
 goto $CTR 0

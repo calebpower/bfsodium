@@ -15,14 +15,15 @@ replayable.
 
 Start with **[CONVENTIONS.md](CONVENTIONS.md)** — the rulebook every `.bf` file
 obeys: the frozen machine model, tape maps, pointer discipline, the idiom
-vocabulary, and the testing protocol. **[IDIOMS.md](IDIOMS.md)** is the
+vocabulary, and the testing protocol (nine tiers, including a style-consistency
+check and a legibility check). **[IDIOMS.md](IDIOMS.md)** is the
 vocabulary itself: the handful of patterns everything is built from, each with
 its tape contract.
 
 ## Status
 
-The ChaCha20 **block function** works and matches RFC 8439 §2.3.2 — a real
-post-quantum-era stream cipher core, in brainfuck, checked against two
+**ChaCha20 works, end to end.** The stream cipher matches RFC 8439 §2.4.2 — a
+real, standards-conformant cipher, in brainfuck, checked against two
 independent oracles.
 
 | | |
@@ -32,9 +33,10 @@ independent oracles.
 | [`chacha20/xor32.bf`](chacha20/xor32.bf) | bitwise exclusive or |
 | [`chacha20/quarterround.bf`](chacha20/quarterround.bf) | the quarter round (RFC 8439 §2.2.1) |
 | [`chacha20/block.bf`](chacha20/block.bf) | the block function (RFC 8439 §2.3.2) |
+| [`chacha20/stream.bf`](chacha20/stream.bf) | the stream cipher (RFC 8439 §2.4.2) |
 
-Next: the ChaCha20 stream cipher (counter mode over the block function). Then
-Poly1305, ChaCha20-Poly1305, SHA-256, HKDF-SHA-256. Keccak and
+Next: Poly1305, then the ChaCha20-Poly1305 AEAD, then SHA-256 and
+HKDF-SHA-256. Keccak and
 the ML-KEM / ML-DSA lattice math are the later mountain.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and

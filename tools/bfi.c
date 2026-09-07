@@ -39,13 +39,22 @@ int main(int argc, char **argv) {
     /* Load the program, keeping only command bytes (everything else is comment). */
     size_t cap = 1u << 16, n = 0;
     char *prog = malloc(cap);
-    if (!prog) die("out of memory");
+    size_t *srcline = malloc(cap * sizeof *srcline);   /* for diagnostics */
+    if (!prog || !srcline) die("out of memory");
     int ch, in_comment = 0;
+    size_t line = 1;
     while ((ch = fgetc(f)) != EOF) {
-        if (in_comment) { if (ch == '\n') in_comment = 0; continue; }
+        if (ch == '\n') { line++; in_comment = 0; continue; }
+        if (in_comment) continue;
         if (ch == ';') { in_comment = 1; continue; }
         if (ch=='>'||ch=='<'||ch=='+'||ch=='-'||ch=='.'||ch==','||ch=='['||ch==']') {
-            if (n == cap) { cap <<= 1; prog = realloc(prog, cap); if (!prog) die("out of memory"); }
+            if (n == cap) {
+                cap <<= 1;
+                prog = realloc(prog, cap);
+                srcline = realloc(srcline, cap * sizeof *srcline);
+                if (!prog || !srcline) die("out of memory");
+            }
+            srcline[n] = line;
             prog[n++] = (char)ch;
         }
     }
@@ -84,7 +93,7 @@ int main(int argc, char **argv) {
                 }
                 break;
             case '<':
-                if (p == 0) { fprintf(stderr, "bfi: pointer moved left of cell 0\n"); return 3; }
+                if (p == 0) { fprintf(stderr, "bfi: %s:%zu: pointer moved left of cell 0\n", argv[1], srcline[ip]); return 3; }
                 --p;
                 break;
             case '+': tape[p]++; break;            /* wraps mod 256 */

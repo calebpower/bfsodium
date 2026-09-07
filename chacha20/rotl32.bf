@@ -27,46 +27,76 @@
 
 ; ==== rotate one bit  n times ====
 [
-  -                                                       ; one step consumed
+; one step consumed
+  -
 
-  ; ____ double byte 0 @0x00  carry into c0 @0x05 ____
-  <<<< [->>>>>>>>>+<<<<<<<<<]                             ; move w0 into x
-  >>>>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<                 ; y := x  x restored
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]      ; ADD8 y into x
-  < [-<<<<<<<<<+>>>>>>>>>]                                ; store x into w0
-  >> [-<<<<<<+>>>>>>]                                     ; carry into c0
-  <<<<<<<                                                 ; back to n
+; ____ double byte 0 @0x00  carry into c0 @0x05 ____
+; move w0 into x
+  <<<< [->>>>>>>>>+<<<<<<<<<]
+; y := x  x restored
+  >>>>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
+; ADD8 y into x
+  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; store x into w0
+  < [-<<<<<<<<<+>>>>>>>>>]
+; carry into c0
+  >> [-<<<<<<+>>>>>>]
+; back to n
+  <<<<<<<
 
-  ; ____ double byte 1 @0x01  carry into c1 @0x06 ____
-  <<< [->>>>>>>>+<<<<<<<<]                                ; move w1 into x
-  >>>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<                  ; y := x  x restored
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]      ; ADD8 y into x
-  < [-<<<<<<<<+>>>>>>>>]                                  ; store x into w1
-  >> [-<<<<<+>>>>>]                                       ; carry into c1
-  <<<<<<<                                                 ; back to n
+; ____ double byte 1 @0x01  carry into c1 @0x06 ____
+; move w1 into x
+  <<< [->>>>>>>>+<<<<<<<<]
+; y := x  x restored
+  >>>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
+; ADD8 y into x
+  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; store x into w1
+  < [-<<<<<<<<+>>>>>>>>]
+; carry into c1
+  >> [-<<<<<+>>>>>]
+; back to n
+  <<<<<<<
 
-  ; ____ double byte 2 @0x02  carry into c2 @0x07 ____
-  << [->>>>>>>+<<<<<<<]                                   ; move w2 into x
-  >>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<                   ; y := x  x restored
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]      ; ADD8 y into x
-  < [-<<<<<<<+>>>>>>>]                                    ; store x into w2
-  >> [-<<<<+>>>>]                                         ; carry into c2
-  <<<<<<<                                                 ; back to n
+; ____ double byte 2 @0x02  carry into c2 @0x07 ____
+; move w2 into x
+  << [->>>>>>>+<<<<<<<]
+; y := x  x restored
+  >>>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
+; ADD8 y into x
+  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; store x into w2
+  < [-<<<<<<<+>>>>>>>]
+; carry into c2
+  >> [-<<<<+>>>>]
+; back to n
+  <<<<<<<
 
-  ; ____ double byte 3 @0x03  carry into c3 @0x08 ____
-  < [->>>>>>+<<<<<<]                                      ; move w3 into x
-  >>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<                    ; y := x  x restored
-  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]      ; ADD8 y into x
-  < [-<<<<<<+>>>>>>]                                      ; store x into w3
-  >> [-<<<+>>>]                                           ; carry into c3
-  <<<<<<<                                                 ; back to n
+; ____ double byte 3 @0x03  carry into c3 @0x08 ____
+; move w3 into x
+  < [->>>>>>+<<<<<<]
+; y := x  x restored
+  >>>>>> [->+>>+<<<] >>>[-<<<+>>>] <<<
+; ADD8 y into x
+  > [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+; store x into w3
+  < [-<<<<<<+>>>>>>]
+; carry into c3
+  >> [-<<<+>>>]
+; back to n
+  <<<<<<<
 
-  ; ____ feed the carries around the cycle ____
-  >>>> [-<<<<<<<<+>>>>>>>>]                               ; w0 gets c3
-  <<< [-<<<<+>>>>]                                        ; w1 gets c0
-  > [-<<<<+>>>>]                                          ; w2 gets c1
-  > [-<<<<+>>>>]                                          ; w3 gets c2
-  <<<                                                     ; back to n
+; ____ feed the carries around the cycle ____
+; w0 gets c3
+  >>>> [-<<<<<<<<+>>>>>>>>]
+; w1 gets c0
+  <<< [-<<<<+>>>>]
+; w2 gets c1
+  > [-<<<<+>>>>]
+; w3 gets c2
+  > [-<<<<+>>>>]
+; back to n
+  <<<
 ]
 
 ; emit the rotated word little endian

@@ -61,14 +61,35 @@ doubleRound s = foldl applyQR s
 // exact wire bytes chacha20/block.bf reads and writes:
 // in = key(32) # counter(4 LE) # nonce(12); out = the 64 byte keystream block.
 blockRun : [48][8] -> [64][8]
-blockRun inb = join [ leBytes w | w <- out ]
+blockRun inb = chachaBlock (take`{32} inb) (leWord (take`{4} (drop`{32} inb)))
+                           (drop`{36} inb)
+
+// The block function proper, on parts rather than wire bytes, so the stream
+// cipher can call it once per 64 byte block.
+chachaBlock : [32][8] -> [32] -> [12][8] -> [64][8]
+chachaBlock key ctr non = join [ leBytes w | w <- out ]
   where
-    kws  = [ leWord w | w <- split`{8} (take`{32} inb) ]
-    cw   = leWord (take`{4} (drop`{32} inb))
-    nws  = [ leWord w | w <- split`{3} (drop`{36} inb) ]
-    st0  = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574] # kws # [cw] # nws
+    kws  = [ leWord w | w <- split`{8} key ]
+    nws  = [ leWord w | w <- split`{3} non ]
+    st0  = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574] # kws # [ctr] # nws
     sts  = [st0] # [ doubleRound s | s <- sts ]
     out  = [ x + y | x <- sts @ (10 : [8]) | y <- st0 ]
+
+// The ChaCha20 stream cipher (RFC 8439 section 2.4), taking and returning the
+// exact wire bytes chacha20/stream.bf reads and writes:
+//   in  = key(32) # counter(4 LE) # nonce(12) # len(2 LE) # plaintext(len)
+//   out = ciphertext(len)
+// The length prefix is what the brainfuck uses to know when to stop, since a
+// primitive here never relies on end of input (CONVENTIONS section 7).
+streamRun : {n} (fin n, 64 >= width n) => [50 + n][8] -> [n][8]
+streamRun inb = [ p ^ k | p <- ptext | k <- ks ]
+  where
+    key   = take`{32} inb
+    ctr   = leWord (take`{4} (drop`{32} inb))
+    non   = take`{12} (drop`{36} inb)
+    ptext = drop`{50} inb
+    ks    = take`{n} (join [ chachaBlock key (ctr + i) non
+                           | i <- [0 ...] : [_][32] ])
 
 // The ChaCha20 quarter round (RFC 8439 section 2.2.1).
 // in = a # b # c # d, each 4 LE bytes; out = the same four words, updated.

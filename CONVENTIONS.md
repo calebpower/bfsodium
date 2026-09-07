@@ -29,8 +29,8 @@ a sentence is a live `,` (read a byte) or `.` (write a byte).
 Two mechanisms handle this, and **both** are required:
 
 1. **`;` starts a comment to end of line** in the pinned interpreter
-   (`tools/bfi`), so prose can be written naturally. Every comment line begins
-   with `;`, and every trailing annotation is introduced by `;`.
+   (`tools/bfi`), so prose can be written naturally. Every annotation is a line
+   beginning with `;` at column 0; a code line never carries one (see §6).
 2. **Portability is enforced, because `;` is not standard brainfuck.** Another
    interpreter would execute that prose. So `tools/bflint` compares the
    instruction stream *with `;` comments honoured* against the stream *with only
@@ -106,10 +106,10 @@ Notation (all operator-free per §0):
 
 ```
 ; TAPE MAP  (home @0)
-;   @0x00:0x3F  state[16]   u32 LE   ; the 16 working words
-;   @0x40:0x7F  init[16]    u32 LE   ; original state, for the final add
-;   @0x80:0x83  ctr         u8       ; round/loop counters
-;   @0x84:0x8B  t[8]        u8scratch ; scratch, zero on entry and exit
+;   @0x00:0x3F  state{16}   u32 LE     the 16 working words
+;   @0x40:0x7F  init{16}    u32 LE     original state  for the final add
+;   @0x80:0x83  ctr         u8         round and loop counters
+;   @0x84:0x8B  t{8}        u8scratch  scratch  zero on entry and exit
 ```
 
 - Addresses are hex, **cell-granular**, ranges joined with a colon (`:`).
@@ -141,7 +141,8 @@ Each block carries a **contract** comment (operator-free) stating its anchor,
 what it reads, what it writes, and which scratch it borrows:
 
 ```
-;;; BLOCK add32  in: ptr@a  reads a@0x00:0x03 b@0x04:0x07  writes a (a = a plus b mod 2^32)  scratch t@0x84 (restored 0)  out: ptr@a
+; BLOCK add32  in: ptr@a  reads a@0x00:0x03 b@0x04:0x07  writes a
+;   (a = a plus b mod 2^32)  scratch t@0x84 (restored 0)  out: ptr@a
 ```
 
 ---
@@ -184,12 +185,16 @@ out, and travelling home — pointer-neutral. This is how all table-backed ops
 scannable and greppable:
 
 ```
-;;; QUARTER_ROUND a b c d
-    ... brainfuck ...
-;;; END QUARTER_ROUND
+; QUARTER_ROUND a b c d
+  ... brainfuck ...
+; END QUARTER_ROUND
 ```
 
 **Formatting.**
+- Annotations live on their own line, starting at column 0 with `;`. A code
+  line never carries a trailing annotation: a long pointer move is chunked
+  across several lines and cannot carry one, and one form everywhere beats two
+  forms sometimes. `tools/bfstyle` enforces this (section 8, tier 3).
 - Indent the body inside every `[ ]` by two spaces; matching brackets line up.
 - One logical operation (or one idiom invocation) per line, with an
   operator-free comment naming it.
@@ -272,6 +277,7 @@ with tiers that inspect **the oracle** and **internal structure**:
 | 6 differential fuzz | Do untried inputs diverge from the spec? | Random inputs, bf output versus Cryptol output; seed printed and replayable through the environment. |
 | 7 metamorphic / property | Do reference-free invariants hold? | Checks that need no oracle: keystream-XOR involution (decrypt of encrypt is identity), distinct block per counter, stream-versus-block-function agreement. Independent of whether the spec is right. |
 | 8 mutation (revert-and-rediscover) | Would the suite catch the bug it claims to? | Break each nontrivial block, confirm the relevant tier fails, restore. |
+| 3 style consistency | Is the style the same across every source file? | `tools/bfstyle` reads the sources as data and enforces one canonical style: annotations on their own line at column 0 (never trailing on a code line), a title then an `IO` section then a `TAPE MAP`, and no run of more than 12 code lines without an annotation. This tier exists because style silently drifted: the hand-written primitives used trailing annotations while the assembled files put them above the code, and **no other tier could see it**, because every other tier checks what the code *computes*, not how it *reads*. Self-tested by feeding it each divergence. The assemblers all emit through one shared `tools/bfemit`, so they cannot drift from each other by construction. |
 | 9 legibility | Can a human reasonably read this, within brainfuck's limits? | Two parts. (a) `tools/bflint` mechanically enforces the objective conventions: every file carries a tape-map and an IO header; prose lines (those starting with `;`) are operator-free; no un-annotated run of command bytes exceeds the budget; loop bodies are indented to bracket depth; block contracts are present and their BEGIN/END are balanced. Self-tested by feeding it minified / header-less / command-wall input and confirming it complains. (b) Human evidence (reaper tier 11, adapted from UI to source): a brainfuck-literate reviewer confirms a sampled block is followable from its contract **and that the contract and comments accurately predict the tested behaviour** — a comment that lies fails this tier, a defect no code-versus-spec tier can catch and the sharpest risk when code and comments are both machine-generated. The linter proves convention-conformance, legibility's necessary floor; it cannot prove "understandable," so both parts are required. |
 
 **Named non-goals** (what we do NOT prove):
