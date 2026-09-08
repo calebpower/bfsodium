@@ -23,68 +23,53 @@
 ; they must all come back together; the trail cell doubles as the scratch that
 ; lets each byte be copied without being consumed;
 
-; read the index into the walker and add one  so a zero index still takes a step
-  >>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>                                               ; read the index into the walker and add one  so a zero
+                                                               ; index still takes a step
   ,
   +
 
-; read the sixteen words into the datum cells of groups 2 to 17
-  >>>>>>
+  >>>>>>                                                       ; read the sixteen words into the datum cells of groups
+                                                               ; 2 to 17
   ,>,>,>,
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
   >>>>>>>
-; next word
-  ,>,>,>,
+  ,>,>,>,                                                      ; next word
 
-; back to the walker  which is 159 cells below the last byte read
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                     ; back to the walker  which is 159 cells below the last
+                                                               ; byte read
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-; walk out: spend a step  carry what is left ten cells on  drop a trail
-  [-[->>>>>>>>>>+<<<<<<<<<<]>+<>>>>>>>>>>]
+  [-[->>>>>>>>>>+<<<<<<<<<<]>+<>>>>>>>>>>]                     ; walk out: spend a step  carry what is left ten cells
+                                                               ; on  drop a trail
 
 ; load the four bytes into the carriers  each copied through the trail cell
 ; and put straight back  so the state is not disturbed
@@ -92,38 +77,30 @@
   <<<<
   [->>>>>>+<+<<<<<]
   >>>>>[-<<<<<+>>>>>]<<<<<
-; byte 1
-  >
+  >                                                            ; byte 1
   [->>>>>>+<<+<<<<]
   >>>>[-<<<<+>>>>]<<<<
-; byte 2
-  >
+  >                                                            ; byte 2
   [->>>>>>+<<<+<<<]
   >>>[-<<<+>>>]<<<
-; byte 3
-  >
+  >                                                            ; byte 3
   [->>>>>>+<<<<+<<]
   >>[-<<+>>]<<
-; back to the walker
-  >
+  >                                                            ; back to the walker
 
-; walk back: hand all four carriers down one group  then follow the trail
-  >>[-<<<<<<<<<<+>>>>>>>>>>]
+  >>[-<<<<<<<<<<+>>>>>>>>>>]                                   ; walk back: hand all four carriers down one group
+                                                               ; then follow the trail
   >[-<<<<<<<<<<+>>>>>>>>>>]
   >[-<<<<<<<<<<+>>>>>>>>>>]
   >[-<<<<<<<<<<+>>>>>>>>>>]
-; step down to the trail of the group below
-  <<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<                                               ; step down to the trail of the group below
   [
-; hand the carriers down another group
-  ->
+  ->                                                           ; hand the carriers down another group
   [-<<<<<<<<<<+>>>>>>>>>>]
   >[-<<<<<<<<<<+>>>>>>>>>>]
   >[-<<<<<<<<<<+>>>>>>>>>>]
   >[-<<<<<<<<<<+>>>>>>>>>>]
-; step down to the trail of the group below
-  <<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<                                               ; step down to the trail of the group below
   ]
 
-; the word came to rest in group 0
-  >.>.>.>.
+  >.>.>.>.                                                     ; the word came to rest in group 0

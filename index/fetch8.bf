@@ -24,13 +24,13 @@
 ; group 0's trail is never set  so the value comes to rest in group 0 and the
 ; pointer stops there;
 
-; read the index into the walker and add one  so a zero index still takes a step
-  >>>>
+  >>>>                                                         ; read the index into the walker and add one  so a zero
+                                                               ; index still takes a step
   ,
   +
 
-; read the eight data bytes into the datum cell of each group
-  >>,
+  >>,                                                          ; read the eight data bytes into the datum cell of each
+                                                               ; group
   >>>,
   >>>,
   >>>,
@@ -39,17 +39,15 @@
   >>>,
   >>>,
 
-; back to the walker
-  <<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<                                      ; back to the walker
 
-; walk out: spend one step  carry what is left to the next group  drop a trail
-  [-[->>>+<<<]>+<>>>]
+  [-[->>>+<<<]>+<>>>]                                          ; walk out: spend one step  carry what is left to the
+                                                               ; next group  drop a trail
 
-; copy the datum here into the walker  restoring the datum from the trail cell
-  <[->+>+<<]>>[-<<+>>]<
+  <[->+>+<<]>>[-<<+>>]<                                        ; copy the datum here into the walker  restoring the
+                                                               ; datum from the trail cell
 
-; walk back: hand the value down one group  then follow the trail if it is set
-  [-<<<+>>>]<<[-<[-<<<+>>>]<<]
+  [-<<<+>>>]<<[-<[-<<<+>>>]<<]                                 ; walk back: hand the value down one group  then follow
+                                                               ; the trail if it is set
 
-; the value came to rest in group 0
-  <.
+  <.                                                           ; the value came to rest in group 0

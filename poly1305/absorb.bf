@@ -54,8 +54,7 @@
 >>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -199,8 +198,7 @@
 >>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -344,8 +342,7 @@
 >>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -489,8 +486,7 @@
 >>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -634,8 +630,7 @@
 >>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -779,8 +774,7 @@
 >>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -924,8 +918,7 @@
 >>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -1069,8 +1062,7 @@
 >>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -1213,8 +1205,7 @@
 >>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -1356,8 +1347,7 @@
 >>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -1499,8 +1489,7 @@
 >>>>>>>>                                                       ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -1642,8 +1631,7 @@
 >>>>>>>                                                        ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -1785,8 +1773,7 @@
 >>>>>>                                                         ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -1928,8 +1915,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -2071,8 +2057,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -2214,8 +2199,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -2357,8 +2341,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -2497,8 +2480,7 @@
   [-]
 ; ASSERT zero 34:62
 
-; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
 ; ASSERT ptr=17
 ; add136 consumes its addend  so the block slot is clear for r to take; the
 ; whole layout rests on that  so it is asserted here rather than trusted;
@@ -3038,8 +3020,7 @@
   <<                                                           ; continued
 ; ASSERT ptr=17
 ; ASSERT zero 34:69
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>                                             ; walk in to this routine entry offset
 
 ; ==== split the top byte at bit 130 ====
 ; ASSERT ptr=33
@@ -3085,8 +3066,7 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ; ASSERT ptr=17
 ; ASSERT zero 51:62
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
 ; ASSERT ptr=51
 ; ASSERT zero 51:62
 
@@ -3100,8 +3080,7 @@
 >>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -3245,8 +3224,7 @@
 >>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -3390,8 +3368,7 @@
 >>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -3535,8 +3512,7 @@
 >>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -3680,8 +3656,7 @@
 >>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -3825,8 +3800,7 @@
 >>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -3970,8 +3944,7 @@
 >>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -4115,8 +4088,7 @@
 >>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -4259,8 +4231,7 @@
 >>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -4402,8 +4373,7 @@
 >>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -4545,8 +4515,7 @@
 >>>>>>>>                                                       ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -4688,8 +4657,7 @@
 >>>>>>>                                                        ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -4831,8 +4799,7 @@
 >>>>>>                                                         ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -4974,8 +4941,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -5117,8 +5083,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -5260,8 +5225,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -5403,8 +5367,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -5543,8 +5506,7 @@
   [-]
 ; ASSERT zero 34:62
 
-; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
 ; ASSERT ptr=17
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>           ; back to the turn counter
 ]
@@ -6114,8 +6076,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                   ; continued
 ; ASSERT ptr=17
 ; ASSERT zero 51:62
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
 ; ASSERT ptr=51
 ; ASSERT zero 51:62
 
@@ -6129,8 +6090,7 @@
 >>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -6274,8 +6234,7 @@
 >>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -6419,8 +6378,7 @@
 >>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -6564,8 +6522,7 @@
 >>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -6709,8 +6666,7 @@
 >>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -6854,8 +6810,7 @@
 >>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -6999,8 +6954,7 @@
 >>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -7144,8 +7098,7 @@
 >>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -7288,8 +7241,7 @@
 >>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -7431,8 +7383,7 @@
 >>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -7574,8 +7525,7 @@
 >>>>>>>>                                                       ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -7717,8 +7667,7 @@
 >>>>>>>                                                        ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -7860,8 +7809,7 @@
 >>>>>>                                                         ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -8003,8 +7951,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -8146,8 +8093,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -8289,8 +8235,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -8432,8 +8377,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -8572,12 +8516,10 @@
   [-]
 ; ASSERT zero 34:62
 
-; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
 ; ASSERT ptr=17
 ; ASSERT zero 34:69
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>                                             ; walk in to this routine entry offset
 
 ; ==== split the top byte at bit 130 ====
 ; ASSERT ptr=33
@@ -8623,8 +8565,7 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ; ASSERT ptr=17
 ; ASSERT zero 51:62
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
 ; ASSERT ptr=51
 ; ASSERT zero 51:62
 
@@ -8638,8 +8579,7 @@
 >>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -8783,8 +8723,7 @@
 >>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -8928,8 +8867,7 @@
 >>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -9073,8 +9011,7 @@
 >>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -9218,8 +9155,7 @@
 >>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -9363,8 +9299,7 @@
 >>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -9508,8 +9443,7 @@
 >>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -9653,8 +9587,7 @@
 >>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -9797,8 +9730,7 @@
 >>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -9940,8 +9872,7 @@
 >>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -10083,8 +10014,7 @@
 >>>>>>>>                                                       ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -10226,8 +10156,7 @@
 >>>>>>>                                                        ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -10369,8 +10298,7 @@
 >>>>>>                                                         ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -10512,8 +10440,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -10655,8 +10582,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -10798,8 +10724,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -10941,8 +10866,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -11081,8 +11005,7 @@
   [-]
 ; ASSERT zero 34:62
 
-; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
 ; ASSERT ptr=17
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>           ; back to the turn counter
 ]
@@ -11403,8 +11326,7 @@
   <<                                                           ; continued
 ; ASSERT ptr=17
 ; ASSERT zero 34:41
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>                                             ; walk in to this routine entry offset
 ; ASSERT ptr=33
 ; ASSERT zero 34:41
 <<<<<<<<<<<<<<<<                                               ; to the bottom of the value  which is where a shift
@@ -11964,8 +11886,7 @@
 
 ; ASSERT ptr=17
 ; ASSERT zero 34:69
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>                                             ; walk in to this routine entry offset
 
 ; ==== split the top byte at bit 130 ====
 ; ASSERT ptr=33
@@ -12011,8 +11932,7 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ; ASSERT ptr=17
 ; ASSERT zero 51:62
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
 ; ASSERT ptr=51
 ; ASSERT zero 51:62
 
@@ -12026,8 +11946,7 @@
 >>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -12171,8 +12090,7 @@
 >>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -12316,8 +12234,7 @@
 >>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -12461,8 +12378,7 @@
 >>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -12606,8 +12522,7 @@
 >>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -12751,8 +12666,7 @@
 >>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -12896,8 +12810,7 @@
 >>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -13041,8 +12954,7 @@
 >>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -13185,8 +13097,7 @@
 >>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -13328,8 +13239,7 @@
 >>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -13471,8 +13381,7 @@
 >>>>>>>>                                                       ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -13614,8 +13523,7 @@
 >>>>>>>                                                        ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -13757,8 +13665,7 @@
 >>>>>>                                                         ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -13900,8 +13807,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -14043,8 +13949,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -14186,8 +14091,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -14329,8 +14233,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -14469,8 +14372,7 @@
   [-]
 ; ASSERT zero 34:62
 
-; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
 ; ASSERT ptr=17
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>           ; back to the turn counter
 ]
@@ -14819,8 +14721,7 @@
   <<<<<<<<<<<<<<<<<<<<<<                                       ; continued
 ; ASSERT ptr=17
 ; ASSERT zero 34:38
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>                                             ; walk in to this routine entry offset
 ; ASSERT ptr=33
 ; ASSERT zero 34:38
 
@@ -15621,8 +15522,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                     ; continued
 ; ASSERT ptr=17
 ; ASSERT zero 34:303
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>                                             ; walk in to this routine entry offset
 ; ASSERT ptr=33
 ; ASSERT zero 34:121
 
@@ -15630,8 +15530,7 @@
 <<<<<<<<<<<<<<<<
 ; ASSERT ptr=17
 ; ASSERT zero 34:69
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>                                             ; walk in to this routine entry offset
 
 ; ==== split the top byte at bit 130 ====
 ; ASSERT ptr=33
@@ -15677,8 +15576,7 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ; ASSERT ptr=17
 ; ASSERT zero 51:62
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
 ; ASSERT ptr=51
 ; ASSERT zero 51:62
 
@@ -15692,8 +15590,7 @@
 >>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -15837,8 +15734,7 @@
 >>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -15982,8 +15878,7 @@
 >>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -16127,8 +16022,7 @@
 >>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -16272,8 +16166,7 @@
 >>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -16417,8 +16310,7 @@
 >>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -16562,8 +16454,7 @@
 >>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -16707,8 +16598,7 @@
 >>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -16851,8 +16741,7 @@
 >>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -16994,8 +16883,7 @@
 >>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -17137,8 +17025,7 @@
 >>>>>>>>                                                       ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -17280,8 +17167,7 @@
 >>>>>>>                                                        ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -17423,8 +17309,7 @@
 >>>>>>                                                         ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -17566,8 +17451,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -17709,8 +17593,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -17852,8 +17735,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -17995,8 +17877,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -18135,8 +18016,7 @@
   [-]
 ; ASSERT zero 34:62
 
-; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
 ; ASSERT ptr=17
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>           ; back to the turn counter
 ]
@@ -18335,8 +18215,7 @@
 <<<<<<<<<<<<<<<<<
 ; ASSERT ptr=17
 ; ASSERT zero 51:62
-; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
 ; ASSERT ptr=51
 ; ASSERT zero 51:62
 
@@ -18350,8 +18229,7 @@
 >>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -18495,8 +18373,7 @@
 >>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -18640,8 +18517,7 @@
 >>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -18785,8 +18661,7 @@
 >>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -18930,8 +18805,7 @@
 >>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -19075,8 +18949,7 @@
 >>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -19220,8 +19093,7 @@
 >>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -19365,8 +19237,7 @@
 >>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -19509,8 +19380,7 @@
 >>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -19652,8 +19522,7 @@
 >>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -19795,8 +19664,7 @@
 >>>>>>>>                                                       ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -19938,8 +19806,7 @@
 >>>>>>>                                                        ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -20081,8 +19948,7 @@
 >>>>>>                                                         ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -20224,8 +20090,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -20367,8 +20232,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -20510,8 +20374,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -20653,8 +20516,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=52
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=53
@@ -20793,8 +20655,7 @@
   [-]
 ; ASSERT zero 34:62
 
-; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
 ; ASSERT ptr=17
 
 ; ==== did bit 130 come up ====

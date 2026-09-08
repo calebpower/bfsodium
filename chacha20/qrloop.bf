@@ -97,8 +97,7 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; to the adder base
 ; ASSERT ptr=24
 ; ASSERT zero 32:37
-; walk in to this routine entry offset
-  >>>>>>>>
+  >>>>>>>>                                                     ; walk in to this routine entry offset
                                                                ; @0x08
 ; ASSERT ptr=32
 ; ASSERT zero 32:43
@@ -112,8 +111,7 @@
 >>>>>                                                          ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -255,8 +253,7 @@
 >>>>                                                           ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -398,8 +395,7 @@
 >>>                                                            ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -541,8 +537,7 @@
 >>                                                             ; to the kernel's base  which is where a paste site
                                                                ; always stands
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -682,8 +677,7 @@
 ; is NOT clear  because a{4} is the answer;
 ; ASSERT zero 28:43
 
-; walk back out to the routine base
-  <<<<<<<<
+  <<<<<<<<                                                     ; walk back out to the routine base
 ; ASSERT ptr=24
 >>>>>>>>                                                       ; to the carry cell and drop it
   [-]
@@ -732,8 +726,7 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; to the exclusive or base
 ; ASSERT ptr=24
 ; ASSERT zero 32:49
-; walk in to this routine entry offset
-  >>>>>>>>
+  >>>>>>>>                                                     ; walk in to this routine entry offset
                                                                ; @0x08
 
 ; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
@@ -816,8 +809,7 @@
   << [-<<<<<<<<<<<+>>>>>>>>>>>]                                ; store res into r3
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; walk back out to the routine base
-  <<<<<<<<
+  <<<<<<<<                                                     ; walk back out to the routine base
 ; ASSERT ptr=24
 >>>>>>>>                                                       ; to the result
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]                 ; move the result back into d
@@ -845,8 +837,7 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<                                     ; to the rotate base
 ; ASSERT ptr=24
 ; ASSERT zero 29:37
-; walk in to this routine entry offset
-  >>>>
+  >>>>                                                         ; walk in to this routine entry offset
 ; ASSERT ptr=28
 ; ASSERT zero 29:43
 
@@ -866,8 +857,7 @@
   [-<<<+>>>]
 <<<
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -1005,8 +995,7 @@
   [-<<<+>>>]
 <<<
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -1144,8 +1133,7 @@
   [-<<<+>>>]
 <<<
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -1283,8 +1271,7 @@
   [-<<<+>>>]
 <<<
 ; ASSERT ptr=33
-; walk in to this routine entry offset
-  >
+  >                                                            ; walk in to this routine entry offset
 ; the carry cell is NOT required to be clear: this routine ADDS into it  and a
 ; wide adder may have put something there; only the scratch must be clean;
 ; ASSERT ptr=34
@@ -1426,8 +1413,7 @@
 ]
 ; ASSERT ptr=28
 
-; walk back out to the routine base
-  <<<<
+  <<<<                                                         ; walk back out to the routine base
 ; ASSERT ptr=24
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]                                 ; move the rotated word back into d
 >                                                              ; the next byte

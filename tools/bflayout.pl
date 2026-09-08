@@ -18,6 +18,12 @@
 #      anything separated from the code by a blank line, which is how a file
 #      header keeps its last line from being dragged onto the first operation.
 #
+#      bfexpand's own "; walk in"/"; walk back" wrappers used to be listed there
+#      too, and that was wrong: each is a single line labelling the one code
+#      line beneath it, which is the definition of an annotation. Left at column
+#      zero they were the only such label in the file not in the right hand
+#      column, so the eye could not run down that column and find everything.
+#
 #   2. A code line longer than CODEW is split. Newlines are inert in brainfuck,
 #      so this cannot change meaning, and tools/bflint proves that by comparing
 #      the instruction stream against the canonical one. Continuations carry
@@ -65,7 +71,6 @@ sub is_structure {
     return 1 if $c =~ /^; emit\b/;              # a section boundary bfexpand cuts on
     return 1 if $c =~ /^; INTERFACE\b/;
     return 1 if $c =~ /^; ====/;                # a section banner
-    return 1 if $c =~ /^; walk (in|back)\b/;    # bfexpand's own paste wrappers
     return 1 if $c =~ /^;\s+\@/;                # a tape map row
     return 1 if $c =~ /^; continued\b/;         # already a continuation
     return 0;

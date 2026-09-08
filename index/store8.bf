@@ -21,16 +21,15 @@
 ; target the datum is cleared and the carried value takes its place; the walk
 ; back has nothing to bring  so it only follows the trail home  clearing it;
 
-; read the index into the walker and add one  so a zero index still takes a step
-  >>>>>
+  >>>>>                                                        ; read the index into the walker and add one  so a zero
+                                                               ; index still takes a step
   ,
   +
 
-; read the value into the carrier
-  >>,
+  >>,                                                          ; read the value into the carrier
 
-; read the eight data bytes into the datum cell of each group
-  >,
+  >,                                                           ; read the eight data bytes into the datum cell of each
+                                                               ; group
   >>>>,
   >>>>,
   >>>>,
@@ -39,17 +38,16 @@
   >>>>,
   >>>>,
 
-; back to the walker
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                              ; back to the walker
 
-; walk out: spend a step  carry the count and the value on  drop a trail
-  [-[->>>>+<<<<]>>[->>>>+<<<<]<+>>>]
+  [-[->>>>+<<<<]>>[->>>>+<<<<]<+>>>]                           ; walk out: spend a step  carry the count and the value
+                                                               ; on  drop a trail
 
-; at the target: clear the datum and let the carried value take its place
-  <[-]>>>[-<<<+>>>]<<
+  <[-]>>>[-<<<+>>>]<<                                          ; at the target: clear the datum and let the carried
+                                                               ; value take its place
 
-; walk back: nothing to carry  just follow the trail home clearing it
-  <<<[-<<<<]
+  <<<[-<<<<]                                                   ; walk back: nothing to carry  just follow the trail
+                                                               ; home clearing it
 
 ; emit the array
   >>>>>>.
