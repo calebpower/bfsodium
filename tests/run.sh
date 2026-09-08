@@ -35,6 +35,25 @@ chmod +x tools/kat.sh tools/dkat.sh
 echo "built"
 
 echo
+echo "== the oracle of record compiles =="
+# A PRECONDITION, not a tier: if spec/bfsodium.cry or spec/perm.cry does not
+# compile then every dual oracle test and every design proof is meaningless,
+# and each will report a mismatched value rather than a broken spec. That
+# happened once -- 149 failures, not one of which said what was wrong, after a
+# forty minute run. So this aborts the suite the way a failed build does,
+# instead of burning the rest of the run to say nothing.
+for cry in bfsodium perm; do
+    out=$(cd spec && printf ":l $cry.cry\n" | CRYPTOLPATH=. cryptol -b /dev/stdin 2>&1) || true
+    case "$out" in
+        *rror*) echo "FAIL spec/$cry.cry does not compile; every oracle rests on it"
+                printf '%s\n' "$out"
+                echo "passed 0, failed 1"
+                exit 1 ;;
+    esac
+    echo "PASS spec/$cry.cry compiles"; pass=$((pass+1))
+done
+
+echo
 echo "== tier 1: interpreter self-test =="
 tmp=$(mktemp -d)
 printf '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.' > "$tmp/hello.bf"
@@ -82,7 +101,8 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
 chacha20/stream.bf
 index/fetch8.bf
 index/fetchword.bf
-index/store8.bf"
+index/store8.bf
+sha256/sha256.bf"
     test "$got" = "$want"'
 
 # The committed brainfuck must be exactly what its skeleton expands to. Nothing
@@ -340,6 +360,37 @@ dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f90919293949596979899
 dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f07000000404142434445464700004100404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80 df3aab1e45b806fd5dabc5b07acc44e19191da6c5d54388985d38adc09df5dfa2effa95bc8eb384cd0b3d86496b63c870575c01dca1c1b3818ddffb46dc565267cf71ef96ef8d3409d16f805340d14ccde aeadRun_0_65 "aead one byte into the second ChaCha block"
 dk aead/chacha20poly1305.bf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546470c0050515253c0c1c2c3c4c5c6c772004c616469657320616e642047656e746c656d656e206f662074686520636c617373206f66202739393a204966204920636f756c64206f6666657220796f75206f6e6c79206f6e652074697020666f7220746865206675747572652c2073756e73637265656e20776f756c642062652069742e d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d63dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b3692ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc3ff4def08e4b7a9de576d26586cec64b61161ae10b594f09e26a7e902ecbd0600691 aeadRun_12_114 "aead RFC 8439 section 2.8.2"
 
+# SHA_256, FIPS 180_4. The published vectors are the empty message and abc;
+# the rest straddle the padding boundary, which is where this construction
+# goes wrong: fifty five bytes is the last message whose length still fits
+# in its own block, fifty six is the first that needs a second one, and a
+# whole block of message needs a second block that is padding alone.
+dk sha256/sha256.bf 0000 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 sha256Run_0 "sha256 the empty message  FIPS"
+dk sha256/sha256.bf 010061 ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb sha256Run_1 "sha256 one byte"
+dk sha256/sha256.bf 0300616263 ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad sha256Run_3 "sha256 abc  FIPS 180_4"
+dk sha256/sha256.bf 3700000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f30313233343536 463eb28e72f82e0a96c0a4cc53690c571281131f672aa229e0d45ae59b598b59 sha256Run_55 "sha256 fifty five bytes  the last to fit one block"
+dk sha256/sha256.bf 3800000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f3031323334353637 da2ae4d6b36748f2a318f23e7ab1dfdf45acdc9d049bd80e59de82a60895f562 sha256Run_56 "sha256 fifty six  the length no longer fits  two blocks"
+dk sha256/sha256.bf 4000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f fdeab9acf3710362bd2658cdc9a29e8f9c757fcf9811603a8c447cd1d9151108 sha256Run_64 "sha256 a whole block of message  two blocks in all"
+
+# One round, and one schedule word. Both are pasted into sha256 sixty four
+# and forty eight times over, so a fault in either is a fault in every
+# digest; they are checked on their own where the failure is legible.
+dk sha256/round.bf 67e6096a85ae67bb72f36e3c3af54fa57f520e518c68059babd9831f19cde05b80636261982f8a42 cdeb6a5d67e6096a85ae67bb72f36e3c22462afa7f520e518c68059babd9831f sha256RoundRun "sha256 round: the first round of the abc block"
+dk sha256/round.bf 00000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000000000000000000000 sha256RoundRun "sha256 round: everything nought"
+dk sha256/round.bf ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff f9fffffffffffffffffffffffffffffffaffffffffffffffffffffffffffffff sha256RoundRun "sha256 round: everything set"
+dk sha256/round.bf 982f8a42982f8a42982f8a42982f8a42982f8a42982f8a42982f8a42982f8a4278563412f27871c6 c91239bc982f8a42982f8a42982f8a420c145a77982f8a42982f8a42982f8a42 sha256RoundRun "sha256 round: a repeated word with the last constant"
+dk sha256/round.bf 38b4e652e44da7f2370d9e260e27136550a4a3a6d07f5c0c332f8b1224083fd22b902f8911e81818 2d0b3ec338b4e652e44da7f2370d9e269749ff8550a4a3a6d07f5c0c332f8b12 sha256RoundRun "sha256 round: a random round"
+dk sha256/round.bf f8c99d5d5d9831957504d90e945de2e8f54ee781cc75f636d85099095aa300165a67036f9b540d6b 90973c41f8c99d5d5d9831957504d90ec1ec02ddf54ee781cc75f636d8509909 sha256RoundRun "sha256 round: a random round"
+dk sha256/round.bf 8f0be21124179c3dd9f73817ce6e118d264aad6cb6dd210faf94acd3cf92c190237cb11f5d108cf2 f678e1f38f0be21124179c3dd9f73817839e0c5b264aad6cb6dd210faf94acd3 sha256RoundRun "sha256 round: a random round"
+dk sha256/expand.bf 00000000000000000000000000000000 00000000 sha256ExpandRun "sha256 expand: all nought"
+dk sha256/expand.bf ffffffffffffffffffffffffffffffff fcff3f20 sha256ExpandRun "sha256 expand: all set"
+dk sha256/expand.bf 80636261000000000000000018000000 80637161 sha256ExpandRun "sha256 expand: the abc block's first expansion"
+dk sha256/expand.bf 01000000010000000100000001000000 02e00002 sha256ExpandRun "sha256 expand: all one"
+dk sha256/expand.bf 6d25cf734c49a1dd273e4d8fab5f5bdb 78008f97 sha256ExpandRun "sha256 expand: random"
+dk sha256/expand.bf 8d1099ec05e8fdc7c1d734777648ab73 ef3c689a sha256ExpandRun "sha256 expand: random"
+dk sha256/expand.bf bde201825045e4da32da5e96796b9d30 8fccfddc sha256ExpandRun "sha256 expand: random"
+
+
 echo
 echo "== tier 5: declared contracts enforced =="
 tmpc=$(mktemp -d)
@@ -361,6 +412,9 @@ run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d
 # the first block and would have gone wrong on the second. No output test saw it.
 run "the AEAD honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546471000404142434445464748494a4b4c4d4e4f1000505152535455565758595a5b5c5d5e5f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/chacha20poly1305.bf >/dev/null"
 run "add8 honours its declared contracts" sh -c "printf ffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/add8.bf >/dev/null"
+run "sha256 honours its declared contracts" sh -c "printf 0300616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha256/sha256.bf >/dev/null"
+run "sha256 round honours its declared contracts" sh -c "printf 6a09e667bb67ae853c6ef372a54ff53a510e527f9b05688c1f83d9ab5be0cd1980636261982f8a42 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha256/round.bf >/dev/null"
+run "sha256 expand honours its declared contracts" sh -c "printf ffffffffffffffffffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha256/expand.bf >/dev/null"
 run "and32 honours its declared contracts" sh -c "printf ffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and32.bf >/dev/null"
 run "rotr32 honours its declared contracts" sh -c "printf 7856341219 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr32.bf >/dev/null"
 run "shr32 honours its declared contracts" sh -c "printf 7856341203 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr32.bf >/dev/null"
