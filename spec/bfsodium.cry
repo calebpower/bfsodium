@@ -589,3 +589,197 @@ sha256Run_64 inb = sha256Out h2
     p  = sha256Pad2`{64} (drop`{2} inb)
     h1 = sha256Compress sha256H0 (take`{64} p)
     h2 = sha256Compress h1 (drop`{64} p)
+
+// HASHCORE: the hash over a prefix in memory and then bytes from the wire.
+// Written per length, as the other oracles are; plen and slen arrive ahead of a
+// fixed 256 byte prefix buffer of which only the first plen bytes matter.
+//   in  = plen(2 LE) # slen(2 LE) # pbuf(256) # slen bytes
+//   out = digest(32) big endian
+
+hashcoreRun_0_3 : [263][8] -> [32][8]
+hashcoreRun_0_3 inb = sha256Out (hs @ (1 : [8]))
+  where
+    msg = drop`{260} inb
+    hs  = [sha256H0] # [ sha256Compress h b
+                       | h <- hs | b <- split`{1} (sha256Pad1`{3} msg) ]
+
+hashcoreRun_3_0 : [260][8] -> [32][8]
+hashcoreRun_3_0 inb = sha256Out (hs @ (1 : [8]))
+  where
+    msg = take`{3} (drop`{4} inb)
+    hs  = [sha256H0] # [ sha256Compress h b
+                       | h <- hs | b <- split`{1} (sha256Pad1`{3} msg) ]
+
+hashcoreRun_1_2 : [262][8] -> [32][8]
+hashcoreRun_1_2 inb = sha256Out (hs @ (1 : [8]))
+  where
+    msg = take`{1} (drop`{4} inb) # drop`{260} inb
+    hs  = [sha256H0] # [ sha256Compress h b
+                       | h <- hs | b <- split`{1} (sha256Pad1`{3} msg) ]
+
+hashcoreRun_0_0 : [260][8] -> [32][8]
+hashcoreRun_0_0 inb = sha256Out (hs @ (1 : [8]))
+  where
+    msg = ([] : [0][8])
+    hs  = [sha256H0] # [ sha256Compress h b
+                       | h <- hs | b <- split`{1} (sha256Pad1`{0} msg) ]
+
+hashcoreRun_64_0 : [260][8] -> [32][8]
+hashcoreRun_64_0 inb = sha256Out (hs @ (2 : [8]))
+  where
+    msg = take`{64} (drop`{4} inb)
+    hs  = [sha256H0] # [ sha256Compress h b
+                       | h <- hs | b <- split`{2} (sha256Pad2`{64} msg) ]
+
+hashcoreRun_30_34 : [294][8] -> [32][8]
+hashcoreRun_30_34 inb = sha256Out (hs @ (2 : [8]))
+  where
+    msg = take`{30} (drop`{4} inb) # drop`{260} inb
+    hs  = [sha256H0] # [ sha256Compress h b
+                       | h <- hs | b <- split`{2} (sha256Pad2`{64} msg) ]
+
+// HMAC-SHA-256, RFC 2104: H( (K xor opad) then H( (K xor ipad) then message ) )
+// with K the key padded to a block. Only the two pads are new; both hashes are
+// ordinary SHA-256 over a byte string.
+hmacIpad : [64][8] -> [64][8]
+hmacIpad kpad = [ k ^ 0x36 | k <- kpad ]
+
+hmacOpad : [64][8] -> [64][8]
+hmacOpad kpad = [ k ^ 0x5c | k <- kpad ]
+
+hmacRun_20_0_8 : [526][8] -> [32][8]
+hmacRun_20_0_8 inb = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = take`{20} (drop`{6} inb) # (zero : [44][8])
+    msg  = drop`{518} inb
+    inn  = sha256Out (hIn @ (2 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{2} (sha256Pad2`{72} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+hmacRun_20_8_0 : [518][8] -> [32][8]
+hmacRun_20_8_0 inb = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = take`{20} (drop`{6} inb) # (zero : [44][8])
+    msg  = take`{8} (drop`{262} inb)
+    inn  = sha256Out (hIn @ (2 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{2} (sha256Pad2`{72} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+hmacRun_4_0_28 : [546][8] -> [32][8]
+hmacRun_4_0_28 inb = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = take`{4} (drop`{6} inb) # (zero : [60][8])
+    msg  = drop`{518} inb
+    inn  = sha256Out (hIn @ (2 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{2} (sha256Pad2`{92} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+hmacRun_20_0_50 : [568][8] -> [32][8]
+hmacRun_20_0_50 inb = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = take`{20} (drop`{6} inb) # (zero : [44][8])
+    msg  = drop`{518} inb
+    inn  = sha256Out (hIn @ (2 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{2} (sha256Pad2`{114} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+hmacRun_0_0_0 : [518][8] -> [32][8]
+hmacRun_0_0_0 inb = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = (zero : [64][8])
+    msg  = ([] : [0][8])
+    inn  = sha256Out (hIn @ (2 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{2} (sha256Pad2`{64} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+hmacRun_32_3_3 : [521][8] -> [32][8]
+hmacRun_32_3_3 inb = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = take`{32} (drop`{6} inb) # (zero : [32][8])
+    msg  = take`{3} (drop`{262} inb) # drop`{518} inb
+    inn  = sha256Out (hIn @ (2 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{2} (sha256Pad2`{70} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+// ---------------------------------------------------------------------------
+// HKDF-SHA-256 (RFC 5869): extract a pseudorandom key, then expand it.
+
+sha256Pad3 : {n} (fin n, n >= 120, n <= 183) => [n][8] -> [192][8]
+sha256Pad3 m = m # [0x80] # (zero : [183 - n][8]) # split (`(8 * n) : [64])
+
+// HMAC where both hashes come to two blocks, which is every call the A.1 and
+// A.3 vectors make. Polymorphic in the key and message lengths, so one
+// definition serves extract and every turn of expand.
+hmac2 : {kn, mn} (fin kn, fin mn, kn <= 64, mn <= 55) => [kn][8] -> [mn][8] -> [32][8]
+hmac2 key msg = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = key # (zero : [64 - kn][8])
+    inn  = sha256Out (hIn @ (2 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{2} (sha256Pad2`{64 + mn} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+// And the same where the inner message runs to three blocks, which A.2 needs
+// because its info is eighty bytes long.
+hmac3 : {kn, mn} (fin kn, fin mn, kn <= 64, mn >= 56, mn <= 119) =>
+        [kn][8] -> [mn][8] -> [32][8]
+hmac3 key msg = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = key # (zero : [64 - kn][8])
+    inn  = sha256Out (hIn @ (3 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{3} (sha256Pad3`{64 + mn} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
+// RFC 5869 A.1: a thirteen byte salt, twenty two of keying material, ten of
+// info, forty two bytes out. Two turns of expand, the second one truncated.
+hkdfRun_13_22_10_42 : [776][8] -> [42][8]
+hkdfRun_13_22_10_42 inb = take`{42} (t1 # t2)
+  where
+    salt = take`{13} (drop`{8} inb)
+    ikm  = take`{22} (drop`{264} inb)
+    info = take`{10} (drop`{520} inb)
+    prk  = hmac2 salt ikm
+    t1   = hmac2 prk (info # [1])
+    t2   = hmac2 prk (t1 # info # [2])
+
+// A.3: no salt and no info. RFC 5869 says an absent salt is HashLen noughts,
+// which for SHA-256 is thirty two of them; that is not the same as a key of
+// length nought and the distinction is the whole of this vector.
+hkdfRun_0_22_0_42 : [776][8] -> [42][8]
+hkdfRun_0_22_0_42 inb = take`{42} (t1 # t2)
+  where
+    ikm = take`{22} (drop`{264} inb)
+    prk = hmac2 (zero : [32][8]) ikm
+    t1  = hmac2 prk ([1] : [1][8])
+    t2  = hmac2 prk (t1 # [2])
+
+// A.2: eighty bytes of everything and eighty two out, so the salt is LONGER
+// than a block and HMAC hashes it first; three turns of expand.
+hkdfRun_80_80_80_82 : [776][8] -> [82][8]
+hkdfRun_80_80_80_82 inb = take`{82} (t1 # t2 # t3)
+  where
+    salt = take`{80} (drop`{8} inb)
+    ikm  = take`{80} (drop`{264} inb)
+    info = take`{80} (drop`{520} inb)
+    skey = sha256Out (hS @ (2 : [8]))
+    hS   = [sha256H0] # [ sha256Compress h b | h <- hS
+                        | b <- split`{2} (sha256Pad2`{80} salt) ]
+    prk  = hmac3 skey ikm
+    t1   = hmac3 prk (info # [1])
+    t2   = hmac3 prk (t1 # info # [2])
+    t3   = hmac3 prk (t2 # info # [3])

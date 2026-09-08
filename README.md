@@ -22,11 +22,11 @@ its tape contract.
 
 ## Status
 
-**The ChaCha20-Poly1305 AEAD and SHA-256 both work.** The stream cipher
-matches RFC 8439 §2.4.2, the authenticator matches §2.5.2, the AEAD that
-combines them matches §2.8.2 — ciphertext and tag both — and SHA-256 matches
-FIPS 180-4, padding and all. In brainfuck, checked against two independent
-oracles.
+**The whole v1 symmetric set works.** ChaCha20 matches RFC 8439 §2.4.2,
+Poly1305 matches §2.5.2, the AEAD that combines them matches §2.8.2 —
+ciphertext and tag both — SHA-256 matches FIPS 180-4 padding and all, and
+HKDF-SHA-256 matches every vector in RFC 5869 Appendix A. In brainfuck,
+checked against two independent oracles.
 
 It is **correct, not safe**: brainfuck branches on data, so there is no
 constant-time story and cannot be one, and nothing is zeroized. See
@@ -58,10 +58,13 @@ constant-time story and cannot be one, and nothing is zeroized. See
 | [`aead/chacha20poly1305.bf`](aead/chacha20poly1305.bf) | **the AEAD (RFC 8439 §2.8.2)** |
 | [`sha256/round.bf`](sha256/round.bf) | one compression round |
 | [`sha256/expand.bf`](sha256/expand.bf) | one message-schedule word |
+| [`sha256/hashcore.bf`](sha256/hashcore.bf) | the hash, over memory then the wire |
 | [`sha256/sha256.bf`](sha256/sha256.bf) | **SHA-256 (FIPS 180-4)** |
+| [`sha256/hmac.bf`](sha256/hmac.bf) | HMAC-SHA-256 (RFC 2104) |
+| [`sha256/hkdf.bf`](sha256/hkdf.bf) | **HKDF-SHA-256 (RFC 5869)** |
 
-Next: HKDF-SHA-256, which completes the symmetric set. Keccak and the ML-KEM /
-ML-DSA lattice math are the later mountain.
+That is everything CONVENTIONS.md lists as v1. Keccak and the ML-KEM / ML-DSA
+lattice math are the later mountain.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and
 [Cryptol](https://cryptol.net); `reaper test` provisions both).

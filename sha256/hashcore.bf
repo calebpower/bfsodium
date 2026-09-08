@@ -1,39 +1,74 @@
-; bfsodium SHA_256 : FIPS 180_4
+; bfsodium SHA_256 HASHCORE : the hash  over a prefix in memory and then the wire
 ;
-; HAND WRITTEN skeleton; The whole of the hash is sha256/hashcore  PASTED; this
-; file is the wire interface and nothing else;
+; HAND WRITTEN skeleton; The round and the schedule step are each PASTED from
+; their own verified files; what is here is the constant table  the padding and
+; the conveyors;
 ;
-; IO  in:  len{2} LE  msg{len}
+; INTERFACE entry=259 exit=1096 footprint=0:1111
+; IO  in:  plen{2} LE  slen{2} LE  pbuf{256}  then slen bytes from the wire
 ;     out: digest{32}  big endian  as the standard prints it
 ;
-; The length prefix is how the program knows where the message ends; a bfsodium
-; primitive never relies on end of input;
+; The message is plen bytes taken from pbuf  followed by slen bytes read from
+; the wire; either count may be nought; Only the first plen bytes of pbuf are
+; looked at  and the rest may hold anything;
+;
+; TWO SOURCES  because two callers want different ones; sha256 hashes what is
+; on the wire and leaves plen at nought; HMAC hashes a block it has built in
+; memory  a key exclusive ored with a pad  and then the message; HKDF hashes
+; only what it has built  and leaves slen at nought; One padding loop and one
+; block loop serve all three;
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x457  sha256/hashcore's frame  pasted at this file's own zero; its
-;                 footprint 0:1111 is the whole of this file's tape
-;   @0x002:0x003  slen{2}  the count hashcore takes from the wire; this file
-;                 fills it and leaves plen at nought  so the entire message
-;                 comes off the wire and none of it from the prefix buffer
-;   @0x104:0x123  H{8}     the digest  once hashcore has run
+;   @0x000:0x001  plen{2} u16 LE  prefix bytes not yet taken; SPENT
+;   @0x002:0x003  slen{2} u16 LE  wire bytes not yet taken; SPENT
+;   @0x004:0x103  pbuf{256} u8    the prefix; consumed from its head
+;   @0x104:0x123  H{8}    u32 LE  the running hash  and then the digest
+;   @0x124:0x143  v{8}    u32 LE  a b c d e f g h
+;   @0x144:0x183  w{16}   u32 LE  the schedule window
+;   @0x184:0x18b  Wt and Wc  this round's schedule word and the window's copy
+;   @0x18c:0x191  pre rnd f16 nf tt uu   the round counters and their flags
+;   @0x194:0x197  tmp{4}  hands a word back after it has been copied
+;   @0x19c:0x1af  the adder frame; add32 footprint 0:19 at @0x19c
+;   @0x1b4:0x270  sha256/round's frame; its footprint is 0:188 pasted there
+;   @0x274:0x2f8  sha256/expand's frame; its footprint is 0:132
+;   @0x304:0x403  K{64}   u32 LE  the constants; the table ROTATES one word per
+;                          round  so K{t} is always at its head and after sixty
+;                          four rounds it is back where it started  which is
+;                          what lets a second block use it again
+;   @0x404:0x443  blk{64} u8      the block being built
+;   @0x446:0x44d  the padding's flags  its byte counter and the cells the two
+;                          counts are tested through
+;   @0x450:0x453  len{4}  u32 LE  the message length  kept for the last block
+;   @0x454:0x457  ksave{4}        holds K{t} while the table rotates past it
 ;
-; hashcore takes its message from a prefix in memory and then from the wire;
-; HMAC and HKDF use the prefix  and this uses the wire; that is the whole of the
-; difference between them and it is one number;
+; The tables are CLEARED before they are written  because writing a byte here
+; ADDS to what the cell held; HMAC enters this routine three times over and the
+; second entry would otherwise find the first digest still in H and add the
+; initial words to it; The constants do survive a call untouched  since the
+; table rotates a full sixty four places per block and comes back to where it
+; started  but they are cleared too: a routine that is safe to enter twice
+; should not rest on that being noticed;
+;
+; The prefix buffer is at the BOTTOM  with the two counts  because a read
+; prologue may hold only reads and single steps: a long run of steps before the
+; first read is split across lines by the layout pass  and a paste begins at the
+; prologue  so those steps would be silently dropped; tools/bffoot refuses a
+; routine shaped that way;
+;
+; FOUR CONVEYORS AND NO INDEX; the schedule window slides so its four taps are
+; always in the same cells  the constants rotate so the round always reads the
+; head of the table  the block slides so a byte always lands on its top  and
+; the prefix is consumed from its head and slides after each byte;
 
->>                                                             ; read the length into the count hashcore takes from
-                                                               ; the wire
-  ,>,
-; ASSERT ptr=3
-; ASSERT zero 4:1111
-<<<                                                            ; to hashcore's base  which is where a paste site
-                                                               ; always stands
-; ASSERT ptr=0
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; walk in to this routine entry offset
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>                                  ; continued
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; read the two counts and the prefix buffer
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,        ; continued
 ; ASSERT ptr=259
 
 ; ==== the sixty four round constants ====
@@ -1637,7 +1672,8 @@
 ; ==== one turn is one padded block ====
 [
 >                                                              ; fifty six bytes  which is as far as a length can be
-  [-]                                                          ; ; added after
+                                                               ; added after
+  [-]
   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 [
   -
@@ -2163,7 +2199,8 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>-<<]                                                      ; continued
 >>                                                             ; otherwise the high byte comes down and the low byte
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; ; wraps
+                                                               ; wraps
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -2609,7 +2646,8 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-   ; continued
   <<]                                                          ; continued
 >>                                                             ; otherwise the high byte comes down and the low byte
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; ; wraps
+                                                               ; wraps
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -2654,7 +2692,8 @@
 [
   -
 <<<<<<<<                                                       ; the ONE that ends the message is placed once and once
-[                                                              ; ; only
+                                                               ; only
+[
   -
 <<<
   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3207,7 +3246,8 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>-<<]                                                      ; continued
 >>                                                             ; otherwise the high byte comes down and the low byte
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; ; wraps
+                                                               ; wraps
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -3653,7 +3693,8 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>-   ; continued
   <<]                                                          ; continued
 >>                                                             ; otherwise the high byte comes down and the low byte
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; ; wraps
+                                                               ; wraps
+  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -3698,7 +3739,8 @@
 [
   -
 <<<<<<<<                                                       ; the ONE that ends the message is placed once and once
-[                                                              ; ; only
+                                                               ; only
+[
   -
 <<<
   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3716,7 +3758,8 @@
 ]
 ; ASSERT ptr=1097
 <<                                                             ; if there is room  the length goes in and this is the
-[                                                              ; ; last block
+                                                               ; last block
+[
   -
 ; the bit count is the byte count times eight  three doublings
 ; the length into the adder
@@ -8337,7 +8380,8 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>]                                                         ; continued
 <<<<<<<<<<<                                                    ; sixteen rounds take their word straight from the
-  [-]                                                          ; ; window
+                                                               ; window
+  [-]
   ++++++++++++++++
 >                                                              ; and there are sixty four rounds in all
   [-]
@@ -8357,7 +8401,8 @@
 >>>>>
   [-<<<<<+>>>>>]
 <                                                              ; a count that is not nought spends one and picks the
-  [[-]<<<<->>+>->]                                             ; ; window arm
+                                                               ; window arm
+  [[-]<<<<->>+>->]
 <<                                                             ; the window arm
 [
   -
@@ -25971,35 +26016,24 @@
 ]
 ; ASSERT ptr=1096
 
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; walk back out to the routine base
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<         ; continued
-; ASSERT ptr=0
-
 ; emit
 ; the digest  big endian  as the standard prints it
 ; hash word 0  top byte first
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>                                ; continued
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<                                          ; continued
   .<.<.<.
 >>>>>>>                                                        ; hash word 1  top byte first
   .<.<.<.
