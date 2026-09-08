@@ -423,3 +423,20 @@ add8Run inb = [ x + y, take`{8} wide ]
     x    = inb @ (0 : [8])
     y    = inb @ (1 : [8])
     wide = ((zero # x) : [16]) + (zero # y)
+
+// AND32: in = x(4 LE) # y(4 LE); out = (x AND y)(4 LE).
+// brainfuck has no bitwise instruction, so idiom/and32 decomposes both bytes a
+// bit at a time; the spec says what it must come to, not how.
+and32Run : [8][8] -> [4][8]
+and32Run inb = leBytes (leWord (take`{4} inb) && leWord (drop`{4} inb))
+
+// ROTR32 with the count on the wire, as idiom/rotr32.bf reads it:
+// in = w(4 LE) # n(1); out = (w rotated right by n)(4 LE).
+rotr32nRun : [5][8] -> [4][8]
+rotr32nRun inb = leBytes (leWord (take`{4} inb) >>> (inb @ 4))
+
+// SHR32 with the count on the wire: in = w(4 LE) # n(1);
+// out = (w shifted right by n)(4 LE). The bits that fall out are gone, which
+// is the only thing separating this from rotr32.
+shr32nRun : [5][8] -> [4][8]
+shr32nRun inb = leBytes (leWord (take`{4} inb) >> (inb @ 4))

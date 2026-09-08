@@ -96,6 +96,9 @@ while IFS= read -r line; do
     case "$line" in
         '@@ADD136@@'*)  import "$repo/poly1305/add136.bf" "${line##* }"; continue ;;
         '@@ADD8@@'*)    import "$repo/idiom/add8.bf" "${line##* }"; continue ;;
+        '@@SHR32@@'*)   import "$repo/idiom/shr32.bf" "${line##* }"; continue ;;
+        '@@ROTR32@@'*)  import "$repo/idiom/rotr32.bf" "${line##* }"; continue ;;
+        '@@AND32@@'*)   import "$repo/idiom/and32.bf" "${line##* }"; continue ;;
         '@@CLAMP@@'*)   import "$repo/poly1305/clamp.bf" "${line##* }"; continue ;;
         '@@ABSORB@@'*)  import "$repo/poly1305/absorb.bf" "${line##* }"; continue ;;
         '@@MULMOD136@@'*) import "$repo/poly1305/mulmod136.bf" "${line##* }"; continue ;;

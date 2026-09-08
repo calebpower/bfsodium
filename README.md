@@ -37,6 +37,9 @@ constant-time story and cannot be one, and nothing is zeroized. See
 | [`chacha20/add32.bf`](chacha20/add32.bf) | 32-bit little-endian add |
 | [`chacha20/rotl32.bf`](chacha20/rotl32.bf) | rotate left by n |
 | [`chacha20/xor32.bf`](chacha20/xor32.bf) | bitwise exclusive or |
+| [`idiom/and32.bf`](idiom/and32.bf) | bitwise and |
+| [`idiom/rotr32.bf`](idiom/rotr32.bf) | rotate right by n |
+| [`idiom/shr32.bf`](idiom/shr32.bf) | shift right by n |
 | [`chacha20/qrloop.bf`](chacha20/qrloop.bf) | the quarter round (RFC 8439 §2.2.1) |
 | [`chacha20/blockloop.bf`](chacha20/blockloop.bf) | the block function (RFC 8439 §2.3.2) |
 | [`chacha20/blockkeep.bf`](chacha20/blockkeep.bf) | the block, keeping the key and nonce |

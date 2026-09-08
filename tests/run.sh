@@ -152,6 +152,44 @@ dk chacha20/add32.bf 7856341211111111 89674523 add32Run "add32 mixed"
 dk chacha20/add32.bf 0000000000000000 00000000 add32Run "add32 zero"
 dk chacha20/add32.bf ffffffffffffffff feffffff add32Run "add32 max plus max"
 
+# The three routines SHA_256 needs and ChaCha20 did not. and32 is xor32 with
+# a different combining step; rotr32 and shr32 are chacha20/rotl32 turned
+# around, and turning it around is what makes them cheap: rotl32 shifts left
+# by DOUBLING, which is an addition, where shifting right is HALVE and costs
+# about a fifth as much per bit. rotr32 by 16 is 320,371 instructions against
+# rotl32 by 16 at 1,433,049.
+dk idiom/and32.bf ffffffff00000000 00000000 and32Run "and32 ffffffff00000000"
+dk idiom/and32.bf ffffffffffffffff ffffffff and32Run "and32 ffffffffffffffff"
+dk idiom/and32.bf 0f0f0f0ff0f0f0f0 00000000 and32Run "and32 0f0f0f0ff0f0f0f0"
+dk idiom/and32.bf 78563412efbeadde 68162412 and32Run "and32 78563412efbeadde"
+dk idiom/and32.bf aa55aa5555aa55aa 00000000 and32Run "and32 aa55aa5555aa55aa"
+dk idiom/and32.bf ffffffff78563412 78563412 and32Run "and32 ffffffff78563412"
+dk idiom/and32.bf 0000000000000000 00000000 and32Run "and32 0000000000000000"
+dk idiom/and32.bf 01020408ffffffff 01020408 and32Run "and32 01020408ffffffff"
+# Rotations at the counts SHA_256 actually asks for, plus the edges: by one,
+# by a whole byte, and by 31, where every bit crosses a byte boundary.
+dk idiom/rotr32.bf 0100000001 00000080 rotr32nRun "rotr32 by 1"
+dk idiom/rotr32.bf 0100000008 00000001 rotr32nRun "rotr32 by 8"
+dk idiom/rotr32.bf 7856341210 34127856 rotr32nRun "rotr32 by 16"
+dk idiom/rotr32.bf 010000001f 02000000 rotr32nRun "rotr32 by 31"
+dk idiom/rotr32.bf 7856341207 ac6824f0 rotr32nRun "rotr32 by 7"
+dk idiom/rotr32.bf 7856341202 9e158d04 rotr32nRun "rotr32 by 2"
+dk idiom/rotr32.bf ffffffff0d ffffffff rotr32nRun "rotr32 by 13"
+dk idiom/rotr32.bf 0000008001 00000040 rotr32nRun "rotr32 by 1"
+dk idiom/rotr32.bf 7856341219 093c2b1a rotr32nRun "rotr32 by 25"
+# The shift differs from the rotation only in what happens to the bit that
+# falls out of the bottom, so the cases that matter are the ones where a bit
+# would have wrapped: by 31 from a word with only the top bit set must give
+# one, and from a word with only the bottom bit set must give nought.
+dk idiom/shr32.bf 0100000001 00000000 shr32nRun "shr32 by 1"
+dk idiom/shr32.bf 7856341203 cf8a4602 shr32nRun "shr32 by 3"
+dk idiom/shr32.bf 785634120a 158d0400 shr32nRun "shr32 by 10"
+dk idiom/shr32.bf ffffffff1f 01000000 shr32nRun "shr32 by 31"
+dk idiom/shr32.bf 000000801f 01000000 shr32nRun "shr32 by 31"
+dk idiom/shr32.bf 7856341210 34120000 shr32nRun "shr32 by 16"
+dk idiom/shr32.bf ffffffff01 ffffff7f shr32nRun "shr32 by 1"
+dk idiom/shr32.bf 0100000001 00000000 shr32nRun "shr32 by 1"
+
 dk chacha20/rotl32.bf 0100000001 02000000 rotl32nRun "rotl32 by 1"
 dk chacha20/rotl32.bf 0100000008 00010000 rotl32nRun "rotl32 by 8"
 dk chacha20/rotl32.bf 7856341210 34127856 rotl32nRun "rotl32 by 16"
@@ -323,6 +361,9 @@ run "qrloop honours its declared contracts" sh -c "printf 1111111104030201436f8d
 # the first block and would have gone wrong on the second. No output test saw it.
 run "the AEAD honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f0700000040414243444546471000404142434445464748494a4b4c4d4e4f1000505152535455565758595a5b5c5d5e5f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/chacha20poly1305.bf >/dev/null"
 run "add8 honours its declared contracts" sh -c "printf ffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/add8.bf >/dev/null"
+run "and32 honours its declared contracts" sh -c "printf ffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and32.bf >/dev/null"
+run "rotr32 honours its declared contracts" sh -c "printf 7856341219 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr32.bf >/dev/null"
+run "shr32 honours its declared contracts" sh -c "printf 7856341203 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr32.bf >/dev/null"
 run "rotl32 honours its declared contracts" sh -c "printf 7856341210 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/rotl32.bf >/dev/null"
 run "blockkeep honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockkeep.bf >/dev/null"
 run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"
