@@ -17,138 +17,138 @@
 ; counterexample  so the pair is a real distinction and not a claim that would
 ; have held whatever was deleted;
 ;
-; INTERFACE entry=16 exit=0 footprint=0:96
+; INTERFACE entry=16 exit=0 footprint=0:104
 ; IO  in:  x{17} LE           (17 bytes)
 ;     out: (x mod p){17} LE   (17 bytes)
 ;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x10  x{17}   u8   the value  and the result
-;   @0x11:0x2e  the pasted routines' frames; fold136 is 0:46 and add136 is 0:39
+;   @0x11:0x34  the pasted routines' frames; fold136 is 0:52 and add136 is 0:45
 ;               and both are pasted at this file's own zero
-;   @0x30:0x40  S{17}   u8   the value as it stood before five was added
-;   @0x41       g       u8   bit 130 after the add; nought or one
-;   @0x42       e       u8   the else arm of that choice
-;   @0x43       h       u8   HALVE frame: the top byte being halved
-;   @0x44       q       u8   HALVE frame: that byte shifted right one
-;   @0x45       bit     u8   HALVE frame: that byte low bit
-;   @0x46       f       u8   HALVE frame scratch  restored to nought
-;   @0x50:0x60  temps{17}    hand the value back after it has been copied
+;   @0x38:0x48  S{17}   u8   the value as it stood before five was added
+;   @0x49       g       u8   bit 130 after the add; nought or one
+;   @0x4a       e       u8   the else arm of that choice
+;   @0x4b       h       u8   HALVE frame: the top byte being halved
+;   @0x4c       q       u8   HALVE frame: that byte shifted right one
+;   @0x4d       bit     u8   HALVE frame: that byte low bit
+;   @0x4e       f       u8   HALVE frame scratch  restored to nought
+;   @0x58:0x68  temps{17}    hand the value back after it has been copied
 
 ; read the value little endian
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 ; ASSERT ptr=16
-; ASSERT zero 17:96
+; ASSERT zero 17:104
 
 ; ==== one fold is all this needs  and spec/perm_cry proves it ====
 L16
 ; ASSERT ptr=0
-; ASSERT zero 17:46
+; ASSERT zero 17:52
 @@FOLD136@@ 0
 ; ASSERT ptr=0
 
 ; ==== keep a copy  because the five may have to be taken back off ====
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the next byte
 R1
-  [-R48+R32+L80]
+  [-R56+R32+L88]
 ; the temps hand the value straight back
-R64
-; ASSERT ptr=80
-  [-L80+R80]
+R72
+; ASSERT ptr=88
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
+  [-L88+R88]
 ; the next byte
 R1
-  [-L80+R80]
-L96
+  [-L88+R88]
+L104
 ; ASSERT ptr=0
 
 ; ==== add five ====
@@ -157,7 +157,7 @@ R17
   +++++
 L17
 ; ASSERT ptr=0
-; ASSERT zero 34:39
+; ASSERT zero 34:45
 @@ADD136@@ 0
 ; ASSERT ptr=0
 
@@ -165,30 +165,30 @@ L17
 R16
 ; ASSERT ptr=16
 ; the top byte steps into the halving frame
-  [-R51+L51]
-R51
-; ASSERT ptr=67
+  [-R59+L59]
+R59
+; ASSERT ptr=75
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; bit 128 is worth one below the split
 R2
-; ASSERT ptr=69
-  [-L53+R53]
+; ASSERT ptr=77
+  [-L61+R61]
 ; and the half is halved again
 L1
   [-L1+R1]
 L1
-; ASSERT ptr=67
+; ASSERT ptr=75
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; bit 129 is worth two
 R2
-; ASSERT ptr=69
-  [-L53++R53]
+; ASSERT ptr=77
+  [-L61++R61]
 ; what is left is bit 130  which is nought or one because the value was below
 ; two to the hundred and thirtieth before five was added to it
 L1
   [-L3+R3]
 L3
-; ASSERT ptr=65
+; ASSERT ptr=73
 
 ; ==== if it came up  the value had to be reduced and this IS the answer ====
 ; the else arm is armed first  and the then arm disarms it
@@ -196,12 +196,12 @@ R1
   [-]
   +
 L1
-; ASSERT ptr=65
+; ASSERT ptr=73
 [
   -
 ; the saved copy is not wanted
 L17
-; ASSERT ptr=48
+; ASSERT ptr=56
   [-]
 ; the next byte
 R1
@@ -258,10 +258,10 @@ L1
 ]
 ; ==== if it did not  the value is the copy from before the five ====
 R1
-; ASSERT ptr=66
+; ASSERT ptr=74
 [
   -
-L66
+L74
 ; ASSERT ptr=0
   [-]
 ; the next byte
@@ -313,63 +313,63 @@ R1
 R1
   [-]
 ; the saved copy comes back
-R32
-; ASSERT ptr=48
-  [-L48+R48]
+R40
+; ASSERT ptr=56
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; the next byte
 R1
-  [-L48+R48]
+  [-L56+R56]
 ; back to the else flag
 R2
 ]
-; ASSERT ptr=66
-L66
+; ASSERT ptr=74
+L74
 ; ASSERT ptr=0
-; ASSERT zero 17:96
+; ASSERT zero 17:104
 ; emit the reduced value little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

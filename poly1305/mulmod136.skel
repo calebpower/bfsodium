@@ -10,9 +10,9 @@
 ;     out: (a times b mod p){17} LE            (17 bytes)
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x060  the work frame; every pasted routine runs HERE  at this file's
+;   @0x000:0x068  the work frame; every pasted routine runs HERE  at this file's
 ;                 own zero  and the operands are carried to it and back; the
-;                 frame is 0:96 because reducep136 is the largest of them
+;                 frame is 0:104 because reducep136 is the largest of them
 ;   @0x0c8:0x0d8  acc{17}   the answer being accumulated
 ;   @0x0dc:0x0ec  t{17}     a doubled once per turn  reduced each time
 ;   @0x0f0:0x100  bv{17}    b  shifted down one per turn until it is gone
@@ -200,7 +200,7 @@ R1
 ; back to the work frame
 L236
 ; ASSERT ptr=0
-; ASSERT zero 17:46
+; ASSERT zero 17:52
 @@FOLD136@@ 0
 ; ASSERT ptr=0
   [-R220+L220]
@@ -443,10 +443,10 @@ R1
 ; back to the work frame
 L276
 ; ASSERT ptr=0
-; ASSERT zero 34:39
+; ASSERT zero 34:45
 @@ADD136@@ 0
 ; ASSERT ptr=0
-; ASSERT zero 17:46
+; ASSERT zero 17:52
 @@FOLD136@@ 0
 ; ASSERT ptr=0
   [-R200+L200]
@@ -561,7 +561,7 @@ L236
 ; ASSERT zero 17:24
 @@DBL136@@ 0
 ; ASSERT ptr=0
-; ASSERT zero 17:46
+; ASSERT zero 17:52
 @@FOLD136@@ 0
 ; ASSERT ptr=0
   [-R220+L220]

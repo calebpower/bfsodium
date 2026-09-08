@@ -64,12 +64,9 @@ hatch if a future primitive genuinely needs a run-time index — but see
 
 ## What is next
 
-1. **Migrate `add136` to `idiom/add8`.** It has 34 instances of the old kernel
-   and is what now dominates Poly1305 and therefore the AEAD. The ripple is the
-   work: `add136`'s footprint goes from 0:39 to 0:45, and `fold136` parks `H`,
-   `tmp` and its halving frame at cells 40 to 46 — exactly there. `reducep136`
-   and `mulmod136` then follow. Keep the old kernel for the carry in, as
-   `add32` does.
+1. **A cheaper `mulmod136`, if Poly1305's speed matters.** It is 987 million
+   instructions and the adder is no longer where that goes; see *Cost*. 136
+   turns each paying two folds is the shape to attack.
 
 2. **SHA-256, then HKDF-SHA-256.** SHA-256 needs 32-bit rotate-right and a
    64-word message schedule; `rotl32` already exists and rotate-right by `n` is
@@ -197,23 +194,33 @@ was `rotl32`, at 20 million a call, because one bit of rotation DOUBLEs four
 bytes and DOUBLE is `ADD8(x, x)`. Migrating that took `blockloop` to 686
 million. Same kernel, a caller nobody had counted.
 
-| | before | after |
-|---|---|---|
-| `ADD8` at 255 plus 255 | 750,977 | 40,796 |
-| `add32` max plus max | 3,070,694 | 229,973 |
-| `rotl32` by 16 | 19,981,909 | 1,433,049 |
-| `blockloop` | ≈5.9 billion (18 s) | 686 million (1.4 s) |
-| `stream`, one block | — | 706 million |
-| AEAD, RFC §2.8.2 | 55 s | 41 s |
+| | before | after | |
+|---|---|---|---|
+| `ADD8` at 255 plus 255 | 750,977 | 40,796 | 18× |
+| `add32` max plus max | 3,070,694 | 229,973 | 13× |
+| `rotl32` by 16 | 19,981,909 | 1,433,049 | 14× |
+| **`blockloop`** | ≈5.9 billion (18 s) | 686 million (1.4 s) | **9×** |
+| `add136` worst case | 12,695,192 | 1,352,910 | 9.4× |
+| `fold136` max | 1,193,069 | 817,802 | 1.5× |
+| `reducep136` max | 1,232,781 | 860,034 | 1.4× |
+| `mulmod136` large | 1,155,893,395 | 987,082,567 | 1.2× |
+| AEAD, RFC §2.8.2 | 13.12 billion | 11.58 billion | 1.13× |
 
-`poly1305` is **not migrated yet** and still pays the product: `add136` is 12.7
-million at its worst, `mulmod136` 1.16 billion, `poly1305` on the RFC vector
-3.2 billion. That is what now dominates the AEAD, and it is the next thing to
-do — see *What is next*.
+**And now the same lesson a second time, in the other direction.** Migrating
+`add136` bought 9.4× on the adder itself and only **1.13×** on the AEAD, across
+four files that had to be re-laid. Poly1305's cost is not the adder: it is
+`mulmod136`'s 136 turns, each paying two `fold136` calls, a `dbl136` and a
+17-byte carry of the operands to and from the work frame. `fold136` at 818
+thousand times 272 calls is already 222 million of `mulmod136`'s 987 million.
+
+So do not reach for the adder again here. The next real win for Poly1305 is a
+**better multiply** — fewer than 136 turns, or a reduction that does not fold
+twice a turn — not a faster byte add. Measure it before building it; that
+advice has now been earned twice.
 
 `dbl136` still exists for the same reason as before: doubling a 17-byte value
 is a shift and costs about half a million, where an `add136` asked to do a
-shift's job costs 12 million. If something is unexpectedly slow, look for that.
+shift's job costs 1.35 million. If something is unexpectedly slow, look for that.
 
 The per-vector timeout in `tests/run.sh` is 900 s.
 

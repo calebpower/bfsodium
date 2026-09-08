@@ -12,9 +12,9 @@
 ; and 15 keep only their low four bits  and bytes 4 8 and 12 lose their low two;
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x027  the tag frame; add136 runs HERE at this file's own zero for
+;   @0x000:0x02d  the tag frame; add136 runs HERE at this file's own zero for
 ;                 the one addition this file still makes itself  the s at the
-;                 end; its footprint 0:39 is what sets the size of it
+;                 end; its footprint 0:45 is what sets the size of it
 ;   @0x12c:0x13c  r{17}    the clamped r  copied into absorb's slot each block;
 ;                          poly1305/clamp does the clamping  borrowing the
 ;                          absorb frame below  which is idle until the first block
@@ -869,7 +869,7 @@ R1
 ; to the work frame
 L336
 ; ASSERT ptr=0
-; ASSERT zero 34:39
+; ASSERT zero 34:45
 @@ADD136@@ 0
 ; ASSERT ptr=0
 ; the seventeenth byte is above the tag and is not emitted

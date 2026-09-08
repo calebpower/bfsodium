@@ -29,7 +29,7 @@
 ;   @0x040:0x14f  blockkeep's frame; it runs HERE at this file's own zero and
 ;                 its footprint 0:335 is what sets the size of it; a keystream
 ;                 block comes back at @0x040:0x07f
-;   @0x0d0:0x0f7  the tag frame; add136 runs at @0x0d0 for the one addition
+;   @0x0d0:0x0fd  the tag frame; add136 runs at @0x0d0 for the one addition
 ;                 this file makes itself  the s at the end; it sits above the
 ;                 keystream  in tape the block function has already given back
 ;   @0x154:0x155  alen{2} u16 LE  kept  because the length block needs it after
@@ -1419,7 +1419,7 @@ R24
 ; add136 runs above the keystream  in tape blockkeep has already given back;
 R17
 ; ASSERT ptr=529
-; ASSERT zero 208:247
+; ASSERT zero 208:253
   [-L321+R321]
 ; the next byte
 R1
