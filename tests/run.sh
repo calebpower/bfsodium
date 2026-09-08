@@ -75,6 +75,7 @@ echo "== tier 9: legibility and portability =="
 run "bfstyle self-test" ./tools/bfstyle --selftest
 run "bflint self-test" ./tools/bflint --selftest
 run "bffoot self-test" ./tools/bffoot --selftest
+run "bftable self-test" perl tools/bftable.pl --selftest
 # Every committed .bf, not a named list of directories. index/ sat outside the
 # old "chacha20 poly1305" globs and so was linted, styled and footprint-checked
 # by nothing at all -- it passes when run by hand, which is exactly the state in
@@ -132,6 +133,16 @@ printf '@@NOSUCHROUTINE@@ 0\n' > "$tmpb/unknown.skel"
 run "a paste site naming no known routine is refused" \
     sh -c "! sh tools/bfexpand.sh $tmpb/unknown.skel >/dev/null 2>&1"
 rm -rf "$tmpb"
+
+# HANDOFF's routine table gives a line count per artifact, and it is the only
+# place a reader can see what a routine costs to read before opening it.
+# Nothing regenerated it and nothing checked it, so eighteen of its thirty rows
+# were wrong: chacha20/qrloop was recorded at 464 lines against an actual 1520,
+# because the row was written when the transpiler was deleted and the .bf has
+# since grown the three routines it pastes. This also fails when a NEW routine
+# has a skeleton and no row, which is the drift that matters, since an absent
+# row reads as nothing rather than as a wrong number.
+run "HANDOFF's routine table describes the tree" perl tools/bftable.pl
 
 echo
 echo "== tiers 2 and 4: primitives, dual oracle =="
