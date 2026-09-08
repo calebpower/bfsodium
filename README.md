@@ -22,10 +22,11 @@ its tape contract.
 
 ## Status
 
-**The ChaCha20-Poly1305 AEAD works.** The stream cipher matches RFC 8439
-§2.4.2, the authenticator matches §2.5.2, and the AEAD that combines them
-matches §2.8.2 — ciphertext and tag both — in brainfuck, checked against two
-independent oracles.
+**The ChaCha20-Poly1305 AEAD and SHA-256 both work.** The stream cipher
+matches RFC 8439 §2.4.2, the authenticator matches §2.5.2, the AEAD that
+combines them matches §2.8.2 — ciphertext and tag both — and SHA-256 matches
+FIPS 180-4, padding and all. In brainfuck, checked against two independent
+oracles.
 
 It is **correct, not safe**: brainfuck branches on data, so there is no
 constant-time story and cannot be one, and nothing is zeroized. See
@@ -55,9 +56,12 @@ constant-time story and cannot be one, and nothing is zeroized. See
 | [`poly1305/poly1305.bf`](poly1305/poly1305.bf) | **the authenticator (RFC 8439 §2.5.2)** |
 | [`aead/keygen.bf`](aead/keygen.bf) | the Poly1305 one-time key (RFC 8439 §2.6) |
 | [`aead/chacha20poly1305.bf`](aead/chacha20poly1305.bf) | **the AEAD (RFC 8439 §2.8.2)** |
+| [`sha256/round.bf`](sha256/round.bf) | one compression round |
+| [`sha256/expand.bf`](sha256/expand.bf) | one message-schedule word |
+| [`sha256/sha256.bf`](sha256/sha256.bf) | **SHA-256 (FIPS 180-4)** |
 
-Next: SHA-256, then HKDF-SHA-256. Keccak and the ML-KEM / ML-DSA lattice math
-are the later mountain.
+Next: HKDF-SHA-256, which completes the symmetric set. Keccak and the ML-KEM /
+ML-DSA lattice math are the later mountain.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and
 [Cryptol](https://cryptol.net); `reaper test` provisions both).

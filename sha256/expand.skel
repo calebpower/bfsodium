@@ -1,0 +1,475 @@
+; bfsodium SHA_256 EXPAND : one word of the message schedule
+;
+; HAND WRITTEN skeleton; The rotate  the shift  the exclusive or and the adder
+; are each PASTED from their own verified files;
+;
+; INTERFACE entry=15 exit=0 footprint=0:132
+; IO  in:  w0{4} LE  w1{4} LE  w9{4} LE  w14{4} LE     (16 bytes)
+;     out: the next schedule word{4} LE                (4 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x03  w0{4}   u32 LE  W{t minus 16}; SPENT
+;   @0x04:0x07  w1{4}   u32 LE  W{t minus 15}; SPENT
+;   @0x08:0x0b  w9{4}   u32 LE  W{t minus 7};  SPENT
+;   @0x0c:0x0f  w14{4}  u32 LE  W{t minus 2};  SPENT
+;   @0x10:0x13  out{4}  u32 LE  the answer
+;   @0x14:0x27  four scratch words and the temp a copy hands back through
+;   @0x30:0x43  the adder frame; add32 footprint 0:19 at @0x30
+;   @0x48:0x61  the exclusive or frame; xor32 0:25 at @0x48
+;   @0x68:0x74  the rotate frame; rotr32 0:12 at @0x68
+;   @0x78:0x84  the shift frame; shr32 0:12 at @0x78
+;
+; FIPS 180_4 section 6 point 2 point 2 gives the recurrence as
+;   W{t} = sigma1(W{t minus 2}) plus W{t minus 7} plus sigma0(W{t minus 15})
+;          plus W{t minus 16}
+; with sigma0 x = ROTR 7 xor ROTR 18 xor SHR 3
+; and  sigma1 x = ROTR 17 xor ROTR 19 xor SHR 10;
+;
+; The four taps arrive here as four adjacent words because the caller keeps a
+; sliding window of sixteen and they sit at fixed places in it; that is why
+; this routine needs no index and takes no position;
+;
+; Note that the two small sigmas mix rotations with a genuine SHIFT  which is
+; the only reason idiom/shr32 exists at all;
+
+; read the four taps
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=15
+; ASSERT zero 16:132
+
+; ==== sigma0 of W{t minus 15} ====
+; the word into the rotate frame
+L11
+  [-R100+L68+L32]
+R1
+  [-R100+L68+L32]
+R1
+  [-R100+L68+L32]
+R1
+  [-R100+L68+L32]
+; and the temp hands the original straight back
+R29
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+R69
+; the rotation count
+  +++++++
+L4
+; ASSERT ptr=104
+@@ROTR32@@ 104
+; ASSERT ptr=104
+; the rotated word comes back
+  [-L84+R84]
+R1
+  [-L84+R84]
+R1
+  [-L84+R84]
+R1
+  [-L84+R84]
+; the word into the rotate frame
+L103
+  [-R100+L68+L32]
+R1
+  [-R100+L68+L32]
+R1
+  [-R100+L68+L32]
+R1
+  [-R100+L68+L32]
+; and the temp hands the original straight back
+R29
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+R69
+; the rotation count
+  ++++++++++++++++++
+L4
+; ASSERT ptr=104
+@@ROTR32@@ 104
+; ASSERT ptr=104
+; the rotated word comes back
+  [-L80+R80]
+R1
+  [-L80+R80]
+R1
+  [-L80+R80]
+R1
+  [-L80+R80]
+; the first operand of the exclusive or
+L87
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+; and the second
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R45
+; ASSERT ptr=72
+@@XOR32@@ 72
+; ASSERT ptr=72
+; the result comes back
+R8
+  [-L52+R52]
+R1
+  [-L52+R52]
+R1
+  [-L52+R52]
+R1
+  [-L52+R52]
+; the word into the shift frame  and it is spent
+L79
+  [-R116+L116]
+R1
+  [-R116+L116]
+R1
+  [-R116+L116]
+R1
+  [-R116+L116]
+R117
+; the shift count
+  +++
+L4
+; ASSERT ptr=120
+@@SHR32@@ 120
+; ASSERT ptr=120
+; the shifted word comes back
+  [-L100+R100]
+R1
+  [-L100+R100]
+R1
+  [-L100+R100]
+R1
+  [-L100+R100]
+; the two rotations so far
+L95
+  [-L4+R4]
+R1
+  [-L4+R4]
+R1
+  [-L4+R4]
+R1
+  [-L4+R4]
+; the first operand of the exclusive or
+L7
+  [-R48+L48]
+R1
+  [-R48+L48]
+R1
+  [-R48+L48]
+R1
+  [-R48+L48]
+; and the second
+L7
+  [-R56+L56]
+R1
+  [-R56+L56]
+R1
+  [-R56+L56]
+R1
+  [-R56+L56]
+R49
+; ASSERT ptr=72
+@@XOR32@@ 72
+; ASSERT ptr=72
+; the result comes back
+R8
+  [-L52+R52]
+R1
+  [-L52+R52]
+R1
+  [-L52+R52]
+R1
+  [-L52+R52]
+
+; ==== sigma1 of W{t minus 2} ====
+; the word into the rotate frame
+L71
+  [-R92+L68+L24]
+R1
+  [-R92+L68+L24]
+R1
+  [-R92+L68+L24]
+R1
+  [-R92+L68+L24]
+; and the temp hands the original straight back
+R21
+  [-L24+R24]
+R1
+  [-L24+R24]
+R1
+  [-L24+R24]
+R1
+  [-L24+R24]
+R69
+; the rotation count
+  +++++++++++++++++
+L4
+; ASSERT ptr=104
+@@ROTR32@@ 104
+; ASSERT ptr=104
+; the rotated word comes back
+  [-L84+R84]
+R1
+  [-L84+R84]
+R1
+  [-L84+R84]
+R1
+  [-L84+R84]
+; the word into the rotate frame
+L95
+  [-R92+L68+L24]
+R1
+  [-R92+L68+L24]
+R1
+  [-R92+L68+L24]
+R1
+  [-R92+L68+L24]
+; and the temp hands the original straight back
+R21
+  [-L24+R24]
+R1
+  [-L24+R24]
+R1
+  [-L24+R24]
+R1
+  [-L24+R24]
+R69
+; the rotation count
+  +++++++++++++++++++
+L4
+; ASSERT ptr=104
+@@ROTR32@@ 104
+; ASSERT ptr=104
+; the rotated word comes back
+  [-L80+R80]
+R1
+  [-L80+R80]
+R1
+  [-L80+R80]
+R1
+  [-L80+R80]
+; the first operand of the exclusive or
+L87
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+; and the second
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R1
+  [-R52+L52]
+R45
+; ASSERT ptr=72
+@@XOR32@@ 72
+; ASSERT ptr=72
+; the result comes back
+R8
+  [-L48+R48]
+R1
+  [-L48+R48]
+R1
+  [-L48+R48]
+R1
+  [-L48+R48]
+; the word into the shift frame  and it is spent
+L71
+  [-R108+L108]
+R1
+  [-R108+L108]
+R1
+  [-R108+L108]
+R1
+  [-R108+L108]
+R109
+; the shift count
+  ++++++++++
+L4
+; ASSERT ptr=120
+@@SHR32@@ 120
+; ASSERT ptr=120
+; the shifted word comes back
+  [-L100+R100]
+R1
+  [-L100+R100]
+R1
+  [-L100+R100]
+R1
+  [-L100+R100]
+; the two rotations so far
+L91
+  [-L8+R8]
+R1
+  [-L8+R8]
+R1
+  [-L8+R8]
+R1
+  [-L8+R8]
+; the first operand of the exclusive or
+L11
+  [-R48+L48]
+R1
+  [-R48+L48]
+R1
+  [-R48+L48]
+R1
+  [-R48+L48]
+; and the second
+L7
+  [-R56+L56]
+R1
+  [-R56+L56]
+R1
+  [-R56+L56]
+R1
+  [-R56+L56]
+R49
+; ASSERT ptr=72
+@@XOR32@@ 72
+; ASSERT ptr=72
+; the result comes back
+R8
+  [-L48+R48]
+R1
+  [-L48+R48]
+R1
+  [-L48+R48]
+R1
+  [-L48+R48]
+
+; ==== the four are added  modulo two to the thirty second ====
+; W{t minus 16} starts it
+L83
+  [-R16+L16]
+R1
+  [-R16+L16]
+R1
+  [-R16+L16]
+R1
+  [-R16+L16]
+; the accumulator into the adder
+R13
+  [-R32+L32]
+R1
+  [-R32+L32]
+R1
+  [-R32+L32]
+R1
+  [-R32+L32]
+; and the addend after it
+R9
+  [-R24+L24]
+R1
+  [-R24+L24]
+R1
+  [-R24+L24]
+R1
+  [-R24+L24]
+R17
+; ASSERT ptr=48
+@@ADD32@@ 48
+; ASSERT ptr=48
+; the sum comes back
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+; the accumulator into the adder
+L35
+  [-R32+L32]
+R1
+  [-R32+L32]
+R1
+  [-R32+L32]
+R1
+  [-R32+L32]
+; and the addend after it
+L11
+  [-R44+L44]
+R1
+  [-R44+L44]
+R1
+  [-R44+L44]
+R1
+  [-R44+L44]
+R37
+; ASSERT ptr=48
+@@ADD32@@ 48
+; ASSERT ptr=48
+; the sum comes back
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+; the accumulator into the adder
+L35
+  [-R32+L32]
+R1
+  [-R32+L32]
+R1
+  [-R32+L32]
+R1
+  [-R32+L32]
+; and the addend after it
+R13
+  [-R20+L20]
+R1
+  [-R20+L20]
+R1
+  [-R20+L20]
+R1
+  [-R20+L20]
+R13
+; ASSERT ptr=48
+@@ADD32@@ 48
+; ASSERT ptr=48
+; the sum comes back
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+R1
+  [-L32+R32]
+L51
+; ASSERT ptr=0
+; ASSERT zero 0:15
+; ASSERT zero 20:132
+
+; emit
+; to the answer
+R16
+; the new schedule word  little endian
+  .>.>.>.

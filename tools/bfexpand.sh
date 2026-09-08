@@ -96,6 +96,8 @@ while IFS= read -r line; do
     case "$line" in
         '@@ADD136@@'*)  import "$repo/poly1305/add136.bf" "${line##* }"; continue ;;
         '@@ADD8@@'*)    import "$repo/idiom/add8.bf" "${line##* }"; continue ;;
+        '@@ROUND@@'*)   import "$repo/sha256/round.bf" "${line##* }"; continue ;;
+        '@@EXPAND@@'*)  import "$repo/sha256/expand.bf" "${line##* }"; continue ;;
         '@@SHR32@@'*)   import "$repo/idiom/shr32.bf" "${line##* }"; continue ;;
         '@@ROTR32@@'*)  import "$repo/idiom/rotr32.bf" "${line##* }"; continue ;;
         '@@AND32@@'*)   import "$repo/idiom/and32.bf" "${line##* }"; continue ;;
