@@ -25,11 +25,38 @@ command -v "$engine" >/dev/null 2>&1 || {
     exit 1
 }
 
+mkdir -p "$repo/out"
+
+# The host paths, which are the engine's business, and the container paths,
+# which are not. On a Unix host these are the same strings and the block below
+# does nothing.
+#
+# Under Git Bash the engine is a native Windows binary, and MSYS rewrites every
+# argument that LOOKS like a POSIX path before it arrives. Left alone it turns
+# `-v /repo:/src:ro` into `\Program Files\Git\src;ro` -- it reads the whole
+# argument as a colon-separated path LIST -- and rewrites `/work` the same way.
+# Turning the rewriting off is necessary but not sufficient: podman then reads
+# the host half of a mount, and the build context, as Windows paths and
+# resolves `/d/projects` to `D:\d\projects`. Neither setting is right for both
+# halves, so the halves are separated -- rewriting off, host paths converted
+# explicitly with cygpath, container paths written literally.
+host=$repo
+hostout=$repo/out
+hostfile=$repo/Containerfile
+case ${OSTYPE:-$(uname -s)} in
+    msys* | cygwin* | MINGW* | MSYS* | CYGWIN*)
+        MSYS_NO_PATHCONV=1
+        MSYS2_ARG_CONV_EXCL='*'
+        export MSYS_NO_PATHCONV MSYS2_ARG_CONV_EXCL
+        host=$(cygpath -w -- "$repo")
+        hostout=$(cygpath -w -- "$repo/out")
+        hostfile=$(cygpath -w -- "$repo/Containerfile")
+        ;;
+esac
+
 echo "container-test: THE FALLBACK LANE. 'reaper test' is the gate of record."
 echo "container-test: building $IMAGE (the first build needs a network)"
-"$engine" build -t "$IMAGE" -f "$repo/Containerfile" "$repo"
-
-mkdir -p "$repo/out"
+"$engine" build -t "$IMAGE" -f "$hostfile" "$host"
 
 # The tree goes in READ ONLY and is copied to scratch inside the container.
 #
@@ -46,15 +73,23 @@ mkdir -p "$repo/out"
 # this runs can leave a Linux ELF binary in the checkout you are editing.
 #
 # On an SELinux host add ,z to the :ro below if the mount is denied.
+#
+# There is no -w flag. The Containerfile's WORKDIR already lands the container
+# in /work, so the flag was only ever a second way of saying it, and a badly
+# behaved one: a podman 4.5 client against a 4.9 server refused it outright,
+# "workdir /work does not exist", for a directory that does exist and is the
+# image's own WorkingDir. A matched 5.8 pair accepts it again, so that was the
+# version skew and not podman -- but the flag is redundant either way, and the
+# `cd` below says the same thing where no engine can misread it.
 # `set -e` would abort on a red suite before the status is captured, losing the
 # closing lines at exactly the moment they are wanted, so the run is guarded.
 status=0
 "$engine" run --rm \
-    -v "$repo":/src:ro \
-    -v "$repo/out":/out \
-    -w /work \
+    -v "$host:/src:ro" \
+    -v "$hostout:/out" \
     "$IMAGE" \
     sh -euc '
+        cd /work
         cp -a /src/. /work/
         rm -f tools/bfi tools/hx tools/bflint tools/bfstyle tools/bffoot
         sh tools/guest-setup.sh --build
