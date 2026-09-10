@@ -144,6 +144,17 @@ rm -rf "$tmpb"
 # row reads as nothing rather than as a wrong number.
 run "HANDOFF's routine table describes the tree" perl tools/bftable.pl
 
+# There is ONE definition of the toolchain, in tools/guest-setup.sh, and both
+# lanes run it: reaper's [build] calls it with no argument, the Containerfile
+# calls it with --toolchain. The moment the Containerfile grows its own apt
+# line or its own Cryptol version there are two definitions, and the fallback
+# lane starts passing what the gate would fail -- silently, because a container
+# that installs a different z3 still runs every test and still says PASS. That
+# is the failure this check exists to make loud.
+run "the container lane installs nothing of its own" sh -c '
+    grep -q "guest-setup.sh --toolchain" Containerfile || exit 1
+    ! grep -Eq "apt-get|CRYPTOL_VERSION|cryptol/releases" Containerfile'
+
 echo
 echo "== tiers 2 and 4: primitives, dual oracle =="
 # ADD8 is the kernel every wide adder is built from and was the slowest thing

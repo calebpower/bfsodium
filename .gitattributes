@@ -1,0 +1,11 @@
+# Nothing here is ever line-ending converted.
+#
+# tests/run.sh proves that every .bf is byte for byte what bfexpand makes of
+# its skeleton, and bfstyle's size budget rests on that equality holding -- it
+# is what licenses the budget to count a skeleton instead of the generated
+# brainfuck. A CRLF checkout breaks all thirty of those comparisons at once and
+# leaves bflint passing, because \r is not a brainfuck command byte. Thirty
+# confusing failures and a clean lint is a worse morning than a merge conflict,
+# so autocrlf is refused here rather than left to whatever the clone was
+# configured with.
+* -text

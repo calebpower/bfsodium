@@ -67,7 +67,10 @@ That is everything CONVENTIONS.md lists as v1. Keccak and the ML-KEM / ML-DSA
 lattice math are the later mountain.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and
-[Cryptol](https://cryptol.net); `reaper test` provisions both).
+[Cryptol](https://cryptol.net); `reaper test` provisions both). Where the
+reaper site is out of reach, `sh tools/container-test.sh` runs the same suite in
+a container — see *Running the suite* in [HANDOFF.md](HANDOFF.md), including
+why that is the fallback and not the gate.
 
 ## Correctness
 

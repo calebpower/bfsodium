@@ -9,9 +9,39 @@
 #
 # Cryptol is pinned to an explicit version so a guest built next month runs the
 # same oracle as one built today.
+#
+# Two phases, and with NO ARGUMENT it runs both -- which is what reaper's
+# [build] has always invoked and what it still invokes. The container fallback
+# wants only the first half, because an apt transaction and a Cryptol tarball
+# fetched from GitHub is the slow part and belongs in a cached image layer
+# rather than in every run; Containerfile takes --toolchain and
+# tools/container-test.sh then takes --build against the tree under test.
+#
+# The phases live here, in the file reaper already runs, rather than being
+# reproduced in the Containerfile. A Containerfile carrying its own apt line
+# and its own Cryptol version is a SECOND definition of the toolchain, and the
+# day it drifts is the day the fallback starts passing what the gate would
+# fail. There is one definition, and this is it.
 set -eu
 
 CRYPTOL_VERSION=3.4.0
+
+usage() {
+    echo "usage: guest-setup.sh [--toolchain|--build]" >&2
+    exit 2
+}
+
+do_toolchain=yes
+do_build=yes
+case "${1-}" in
+    '')          [ $# -le 1 ] || usage ;;
+    --toolchain) do_build=no ;;
+    --build)     do_toolchain=no ;;
+    *)           usage ;;
+esac
+[ $# -le 1 ] || usage
+
+if [ "$do_toolchain" = yes ]; then
 
 echo "guest-setup: apt toolchain (C compiler, z3, curl)"
 export DEBIAN_FRONTEND=noninteractive
@@ -53,6 +83,10 @@ cc --version | head -1
 z3 --version
 cryptol --version 2>&1 | head -1
 
+fi
+
+if [ "$do_build" = yes ]; then
+
 echo "guest-setup: building the pinned interpreter and tools"
 # Every tool tests/run.sh builds, so a compile error is reported HERE as a
 # build failure rather than surfacing later as a test failure. bffoot and
@@ -64,5 +98,7 @@ cc -O2 -std=c99 -Wall -Wextra -o tools/hx      tools/hx.c
 cc -O2 -std=c99 -Wall -Wextra -o tools/bflint  tools/bflint.c
 cc -O2 -std=c99 -Wall -Wextra -o tools/bfstyle tools/bfstyle.c
 cc -O2 -std=c99 -Wall -Wextra -o tools/bffoot  tools/bffoot.c
+
+fi
 
 echo "guest-setup: done"
