@@ -72,6 +72,51 @@ reaper site is out of reach, `sh tools/container-test.sh` runs the same suite in
 a container — see *Running the suite* in [HANDOFF.md](HANDOFF.md), including
 why that is the fallback and not the gate.
 
+## What it can and cannot do
+
+The limits below are interface facts, not implementation details — they are
+what you hit first, and none of them are bugs.
+
+**Input sizes are capped by the length prefixes.**
+
+- Every variable-length primitive takes `len{2} LE`, so **65535 bytes is the
+  maximum** message, plaintext or AAD. SHA-256 cannot hash a 64 KiB-plus file.
+- `hmac` and `hkdf` take fixed **256-byte buffers** for the key, salt, IKM and
+  info. Longer inputs do not fit the interface.
+
+**Every primitive is one-shot.**
+
+- There is no streaming or incremental form. You cannot feed a hash in chunks,
+  and there is no session or context to carry between runs.
+- The AEAD **seals only**. Opening is proved as a metamorphic property, not
+  exposed as a callable entry point.
+- Randomness is never generated. Where a primitive needs entropy it is supplied
+  as input bytes, which is what keeps every run replayable.
+
+**It is slow, and the numbers are the point rather than an apology.** Costs are
+in `bfi` instructions, which are machine independent; the wall times are from a
+modern x86-64 at roughly 750 million instructions a second.
+
+| | instructions | wall |
+|---|---|---|
+| SHA-256 of 48 bytes | 1.2 billion | 2 s |
+| AEAD, 32-byte AAD and 14-byte plaintext | 5.2 billion | 6 s |
+| HKDF, 64-byte output | ≈22 billion | ≈29 s |
+| AEAD, the full RFC 8439 §2.8.2 vector | 11.6 billion | — |
+
+**Not present at all:** any public-key primitive — no X25519, no signatures, no
+key exchange. No post-quantum anything; ML-KEM, ML-DSA and Keccak are deferred,
+see *Scope and roadmap* in CONVENTIONS.md. No AES, SHA-3 or BLAKE. No encoding
+helpers — no hex, base64 or JSON canonicalization.
+
+**Not proven**, and named here rather than left to be discovered:
+
+- **Differential fuzz is declared and not built.** There is documented
+  precedent it would find things: every `mulmod136` vector shared a blind spot
+  at bit 129, so a loop stopping one turn short passed all of them.
+- **Sufficiency.** The v1 set is *complete* as CONVENTIONS §9 defines it.
+  Nothing has yet shown it is *enough* for the downstream target.
+
 ## Correctness
 
 Every primitive is checked against **two independent oracles** — the published
