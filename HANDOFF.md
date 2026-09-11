@@ -160,11 +160,17 @@ site, and it is a fallback, not a second opinion.
     reaper up && reaper test        # the gate
     sh tools/container-test.sh      # the fallback, same suite, nothing skipped
 
-The reaper guest is **currently torn down**, deliberately. Bringing it back is
-`reaper up`, and the first `reaper test` afterwards re-runs `guest-setup.sh` in
-full: an apt transaction and a pinned Cryptol tarball fetched from GitHub. Budget
-for that. There is no useful partial gate before it finishes, because tiers 4
-and 8 are both Cryptol and the suite refuses to degrade to a single oracle.
+**A cold guest costs a provisioning round.** Whenever the guest has been torn
+down, the first `reaper test` after `reaper up` re-runs `guest-setup.sh` in
+full: an apt transaction and a pinned Cryptol tarball fetched from GitHub.
+Budget for that. There is no useful partial gate before it finishes, because
+tiers 4 and 8 are both Cryptol and the suite refuses to degrade to a single
+oracle.
+
+This paragraph used to assert the guest *was* torn down, as a standing fact.
+That is the wrong kind of thing for a document to claim: it is true or false by
+the minute, nothing checks it, and it was false for some time before anyone
+noticed. Guest state belongs to `reaper list`, not here.
 
 Both lanes run `tools/guest-setup.sh`, and that is the only definition of the
 toolchain anywhere in this repository. reaper calls it with no argument;
