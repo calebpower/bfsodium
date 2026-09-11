@@ -68,6 +68,26 @@ printf -- '-.' > "$tmp/wrap.bf"
 run "cell wraps 0 to 255"  ./tools/kat.sh "$tmp/wrap.bf" "" ff wrap
 printf '; prose, with punctuation. inert\n,.\n' > "$tmp/cmt.bf"
 run "semicolon comments are inert" ./tools/kat.sh "$tmp/cmt.bf" 41 41 cmt
+# A byte written by '.' must reach the far end before the program blocks or
+# ends, and every other check here is blind to whether it does: they all read
+# the output AFTER the program has exited, by which time stdio has flushed
+# either way.
+#
+# It was not true. bfi used stdio with no setvbuf, so with stdout to a pipe it
+# buffered 4 KiB and nothing left the process until the final fflush. A
+# one-shot primitive never noticed. Anything holding a CONVERSATION with a bf
+# program over a pipe deadlocks instantly and silently: the request sits in
+# the buffer, the far end blocks reading a request that was never sent, the
+# program blocks on ',' for a reply that cannot come, and there is no output
+# and no core to look at.
+#
+# The program below writes one byte and then spins forever, so the byte can
+# only be observed if it was flushed when it was written. timeout kills it
+# with SIGTERM, which does not flush -- which is exactly the point.
+printf '%s' '++++++++[>++++++++<-]>+.[]' > "$tmp/spin.bf"
+run "a written byte reaches a pipe before the program ends" sh -c "
+    got=\$(timeout 2 ./tools/bfi $tmp/spin.bf </dev/null | ./tools/hx)
+    test \"\$got\" = 41"
 rm -rf "$tmp"
 
 echo

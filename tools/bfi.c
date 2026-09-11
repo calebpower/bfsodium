@@ -33,6 +33,28 @@ static void die(const char *msg) { fprintf(stderr, "bfi: %s\n", msg); exit(2); }
 int main(int argc, char **argv) {
     if (argc != 2) { fprintf(stderr, "usage: %s program.bf\n", argv[0]); return 2; }
 
+    /* '.' must reach the far end before the program blocks on ','.
+     *
+     * With stdout to a terminal, C stdio is line buffered and nobody notices.
+     * With stdout to a PIPE it is fully buffered, so nothing this program
+     * writes leaves the process until the buffer fills or the program ends --
+     * and the fflush below is the only flush, which happens after the last
+     * instruction has run. A bfsodium primitive is one-shot and reads a known
+     * byte count, so that has never mattered here.
+     *
+     * It matters the moment anything holds a conversation with a bf program
+     * over a pipe: the request sits in this buffer, the far end blocks reading
+     * a request that was never sent, this program blocks on ',' awaiting a
+     * reply that cannot come, and the only symptom is a hang with no output
+     * and no core. That is what happens today if you point a broker at bfi,
+     * and it is not a defect anyone would find by reading the failure.
+     *
+     * Unbuffered is the fix. Line buffering is not: 0x0a is an ordinary data
+     * byte here, not a terminator. The cost is one write(2) per '.', which is
+     * invisible next to a primitive that spends millions of instructions
+     * between them. */
+    setvbuf(stdout, NULL, _IONBF, 0);
+
     FILE *f = fopen(argv[1], "rb");
     if (!f) { perror("bfi: open program"); return 2; }
 
