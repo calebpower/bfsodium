@@ -54,6 +54,7 @@ for cry in bfsodium perm; do
 done
 
 echo
+# TIER 1
 echo "== tier 1: interpreter self-test =="
 tmp=$(mktemp -d)
 printf '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.' > "$tmp/hello.bf"
@@ -91,22 +92,26 @@ run "a written byte reaches a pipe before the program ends" sh -c "
 rm -rf "$tmp"
 
 echo
+# TIER 9
 echo "== tier 9: legibility and portability =="
 run "bfstyle self-test" ./tools/bfstyle --selftest
 run "bflint self-test" ./tools/bflint --selftest
 run "bffoot self-test" ./tools/bffoot --selftest
 run "bftable self-test" perl tools/bftable.pl --selftest
+run "bftier self-test" perl tools/bftier.pl --selftest
 # Every committed .bf, not a named list of directories. index/ sat outside the
 # old "chacha20 poly1305" globs and so was linted, styled and footprint-checked
 # by nothing at all -- it passes when run by hand, which is exactly the state in
 # which a regression goes unseen. A new directory is covered by construction.
 for f in */*.bf; do run "lint $f" ./tools/bflint "$f"; done
+# TIER 9a 9b
 for f in */*.bf; do run "style $f" ./tools/bfstyle "$f"; done
 # A routine is pasted into its callers on the strength of its INTERFACE line, so
 # that line has to be a fact and not a promise. stagger understated its footprint
 # by four cells, quietly borrowed them from the block function's saved copy of
 # the original state, and put one wrong word in every block; the arithmetic was
 # perfect and every other tier passed. This is the check that saw it.
+# TIER 9d
 for f in */*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
 
 # bffoot returns success on a file with no INTERFACE line -- it declines to
@@ -116,6 +121,7 @@ for f in */*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
 # and index/ is the unpasted escape hatch; a NEW routine that forgets its
 # INTERFACE line joins this list and fails here, instead of collecting a
 # vacuous PASS from the loop above.
+# TIER 9d
 run "the files declaring no INTERFACE are exactly the known ones" sh -c '
     got=$(for f in */*.bf; do grep -q "^; INTERFACE" "$f" || echo "$f"; done)
     want="aead/chacha20poly1305.bf
@@ -131,6 +137,7 @@ sha256/sha256.bf"
 # is hand-edited downstream of bfexpand, and this is the check that says so --
 # it is also what caught bfexpand dropping all but the first line of a
 # multi-line read prologue, which pasted 47 stray reads into a caller.
+# TIER 9c
 for s in */*.skel; do
     run "regenerates ${s%.skel}.bf" \
         sh -c "sh tools/bfexpand.sh '$s' | cmp -s - '${s%.skel}.bf'"
@@ -162,7 +169,13 @@ rm -rf "$tmpb"
 # since grown the three routines it pastes. This also fails when a NEW routine
 # has a skeleton and no row, which is the drift that matters, since an absent
 # row reads as nothing rather than as a wrong number.
+# TIER 9e
 run "HANDOFF's routine table describes the tree" perl tools/bftable.pl
+# The tier table is the other half, and the reason it exists is that tier 6
+# sat in the old combined table in the same voice as the tiers that ran. A
+# table saying what you want and what you have in one column drifts the
+# moment those differ, and they almost always differ.
+run "HANDOFF's tier table describes the suite" perl tools/bftier.pl
 
 # There is ONE definition of the toolchain, in tools/guest-setup.sh, and both
 # lanes run it: reaper's [build] calls it with no argument, the Containerfile
@@ -171,11 +184,13 @@ run "HANDOFF's routine table describes the tree" perl tools/bftable.pl
 # lane starts passing what the gate would fail -- silently, because a container
 # that installs a different z3 still runs every test and still says PASS. That
 # is the failure this check exists to make loud.
+# TIER 10
 run "the container lane installs nothing of its own" sh -c '
     grep -q "guest-setup.sh --toolchain" Containerfile || exit 1
     ! grep -Eq "apt-get|CRYPTOL_VERSION|cryptol/releases" Containerfile'
 
 echo
+# TIER 2 4
 echo "== tiers 2 and 4: primitives, dual oracle =="
 # ADD8 is the kernel every wide adder is built from and was the slowest thing
 # in the library: the old one tested for the carry once per unit of the addend,
@@ -466,6 +481,7 @@ dk sha256/hkdf.bf 5000500050005200606162636465666768696a6b6c6d6e6f70717273747576
 
 
 echo
+# TIER 5
 echo "== tier 5: declared contracts enforced =="
 tmpc=$(mktemp -d)
 printf "; IO none\n; TAPE MAP @0x00\n; three right\n  >>>\n; ASSERT ptr=5\n  +\n" > "$tmpc/bad.bf"
@@ -507,6 +523,7 @@ run "absorb honours its declared contracts" sh -c "printf 0123456789abcdef112233
 run "poly1305 honours its declared contracts" sh -c "printf 85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b2000414c57626d78838e99a4afbac5d0dbe6f1fc07121d28333e49545f6a75808b96 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi poly1305/poly1305.bf >/dev/null"
 
 echo
+# TIER 7
 echo "== tier 7: metamorphic, which needs no oracle at all =="
 # CONVENTIONS section 8 has declared this tier since the beginning and the suite
 # has never had it. It earns its place here because the AEAD makes it cheap: the
@@ -538,6 +555,7 @@ run "encrypting the ciphertext again returns the plaintext" sh -c '
   test "$c" = "$3"' _ "$m7key" "$m7non" "$m7pt"
 
 echo
+# TIER 8
 echo "== design proofs (Cryptol) =="
 if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
 :l perm.cry

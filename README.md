@@ -13,12 +13,22 @@ minified compiler output. It is pure computation: plain stdin/stdout, no
 syscalls, randomness supplied as input, so every run is deterministic and
 replayable.
 
-Start with **[CONVENTIONS.md](CONVENTIONS.md)** — the rulebook every `.bf` file
-obeys: the frozen machine model, tape maps, pointer discipline, the idiom
-vocabulary, and the testing protocol (nine tiers, including a style-consistency
-check and a legibility check). **[IDIOMS.md](IDIOMS.md)** is the
-vocabulary itself: the handful of patterns everything is built from, each with
-its tape contract.
+Three documents, and each answers a different question.
+
+- **[CONVENTIONS.md](CONVENTIONS.md)** — *what are the rules?* The rulebook
+  every `.bf` file obeys: the frozen machine model, tape maps, pointer
+  discipline, the idiom vocabulary with each pattern's tape contract (§5), how
+  a file is written, and which testing tiers the project requires and why.
+- **[HANDOFF.md](HANDOFF.md)** — *what is true today?* State, the routine
+  table, which tiers are actually built, measured costs, and the traps that
+  have bitten. Everything here changes often, so as much of it as possible is
+  checked by a tool rather than typed.
+- This file — *should I care, and what will I hit?*
+
+The split is by **rate of change**, not by register. Facts that never move live
+in CONVENTIONS; facts that move every week live in HANDOFF and have a checker.
+The previous arrangement split by voice — rules here, narrative there — which
+gave every subject two homes, and two homes is how a fact drifts.
 
 ## Status
 

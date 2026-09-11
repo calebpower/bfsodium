@@ -145,45 +145,218 @@ because one was: `stagger` declared `0:67` while staging eight bytes through
 64–71, which was invisible standalone and corrupted one word of every block
 once pasted.
 
+A caller uses the first two directly: it walks in `entry` cells before the
+pasted body, and walks back `exit` cells afterwards to return to the routine's
+own base. That is why both are declared rather than inferred.
+
 A paste site **must** state the base its callee's zero lands on
 (`@@ADD136@@ 0`). Omitting it is a hard error rather than a guess, because a
 routine's contracts are written relative to its own base and have to be
 rebased.
 
+**Contracts are authored relative and committed absolute.** Write
+`; ASSERT ptr=+24` and `; ASSERT zero +3:+10` in the skeleton, against the
+routine's own base, so the same line stays true wherever the routine is pasted;
+`bfexpand` resolves them to absolute cells on the way out. The committed
+brainfuck must not carry the `+` notation, because `+` is an instruction and a
+canonical interpreter with no `;` rule would execute every one of them.
+
+Use them liberally, and especially `ASSERT zero` on a frame at entry and exit —
+that is what makes a routine safe to paste inside a loop. §8 tier 5 is the
+mechanism; this is the advice.
+
 ---
 
 ## 5. Idiom vocabulary
 
-A small fixed vocabulary so a reviewer learns the instruction set once. Exact
-brainfuck and pointer contracts live in `IDIOMS.md`; this is the authoritative
-list of what exists.
+A small fixed vocabulary, so a reviewer learns the instruction set once and
+then reads every block in its terms. This section is both the authoritative
+list of what exists and the reference for each one. It used to be split between
+here and an `IDIOMS.md`, which meant the list and the contracts could disagree
+-- and they did, because the list here named `ROTR32`, `SHR32` and `AND32`
+that the reference never described, while the reference described a lookup
+table this section records as rejected.
 
-Core: `CLEAR`, `MOVE` (destructive add into the destination), `COPY`,
-`ADD`, `IF`, `IFELSE`, `HALVE`, `DOUBLE`.
-
-Word layer: `ADD32`, `XOR32`, `ROTL32`, `ROTR32`, `SHR32`, `AND32`.
+Notation: cells are named by their offset from the block's anchor. Every idiom
+is **pointer-neutral** -- it ends with the pointer where it started -- and
+leaves every scratch cell it touched at zero, which is what lets blocks compose
+by plain concatenation. Each contract states what it reads, what it writes,
+what it consumes, and what scratch it borrows.
 
 **Bitwise is computed, not table-backed.** An earlier plan materialised a
-256×256 XOR table on the tape once at startup. It was **rejected** — see
-`IDIOMS.md` — and nothing in the tree builds one. Byte XOR is eight halvings; a
-table would cost 64 KiB of tape and an indexed read, and indexed reads are the
-expensive thing here, not the arithmetic.
+256x256 XOR table on the tape once at startup. It was **rejected** -- the
+reasoning is under *Bitwise* below -- and nothing in the tree builds one. Byte
+XOR is eight halvings; a table would cost 64 KiB of tape and an indexed read,
+and indexed reads are the expensive thing here, not the arithmetic.
 
-**Indexed addressing exists and is unused.** `index/fetch8`, `index/store8` and
-`index/fetchword` are hand-written, verified, and reachable if a future
+**Indexed addressing exists and is unused.** `index/fetch8`, `index/store8`
+and `index/fetchword` are hand-written, verified, and reachable if a future
 primitive genuinely needs a run-time index. Nothing has. Which brings us to:
 
-**Conveyors, not indices.** Every loop in this repository brings the data to the
-code rather than reaching for the data with an index. `blockloop` rotates the
-ChaCha state so the four words a quarter round wants are always at the same four
-cells. `mulmod136` carries its operands to a fixed work frame at cell zero.
-`poly1305` lands each message byte on the top of the block and slides the block
-down one, so a byte taken in round `k` comes to rest at `blk[k]` with no index
-anywhere — and a short block comes out right for free.
+**Conveyors, not indices.** Every loop in this repository brings the data to
+the code rather than reaching for the data with an index. `blockloop` rotates
+the ChaCha state so the four words a quarter round wants are always at the same
+four cells. `mulmod136` carries its operands to a fixed work frame at cell
+zero. `poly1305` lands each message byte on the top of the block and slides the
+block down one, so a byte taken in round `k` comes to rest at `blk[k]` with no
+index anywhere -- and a short block comes out right for free.
 
 This is not an aesthetic preference. Indexed addressing on a tape costs pointer
 travel proportional to distance, and the conveyor is usually both cheaper and
 far easier to prove.
+
+### Core
+
+#### CLEAR — set a cell to zero
+```
+[-]
+```
+Consumes the cell. The workhorse for discarding a value you are done with (a
+dropped carry, a spent counter).
+
+#### MOVE — add a cell into another, emptying the source
+```
+x[- >>+ <<]          ; move x into the cell two to its right
+```
+*Reads and consumes* `x`; *adds into* the destination. The destination is
+**added to**, not overwritten — clear it first if you need assignment. This is
+the only primitive way to relocate a value in brainfuck; everything else is
+built from it.
+
+#### COPY — duplicate a cell, preserving the source
+```
+x[- >+ >>+ <<<]      ; x into dest and into a temp, x is now 0
+>>> [-<<<+>>>]       ; put the temp back into x
+```
+*Reads* `x` (restored); *adds into* the destination; *borrows* one scratch cell
+(restored to 0). brainfuck cannot read a cell without consuming it, so a copy is
+always a move to two places followed by a move back. Every "preserve the
+operand" step in the library is this.
+
+#### ADD — add one cell into another, modulo 256
+Same as MOVE. The mod-256 wrap is the machine's, not ours, and we rely on it
+(§1).
+
+---
+
+### Control
+
+#### IFZERO — set a flag when a value is zero
+```
+>+<                  ; assume zero: flag := 1
+[ >-< [-] ]          ; if the value is nonzero, clear the flag and the value
+```
+Tests a value without a comparison instruction, which brainfuck does not have.
+The trick throughout the library: **assume, then undo**. Set the answer
+tentatively, then let a loop that only runs when the value is nonzero take it
+back. Verified at 0, 1, 0x80 and 0xff.
+
+#### TOGGLE — flip a 0/1 cell
+```
+>+<                  ; f := 1
+[->-<]               ; if t was 1: t := 0 and f := 0
+>[-<+>]<             ; if f survived: t := 1
+```
+*Reads and writes* `t` (which must be 0 or 1); *borrows* `f` at `t+1`
+(restored). Used by XOR8: toggling once per set bit computes parity, which is
+exactly exclusive or.
+
+---
+
+### Arithmetic
+
+#### ADD8 — add with carry
+```
+y[- x+ [t0+ t1+ <-] t0[x t1 restore] c+ [c- ...] ]
+```
+The shipped form, with `y` at the anchor, `x` at `y-1`, `c` at `y+1`, and
+scratch `t0 t1` at `y+2 y+3`:
+```
+[-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
+```
+*Consumes* `y`; *adds into* `x` modulo 256; *adds the carry into* `c`;
+*borrows* `t0 t1` (restored). For each unit of `y` it bumps `x`, then detects
+whether `x` has just wrapped to zero by the IFZERO trick — bump `c`
+tentatively, take it back unless the copy was zero. A byte sum is at most 511,
+so `x` wraps at most once and `c` gains at most 1.
+
+Verified: `18+52`, `255+1`, `255+255`, `128+128`, `0+0`, `0+255`.
+
+#### ADD32 — 32-bit little-endian add
+Four ADD8 byte blocks, LSB first, each adding the addend byte and then the
+carry from the byte below, with the carry out kept for the next byte. The carry
+out of byte 3 is dropped (the sum is modulo 2^32). Shipped as
+[`chacha20/add32.bf`](chacha20/add32.bf).
+
+#### HALVE — shift right one, with the low bit
+With the value at the anchor, `q` at `+1`, `t` at `+2`, `f` at `+3`:
+```
+[->>>+<[-<+>>-<]>[-<+>]<<<]
+```
+*Consumes* the value; *writes* `q` (the value shifted right one) and `t` (its
+low bit); *borrows* `f` (restored). Counts the value down, toggling `t` each
+step and bumping `q` every second step. This is the only bit-extraction
+primitive in the library — XOR8 is built entirely from it.
+
+#### DOUBLE — shift left one, with the high bit
+COPY the value, then ADD8 it to itself: `x + x` is exactly `2x` modulo 256 with
+the carry equal to bit 7. Cheaper than seven HALVEs, and it reuses a kernel that
+is already proven. Used by ROTL32.
+
+---
+
+### Bitwise
+
+brainfuck has no bitwise instruction.
+
+**Why not a lookup table.** The original plan was a 256-by-256 XOR table. That
+is the wrong shape here: the table would sit tens of thousands of cells from the
+working frame, and since the only way to reach a cell is to walk to it, every
+lookup would pay that distance twice. Building the table costs more still. Bit
+decomposition keeps every access within a handful of cells of the frame.
+
+#### XOR8 — byte exclusive or
+Eight steps. Each HALVEs both operands to get their low bits, TOGGLEs a flag
+once per set low bit (so the flag ends as the exclusive or), adds the running
+bit weight into the result when the flag is set, and doubles the weight.
+Shipped inside [`chacha20/xor32.bf`](chacha20/xor32.bf).
+
+#### XOR32
+Four XOR8 blocks over the byte pairs.
+
+#### ROTL32 — rotate left by n
+`n` single-bit rotations under a counter. One bit rotation DOUBLEs all four
+bytes and feeds each carry into the next byte cyclically; a doubled byte is
+even, so adding the neighbour's carry bit cannot overflow and no second carry
+pass is needed. Shipped as [`chacha20/rotl32.bf`](chacha20/rotl32.bf).
+
+---
+
+### Composition
+
+brainfuck has no subroutines, so a composite primitive physically contains its
+parts. Because brainfuck code is **position-independent** — a block that only
+moves relative to where it starts behaves identically wherever it is placed — a
+proven body can be reused verbatim at a different base rather than retyped at
+new offsets.
+
+That splicing is done by [`tools/bfexpand.sh`](tools/bfexpand.sh), from a
+`@@NAME@@ base` directive in a skeleton. It pastes the callee's body and
+rebases its `ASSERT` lines, and it does nothing else: it chooses no layout,
+computes no offset from a name, and generates no loop. The glue that moves
+words into a shared workspace and back is written by hand, in the skeleton,
+beside the paste.
+
+It used to be done by a transpiler — `tools/qrasm.sh` and its siblings, which
+assembled the quarter round out of add32, xor32 and rotl32. They are **deleted**,
+along with everything they generated, and §6 records why: the
+project came off the rails by drifting into code generation, and the size
+budget exists to keep it from happening again.
+
+The glue obeys one rule, the same one §4 requires of every routine:
+**a routine declares where the pointer enters and where it leaves, and
+`tools/bffoot` proves both against the instruction stream.** Operations then
+compose by concatenation.
 
 ---
 
@@ -288,6 +461,20 @@ are non-negotiable:
 - **The pinned interpreter is the reference.** All tests run through
   `tools/bfi`, whose own semantics are smoke-tested first.
 
+The checkers, at a glance. Each answers one question and no other, which is
+what keeps them independently self-testable:
+
+| tool | question it answers |
+|---|---|
+| `bfi` | what does this program mean (the pinned semantics), and does it honour its contracts |
+| `bflint` | is this portable brainfuck, and is it annotated at all |
+| `bfstyle` | is the style the same across every file, and was this file written or generated |
+| `bffoot` | does the `INTERFACE` line tell the truth |
+| `dkat.sh` | does the brainfuck match both the pinned vector and the Cryptol spec |
+| `rebuild.sh` | expand every skeleton in an order that respects the pastes |
+| `bftable.pl` | does `HANDOFF.md`'s routine table still describe the tree |
+| `bftier.pl` | does `HANDOFF.md`'s tier status table still describe the suite |
+
 Tiers, as they apply here. The KAT tiers inspect **output**, so they are
 deliberately paired with tiers that inspect **the oracle** and **internal
 structure**.
@@ -306,7 +493,7 @@ structure**.
 | 9b size budget | Is this file short enough that a person would actually read it? | `bfstyle` fails any file over 2000 lines, counting the **skeleton** where one exists. Added after the composites drifted to 42k lines, 66k, and — in an AEAD never committed — 903k, every one of which passed all the other checks. The exemption is sound only because the suite separately proves every `.bf` equals `bfexpand` of its skeleton byte for byte; the two halves are one check and removing either reopens the hole. |
 | 9c provenance | Is the committed brainfuck what its skeleton says? | Every `.bf` compared byte for byte against `bfexpand` of its `.skel`, and `bfexpand`'s own refusals tested: a paste site with no base is an error, an unknown routine is an error. |
 | 9d the interface tells the truth | Does the `INTERFACE` line describe the code? | `tools/bffoot` proves entry, exit and footprint against the instruction stream (§4). The set of files that declare no `INTERFACE` is pinned, so a new routine that forgets the line fails rather than passing silently. |
-| 9e the documents describe the tree | Is the routine table still true? | `tools/bftable.pl` checks `HANDOFF.md`'s table against the tree. Added after eighteen of its thirty rows were found wrong: a number nobody verifies is not documentation, it is a rumour. |
+| 9e the documents describe the tree | Are the two machine-checked tables still true? | `tools/bftable.pl` checks `HANDOFF.md`'s routine table against the tree, added after eighteen of its thirty rows were found wrong. `tools/bftier.pl` checks its tier status table against `tests/run.sh`, added after tier 6 sat in a combined table in the same voice as the tiers that ran, so a reader took a green suite as evidence of fuzz coverage that did not exist. **This section says what is REQUIRED; that table says what is BUILT.** Keeping those in one column is what drifted. A number nobody verifies is not documentation, it is a rumour. |
 | 10 one definition of the toolchain | Do the two lanes test the same thing? | The suite greps the `Containerfile` to prove it installs nothing of its own and calls `guest-setup.sh --toolchain`. A second definition is how a fallback lane starts passing what the gate would fail — silently, because a container with a different z3 still runs every test and still says PASS. |
 | 11 mutation | Would the suite catch the bug it claims to? | Break each nontrivial block, confirm the relevant tier fails, restore. |
 
