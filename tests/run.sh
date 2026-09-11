@@ -185,9 +185,23 @@ run "HANDOFF's tier table describes the suite" perl tools/bftier.pl
 # that installs a different z3 still runs every test and still says PASS. That
 # is the failure this check exists to make loud.
 # TIER 10
-run "the container lane installs nothing of its own" sh -c '
-    grep -q "guest-setup.sh --toolchain" Containerfile || exit 1
-    ! grep -Eq "apt-get|CRYPTOL_VERSION|cryptol/releases" Containerfile'
+run "no lane defines a toolchain of its own" sh -c '
+    rc=0
+    for f in Containerfile .reaper.toml tools/container-test.sh .github/workflows/*.yml; do
+        [ -e "$f" ] || continue
+        # Whole-line comments are stripped first, so the ban does not trip
+        # over the prose explaining the ban. The sibling project learned that
+        # the hard way: its version of this check read a Containerfile whole
+        # and failed on a comment saying there was deliberately no apt-get
+        # line. A check that punishes its own documentation teaches the next
+        # person to delete the documentation.
+        body=$(sed -e "s/^[[:space:]]*#.*//" "$f")
+        printf "%s" "$body" | grep -q "guest-setup.sh" || {
+            echo "$f runs no guest-setup.sh"; rc=1; }
+        printf "%s" "$body" | grep -Eq "apt-get|apt install|CRYPTOL_VERSION|cryptol/releases" && {
+            echo "$f defines a toolchain of its own"; rc=1; }
+    done
+    exit $rc'
 
 echo
 # TIER 2 4

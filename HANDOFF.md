@@ -152,13 +152,29 @@ must have no marker in the suite at all.
 
 ## Running the suite
 
-There are two lanes and they are not equals. **`reaper test` is the gate of
-record**; a change is not judged until it has been green there. The container
-lane exists so that work can continue from a host that cannot reach the reaper
-site, and it is a fallback, not a second opinion.
+There are three lanes and they are not equals. **`reaper test` is the gate of
+record**; a change is not judged until it has been green there. The other two
+run the same `tests/run.sh` with nothing skipped, and neither is a second
+opinion about whether a change may land.
 
     reaper up && reaper test        # the gate
-    sh tools/container-test.sh      # the fallback, same suite, nothing skipped
+    sh tools/container-test.sh      # the fallback, for a host that cannot reach the site
+    .github/workflows/suite.yml     # CI, on every pull request
+
+The CI lane is the newest and the weakest claim of the three, not because it
+runs less — it runs exactly the same suite in `ubuntu:26.04`, the same image
+the Containerfile pins and the same userland reaper provisions — but because a
+green tick on a pull request is the easiest thing in the world to mistake for
+a verdict. The job prints what it did and did not prove as its last step, for
+that reason.
+
+**All three run `tools/guest-setup.sh` and none of them installs anything of
+its own.** That is one rule with one check behind it: the suite reads every
+lane definition, strips its comments, and fails if any of them carries an
+`apt-get` or a Cryptol version, or stops calling `guest-setup.sh`. The check
+used to look only at the `Containerfile`; adding a third lane without widening
+it would have left a file that could quietly define a second toolchain, which
+is the precise failure the check exists to prevent.
 
 **A cold guest costs a provisioning round.** Whenever the guest has been torn
 down, the first `reaper test` after `reaper up` re-runs `guest-setup.sh` in

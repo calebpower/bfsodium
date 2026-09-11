@@ -1,0 +1,70 @@
+# The third lane, and the weakest of the three.
+#
+# `reaper test` is the gate of record. `tools/container-test.sh` is the
+# fallback for a host that cannot reach the reaper site. This runs the same
+# suite again on a pull request, so a change is not reviewed blind -- but a
+# green tick here has not proved anything on the machine of record, and the
+# job says so in its own output rather than leaving the tick to imply it.
+#
+# WHY A CONTAINER RATHER THAN A RUNNER IMAGE. reaper provisions ubuntu-26.04
+# and the Containerfile pins `FROM ubuntu:26.04`, so both existing lanes
+# compile the pinned interpreter against the same libc with the same compiler.
+# GitHub's hosted images are a different userland on a different release
+# cadence, and a lane that tests a different userland is answering a different
+# question. Running IN ubuntu:26.04 keeps all three lanes comparable.
+#
+# WHY THIS FILE INSTALLS NOTHING. tools/guest-setup.sh is the only definition
+# of the toolchain in this repository. reaper calls it with no argument, the
+# Containerfile calls it with --toolchain, container-test.sh calls it with
+# --build, and this calls it with no argument exactly as reaper does. An
+# apt-get line here would be a THIRD definition, and the day it drifts is the
+# day a pull request goes green against a toolchain the gate would reject.
+# tests/run.sh greps this file to prove it stays that way -- the same check
+# that has always guarded the Containerfile, widened when this lane was added.
+
+name: suite
+
+on:
+  pull_request:
+
+# A pull request that is pushed to again does not need the previous run.
+concurrency:
+  group: suite-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suite:
+    name: the whole suite, on ubuntu 26.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:26.04
+    # The AEAD vector alone is some eleven billion interpreter instructions,
+    # and a cold start also fetches the pinned Cryptol tarball. Sixty minutes
+    # is generous rather than tight; the point of the limit is that a hang
+    # ends rather than that a slow run is punished.
+    timeout-minutes: 60
+
+    steps:
+      - name: check out the tree under test
+        uses: actions/checkout@v4
+
+      - name: provision the toolchain
+        # Byte for byte what .reaper.toml's [build] runs. Both phases: the apt
+        # transaction and the pinned Cryptol, then the five compiler
+        # invocations.
+        run: sh tools/guest-setup.sh
+
+      - name: run the suite
+        # .reaper.toml redirects into a file and re-raises the status, because
+        # its /bin/sh may be dash and a pipe would report tee's status instead
+        # of the suite's. Here the output is streamed straight to the job log
+        # and the step's exit status is the suite's, so there is no pipe to get
+        # wrong. The no-tee rule is about pipelines, not about redirection.
+        run: sh tests/run.sh
+
+      - name: say what this did and did not prove
+        if: always()
+        run: |
+          echo "This was the CI lane. 'reaper test' is the gate of record and"
+          echo "has not run. A green tick here means the suite passed on an"
+          echo "ubuntu 26.04 userland; it does not mean the change is landed."
