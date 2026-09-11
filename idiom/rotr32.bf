@@ -26,73 +26,73 @@
 ; cannot overflow and no second pass is needed;
 
 ,>,>,>,>,                                                      ; read w{0:3} then n  leaving the pointer on n @0x04
-; ASSERT ptr=4
-; ASSERT zero 5:12
+                                                               ; ASSERT ptr=4
+                                                               ; ASSERT zero 5:12
 
 ; ==== rotate one bit  n times ====
 [
   -                                                            ; one step consumed
 
-; ____ halve byte 0 @0x00  its low bit into c0 @0x05 ____
-; the byte steps into the halving frame
+                                                               ; ____ halve byte 0 @0x00  its low bit into c0 @0x05
+                                                               ; ____ the byte steps into the halving frame
 <<<<
   [->>>>>>>>>+<<<<<<<<<]
 >>>>>>>>>
-; ASSERT ptr=9
+                                                               ; ASSERT ptr=9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >                                                              ; the half goes back as the byte
   [-<<<<<<<<<<+>>>>>>>>>>]
 >                                                              ; and the bit that fell off is kept
   [-<<<<<<+>>>>>>]
 <<<<<<<                                                        ; back to the step counter
-; ASSERT ptr=4
+                                                               ; ASSERT ptr=4
 
-; ____ halve byte 1 @0x01  its low bit into c1 @0x06 ____
-; the byte steps into the halving frame
+                                                               ; ____ halve byte 1 @0x01  its low bit into c1 @0x06
+                                                               ; ____ the byte steps into the halving frame
 <<<
   [->>>>>>>>+<<<<<<<<]
 >>>>>>>>
-; ASSERT ptr=9
+                                                               ; ASSERT ptr=9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >                                                              ; the half goes back as the byte
   [-<<<<<<<<<+>>>>>>>>>]
 >                                                              ; and the bit that fell off is kept
   [-<<<<<+>>>>>]
 <<<<<<<                                                        ; back to the step counter
-; ASSERT ptr=4
+                                                               ; ASSERT ptr=4
 
-; ____ halve byte 2 @0x02  its low bit into c2 @0x07 ____
-; the byte steps into the halving frame
+                                                               ; ____ halve byte 2 @0x02  its low bit into c2 @0x07
+                                                               ; ____ the byte steps into the halving frame
 <<
   [->>>>>>>+<<<<<<<]
 >>>>>>>
-; ASSERT ptr=9
+                                                               ; ASSERT ptr=9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >                                                              ; the half goes back as the byte
   [-<<<<<<<<+>>>>>>>>]
 >                                                              ; and the bit that fell off is kept
   [-<<<<+>>>>]
 <<<<<<<                                                        ; back to the step counter
-; ASSERT ptr=4
+                                                               ; ASSERT ptr=4
 
-; ____ halve byte 3 @0x03  its low bit into c3 @0x08 ____
-; the byte steps into the halving frame
+                                                               ; ____ halve byte 3 @0x03  its low bit into c3 @0x08
+                                                               ; ____ the byte steps into the halving frame
 <
   [->>>>>>+<<<<<<]
 >>>>>>
-; ASSERT ptr=9
+                                                               ; ASSERT ptr=9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >                                                              ; the half goes back as the byte
   [-<<<<<<<+>>>>>>>]
 >                                                              ; and the bit that fell off is kept
   [-<<<+>>>]
 <<<<<<<                                                        ; back to the step counter
-; ASSERT ptr=4
+                                                               ; ASSERT ptr=4
 
-; ____ each kept bit lands as the top bit of the byte below it ____
-; c1 is the top bit of w0
+                                                               ; ____ each kept bit lands as the top bit of the byte
+                                                               ; below it ____ c1 is the top bit of w0
 >>
-; ASSERT ptr=6
+                                                               ; ASSERT ptr=6
   [-<<<<<<++++++++++++++++++++++++++++++++++++++++++++++++++
   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   ; continued
   ++++++++++++++++++++>>>>>>]                                  ; continued
@@ -105,15 +105,15 @@
   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   ; continued
   ++++++++++++++++++++>>>>>>]                                  ; continued
 <<<                                                            ; and c0 wraps all the way round to the top bit of w3
-; ASSERT ptr=5
+                                                               ; ASSERT ptr=5
   [-<<++++++++++++++++++++++++++++++++++++++++++++++++++++++
   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   ; continued
   ++++++++++++++++>>]                                          ; continued
 <                                                              ; back to the step counter
-; ASSERT ptr=4
-; ASSERT zero 5:12
+                                                               ; ASSERT ptr=4
+                                                               ; ASSERT zero 5:12
 ]
-; ASSERT ptr=4
+                                                               ; ASSERT ptr=4
 
 ; emit
 <<<<                                                           ; the rotated word little endian

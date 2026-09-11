@@ -19,17 +19,17 @@
 ; back as the last;
 
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,                            ; read the state
-; continued
+                                                               ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; continued
+                                                               ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; continued
+                                                               ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; to the start of the state
   <<<                                                          ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 ; ==== row at @00 ====
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the first word steps aside into the temp
   >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<]                                             ; continued
@@ -70,7 +70,7 @@
 >                                                              ; the next byte
   [-<<<<+>>>>]
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>              ; the temp becomes the last word
-; ASSERT ptr=64
+                                                               ; ASSERT ptr=64
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]           ; continued
 >                                                              ; the next byte
@@ -84,10 +84,10 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]           ; continued
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
   <<<<<<<                                                      ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 ; ==== row at @10 ====
 >>>>>>>>>>>>>>>>                                               ; to this row
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<   ; the first word steps aside into the temp
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                   ; continued
 >                                                              ; the next byte
@@ -124,7 +124,7 @@
 >                                                              ; the next byte
   [-<<<<+>>>>]
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                              ; the temp becomes the last word
-; ASSERT ptr=64
+                                                               ; ASSERT ptr=64
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>]                                           ; continued
 >                                                              ; the next byte
@@ -138,10 +138,10 @@
   >>>>>>>>>>>>>>>>>]                                           ; continued
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
   <<<<<<<                                                      ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 ; ==== row at @20 ====
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                               ; to this row
-; ASSERT ptr=32
+                                                               ; ASSERT ptr=32
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<   ; the first word steps aside into the temp
   <<<<<<<<<]                                                   ; continued
 >                                                              ; the next byte
@@ -178,7 +178,7 @@
 >                                                              ; the next byte
   [-<<<<+>>>>]
 >>>>>>>>>>>>>>>>>                                              ; the temp becomes the last word
-; ASSERT ptr=64
+                                                               ; ASSERT ptr=64
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
 >                                                              ; the next byte
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
@@ -188,10 +188,10 @@
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
   <<<<<<<                                                      ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 ; ==== row at @30 ====
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>               ; to this row
-; ASSERT ptr=48
+                                                               ; ASSERT ptr=48
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]                         ; the first word steps aside into the temp
 >                                                              ; the next byte
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
@@ -224,7 +224,7 @@
 >                                                              ; the next byte
   [-<<<<+>>>>]
 >                                                              ; the temp becomes the last word
-; ASSERT ptr=64
+                                                               ; ASSERT ptr=64
   [-<<<<+>>>>]
 >                                                              ; the next byte
   [-<<<<+>>>>]
@@ -234,13 +234,13 @@
   [-<<<<+>>>>]
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; back to the start of the state
   <<<<<<<                                                      ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 
 ; emit the rotated state
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
-; continued
+                                                               ; continued
   >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
-; continued
+                                                               ; continued
   >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
-; continued
+                                                               ; continued
   >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

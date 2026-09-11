@@ -27,444 +27,444 @@
 ; could ever reach  which is code no test could cover;
 
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,                            ; read the value little endian
-; ASSERT ptr=16
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=16
+                                                               ; ASSERT zero 17:21
 
 ; ==== byte 16 ====
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->+<]                                                       ; the byte steps into the halving frame
 >
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<+>>]
 >                                                              ; nothing has come down to the top byte  so there is no
                                                                ; bit to add here
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<                                                           ; to the byte below
 
 ; ==== byte 15 ====
-; ASSERT ptr=15
+                                                               ; ASSERT ptr=15
   [->>+<<]                                                     ; the byte steps into the halving frame
 >>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<+>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<                                                          ; to the byte below
 
 ; ==== byte 14 ====
-; ASSERT ptr=14
+                                                               ; ASSERT ptr=14
   [->>>+<<<]                                                   ; the byte steps into the halving frame
 >>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<+>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<                                                         ; to the byte below
 
 ; ==== byte 13 ====
-; ASSERT ptr=13
+                                                               ; ASSERT ptr=13
   [->>>>+<<<<]                                                 ; the byte steps into the halving frame
 >>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<+>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<                                                        ; to the byte below
 
 ; ==== byte 12 ====
-; ASSERT ptr=12
+                                                               ; ASSERT ptr=12
   [->>>>>+<<<<<]                                               ; the byte steps into the halving frame
 >>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<+>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<                                                       ; to the byte below
 
 ; ==== byte 11 ====
-; ASSERT ptr=11
+                                                               ; ASSERT ptr=11
   [->>>>>>+<<<<<<]                                             ; the byte steps into the halving frame
 >>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<+>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<                                                      ; to the byte below
 
 ; ==== byte 10 ====
-; ASSERT ptr=10
+                                                               ; ASSERT ptr=10
   [->>>>>>>+<<<<<<<]                                           ; the byte steps into the halving frame
 >>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<+>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<                                                     ; to the byte below
 
 ; ==== byte 9 ====
-; ASSERT ptr=9
+                                                               ; ASSERT ptr=9
   [->>>>>>>>+<<<<<<<<]                                         ; the byte steps into the halving frame
 >>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<+>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<                                                    ; to the byte below
 
 ; ==== byte 8 ====
-; ASSERT ptr=8
+                                                               ; ASSERT ptr=8
   [->>>>>>>>>+<<<<<<<<<]                                       ; the byte steps into the halving frame
 >>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<+>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<                                                   ; to the byte below
 
 ; ==== byte 7 ====
-; ASSERT ptr=7
+                                                               ; ASSERT ptr=7
   [->>>>>>>>>>+<<<<<<<<<<]                                     ; the byte steps into the halving frame
 >>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<+>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<<                                                  ; to the byte below
 
 ; ==== byte 6 ====
-; ASSERT ptr=6
+                                                               ; ASSERT ptr=6
   [->>>>>>>>>>>+<<<<<<<<<<<]                                   ; the byte steps into the halving frame
 >>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<<<                                                 ; to the byte below
 
 ; ==== byte 5 ====
-; ASSERT ptr=5
+                                                               ; ASSERT ptr=5
   [->>>>>>>>>>>>+<<<<<<<<<<<<]                                 ; the byte steps into the halving frame
 >>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<<<<                                                ; to the byte below
 
 ; ==== byte 4 ====
-; ASSERT ptr=4
+                                                               ; ASSERT ptr=4
   [->>>>>>>>>>>>>+<<<<<<<<<<<<<]                               ; the byte steps into the halving frame
 >>>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<<<<<                                               ; to the byte below
 
 ; ==== byte 3 ====
-; ASSERT ptr=3
+                                                               ; ASSERT ptr=3
   [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]                             ; the byte steps into the halving frame
 >>>>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<<<<<<                                              ; to the byte below
 
 ; ==== byte 2 ====
-; ASSERT ptr=2
+                                                               ; ASSERT ptr=2
   [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]                           ; the byte steps into the halving frame
 >>>>>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<<<<<<<                                             ; to the byte below
 
 ; ==== byte 1 ====
-; ASSERT ptr=1
+                                                               ; ASSERT ptr=1
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]                         ; the byte steps into the halving frame
 >>>>>>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 <<<<<<<<<<<<<<<<<<<                                            ; to the byte below
 
 ; ==== byte 0 ====
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
   [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]                       ; the byte steps into the halving frame
 >>>>>>>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; count it down  toggling the low bit and adding to the
                                                                ; quotient
 >                                                              ; the quotient goes back into the byte
   [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
 >>>                                                            ; the bit that came down from the byte above is worth
                                                                ; 128 here
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<<<<
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++++++++++++++++++++++++++++++++++
-; continued
+                                                               ; continued
   ++++++++
 >>>>>>>>>>>>>>>>>>>>>]
 <<                                                             ; this byte low bit is what goes down to the byte below
-; ASSERT ptr=19
+                                                               ; ASSERT ptr=19
   [->>+<<]
 
 >>                                                             ; the bit shifted out of the bottom byte is discarded
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-]
 <<<<<<<<<<<<<<<<<<<<<                                          ; back to the head of the value
-; ASSERT ptr=0
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 17:21
 ; emit the shifted value little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

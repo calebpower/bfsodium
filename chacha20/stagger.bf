@@ -31,19 +31,19 @@
 ; overwritten before it has moved;
 ; read the state
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; continued
+                                                               ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; continued
+                                                               ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; continued
+                                                               ; continued
   >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; to the start of the state
   <<<                                                          ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 
 ; ==== row 1 rotates left one ====
 >>>>>>>>>>>>>>>>
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<   ; the first word steps aside
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                   ; continued
 >                                                              ; the next byte
@@ -80,7 +80,7 @@
 >                                                              ; the next byte
   [-<<<<+>>>>]
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                              ; the temp becomes the last word
-; ASSERT ptr=64
+                                                               ; ASSERT ptr=64
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>]                                           ; continued
 >                                                              ; the next byte
@@ -94,11 +94,11 @@
   >>>>>>>>>>>>>>>>>]                                           ; continued
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<                                                      ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 
 ; ==== row 2 rotates left two  its halves change places ====
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; ASSERT ptr=32
+                                                               ; ASSERT ptr=32
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<   ; byte 0 of the half exchange
   <<<<<<<<<]                                                   ; continued
 >>>>>>>>
@@ -163,11 +163,11 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 
 ; ==== row 3 rotates left three  which is a rotate right by one ====
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-; ASSERT ptr=60
+                                                               ; ASSERT ptr=60
   [->>>>+<<<<]                                                 ; the LAST word steps aside
 >                                                              ; the next byte
   [->>>>+<<<<]
@@ -200,9 +200,9 @@
   [->>>>+<<<<]
 <                                                              ; the byte below
   [->>>>+<<<<]
-; ASSERT ptr=48
+                                                               ; ASSERT ptr=48
 >>>>>>>>>>>>>>>>                                               ; the temp becomes the first word
-; ASSERT ptr=64
+                                                               ; ASSERT ptr=64
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 >                                                              ; the next byte
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
@@ -212,13 +212,13 @@
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<                                                      ; continued
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
 
 ; emit the staggered state
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
-; continued
+                                                               ; continued
   >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
-; continued
+                                                               ; continued
   >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
-; continued
+                                                               ; continued
   >.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

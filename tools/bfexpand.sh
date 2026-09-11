@@ -56,12 +56,25 @@ body() {
 # with no ';' rule would execute every one of them. So the offsets are resolved
 # to absolute numbers here -- by the paste base when imported, and by zero when
 # a routine is written out on its own.
+#
+# The patterns tolerate leading whitespace, and they must. A paste reads the
+# callee's COMMITTED .bf, not its skeleton, and tools/bflayout indents a
+# standalone annotation into the right hand column -- so every ASSERT in a
+# pasted body arrives with sixty three spaces in front of it. Anchored at
+# column zero these rules would simply not match, the contracts would be
+# pasted carrying the CALLEE's offsets, and a routine pasted at base 34 would
+# assert about cells belonging to somebody else. Tier 5 would catch it, but
+# only after someone spent an afternoon disbelieving it.
+#
+# Field numbers are unaffected: awk's default splitting ignores leading blanks,
+# so $3 is still the ptr= term. The output goes back at column zero and the
+# layout pass indents it again, which is what keeps this idempotent.
 rebase() {
     awk -v b="$1" '
-        /^; ASSERT ptr=/  { n=$3; sub(/ptr=/,"",n); sub(/^\+/,"",n)
-                            print "; ASSERT ptr=" n+b; next }
-        /^; ASSERT zero / { split($4,p,":"); sub(/^\+/,"",p[1]); sub(/^\+/,"",p[2])
-                            print "; ASSERT zero " p[1]+b ":" p[2]+b; next }
+        /^[ \t]*; ASSERT ptr=/  { n=$3; sub(/ptr=/,"",n); sub(/^\+/,"",n)
+                                  print "; ASSERT ptr=" n+b; next }
+        /^[ \t]*; ASSERT zero / { split($4,p,":"); sub(/^\+/,"",p[1]); sub(/^\+/,"",p[2])
+                                  print "; ASSERT zero " p[1]+b ":" p[2]+b; next }
         { print }'
 }
 

@@ -18,9 +18,21 @@
  *      brainfuck reads straight down the left and English straight down the
  *      right. A chunked multi-line operation carries one on each of its lines,
  *      which is what made this form workable at all.
- *   3. A standalone annotation -- header, tape map row, section banner, or a
- *      contract that binds to the next instruction -- starts at column 0. An
- *      annotation that wrapped starts at the annotation column.
+ *   3. A standalone annotation starts either at column 0 or at the annotation
+ *      column, and nowhere else. Column 0 is for the things that ANCHOR: the
+ *      file header, a tape map row, a section banner, and the "; emit" and
+ *      "; INTERFACE" lines that bffoot and bfexpand both find by looking at
+ *      column 0. Everything else in the body -- a remark that needed its own
+ *      line, a wrapped annotation, and a contract that binds to the next
+ *      instruction -- sits in the annotation column with the rest of the
+ *      English.
+ *
+ *      A contract used to be in the first group, and that was a conflation:
+ *      an ASSERT must keep its own LINE, because folding it onto a code line
+ *      would bind it to the previous instruction instead of the next, but
+ *      that is not the same requirement as keeping column 0. Left there it
+ *      broke the right hand column several times per screen, which is most of
+ *      what two columns are for.
  *   4. No run of more than MAXRUN consecutive code lines without an
  *      annotation, so no block goes unexplained.
  *   5. No more than MAXLINES lines -- counted on the sibling .skel when there

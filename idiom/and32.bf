@@ -46,219 +46,223 @@
 
 ,>,>,>,>,>,>,>,>                                               ; read x{0:3} then y{0:3}  leaving the pointer on r0
                                                                ; @0x08
-; ASSERT ptr=8
-; ASSERT zero 8:25
+                                                               ; ASSERT ptr=8
+                                                               ; ASSERT zero 8:25
 
 ; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
 <<<<<<<<                                                       ; move x0 into a
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
   [->>>>>>>>>>>>+<<<<<<<<<<<<]
 >>>>                                                           ; move y0 into b
   [->>>>>>>>>>>>+<<<<<<<<<<<<]
 >>>>>>>>>>>>>>>>>>>                                            ; the weight starts at one
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   +
 >                                                              ; eight bits
   ++++++++
 [                                                              ; ____ one bit step ____
   -
 <<<<<<<<<<<<                                                   ; HALVE a  giving qa and pa
-; ASSERT ptr=12
+                                                               ; ASSERT ptr=12
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>>>                                                           ; HALVE b  giving qb and pb
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 <<                                                             ; both low bits set is the and  and only that raises t
-; ASSERT ptr=14
+                                                               ; ASSERT ptr=14
   [[-]>>>>[[-]>>+<<]<<<<]
 >>>>                                                           ; a bit left standing on its own is cleared  which the
                                                                ; nesting cannot reach
   [-]
 >>                                                             ; if t then res gets the weight
-; ASSERT ptr=20
+                                                               ; ASSERT ptr=20
   [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
 <<<<<<<                                                        ; a becomes its own half
-; ASSERT ptr=13
+                                                               ; ASSERT ptr=13
   [-<+>]
 >>>>                                                           ; and b likewise
   [-<+>]
 >>>>>>                                                         ; the weight doubles for the next bit
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [->>+<<]
 >>
   [-<<++>>]
 <                                                              ; back to the bit counter
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 ]
-; ASSERT ptr=24
-; res holds the byte just built  and the weight has doubled past 128 to nought;
-; everything else the bit loop touched is back where it started;
-; ASSERT zero 12:21
-; ASSERT zero 23:23
+                                                               ; ASSERT ptr=24
+                                                               ; res holds the byte just built  and the weight has
+                                                               ; doubled past 128 to nought; everything else the bit
+                                                               ; loop touched is back where it started;
+                                                               ; ASSERT zero 12:21
+                                                               ; ASSERT zero 23:23
 <<                                                             ; store res into r0
-; ASSERT ptr=22
+                                                               ; ASSERT ptr=22
   [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<                                                 ; back to the head of the result
-; ASSERT ptr=8
+                                                               ; ASSERT ptr=8
 
 ; ==== byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09 ====
 <<<<<<<                                                        ; move x1 into a
-; ASSERT ptr=1
+                                                               ; ASSERT ptr=1
   [->>>>>>>>>>>+<<<<<<<<<<<]
 >>>>                                                           ; move y1 into b
   [->>>>>>>>>>>+<<<<<<<<<<<]
 >>>>>>>>>>>>>>>>>>                                             ; the weight starts at one
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   +
 >                                                              ; eight bits
   ++++++++
 [                                                              ; ____ one bit step ____
   -
 <<<<<<<<<<<<                                                   ; HALVE a  giving qa and pa
-; ASSERT ptr=12
+                                                               ; ASSERT ptr=12
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>>>                                                           ; HALVE b  giving qb and pb
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 <<                                                             ; both low bits set is the and  and only that raises t
-; ASSERT ptr=14
+                                                               ; ASSERT ptr=14
   [[-]>>>>[[-]>>+<<]<<<<]
 >>>>                                                           ; a bit left standing on its own is cleared  which the
                                                                ; nesting cannot reach
   [-]
 >>                                                             ; if t then res gets the weight
-; ASSERT ptr=20
+                                                               ; ASSERT ptr=20
   [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
 <<<<<<<                                                        ; a becomes its own half
-; ASSERT ptr=13
+                                                               ; ASSERT ptr=13
   [-<+>]
 >>>>                                                           ; and b likewise
   [-<+>]
 >>>>>>                                                         ; the weight doubles for the next bit
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [->>+<<]
 >>
   [-<<++>>]
 <                                                              ; back to the bit counter
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 ]
-; ASSERT ptr=24
-; res holds the byte just built  and the weight has doubled past 128 to nought;
-; everything else the bit loop touched is back where it started;
-; ASSERT zero 12:21
-; ASSERT zero 23:23
+                                                               ; ASSERT ptr=24
+                                                               ; res holds the byte just built  and the weight has
+                                                               ; doubled past 128 to nought; everything else the bit
+                                                               ; loop touched is back where it started;
+                                                               ; ASSERT zero 12:21
+                                                               ; ASSERT zero 23:23
 <<                                                             ; store res into r1
-; ASSERT ptr=22
+                                                               ; ASSERT ptr=22
   [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<                                                 ; back to the head of the result
-; ASSERT ptr=8
+                                                               ; ASSERT ptr=8
 
 ; ==== byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a ====
 <<<<<<                                                         ; move x2 into a
-; ASSERT ptr=2
+                                                               ; ASSERT ptr=2
   [->>>>>>>>>>+<<<<<<<<<<]
 >>>>                                                           ; move y2 into b
   [->>>>>>>>>>+<<<<<<<<<<]
 >>>>>>>>>>>>>>>>>                                              ; the weight starts at one
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   +
 >                                                              ; eight bits
   ++++++++
 [                                                              ; ____ one bit step ____
   -
 <<<<<<<<<<<<                                                   ; HALVE a  giving qa and pa
-; ASSERT ptr=12
+                                                               ; ASSERT ptr=12
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>>>                                                           ; HALVE b  giving qb and pb
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 <<                                                             ; both low bits set is the and  and only that raises t
-; ASSERT ptr=14
+                                                               ; ASSERT ptr=14
   [[-]>>>>[[-]>>+<<]<<<<]
 >>>>                                                           ; a bit left standing on its own is cleared  which the
                                                                ; nesting cannot reach
   [-]
 >>                                                             ; if t then res gets the weight
-; ASSERT ptr=20
+                                                               ; ASSERT ptr=20
   [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
 <<<<<<<                                                        ; a becomes its own half
-; ASSERT ptr=13
+                                                               ; ASSERT ptr=13
   [-<+>]
 >>>>                                                           ; and b likewise
   [-<+>]
 >>>>>>                                                         ; the weight doubles for the next bit
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [->>+<<]
 >>
   [-<<++>>]
 <                                                              ; back to the bit counter
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 ]
-; ASSERT ptr=24
-; res holds the byte just built  and the weight has doubled past 128 to nought;
-; everything else the bit loop touched is back where it started;
-; ASSERT zero 12:21
-; ASSERT zero 23:23
+                                                               ; ASSERT ptr=24
+                                                               ; res holds the byte just built  and the weight has
+                                                               ; doubled past 128 to nought; everything else the bit
+                                                               ; loop touched is back where it started;
+                                                               ; ASSERT zero 12:21
+                                                               ; ASSERT zero 23:23
 <<                                                             ; store res into r2
-; ASSERT ptr=22
+                                                               ; ASSERT ptr=22
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]
 <<<<<<<<<<<<<<                                                 ; back to the head of the result
-; ASSERT ptr=8
+                                                               ; ASSERT ptr=8
 
 ; ==== byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b ====
 <<<<<                                                          ; move x3 into a
-; ASSERT ptr=3
+                                                               ; ASSERT ptr=3
   [->>>>>>>>>+<<<<<<<<<]
 >>>>                                                           ; move y3 into b
   [->>>>>>>>>+<<<<<<<<<]
 >>>>>>>>>>>>>>>>                                               ; the weight starts at one
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   +
 >                                                              ; eight bits
   ++++++++
 [                                                              ; ____ one bit step ____
   -
 <<<<<<<<<<<<                                                   ; HALVE a  giving qa and pa
-; ASSERT ptr=12
+                                                               ; ASSERT ptr=12
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>>>                                                           ; HALVE b  giving qb and pb
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 <<                                                             ; both low bits set is the and  and only that raises t
-; ASSERT ptr=14
+                                                               ; ASSERT ptr=14
   [[-]>>>>[[-]>>+<<]<<<<]
 >>>>                                                           ; a bit left standing on its own is cleared  which the
                                                                ; nesting cannot reach
   [-]
 >>                                                             ; if t then res gets the weight
-; ASSERT ptr=20
+                                                               ; ASSERT ptr=20
   [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
 <<<<<<<                                                        ; a becomes its own half
-; ASSERT ptr=13
+                                                               ; ASSERT ptr=13
   [-<+>]
 >>>>                                                           ; and b likewise
   [-<+>]
 >>>>>>                                                         ; the weight doubles for the next bit
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [->>+<<]
 >>
   [-<<++>>]
 <                                                              ; back to the bit counter
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 ]
-; ASSERT ptr=24
-; res holds the byte just built  and the weight has doubled past 128 to nought;
-; everything else the bit loop touched is back where it started;
-; ASSERT zero 12:21
-; ASSERT zero 23:23
+                                                               ; ASSERT ptr=24
+                                                               ; res holds the byte just built  and the weight has
+                                                               ; doubled past 128 to nought; everything else the bit
+                                                               ; loop touched is back where it started;
+                                                               ; ASSERT zero 12:21
+                                                               ; ASSERT zero 23:23
 <<                                                             ; store res into r3
-; ASSERT ptr=22
+                                                               ; ASSERT ptr=22
   [-<<<<<<<<<<<+>>>>>>>>>>>]
 <<<<<<<<<<<<<<                                                 ; back to the head of the result
-; ASSERT ptr=8
+                                                               ; ASSERT ptr=8
 
-; ASSERT zero 0:7
-; ASSERT zero 12:25
+                                                               ; ASSERT zero 0:7
+                                                               ; ASSERT zero 12:25
 
 ; emit
   .>.>.>.                                                      ; the and  four bytes little endian

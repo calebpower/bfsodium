@@ -30,13 +30,13 @@
 ; forward through them  and each visit is entered and left on the byte itself;
 
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,                              ; read r
-; ASSERT ptr=15
-; ASSERT zero 16:21
+                                                               ; ASSERT ptr=15
+                                                               ; ASSERT zero 16:21
 <<<<<<<<<<<<                                                   ; to the first byte the clamp touches
 ; ==== byte 3 ====
   [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]                             ; the byte steps into the working frame
 >>>>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving  and the bit that falls off is worth 1 here
 >>
   [->>+<<]
@@ -61,17 +61,17 @@
 <
   [-]                                                          ; what is left above bit three is what the clamp throws
                                                                ; away
-; ASSERT ptr=18
+                                                               ; ASSERT ptr=18
 >>>
   [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]                     ; the byte goes back where it came from
 <<<<<<<<<<<<<<<<<<
-; ASSERT ptr=3
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=3
+                                                               ; ASSERT zero 17:21
 >                                                              ; on to the next byte the clamp touches
 ; ==== byte 4 ====
   [->>>>>>>>>>>>>+<<<<<<<<<<<<<]                               ; the byte steps into the working frame
 >>>>>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving  and the bit that falls off is one the clamp
                                                                ; throws away
 >>
@@ -84,17 +84,17 @@
 >>
   [-]
 <
-; ASSERT ptr=18
+                                                               ; ASSERT ptr=18
   [-<<<<<<<<<<<<<<++++>>>>>>>>>>>>>>]                          ; the quarter goes back multiplied by four  which is
                                                                ; those two bits gone
 <<<<<<<<<<<<<<
-; ASSERT ptr=4
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=4
+                                                               ; ASSERT zero 17:21
 >>>                                                            ; on to the next byte the clamp touches
 ; ==== byte 7 ====
   [->>>>>>>>>>+<<<<<<<<<<]                                     ; the byte steps into the working frame
 >>>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving  and the bit that falls off is worth 1 here
 >>
   [->>+<<]
@@ -119,17 +119,17 @@
 <
   [-]                                                          ; what is left above bit three is what the clamp throws
                                                                ; away
-; ASSERT ptr=18
+                                                               ; ASSERT ptr=18
 >>>
   [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]                             ; the byte goes back where it came from
 <<<<<<<<<<<<<<
-; ASSERT ptr=7
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=7
+                                                               ; ASSERT zero 17:21
 >                                                              ; on to the next byte the clamp touches
 ; ==== byte 8 ====
   [->>>>>>>>>+<<<<<<<<<]                                       ; the byte steps into the working frame
 >>>>>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving  and the bit that falls off is one the clamp
                                                                ; throws away
 >>
@@ -142,17 +142,17 @@
 >>
   [-]
 <
-; ASSERT ptr=18
+                                                               ; ASSERT ptr=18
   [-<<<<<<<<<<++++>>>>>>>>>>]                                  ; the quarter goes back multiplied by four  which is
                                                                ; those two bits gone
 <<<<<<<<<<
-; ASSERT ptr=8
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=8
+                                                               ; ASSERT zero 17:21
 >>>                                                            ; on to the next byte the clamp touches
 ; ==== byte 11 ====
   [->>>>>>+<<<<<<]                                             ; the byte steps into the working frame
 >>>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving  and the bit that falls off is worth 1 here
 >>
   [->>+<<]
@@ -177,17 +177,17 @@
 <
   [-]                                                          ; what is left above bit three is what the clamp throws
                                                                ; away
-; ASSERT ptr=18
+                                                               ; ASSERT ptr=18
 >>>
   [-<<<<<<<<<<+>>>>>>>>>>]                                     ; the byte goes back where it came from
 <<<<<<<<<<
-; ASSERT ptr=11
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=11
+                                                               ; ASSERT zero 17:21
 >                                                              ; on to the next byte the clamp touches
 ; ==== byte 12 ====
   [->>>>>+<<<<<]                                               ; the byte steps into the working frame
 >>>>>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving  and the bit that falls off is one the clamp
                                                                ; throws away
 >>
@@ -200,17 +200,17 @@
 >>
   [-]
 <
-; ASSERT ptr=18
+                                                               ; ASSERT ptr=18
   [-<<<<<<++++>>>>>>]                                          ; the quarter goes back multiplied by four  which is
                                                                ; those two bits gone
 <<<<<<
-; ASSERT ptr=12
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=12
+                                                               ; ASSERT zero 17:21
 >>>                                                            ; on to the next byte the clamp touches
 ; ==== byte 15 ====
   [->>+<<]                                                     ; the byte steps into the working frame
 >>
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving  and the bit that falls off is worth 1 here
 >>
   [->>+<<]
@@ -235,12 +235,12 @@
 <
   [-]                                                          ; what is left above bit three is what the clamp throws
                                                                ; away
-; ASSERT ptr=18
+                                                               ; ASSERT ptr=18
 >>>
   [-<<<<<<+>>>>>>]                                             ; the byte goes back where it came from
 <<<<<<
-; ASSERT ptr=15
-; ASSERT zero 17:21
+                                                               ; ASSERT ptr=15
+                                                               ; ASSERT zero 17:21
 
 ; emit
 <<<<<<<<<<<<<<<                                                ; back to the head of r

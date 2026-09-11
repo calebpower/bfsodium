@@ -34,17 +34,17 @@
 ; and that is exactly the low byte wanted;
 
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,                            ; read the value little endian
-; ASSERT ptr=16
-; ASSERT zero 17:24
+                                                               ; ASSERT ptr=16
+                                                               ; ASSERT zero 17:24
 <<<<<<<<<<<<<<<<                                               ; to the bottom of the value  which is where a shift
                                                                ; left starts
 
 ; ==== byte 0 ====
-; ASSERT ptr=0
+                                                               ; ASSERT ptr=0
   [->>>>>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]          ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>>>>>>>>                                        ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -52,7 +52,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -60,24 +60,25 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
-; byte nought receives no carry: nothing is below it  and the frame is clear
-; on entry  so this step could never have run
+                                                               ; byte nought receives no carry: nothing is below it
+                                                               ; and the frame is clear on entry  so this step could
+                                                               ; never have run
 <<<<
-; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; this byte top bit is what goes up to the byte above
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<<<<                                               ; to the byte above
 
 ; ==== byte 1 ====
-; ASSERT ptr=1
+                                                               ; ASSERT ptr=1
   [->>>>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]            ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>>>>>>>                                         ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -85,7 +86,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -93,24 +94,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<<<                                                ; to the byte above
 
 ; ==== byte 2 ====
-; ASSERT ptr=2
+                                                               ; ASSERT ptr=2
   [->>>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<<]              ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>>>>>>                                          ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -118,7 +119,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -126,24 +127,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<<                                                 ; to the byte above
 
 ; ==== byte 3 ====
-; ASSERT ptr=3
+                                                               ; ASSERT ptr=3
   [->>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<]                ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>>>>>                                           ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -151,7 +152,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -159,24 +160,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<                                                  ; to the byte above
 
 ; ==== byte 4 ====
-; ASSERT ptr=4
+                                                               ; ASSERT ptr=4
   [->>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<]                  ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>>>>                                            ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -184,7 +185,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -192,24 +193,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<<<<                                                   ; to the byte above
 
 ; ==== byte 5 ====
-; ASSERT ptr=5
+                                                               ; ASSERT ptr=5
   [->>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<]                    ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>>>                                             ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -217,7 +218,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -225,24 +226,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<<<                                                    ; to the byte above
 
 ; ==== byte 6 ====
-; ASSERT ptr=6
+                                                               ; ASSERT ptr=6
   [->>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<]                      ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>>                                              ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -250,7 +251,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -258,24 +259,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<<                                                     ; to the byte above
 
 ; ==== byte 7 ====
-; ASSERT ptr=7
+                                                               ; ASSERT ptr=7
   [->>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<]                        ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>>                                               ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -283,7 +284,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -291,24 +292,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<<                                                      ; to the byte above
 
 ; ==== byte 8 ====
-; ASSERT ptr=8
+                                                               ; ASSERT ptr=8
   [->>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<]                          ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>>                                                ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -316,7 +317,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -324,24 +325,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<<                                                       ; to the byte above
 
 ; ==== byte 9 ====
-; ASSERT ptr=9
+                                                               ; ASSERT ptr=9
   [->>>>>>>>+>>>>>>+<<<<<<<<<<<<<<]                            ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>>                                                 ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -349,7 +350,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -357,24 +358,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<<                                                        ; to the byte above
 
 ; ==== byte 10 ====
-; ASSERT ptr=10
+                                                               ; ASSERT ptr=10
   [->>>>>>>+>>>>>>+<<<<<<<<<<<<<]                              ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>>                                                  ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -382,7 +383,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -390,24 +391,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<<+>>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<<                                                         ; to the byte above
 
 ; ==== byte 11 ====
-; ASSERT ptr=11
+                                                               ; ASSERT ptr=11
   [->>>>>>+>>>>>>+<<<<<<<<<<<<]                                ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>>                                                   ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -415,7 +416,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -423,24 +424,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<<+>>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<<+>>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<<                                                          ; to the byte above
 
 ; ==== byte 12 ====
-; ASSERT ptr=12
+                                                               ; ASSERT ptr=12
   [->>>>>+>>>>>>+<<<<<<<<<<<]                                  ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>>                                                    ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -448,7 +449,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -456,24 +457,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<<+>>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<<+>>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<<                                                           ; to the byte above
 
 ; ==== byte 13 ====
-; ASSERT ptr=13
+                                                               ; ASSERT ptr=13
   [->>>>+>>>>>>+<<<<<<<<<<]                                    ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>>                                                     ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -481,7 +482,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -489,24 +490,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<<+>>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<<+>>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<<                                                            ; to the byte above
 
 ; ==== byte 14 ====
-; ASSERT ptr=14
+                                                               ; ASSERT ptr=14
   [->>>+>>>>>>+<<<<<<<<<]                                      ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>>                                                      ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -514,7 +515,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -522,24 +523,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<<+>>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<<+>>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <<                                                             ; to the byte above
 
 ; ==== byte 15 ====
-; ASSERT ptr=15
+                                                               ; ASSERT ptr=15
   [->>+>>>>>>+<<<<<<<<]                                        ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>>                                                       ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -547,7 +548,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -555,24 +556,24 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<<+>>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<<+>>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 <                                                              ; to the byte above
 
 ; ==== byte 16 ====
-; ASSERT ptr=16
+                                                               ; ASSERT ptr=16
   [->+>>>>>>+<<<<<<<]                                          ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
 >>>>>>>                                                        ; to the copy that will be doubled
-; ASSERT ptr=23
+                                                               ; ASSERT ptr=23
   [-<<++>>]                                                    ; doubling wraps modulo 256 by itself  and that wrap IS
                                                                ; the low byte wanted
 >                                                              ; seven turns of halving leave nothing but the top bit
@@ -580,7 +581,7 @@
 [
   -
 <<<<<<<                                                        ; to the value
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 >>                                                             ; the bit that falls off is not wanted here
   [-]
@@ -588,22 +589,22 @@
   [-<+>]
 >>>>>>                                                         ; back to the turn counter
 ]
-; ASSERT ptr=24
+                                                               ; ASSERT ptr=24
 <<<                                                            ; the doubled byte goes back where it came from
-; ASSERT ptr=21
+                                                               ; ASSERT ptr=21
   [-<<<<<+>>>>>]
 >                                                              ; and the bit that came up from the byte below is added
                                                                ; to it
   [-<<<<<<+>>>>>>]
 <<<<<                                                          ; this byte top bit is what goes up to the byte above
-; ASSERT ptr=17
+                                                               ; ASSERT ptr=17
   [->>>>>+<<<<<]
 
 >>>>>                                                          ; the bit shifted out of the top byte is discarded
-; ASSERT ptr=22
+                                                               ; ASSERT ptr=22
   [-]
 <<<<<<<<<<<<<<<<<<<<<<                                         ; back to the head of the value
-; ASSERT ptr=0
-; ASSERT zero 17:24
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 17:24
 ; emit the shifted value little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

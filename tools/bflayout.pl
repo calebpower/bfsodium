@@ -76,7 +76,75 @@ sub is_structure {
     return 0;
 }
 
-sub flush_pending { print "$_\n" for @pending; @pending = (); }
+my $seen_code = 0;   # the header keeps column zero; the body does not
+
+# Four kinds of line keep column zero even inside the body, and only one of
+# those is a matter of taste.
+#
+# "; emit" and "; INTERFACE" are ANCHORS: tools/bffoot finds the end of a body
+# with strncmp(line, "; emit", 6) and tools/bfexpand cuts on /^; emit/ and
+# greps '^; INTERFACE'. Indent either and a routine stops being pasteable,
+# quietly, which is the worst way for it to stop.
+#
+# A tape map row belongs to the header block and is a table, not a remark.
+#
+# A section banner is the matter of taste: it is wider than the annotation
+# column, so indenting it would wrap it across three lines and make the thing
+# it is meant to separate harder to find, not easier.
+sub anchored_left {
+    my ($c) = @_;
+    return 1 if $c =~ /^;\s*$/;                 # a spacer has nothing to align
+    return 1 if $c =~ /^\s*; emit\b/;           # bffoot and bfexpand cut on this
+    return 1 if $c =~ /^\s*; INTERFACE\b/;      # bfexpand greps for it
+    return 1 if $c =~ /^\s*; ====/;             # a banner is wider than the column
+    return 1 if $c =~ /^;\s+\@/;                # a tape map row
+    return 0;
+}
+
+# Everything else in the body is indented into the annotation column, so the
+# English runs down ONE column with no breaks in it.
+#
+# This used to print every pending line verbatim at column zero, which left two
+# kinds of line stranded on the left: an ASSERT, and every line but the last of
+# a multi-line remark. Reading the right hand column then meant the eye jumping
+# back to column zero and out again several times per screen -- which defeats
+# the whole point of having two columns, and was the loudest thing wrong with
+# the committed files.
+#
+# An ASSERT still keeps its own line, because it binds to the next instruction
+# and folding it onto a code line would bind it to the previous one. Its own
+# line is not the same requirement as column zero, and the two were conflated.
+# A run of consecutive remark lines is REFLOWED as one paragraph rather than
+# wrapped line by line. The author's line breaks were chosen against column
+# zero and a 78 column page; re-using them against a 53 column gutter gives a
+# ragged edge and half-empty lines, which looks like a mistake even though the
+# words are right. Joining first and wrapping after gives back a tidy block.
+sub flush_pending {
+    my @para;
+    my $flush_para = sub {
+        return unless @para;
+        my $t = join ' ', @para;
+        print ' ' x ($COL - 1), "; $_\n" for wrap_ann($t);
+        @para = ();
+    };
+    for my $c (@pending) {
+        if (!$seen_code || anchored_left($c)) { $flush_para->(); print "$c\n"; next }
+        my $t = $c;
+        $t =~ s/^\s*;\s?//;
+        # An ASSERT keeps its own line and is never folded into a paragraph:
+        # it binds to the next instruction, so anything printed between it and
+        # that instruction would be wrong, and running two of them together
+        # would bind the second nowhere.
+        if ($c =~ /^\s*; ASSERT\b/) {
+            $flush_para->();
+            print ' ' x ($COL - 1), "; $t\n";
+            next;
+        }
+        push @para, $t;
+    }
+    $flush_para->();
+    @pending = ();
+}
 
 # Emit one code line, split and aligned, with an optional annotation.
 sub emit_code {
@@ -151,5 +219,6 @@ while (my $line = <>) {
     }
     flush_pending();
     emit_code($code, $ann);
+    $seen_code = 1;
 }
 flush_pending();
