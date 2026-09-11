@@ -147,10 +147,22 @@ brainfuck has no subroutines, so a composite primitive physically contains its
 parts. Because brainfuck code is **position-independent** — a block that only
 moves relative to where it starts behaves identically wherever it is placed — a
 proven body can be reused verbatim at a different base rather than retyped at
-new offsets. [`tools/qrasm.sh`](tools/qrasm.sh) does exactly this for the
-ChaCha20 quarter round: it splices in the bodies of add32, xor32 and rotl32 and
-adds glue that moves words into a shared workspace and back.
+new offsets.
 
-The glue obeys one rule, the same one CONVENTIONS §4 requires of hand-written
-blocks: **every operation is entered with the pointer at cell 0 and leaves it at
-cell 0.** Operations then compose by concatenation.
+That splicing is done by [`tools/bfexpand.sh`](tools/bfexpand.sh), from a
+`@@NAME@@ base` directive in a skeleton. It pastes the callee's body and
+rebases its `ASSERT` lines, and it does nothing else: it chooses no layout,
+computes no offset from a name, and generates no loop. The glue that moves
+words into a shared workspace and back is written by hand, in the skeleton,
+beside the paste.
+
+It used to be done by a transpiler — `tools/qrasm.sh` and its siblings, which
+assembled the quarter round out of add32, xor32 and rotl32. They are **deleted**,
+along with everything they generated, and CONVENTIONS §6 records why: the
+project came off the rails by drifting into code generation, and the size
+budget exists to keep it from happening again.
+
+The glue obeys one rule, the same one CONVENTIONS §4 requires of every routine:
+**a routine declares where the pointer enters and where it leaves, and
+`tools/bffoot` proves both against the instruction stream.** Operations then
+compose by concatenation.
