@@ -141,12 +141,19 @@ READ 4
 >>>>>>>>,[<+>[-]],[<+>[-]],[<+>[-]],[<+>[-]],[<+>[-]],[<+>[-]]<<<<<<<<
 #   the rest of the record: mtime, mode and the reserved bytes
 READ 20
-#   if cell 7 is set, the file is too large: exit 1 and stop. The broker
-#   answers the exit frame and then ends the conversation, which kills the
-#   interpreter, so nothing below runs.
+#   if cell 7 is set, the file is too large. Remove the temporary file and
+#   exit 1.
+#
+#   THE UNLINK COMES FIRST because there is no second chance at it. brainstem
+#   answers the exit frame and then closes the program's stdin, so every frame
+#   after this one is written into a pipe nobody is reading and the unlink at
+#   the foot of this file never happens. A refusal that left the caller's
+#   directory holding a copy of their own input would be a poor way to say no.
 >>>>>>>
 LOOP
 <<<<<<<
+EMIT 15 0f 00 ff ff ff ff 00 00 62 66 73 68 61 2e 74 6d 70
+READ 3
 EMIT 02 01 00 01
 READ 3
 >>>>>>>[-]
