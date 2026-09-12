@@ -618,9 +618,9 @@ run "the pinned broker and expander are present" sh -c '
 # The committed .bf is the expansion of its .poke, byte for byte. Same claim
 # tier 9c makes for every routine, and the same reason: a .bf carries no
 # comments, so the skeleton is the only artifact review can happen on.
-run "programs/sha256-abc.bf is what its skeleton says" sh -c '
-    sh "$1/tools/bfgen.sh" programs/sha256-abc.poke \
-        | cmp -s - programs/sha256-abc.bf' _ "$BS"
+run "programs/sha256.bf is what its skeleton says" sh -c '
+    sh "$1/tools/bfgen.sh" programs/sha256.poke \
+        | cmp -s - programs/sha256.bf' _ "$BS"
 
 # A PROGRAM IS BARE BRAINFUCK, and this is the check that says so. The routine
 # tiers above deliberately skip programs/, because a routine's legibility floor
@@ -636,23 +636,43 @@ run "programs are nothing but the eight brainfuck instructions" sh -c '
     done
     exit $rc' _ "$BS"
 
-# AND THE DIGEST IS RIGHT, end to end: a brainfuck program spawns an
-# interpreter on sha256/sha256.bf through the broker, feeds it "abc", reads the
-# thirty two bytes back one at a time and writes them to the broker's stdout.
-# The oracle is FIPS 180-4, and nothing about it is pinned here -- it is the
-# same digest tier 2 already demands of the routine on its own.
-run "a program computes SHA-256 by chaining, through the broker" sh -c '
-    d=$(mktemp -d) || exit 1
-    cp tools/bfi "$d/bfi" && cp sha256/sha256.bf "$d/sha256.bf" || { rm -rf "$d"; exit 1; }
-    cp programs/sha256-abc.bf "$d/prog.bf" || { rm -rf "$d"; exit 1; }
-    ( cd "$d" && timeout 300 "$1/build/brainstem" --op-timeout 120000 \
-        -- ./bfi ./prog.bf ) > "$d/digest.bin" 2>/dev/null
-    got=$(./tools/hx < "$d/digest.bin")
-    rm -rf "$d"
-    test "$got" = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad || {
-        echo "got    $got"
-        echo "wanted ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-        exit 1; }' _ "$BS"
+# AND THE DIGESTS ARE RIGHT, end to end. The program reads the bytes the shell
+# handed the broker, spawns an interpreter on sha256/sha256.bf through that
+# broker, relays them across a pipe and writes the digest back out.
+#
+# Three messages, each here for a reason. The EMPTY one is the boundary where
+# the relay loop never runs its body at all. "abc" is FIPS 180-4. The hundred
+# byte one spans TWO compression blocks, so it catches a length prefix that is
+# wrong in a way a short message would hide -- and the prefix is the
+# interesting part of this program, taken byte for byte out of a stat record.
+# tools/bfprog.sh is the one place that knows how to RUN a program: a scratch
+# directory, the routines it may spawn copied in by name, and the pinned broker
+# on the other end of its stdin and stdout. A routine is run by bfi alone; a
+# program cannot be, which is most of what makes it a program.
+#
+# It is a script and not a shell function here for a reason that has now bitten
+# this file twice: these checks run under sh -c, and A CHILD SHELL DOES NOT
+# INHERIT FUNCTIONS. The first version was a function, and it would have failed
+# by producing an empty digest that compared unequal -- which reads as "the
+# program is wrong" rather than "the harness is".
+bf_msg=$(mktemp -d)
+: > "$bf_msg/empty"
+printf abc > "$bf_msg/abc"
+printf 'a%.0s' $(seq 1 100) > "$bf_msg/a100"
+
+run "a program hashes nothing at all, through the broker" sh -c '
+    test "$(sh tools/bfprog.sh programs/sha256.bf "$1" | ./tools/hx)" = "$2"' \
+    _ "$bf_msg/empty" \
+    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+run "a program hashes abc, through the broker" sh -c '
+    test "$(sh tools/bfprog.sh programs/sha256.bf "$1" | ./tools/hx)" = "$2"' \
+    _ "$bf_msg/abc" \
+    ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+run "a program hashes across two blocks, through the broker" sh -c '
+    test "$(sh tools/bfprog.sh programs/sha256.bf "$1" | ./tools/hx)" = "$2"' \
+    _ "$bf_msg/a100" \
+    2816597888e4a0d3a36b82b83316ab32680eb8f00f8cd3b904d681246d285a0e
+rm -rf "$bf_msg"
 
 echo
 # TIER 8

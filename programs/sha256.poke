@@ -1,0 +1,225 @@
+# sha256.poke -- read stdin, write the SHA-256 digest to stdout.
+#
+#   cat something | brainstem -- bfi sha256.bf | hx
+#
+# A file containing nothing but the eight brainfuck instructions reads the
+# bytes the shell handed the broker, spawns an interpreter on
+# sha256/sha256.bf, feeds them to it, and writes the thirty two byte digest
+# back out. It is the ordinary Unix shape -- bytes in, digest out -- and it is
+# done entirely by a brainfuck program driving another brainfuck program.
+#
+# WHY THERE IS A TEMPORARY FILE, since it is the one surprising thing here.
+# sha256.bf wants a two byte little-endian LENGTH before the message, and the
+# length of a stream is not known until the stream ends. The alternative is to
+# buffer every byte on the tape and count them in sixteen bits, which is real
+# arithmetic and a lot of pointer discipline. Writing them to a file instead
+# lets the FILESYSTEM do the counting: stat reports the size, and the low two
+# bytes of that u64 are already exactly the prefix format, little-endian, so
+# they are copied byte for byte with no arithmetic at all.
+#
+# The file is unlinked before the program exits.
+#
+# A FILE LARGER THAN 65535 BYTES IS REFUSED rather than hashed wrongly. Only
+# the low two bytes of the size can reach sha256.bf, so a larger file would
+# hash its length modulo 65536 and print a plausible, wrong digest. The six
+# high bytes are checked and the program exits 1 if any is set.
+#
+# COST, BECAUSE IT IS THE REAL LIMIT. sha256.bf is about 1.2 billion
+# interpreter instructions per 64 byte block -- roughly two seconds. A
+# kilobyte is half a minute. A megabyte is about nine hours. Hash small
+# things.
+#
+# TAPE MAP
+# cell 0 is the working cell: every EMIT and every READ uses it.
+# cell 1 holds the status byte of a read, which drives the relay loops.
+# cell 2 is the relay loop's continue flag.
+# cell 3 holds one byte in flight between a read and a write.
+# cell 4 is the relay loop's branch flag.
+# cells 5 and 6 hold the low two bytes of the file size.
+# cell 7 counts the non-zero high bytes of the size: zero means it fits.
+# cell 8 is scratch for those high bytes.
+# cell 9 is the digest byte counter, thirty two down to zero.
+#
+# INDENTATION IS LOAD BEARING. A comment indented by two or more spaces
+# annotates the frame that follows it; a flush one, like this, is the file
+# talking about itself. brainstem's tools/bsframe reads a skeleton by that
+# rule.
+#
+# HANDLES ARE ALLOCATED BEFORE ANYTHING IS CLOSED, deliberately. brainstem
+# reuses the lowest free slot and bumps its generation, so closing early would
+# make every later handle carry a generation this file would have to track.
+# Nothing here is closed until every handle exists.
+#
+# Frames transcribed by hand from brainstem's ABI.md sections 3, 7.10 to 7.23.
+#
+#   hello  op 01, len 10, magic "BSTM", want major 1, want minor 0, flags 0
+EMIT 01 0a 00 42 53 54 4d 01 00 00 00 00 00
+READ 107
+#   pipe  op 0e, flags 0.  Handles 4 (read) and 5 (write): this program writes
+#   the message into 5 and the child reads it from 4.
+EMIT 0e 02 00 00 00
+READ 11
+#   pipe again.  Handles 6 (read) and 7 (write): the child writes the digest
+#   into 7 and this program reads it from 6.
+EMIT 0e 02 00 00 00
+READ 11
+#   open  op 11, dir ffffffff, flags WRITE|CREATE|TRUNC = 0x0016, mode 0644 =
+#   0x01a4, path "bfsha.tmp".  Handle 8, the temporary file for writing.
+EMIT 11 11 00 ff ff ff ff 16 00 a4 01 62 66 73 68 61 2e 74 6d 70
+READ 7
+#   open  op 11 again, flags READ = 0x0001, mode 0, same path.  Handle 9, the
+#   same file for reading. Opened NOW, before anything is closed, so that the
+#   handle numbers stay simple.
+EMIT 11 11 00 ff ff ff ff 01 00 00 00 62 66 73 68 61 2e 74 6d 70
+READ 7
+#   spawn  op 0f, len 0x29 = 41.
+#     dir ffffffff meaning the broker's working directory, flags 0,
+#     nfdmap 2, nargv 2, nenv 0, reserved 0
+EMIT 0f 29 00 ff ff ff ff 00 00 02 02 00 00
+#     the descriptor map: child fd 0 gets handle 4, child fd 1 gets handle 7.
+#     ANY CHILD DESCRIPTOR NOT NAMED HERE IS CLOSED, so the child gets these
+#     two and nothing else.
+EMIT 00 04 00 00 00
+EMIT 01 07 00 00 00
+#     the path, then argv: "bfi", "bfi", "sha256.bf". No environment at all:
+#     sha256.bf reads an exact, known byte count and never reads past it, so
+#     BFI_EOF cannot matter to it.
+EMIT 03 00 62 66 69
+EMIT 03 00 62 66 69
+EMIT 09 00 73 68 61 32 35 36 2e 62 66
+#     the reply is a process handle: 10
+READ 7
+#   close the outer copies of the child's two ends.  Without this the child
+#   never sees end of input and this program never sees end of file.
+EMIT 0c 04 00 04 00 00 00
+READ 3
+EMIT 0c 04 00 07 00 00 00
+READ 3
+#   THE FIRST RELAY: the broker's stdin, handle 1, into the temporary file,
+#   handle 8, one byte at a time until end of file.
+#
+#   The loop is driven by the STATUS byte of each read, not by a count. A read
+#   of one byte returns OK and four bytes when there is a byte, and END with a
+#   zero length -- three bytes -- when there is not. Both shapes begin with a
+#   status and a two byte length, so those three are always taken; only the
+#   data byte is conditional, which is what the branch flag is for.
+>>+<<
+>>
+LOOP
+<<
+#   read  op 0a, handle 1, one byte, flags 0
+EMIT 0a 08 00 01 00 00 00 01 00 00 00
+>,<,,
+>>>>+<<<
+[>>>[-]<[-]>>[-]<<<[-]]
+>>>
+LOOP
+<,<<<
+#   write  op 0b, handle 8, flags 0, the byte just read
+EMIT 0b 07 00 08 00 00 00 00 00
+>>>.<<<
+READ 5
+>>>>[-]
+END
+<<
+END
+<<
+#   stat  op 13, dir ffffffff, flags 0, path "bfsha.tmp".  Thirty five bytes
+#   back: status, two length bytes, then the thirty two byte record.
+EMIT 13 0f 00 ff ff ff ff 00 00 62 66 73 68 61 2e 74 6d 70
+READ 3
+#   the record: type, readable, writable, executable
+READ 4
+#   THE LOW TWO BYTES OF THE SIZE, saved in cells 5 and 6. This is the whole
+#   trick: size is a little-endian u64 and sha256.bf wants a little-endian
+#   u16, so the first two bytes of one are the whole of the other. No
+#   arithmetic, just two commas.
+>>>>>,>,<<<<<<
+#   the six high bytes of the size, each ORed into cell 7. Any of them set
+#   means the file does not fit in a u16 and hashing it would print a
+#   plausible wrong answer.
+>>>>>>>>,[<+>[-]],[<+>[-]],[<+>[-]],[<+>[-]],[<+>[-]],[<+>[-]]<<<<<<<<
+#   the rest of the record: mtime, mode and the reserved bytes
+READ 20
+#   if cell 7 is set, the file is too large: exit 1 and stop. The broker
+#   answers the exit frame and then ends the conversation, which kills the
+#   interpreter, so nothing below runs.
+>>>>>>>
+LOOP
+<<<<<<<
+EMIT 02 01 00 01
+READ 3
+>>>>>>>[-]
+END
+<<<<<<<
+#   write  op 0b, handle 5, flags 0, the two size bytes -- sha256.bf's length
+#   prefix, straight out of the stat record.
+EMIT 0b 08 00 05 00 00 00 00 00
+>>>>>.>.<<<<<<
+READ 5
+#   THE SECOND RELAY, the same loop again: the temporary file, handle 9, into
+#   the child's stdin, handle 5.
+>>+<<
+>>
+LOOP
+<<
+#   read  op 0a, handle 9, one byte, flags 0
+EMIT 0a 08 00 09 00 00 00 01 00 00 00
+>,<,,
+>>>>+<<<
+[>>>[-]<[-]>>[-]<<<[-]]
+>>>
+LOOP
+<,<<<
+#   write  op 0b, handle 5, flags 0, the byte just read
+EMIT 0b 07 00 05 00 00 00 00 00
+>>>.<<<
+READ 5
+>>>>[-]
+END
+<<
+END
+<<
+#   close handle 5, so the child sees end of input
+EMIT 0c 04 00 05 00 00 00
+READ 3
+#   THE DIGEST, thirty two bytes, one at a time, from handle 6 to handle 2.
+#
+#   A read of ONE byte is the only read from a stream that is deterministic:
+#   it blocks until there is a byte and then returns exactly it. The first of
+#   these is where the child's work is waited on, because it writes nothing
+#   until it has hashed.
+>>>>>>>>>++++++++++++++++++++++++++++++++
+LOOP
+<<<<<<<<<
+#   read  op 0a, handle 6, one byte, flags 0
+EMIT 0a 08 00 06 00 00 00 01 00 00 00
+READ 3
+>>>,<<<
+#   write  op 0b, handle 2 -- the broker's stdout -- flags 0, one byte
+EMIT 0b 07 00 02 00 00 00 00 00
+>>>.<<<
+READ 5
+>>>>>>>>>-
+END
+<<<<<<<<<
+#   wait  op 10, handle 10, flags 0 -- blocking.  state 1 exited, code 0.
+EMIT 10 06 00 0a 00 00 00 00 00
+READ 7
+#   unlink  op 15, dir ffffffff, flags 0, path "bfsha.tmp"
+EMIT 15 0f 00 ff ff ff ff 00 00 62 66 73 68 61 2e 74 6d 70
+READ 3
+#   close everything still open: the digest pipe, both file handles, and the
+#   process handle. Closing a process handle stops tracking the child; it does
+#   not kill it.
+EMIT 0c 04 00 06 00 00 00
+READ 3
+EMIT 0c 04 00 08 00 00 00
+READ 3
+EMIT 0c 04 00 09 00 00 00
+READ 3
+EMIT 0c 04 00 0a 00 00 00
+READ 3
+#   exit  op 02, len 1, code 0
+EMIT 02 01 00 00
+READ 3

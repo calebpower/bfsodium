@@ -30,13 +30,33 @@ the tree's Cryptol coverage changed, which is the opposite of a definition.
 
 **A program is still standard brainfuck.** It does not stop being brainfuck by
 speaking a protocol; that is the entire thesis brainstem exists to demonstrate.
-So `bflint`, `bfstyle` and the provenance tier cover a program exactly as they
-cover a routine. What a program does *not* get is a Cryptol oracle, because
-there is nothing here for Cryptol to say.
+What a program does *not* get is a Cryptol oracle, because there is nothing
+here for Cryptol to say.
 
 And the boundary enforces itself, which is why there is no lint for it: a
 routine that emitted protocol frames would fail its own known-answer test,
 because a KAT compares stdout and frames are extra bytes on stdout.
+
+### Two legibility rules, because there are two portability claims
+
+This is the part that surprised me and is worth stating plainly: **the routine
+tiers do not run on `programs/`.**
+
+A routine is COMMENTED brainfuck — a title, an `IO` line, a `TAPE MAP`,
+annotations at column 64, no run of more than twelve code lines without one.
+That floor is this project's central promise and `bflint` and `bfstyle`
+enforce it.
+
+A program is BARE brainfuck: nothing but the eight instructions. It has to be,
+because it must run under **any** conforming interpreter, and `;` comments are
+an extension of the pinned one. Demanding the routine floor of a program would
+demand comments that break the program's own claim.
+
+So `programs/` is covered by tier 12 instead, where brainstem's `bsbf` proves
+bareness directly — the mechanical form of the claim the whole scheme rests
+on. Its legibility lives where a routine's does: in the skeleton. Nothing is
+uncovered; the coverage follows the artifact's portability claim rather than
+its directory.
 
 ## `.poke`, not `.skel`
 
@@ -87,16 +107,45 @@ not one anybody should depend on either.
 
 | program | does | oracle |
 |---|---|---|
-| `sha256-abc.poke` | hashes the fixed message `"abc"` by spawning `sha256/sha256.bf` through the broker | the FIPS 180-4 digest, end to end |
+| `sha256.poke` | reads stdin, writes the SHA-256 digest to stdout | FIPS 180-4, end to end, at three lengths |
 
-`sha256-abc` exists to prove the join and nothing more. Every routine here was
-already verified and the broker was already gated across two kernels; what
-nothing tested was that a program can take one routine's output and make it the
-next one's input. It hashes a fixed message because doing it to a file the
-caller names needs `open`, `stat`, a relay loop and a size guard, and the
-chaining deserved to be proved before any of that was built on top of it.
+```sh
+cat something | brainstem -- bfi sha256.bf | hx
+```
 
-**Cost, because it decides what is worth writing.** SHA-256 is about 1.2 billion
-interpreter instructions per 64-byte block, roughly two seconds. A kilobyte is
-half a minute and a megabyte is about nine hours. Programs here should hash
-things measured in hundreds of bytes; see *Cost* in `HANDOFF.md`.
+Bytes in, digest out, the ordinary Unix shape — done entirely by a brainfuck
+program driving another brainfuck program. `tools/bfprog.sh` is the supported
+way to run one; a routine is `bfi routine.bf < input` and a program cannot be,
+which is most of what makes it a program.
+
+### The temporary file, which is the one surprising thing
+
+`sha256/sha256.bf` wants a two byte little-endian **length** before the
+message, and the length of a stream is not known until the stream ends. The
+alternative is buffering every byte on the tape and counting them in sixteen
+bits, which is real arithmetic and a great deal of pointer discipline.
+
+Writing them to a file instead lets the filesystem do the counting. `stat`
+reports the size, and **the low two bytes of that u64 are already exactly the
+prefix format** — little-endian, same width — so they are copied byte for byte
+with no arithmetic anywhere in the program. The file is unlinked before exit.
+
+A file larger than 65535 bytes is **refused**, not hashed wrongly: only the low
+two bytes can reach the routine, so a larger one would hash its length modulo
+65536 and print a plausible, wrong digest. The six high bytes are checked and
+the program exits 1 if any is set.
+
+### Cost, because it decides what is worth writing
+
+SHA-256 is about 1.2 billion interpreter instructions per 64 byte block,
+roughly **two seconds**. Measured end to end through the broker:
+
+| input | wall |
+|---|---|
+| empty | ~2 s |
+| 3 bytes | ~1 s |
+| 100 bytes | ~4 s |
+| 1000 bytes | ~27 s |
+
+A megabyte would be about nine hours. Hash small things; see *Cost* in
+`HANDOFF.md`.

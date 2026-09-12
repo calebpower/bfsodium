@@ -1,0 +1,66 @@
+#!/bin/sh
+# bfprog.sh -- run a program from programs/ under the pinned broker.
+#
+#   sh tools/bfprog.sh programs/sha256.bf INPUTFILE     > digest.bin
+#
+# A program is not a routine and cannot be run the way one is. A routine is
+# `bfi routine.bf < input`: pure computation, stdin to stdout, nothing else in
+# the picture. A program needs a BROKER on the other end of its stdin and
+# stdout, because what it does is sequence routines by spawning them, and the
+# eight instructions cannot spawn anything on their own.
+#
+# So this does what tools/kat.sh does for a routine: it is the one place that
+# knows how to invoke the thing, and every caller goes through it.
+#
+# WHAT THE SCRATCH DIRECTORY IS FOR. The program spawns `bfi` on a routine by
+# NAME, resolved against the broker's working directory, and it writes a
+# temporary file there. Handing it a directory of its own means it cannot
+# collide with a parallel run, cannot read a stale temporary, and cannot leave
+# anything behind -- the directory goes when this script returns.
+#
+# The broker and the interpreter both come from the brainstem checkout that
+# tools/guest-setup.sh pinned and built. If it is missing this FAILS rather
+# than skipping: "run it when present" is a skip and this project does not
+# skip.
+#
+# The op timeout is generous rather than tight, and deliberately so. SHA-256 is
+# about two seconds per 64 byte block under the pinned interpreter, so the
+# first read of the digest waits out the whole hash -- a kilobyte of input is
+# half a minute of silence before a single byte comes back. The point of the
+# bound is that a HANG ends; it is not there to punish a slow run.
+set -eu
+
+BS=${BRAINSTEM_DIR:-/opt/brainstem}
+
+[ $# -eq 2 ] || { echo "usage: bfprog.sh PROGRAM.bf INPUTFILE" >&2; exit 2; }
+prog=$1
+input=$2
+
+repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$repo"
+
+[ -r "$prog" ]  || { echo "bfprog: no such program: $prog" >&2; exit 2; }
+[ -r "$input" ] || { echo "bfprog: no such input: $input" >&2; exit 2; }
+[ -x "$BS/build/brainstem" ] || {
+    echo "bfprog: no broker at $BS/build/brainstem" >&2
+    echo "bfprog: tools/guest-setup.sh builds it from BRAINSTEM_COMMIT" >&2
+    exit 2
+}
+[ -x tools/bfi ] || { echo "bfprog: tools/bfi is not built" >&2; exit 2; }
+
+d=$(mktemp -d)
+trap 'rm -rf "$d"' EXIT
+
+cp tools/bfi "$d/bfi"
+cp "$prog" "$d/prog.bf"
+# Every routine a program might spawn, by name, flattened into the scratch
+# directory. Copied rather than symlinked because the broker resolves the name
+# against its working directory and a symlink would reach back into the tree
+# this is deliberately isolated from.
+for r in */*.bf; do
+    case "$r" in programs/*) continue ;; esac
+    cp "$r" "$d/$(basename "$r")"
+done
+
+( cd "$d" && timeout 900 "$BS/build/brainstem" --op-timeout 600000 \
+    -- ./bfi ./prog.bf ) < "$input"
