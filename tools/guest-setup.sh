@@ -63,7 +63,7 @@ if [ "$do_toolchain" = yes ]; then
 echo "guest-setup: apt toolchain (C compiler, z3, curl)"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq build-essential z3 curl ca-certificates >/dev/null
+apt-get install -y -qq build-essential z3 curl ca-certificates git >/dev/null
 
 if command -v cryptol >/dev/null 2>&1; then
     echo "guest-setup: cryptol already present"
@@ -95,10 +95,38 @@ else
     rm -rf "$tmp"
 fi
 
+# The P1 broker, at BRAINSTEM_COMMIT. programs/ are brainstem clients: they
+# chain routines by spawning them through a broker, so the broker is a build
+# dependency of this repository exactly as Cryptol is.
+#
+# Cloned rather than vendored, and pinned to a SHA rather than a branch, for
+# the reason the Cryptol pin exists: a dependency that moves on its own turns
+# a red suite into a question about somebody else's tree. The checkout also
+# provides tools/bfgen.sh, which is what expands a programs/*.poke -- there is
+# deliberately no second copy of it here, because two copies of an expander is
+# two things that can disagree about what a .poke means.
+if [ -x /opt/brainstem/build/brainstem ] \
+   && [ "$(cat /opt/brainstem/PINNED 2>/dev/null)" = "$BRAINSTEM_COMMIT" ]; then
+    echo "guest-setup: brainstem $BRAINSTEM_COMMIT already built"
+else
+    echo "guest-setup: fetching brainstem $BRAINSTEM_COMMIT"
+    rm -rf /opt/brainstem
+    git clone -q https://github.com/calebpower/brainstem /opt/brainstem \
+        || { echo "guest-setup: FAILED to clone brainstem" >&2; exit 1; }
+    ( cd /opt/brainstem && git checkout -q "$BRAINSTEM_COMMIT" ) \
+        || { echo "guest-setup: no commit $BRAINSTEM_COMMIT in brainstem" >&2; exit 1; }
+    ( cd /opt/brainstem && sh tools/build.sh >/dev/null ) \
+        || { echo "guest-setup: brainstem did not build" >&2; exit 1; }
+    # Recorded so a re-run can tell "already built" from "built something else".
+    printf '%s
+' "$BRAINSTEM_COMMIT" > /opt/brainstem/PINNED
+fi
+
 echo "guest-setup: versions"
 cc --version | head -1
 z3 --version
 cryptol --version 2>&1 | head -1
+echo "brainstem $(cat /opt/brainstem/PINNED)"
 
 fi
 

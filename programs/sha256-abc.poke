@@ -1,0 +1,124 @@
+# sha256-abc.poke -- brainfuck computing SHA-256 by driving brainfuck.
+#
+# THE FIRST PROGRAM, AND THE POINT OF THE WHOLE THREE-PHASE SCHEME. A file
+# containing nothing but the eight brainfuck instructions creates two pipes,
+# starts an interpreter on sha256/sha256.bf with those pipes as its stdin and
+# stdout, feeds it a message, reads the digest back a byte at a time, and
+# writes those bytes to the terminal.
+#
+# Every routine in this library was already verified. What was never tested is
+# that they can be SEQUENCED -- that one program can take a routine's output
+# and make it another's input, with no shell in the middle. bfsodium gates the
+# routines, brainstem gates the broker, and until this file nothing gated the
+# join.
+#
+# It hashes a FIXED message, "abc", whose digest is the FIPS 180-4 vector. The
+# next program hashes a file the caller names, which needs open, stat, a relay
+# loop and a size guard; this one needs none of them, and exists so that the
+# chaining is proved before any of that is built on top of it.
+#
+# WHY THIS IS A PROGRAM AND NOT A ROUTINE. It cannot be specified in Cryptol:
+# Cryptol describes functions, and this is a sequence of I/O. That is the
+# whole line between programs/ and the routine directories, and it draws
+# itself -- see programs/README.md.
+#
+# TAPE MAP
+# cell 0 is the working cell: every EMIT and every READ uses it.
+# cell 1 holds one byte of the digest, in flight between read and write.
+# cell 2 is the digest byte counter, thirty two down to zero.
+#
+# Run it with the interpreter and sha256.bf in the working directory:
+# brainstem -- bfi sha256-abc.bf
+#
+# INDENTATION IS LOAD BEARING BELOW THIS LINE. A comment indented by two or
+# more spaces annotates the frame that follows it; a flush one, like this, is
+# the file talking about itself. brainstem's tools/bsframe reads a skeleton by
+# that rule, so an indented TAPE MAP would arrive as though it described the
+# handshake.
+#
+# Frames transcribed by hand from brainstem's ABI.md sections 3, 7.10 to 7.16.
+#
+#   hello  op 01, len 10, magic "BSTM", want major 1, want minor 0, flags 0
+EMIT 01 0a 00 42 53 54 4d 01 00 00 00 00 00
+READ 107
+#   pipe  op 0e, flags 0.  Handles 4 (read) and 5 (write): this program writes
+#   the message into 5 and the child reads it from 4.
+EMIT 0e 02 00 00 00
+READ 11
+#   pipe again.  Handles 6 (read) and 7 (write): the child writes the digest
+#   into 7 and this program reads it from 6.
+EMIT 0e 02 00 00 00
+READ 11
+#   spawn  op 0f, len 0x29 = 41.
+#     dir ffffffff meaning the broker's working directory, flags 0,
+#     nfdmap 2, nargv 2, nenv 0, reserved 0
+EMIT 0f 29 00 ff ff ff ff 00 00 02 02 00 00
+#     the descriptor map: child fd 0 gets handle 4, child fd 1 gets handle 7.
+#     ANY CHILD DESCRIPTOR NOT NAMED HERE IS CLOSED, so the child gets these
+#     two and nothing else -- not even the broker's stderr.
+EMIT 00 04 00 00 00
+EMIT 01 07 00 00 00
+#     the path, u16 prefixed: "bfi"
+EMIT 03 00 62 66 69
+#     argv: "bfi", "sha256.bf"
+EMIT 03 00 62 66 69
+EMIT 09 00 73 68 61 32 35 36 2e 62 66
+#     no environment at all.  sha256.bf reads an exact, known byte count and
+#     never reads past it, so BFI_EOF cannot matter to it -- unlike echo.bf in
+#     brainstem's own drive fixture, which needs it to terminate.
+#     the reply is a process handle: 8
+READ 7
+#   close the outer copies of the child's two ends.  This is the step that is
+#   easy to forget and impossible to debug: without it the child never sees
+#   end of input and this program never sees end of file.
+EMIT 0c 04 00 04 00 00 00
+READ 3
+EMIT 0c 04 00 07 00 00 00
+READ 3
+#   write  op 0b, handle 5, flags 0, and the message in sha256.bf's own input
+#   format: a two byte little-endian length, then the bytes. 0x0003 then
+#   "abc".  Payload is 4 + 2 + 5 = 11 = 0x0b.
+EMIT 0b 0b 00 05 00 00 00 00 00 03 00 61 62 63
+READ 5
+#   close handle 5.  sha256.bf has its length and will not read further, but
+#   closing is what makes that a fact rather than a hope.
+EMIT 0c 04 00 05 00 00 00
+READ 3
+#   THE DIGEST, thirty two bytes, one at a time.
+#
+#   Put 32 in cell 2 and count down. A read of ONE byte is the only read from
+#   a stream that is deterministic: it blocks until there is a byte and then
+#   returns exactly it. Asking for thirty two and assuming thirty two is the
+#   race brainstem's own fixtures shipped with and had to have fixed.
+#
+#   The first of these reads is where sha256.bf's two seconds of work are
+#   waited on, because the child writes nothing until it has hashed.
+>>++++++++++++++++++++++++++++++++
+LOOP
+<<
+#   read  op 0a, handle 6, one byte, flags 0.  Reply is status, two length
+#   bytes, then the byte: READ 3 takes the header and the raw comma below
+#   takes the byte into cell 1.
+EMIT 0a 08 00 06 00 00 00 01 00 00 00
+READ 3
+>,<
+#   write  op 0b, handle 2 -- the broker's stdout -- flags 0, one byte.
+#   Payload is 4 + 2 + 1 = 7. The header is literal and the byte is not, so
+#   the byte is emitted with raw brainfuck from cell 1.
+EMIT 0b 07 00 02 00 00 00 00 00
+>.<
+READ 5
+>>-
+END
+<<
+#   wait  op 10, handle 8, flags 0 -- blocking.  state 1 exited, code 0.
+EMIT 10 06 00 08 00 00 00 00 00
+READ 7
+#   close the read end and the process handle
+EMIT 0c 04 00 06 00 00 00
+READ 3
+EMIT 0c 04 00 08 00 00 00
+READ 3
+#   exit  op 02, len 1, code 0
+EMIT 02 01 00 00
+READ 3

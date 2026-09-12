@@ -6,9 +6,13 @@ actually built and where it has bitten.
 
 ## State
 
-**Gated: 339 pass, 0 fail on `ubuntu-26.04`, at `8edf0f6`.** That is `reaper
-test`, which the lane section below calls the gate of record; the container
-lane agrees on the same commit.
+**Gated: 339 pass, 0 fail on `ubuntu-26.04`, at `8edf0f6`** -- `reaper test`,
+which the lane section below calls the gate of record.
+
+**The container lane is at 343 on the commit that added `programs/`, and the
+gate has not seen that one yet.** The four new checks are tier 12, and they
+need a broker: `tools/guest-setup.sh` clones and builds brainstem at
+`BRAINSTEM_COMMIT`, so the first gate run after this will provision it.
 
 The lane and the commit are named because "the suite is 339 pass, 0 fail" is
 not a fact, it is a measurement, and a measurement with neither of those is a
@@ -113,6 +117,7 @@ must have no marker in the suite at all.
 | 9e | yes | 2 | the routine AND tier tables describe the tree |
 | 10 | yes | 1 | one definition of the toolchain |
 | 11 | manual | 0 | mutation, a discipline rather than a check |
+| 12 | yes | 4 | composition: a program chains routines through the broker |
 
 ## What is next
 
@@ -123,8 +128,20 @@ must have no marker in the suite at all.
    output against it yet, and that is the thing that would prove the set is
    actually sufficient rather than merely complete.
 
-   **THERE IS A SMALLER PROOF INSIDE IT AND IT SHOULD BE BUILT FIRST.** The
-   corpus check is nine sequenced calls, and what is unproven is the
+   **THE SMALLER PROOF INSIDE IT IS BUILT.** `programs/sha256-abc.poke` is a
+   brainfuck program that spawns an interpreter on `sha256/sha256.bf` through
+   the broker, feeds it "abc", reads the digest back a byte at a time and
+   writes it out — and tier 12 checks the result against FIPS 180-4 end to
+   end. One second. The seam this section said nothing tested is tested.
+
+   **What remains of this item is the corpus**, which is nine sequenced calls
+   against BoneMesh's vectors rather than one, and a program that hashes a
+   FILE the caller names rather than a fixed message — that needs `open`,
+   `stat`, a relay loop and a guard for files over 64 KiB, none of which the
+   first program required.
+
+   The original reasoning, kept because it is why the directory exists: the
+   corpus check is nine sequenced calls, and what was unproven was the
    SEQUENCING rather than any one call. bfsodium gates every routine against
    Cryptol and the RFCs, brainstem gates the broker across two kernels, and
    **nothing anywhere tests the seam between them** — that a brainfuck

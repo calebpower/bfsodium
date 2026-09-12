@@ -99,20 +99,35 @@ run "bflint self-test" ./tools/bflint --selftest
 run "bffoot self-test" ./tools/bffoot --selftest
 run "bftable self-test" perl tools/bftable.pl --selftest
 run "bftier self-test" perl tools/bftier.pl --selftest
-# Every committed .bf, not a named list of directories. index/ sat outside the
-# old "chacha20 poly1305" globs and so was linted, styled and footprint-checked
-# by nothing at all -- it passes when run by hand, which is exactly the state in
-# which a regression goes unseen. A new directory is covered by construction.
-for f in */*.bf; do run "lint $f" ./tools/bflint "$f"; done
+# Every committed ROUTINE, not a named list of directories. index/ sat outside
+# the old "chacha20 poly1305" globs and so was linted, styled and
+# footprint-checked by nothing at all -- it passes when run by hand, which is
+# exactly the state in which a regression goes unseen. A new routine directory
+# is covered by construction.
+#
+# programs/ IS THE ONE EXCLUSION AND IT IS NOT AN EXEMPTION. A program is bare
+# brainfuck -- nothing but the eight instructions -- because it must run under
+# ANY conforming interpreter, and ";" comments are an extension of the pinned
+# one. A routine is COMMENTED brainfuck, because its legibility floor is this
+# project's central promise. Two portability claims, two legibility rules, and
+# applying the routine rule to a program would demand comments that would break
+# the program's own claim.
+#
+# So programs/ is covered by tier 11 instead, with brainstem's bsbf proving the
+# bare-brainfuck property that its skeleton and its own README stand behind.
+# Nothing is uncovered; the coverage is by a different rule.
+bf_routines() { for f in */*.bf; do case "$f" in programs/*) ;; *) echo "$f" ;; esac; done; }
+
+for f in $(bf_routines); do run "lint $f" ./tools/bflint "$f"; done
 # TIER 9a 9b
-for f in */*.bf; do run "style $f" ./tools/bfstyle "$f"; done
+for f in $(bf_routines); do run "style $f" ./tools/bfstyle "$f"; done
 # A routine is pasted into its callers on the strength of its INTERFACE line, so
 # that line has to be a fact and not a promise. stagger understated its footprint
 # by four cells, quietly borrowed them from the block function's saved copy of
 # the original state, and put one wrong word in every block; the arithmetic was
 # perfect and every other tier passed. This is the check that saw it.
 # TIER 9d
-for f in */*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
+for f in $(bf_routines); do run "footprint $f" ./tools/bffoot "$f"; done
 
 # bffoot returns success on a file with no INTERFACE line -- it declines to
 # judge what does not claim to be pasteable, which is right, but it means
@@ -123,7 +138,15 @@ for f in */*.bf; do run "footprint $f" ./tools/bffoot "$f"; done
 # vacuous PASS from the loop above.
 # TIER 9d
 run "the files declaring no INTERFACE are exactly the known ones" sh -c '
-    got=$(for f in */*.bf; do grep -q "^; INTERFACE" "$f" || echo "$f"; done)
+    # The exclusion is inlined rather than calling bf_routines, because this
+    # check runs under sh -c and a CHILD SHELL DOES NOT INHERIT FUNCTIONS. The
+    # loops above are at top level and may call it; this one may not, and the
+    # failure it produced was the quiet kind -- an empty list comparing unequal
+    # to the pinned one, which reads as "a routine lost its INTERFACE line".
+    got=$(for f in */*.bf; do
+              case "$f" in programs/*) continue ;; esac
+              grep -q "^; INTERFACE" "$f" || echo "$f"
+          done)
     want="aead/chacha20poly1305.bf
 chacha20/stream.bf
 index/fetch8.bf
@@ -567,6 +590,69 @@ run "encrypting the ciphertext again returns the plaintext" sh -c '
   c=$(printf %s "$1$2""0000""1000""$a" | ./tools/hx -r \
       | ./tools/bfi aead/chacha20poly1305.bf | ./tools/hx | cut -c1-32)
   test "$c" = "$3"' _ "$m7key" "$m7non" "$m7pt"
+
+echo
+# TIER 12
+echo "== tier 12: composition, a program chaining routines =="
+# THE SEAM, AND UNTIL THIS TIER NOTHING TESTED IT. Every routine here is
+# checked against Cryptol and a vector. brainstem is gated across two kernels.
+# What neither of them could see is whether a brainfuck PROGRAM can take one
+# routine's output and make it the next one's input -- the capability the whole
+# three-phase scheme was designed around, and the reason this library claims
+# its primitives COMPOSE rather than merely that each one is right.
+#
+# The broker and the expander both come from the brainstem checkout that
+# tools/guest-setup.sh pinned and built. There is no copy of either here: two
+# copies of an expander are two things that can disagree about what a .poke
+# means. If /opt/brainstem is missing this tier FAILS rather than skipping,
+# which is the house rule -- "run it when present" is a skip and this project
+# does not skip.
+BS=/opt/brainstem
+run "the pinned broker and expander are present" sh -c '
+    test -x "$1/build/brainstem" || { echo "no broker at $1"; exit 1; }
+    test -r "$1/tools/bfgen.sh"  || { echo "no expander at $1"; exit 1; }
+    test "$(cat "$1/PINNED" 2>/dev/null)" = "$2" || {
+        echo "the built broker is not the pinned commit"; exit 1; }' \
+    _ "$BS" "$(sed -n "s/^BRAINSTEM_COMMIT=//p" tools/guest-setup.sh)"
+
+# The committed .bf is the expansion of its .poke, byte for byte. Same claim
+# tier 9c makes for every routine, and the same reason: a .bf carries no
+# comments, so the skeleton is the only artifact review can happen on.
+run "programs/sha256-abc.bf is what its skeleton says" sh -c '
+    sh "$1/tools/bfgen.sh" programs/sha256-abc.poke \
+        | cmp -s - programs/sha256-abc.bf' _ "$BS"
+
+# A PROGRAM IS BARE BRAINFUCK, and this is the check that says so. The routine
+# tiers above deliberately skip programs/, because a routine's legibility floor
+# demands comments and a program's portability claim forbids them: it must run
+# under ANY conforming interpreter, and ";" comments are an extension of the
+# pinned one. brainstem's bsbf proves the property directly -- nothing in the
+# file but the eight instructions and whitespace -- which is the mechanical
+# form of the claim the whole scheme rests on.
+run "programs are nothing but the eight brainfuck instructions" sh -c '
+    rc=0
+    for f in programs/*.bf; do
+        "$1/build/bsbf" "$f" || { echo "$f is not portable brainfuck"; rc=1; }
+    done
+    exit $rc' _ "$BS"
+
+# AND THE DIGEST IS RIGHT, end to end: a brainfuck program spawns an
+# interpreter on sha256/sha256.bf through the broker, feeds it "abc", reads the
+# thirty two bytes back one at a time and writes them to the broker's stdout.
+# The oracle is FIPS 180-4, and nothing about it is pinned here -- it is the
+# same digest tier 2 already demands of the routine on its own.
+run "a program computes SHA-256 by chaining, through the broker" sh -c '
+    d=$(mktemp -d) || exit 1
+    cp tools/bfi "$d/bfi" && cp sha256/sha256.bf "$d/sha256.bf" || { rm -rf "$d"; exit 1; }
+    cp programs/sha256-abc.bf "$d/prog.bf" || { rm -rf "$d"; exit 1; }
+    ( cd "$d" && timeout 300 "$1/build/brainstem" --op-timeout 120000 \
+        -- ./bfi ./prog.bf ) > "$d/digest.bin" 2>/dev/null
+    got=$(./tools/hx < "$d/digest.bin")
+    rm -rf "$d"
+    test "$got" = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad || {
+        echo "got    $got"
+        echo "wanted ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        exit 1; }' _ "$BS"
 
 echo
 # TIER 8
