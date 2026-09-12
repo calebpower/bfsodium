@@ -142,12 +142,14 @@ must have no marker in the suite at all.
    never been run end to end would be tagging on faith, and nothing about the
    version number is urgent.
 
-   Two notes for whoever builds it. It is ONE piece of work with the corpus
-   check rather than two, since the harness is the same harness. And the
-   primitive has to be chosen on MEASURED cost: the AEAD is 11.58 billion
-   instructions and is not gateable, `blockloop` is 686 million at about 1.4
-   seconds, and SHA-256 is not in the cost table at all — measure it before
-   choosing, rather than assuming it is cheap because its routine is short.
+   It is ONE piece of work with the corpus check rather than two, since the
+   harness is the same harness.
+
+   **And the cost is affordable, which was not obvious and is now measured.**
+   `sha256` is about **1.15 billion instructions, roughly two seconds** under
+   `bfi` — 1.7 times `blockloop` and a tenth of the AEAD's 11.58 billion.
+   A program that hashes, takes the digest and hashes again costs about four
+   seconds, which a gate can carry without argument. See *Cost* below.
 
    **WHERE IT LIVES IS SETTLED: a `programs/` directory here.** The earlier
    note called it an open question and offered brainstem as the answer. That
@@ -349,6 +351,25 @@ tables, measurements, and the things that have gone wrong.
 Everything expensive in this library is the byte adder, and there are now two
 of them.
 
+**Measured whole-primitive costs**, for choosing what a gate can carry. These
+are `BFI_COUNT=1` under the pinned interpreter, and each was taken from a run
+whose output was checked against its KAT in the same command — see the trap
+about that below.
+
+| primitive | instructions | wall |
+|---|---|---|
+| `sha256` of the empty message | 1,145,948,360 | ~2 s |
+| `sha256` of "abc" | 1,180,129,364 | ~2 s |
+
+The AEAD's 11.58 billion is in the migration table below and has no wall time
+here on purpose: it was never timed, and dividing one number by another is a
+derivation wearing a measurement's clothes.
+
+SHA-256 was absent from every table here until M7 of the sibling project
+needed it, and the guess everybody would have made — that it is expensive,
+since its routine is 7509 lines — is wrong by an order of magnitude in the
+comfortable direction. It is a tenth of the AEAD and 1.7 times `blockloop`.
+
 The **old kernel** detects the carry by testing whether the accumulator has
 just wrapped, once per unit of the addend, and that test costs a copy of the
 accumulator. So its cost is the **product** of the two bytes: about three
@@ -459,6 +480,31 @@ regression guard and Cryptol is the oracle. Twice now the dual oracle has caught
 and Cryptol said so. Do not pin a value you computed in your head.
 
 ## Traps that have actually bitten
+
+- **A COST MEASUREMENT WITH UNVERIFIED INPUT IS A NUMBER ABOUT NOTHING.** The
+  first attempt at SHA-256's cost came back at **198 billion instructions**,
+  seventeen times the AEAD, and it was nearly written into two repositories as
+  the reason a chaining program could not be gated.
+
+  It was wrong by a factor of 173. `tools/hx` decodes with **`-r`**, not with
+  `-d`; `-d` is not the decode flag and the tool encoded instead, so the
+  program was fed twenty bytes of the ASCII of the hex rather than the five
+  bytes meant. Its first two bytes are a length prefix, so it hashed an
+  enormous message and the count was real — just not of the thing being
+  asked about.
+
+  **The number was plausible**, which is the whole danger. SHA-256's routine
+  is 7509 lines, the largest in the tree, so an enormous count confirmed what
+  anyone would have assumed. A measurement that agrees with your prior is the
+  one to check hardest.
+
+  What caught it was checking the input encoding by hand. What SHOULD have
+  caught it, and now does, is measuring and verifying in the same command: the
+  rows above were each taken from a run whose digest was compared to its KAT
+  in the same breath as its instruction count. A run that produces the wrong
+  answer is not a measurement of the right workload, and there is no reason to
+  ever separate the two.
+
 
 - **Prose is code.** A `.` or `,` or `-` in a comment is an instruction under
   canonical brainfuck. `tools/bflint` compares the `bfi` instruction stream
