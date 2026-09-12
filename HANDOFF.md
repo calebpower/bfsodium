@@ -123,15 +123,101 @@ must have no marker in the suite at all.
    output against it yet, and that is the thing that would prove the set is
    actually sufficient rather than merely complete.
 
-   **Where that check LIVES is an open question and is deliberately not
-   answered here.** It could be a tier in this repository, which would make
-   bfsodium's claim self-contained and would mean this repo carries vectors
-   for a protocol it is not part of. Or it could live in BoneMesh, which owns
-   the corpus and the protocol and would be checking a dependency rather than
-   itself — at the cost that bfsodium's own suite would no longer demonstrate
-   the sufficiency claim above. Whoever does it should decide that first,
-   because the answer changes what gets built and it is easier to decide than
-   to move later.
+   **THERE IS A SMALLER PROOF INSIDE IT AND IT SHOULD BE BUILT FIRST.** The
+   corpus check is nine sequenced calls, and what is unproven is the
+   SEQUENCING rather than any one call. bfsodium gates every routine against
+   Cryptol and the RFCs, brainstem gates the broker across two kernels, and
+   **nothing anywhere tests the seam between them** — that a brainfuck
+   program can take one primitive's OUTPUT and make it the next primitive's
+   INPUT, with no shell in the middle. That is the capability the whole
+   three-phase scheme was designed around and the one nobody has shown.
+
+   It matters to this repository in particular, because a library's claim is
+   not "each routine is correct" — it is "these compose". Composition here
+   is currently source-level pasting through `bfexpand`. Composition at
+   RUNTIME, one program driving several, is a different claim and an untested
+   one.
+
+   **v1.0.0 waits on this.** Tagging a library whose composition story has
+   never been run end to end would be tagging on faith, and nothing about the
+   version number is urgent.
+
+   Two notes for whoever builds it. It is ONE piece of work with the corpus
+   check rather than two, since the harness is the same harness. And the
+   primitive has to be chosen on MEASURED cost: the AEAD is 11.58 billion
+   instructions and is not gateable, `blockloop` is 686 million at about 1.4
+   seconds, and SHA-256 is not in the cost table at all — measure it before
+   choosing, rather than assuming it is cheap because its routine is short.
+
+   **WHERE IT LIVES IS SETTLED: a `programs/` directory here.** The earlier
+   note called it an open question and offered brainstem as the answer. That
+   was wrong, symmetrically: it avoided contradicting this repository's
+   boundary by contradicting brainstem's. brainstem is a general broker whose
+   README says the indirection through an external interpreter is what makes
+   it indifferent to what is on the far end, and vendoring a crypto routine
+   into its fixtures would make its corpus domain-specific for the first time.
+   There will be other brainfuck libraries that want chaining and have nothing
+   to do with cryptography.
+
+   **The principle is dependency direction.** Infrastructure must not know its
+   consumers; a consumer knowing its infrastructure is ordinary. brainstem
+   knowing about bfsodium is backwards. bfsodium knowing about brainstem is
+   a library using a broker, which is what the broker is for.
+
+   ### routines and programs
+
+   | | a routine | a program |
+   |---|---|---|
+   | what it does | computes | does something, which needs the world |
+   | I/O | plain stdin to stdout, one operation | sequences several, through a broker |
+   | oracle | Cryptol, and a KAT | a KAT, end to end |
+   | lives in | `chacha20/`, `poly1305/`, `sha256/`, `aead/`, `idiom/`, `index/` | `programs/` |
+
+   **THE LINE IS DRAWN BY CRYPTOL AND THAT IS NOT A WEAKNESS, IT IS THE
+   DEFINITION.** Can this thing be specified in Cryptol? Then it is a routine.
+   Can it not? Then it is a program. Cryptol describes functions, and a
+   sequence of I/O is not a function, so the question separates the two kinds
+   exactly and without anyone exercising judgment.
+
+   Read it as *in principle*, not *in practice*. A pure routine nobody has
+   written a spec for yet is still a routine; otherwise the criterion would
+   reclassify things as the tree's Cryptol coverage changed, which is the
+   opposite of a definition.
+
+   **The rulebook line is amended, not deleted.** CONVENTIONS says bfsodium is
+   pure computation with plain stdin/stdout, no syscalls and no P1 broker.
+   What that protects is the ROUTINES: purity is what makes them checkable
+   against Cryptol, runnable under any conforming interpreter, and usable as
+   KAT targets. It was never a claim about what else may live in the tree.
+
+   **And the fence enforces itself**, which is the part worth keeping. A
+   routine that emitted protocol frames would fail its own KAT, because a KAT
+   compares stdout and frames are extra bytes on stdout. No new lint is
+   needed. What is needed is only that the existing tiers keep pointing at the
+   routine directories and not at `programs/`.
+
+   Everything else still applies to a program, and this matters: **a program
+   is still standard brainfuck.** It does not stop being brainfuck by speaking
+   a protocol -- that is the whole thesis of brainstem -- so `bflint`,
+   `bfstyle` and the provenance tier cover it exactly as they cover a routine.
+
+   ### what that leaves each repository owning
+
+   | | owns |
+   |---|---|
+   | bfsodium `programs/` | the composition, because composing is this library's own claim |
+   | BoneMesh `interop/check-keyschedule-bf.sh` | the conformance vectors, beside five other implementations |
+   | brainstem | neither; it stays a general broker |
+
+   Each repository tests its own claim. brainstem's is that a program can
+   drive a program, already proved by `bf/proc/drive.poke`. This one's is that
+   its primitives compose. BoneMesh's is that an implementation agrees with
+   the corpus.
+
+   **The cost of it**, stated because it is not free: the gate will need a
+   broker present to run a `programs/` tier. `tools/guest-setup.sh` now pins
+   one by commit -- see `BRAINSTEM_COMMIT` there, and the note beside it about
+   what the pin turning into a TAG will mean.
 
 2. **A cheaper `mulmod136`, if Poly1305's speed matters.** It is 987 million
    instructions and the adder is no longer where that goes; see *Cost*. 136
@@ -141,7 +227,11 @@ must have no marker in the suite at all.
    `rotl32` with 16, 12, 8, 7, for about 2.4× on ChaCha's rotations. Four
    constants and one paste name; see *Cost*.
 
-4. **PQC is explicitly out of scope.** Keccak and NTT are a later mountain.
+4. **PQC is not next, and it is not out of scope for ever.** The long-term
+   target is the NIST-recommended set, which since FIPS 203 and 204 includes
+   ML-KEM and ML-DSA. Keccak and NTT are a later mountain rather than a closed
+   door, and this item used to say "explicitly out of scope", which was
+   stronger than intended.
    Worth restating precisely, because the BoneMesh corpus in item 1 invites
    the wrong inference: those vectors need **no** post-quantum anything, since
    `ss_dh` and `ss_kem` arrive as inputs and the suite name in the protocol

@@ -26,6 +26,23 @@ set -eu
 
 CRYPTOL_VERSION=3.4.0
 
+# The P1 broker, pinned by commit. DECLARED AND NOT YET FETCHED: nothing in
+# the suite consumes it, because programs/ does not exist yet. It is here
+# rather than in a document because a pin belongs beside the other pin, and
+# because of what its FORM is going to mean.
+#
+# A brainstem client -- a program under programs/, once there is one -- needs a
+# broker on the far end to chain routines through, so the gate will need one
+# built here the way it already builds Cryptol. Pinning it by SHA says this
+# repository is tracking a moving dependency.
+#
+# WHEN THIS BECOMES A TAG, bfsodium is close to v1.0.0. brainstem gets tagged
+# first, this pin changes from a SHA to that tag, and the change is the
+# signal: a library that depends on an untagged commit of its infrastructure
+# is not a library anybody should be depending on either. The version number
+# is downstream of that, not a decision of its own.
+BRAINSTEM_COMMIT=f1048de21bd1167eee8db3b5af6b08fa5d926cd4
+
 usage() {
     echo "usage: guest-setup.sh [--toolchain|--build]" >&2
     exit 2
