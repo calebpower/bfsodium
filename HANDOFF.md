@@ -114,6 +114,16 @@ must have no marker in the suite at all.
    output against it yet, and that is the thing that would prove the set is
    actually sufficient rather than merely complete.
 
+   **Where that check LIVES is an open question and is deliberately not
+   answered here.** It could be a tier in this repository, which would make
+   bfsodium's claim self-contained and would mean this repo carries vectors
+   for a protocol it is not part of. Or it could live in BoneMesh, which owns
+   the corpus and the protocol and would be checking a dependency rather than
+   itself — at the cost that bfsodium's own suite would no longer demonstrate
+   the sufficiency claim above. Whoever does it should decide that first,
+   because the answer changes what gets built and it is easier to decide than
+   to move later.
+
 2. **A cheaper `mulmod136`, if Poly1305's speed matters.** It is 987 million
    instructions and the adder is no longer where that goes; see *Cost*. 136
    turns each paying two folds is the shape to attack.
@@ -132,16 +142,20 @@ must have no marker in the suite at all.
    four are ML-DSA-65, ML-DSA-87, ML-KEM-768 with X25519, and an RFC 8785 JCS
    canonicaliser, which is not even cryptography.
 
-5. **`CONVENTIONS.md` has been rewritten** to describe the project as built,
-   and `IDIOMS.md` is folded into its section 5, so the vocabulary and the
-   list of it can no longer disagree. What replaced
-   this item: **nothing checks that the tier table still matches
-   `tests/run.sh`.** `bftable.pl` keeps the routine table above honest and
-   there is no equivalent for the tiers, which is precisely the drift that
-   made this rewrite necessary — eighteen of thirty rows wrong in the one
-   table nobody was checking. A `bftier` would not be hard: parse the `| Tier |`
-   rows, parse the section banners and `run` labels in the suite, and fail on
-   a row with no assertion behind it.
+5. **Done, and struck.** `CONVENTIONS.md` has been rewritten to describe the
+   project as built, `IDIOMS.md` is folded into its section 5 so the
+   vocabulary and the list of it can no longer disagree, and the gap this
+   item was reduced to — *nothing checks that the tier table still matches
+   `tests/run.sh`* — is closed: `tools/bftier.pl` exists, has a self test, and
+   runs in the suite beside `bftable.pl`.
+
+   It is left here rather than deleted because of HOW it was found. The tool
+   landed in the same commit that wrote this paragraph asking for it, and the
+   paragraph stood for six commits afterwards describing a hole that was
+   already filled. Nobody reads their own "what is next" list after writing
+   it, which is the argument for the two tables above being checked by a tool
+   and not by a reader: eighteen of thirty rows were wrong in the one table
+   nobody was checking, and this list is a table nobody is checking either.
 
 6. **Tier 6, differential fuzz, is still declared and still absent.** It is
    affordable for the cheap primitives — `add32`, `xor32`, `rotl32`, `add136`,
