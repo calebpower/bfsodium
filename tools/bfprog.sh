@@ -44,6 +44,22 @@ BS=${BRAINSTEM_DIR:-/opt/brainstem}
 [ $# -eq 1 ] || { echo "usage: bfprog.sh PROGRAM.bf < INPUT" >&2; exit 2; }
 prog=$1
 
+# A RELATIVE PROGRAM PATH MEANS WHAT IT MEANT WHERE IT WAS TYPED, so it is
+# made absolute here, before the cd below moves the ground under it. Resolving
+# it afterwards silently reinterprets it against the repository root, which is
+# how
+#
+#   cat x | bfsodium/tools/bfprog.sh bfsodium/programs/sha256.bf
+#
+# run from the PARENT of the checkout came to report "no such program" for a
+# file that was plainly there: it had been turned into bfsodium/bfsodium/...
+# The script only ever worked when invoked from inside the repo, and nothing
+# said so, because every caller in the suite happened to be.
+case $prog in
+    /*) ;;
+    *)  prog=$(pwd)/$prog ;;
+esac
+
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo"
 

@@ -676,6 +676,23 @@ run "a program hashes across two blocks, through the broker" sh -c '
     test "$(sh tools/bfprog.sh programs/sha256.bf < "$1" | ./tools/hx)" = "$2"' \
     _ "$bf_msg/a100" \
     2816597888e4a0d3a36b82b83316ab32680eb8f00f8cd3b904d681246d285a0e
+
+# FROM OUTSIDE THE CHECKOUT, BY A RELATIVE PATH -- the one shape every other
+# check here misses, because they all run from the repository root and so
+# never notice that bfprog.sh cds to that root before it resolves anything.
+# It did, and `bfsodium/tools/bfprog.sh bfsodium/programs/sha256.bf` typed one
+# directory up therefore looked for bfsodium/bfsodium/programs/sha256.bf and
+# reported a file that was plainly there as missing.
+#
+# An absolute path would NOT catch this and is the tempting way to write it.
+# The bug is precisely the reinterpretation of a relative one, so the check
+# has to leave the root and stay relative to be worth having.
+run "a program runs from outside the checkout, by relative path" sh -c '
+    repo=$(pwd); base=$(basename "$repo")
+    cd .. || exit 1
+    test "$(printf abc | sh "$base/tools/bfprog.sh" "$base/programs/sha256.bf" \
+            | "$repo/tools/hx")" = "$1"' \
+    _ ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
 rm -rf "$bf_msg"
 
 echo
