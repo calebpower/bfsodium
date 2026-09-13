@@ -96,7 +96,16 @@ status=0
         # No pipe into tee. /bin/sh here is dash: no pipefail, no PIPESTATUS,
         # and the suite exit status is the entire point of running it. This is
         # the same idiom .reaper.toml uses, for the same reason.
-        sh tests/run.sh > /out/suite.log 2>&1; s=$?
+        #
+        # `|| s=$?` RATHER THAN `; s=$?`, because this shell runs under -e and
+        # the difference is only visible when the suite is red. A bare `;` lets
+        # -e abort here, before the cat -- so a failing run printed the build
+        # and then nothing, and the summary naming the failed check reached the
+        # log file but never the terminal. That is the one run whose closing
+        # lines anybody wanted. Put in a condition, the failure stops being a
+        # -e trigger and the status still propagates.
+        s=0
+        sh tests/run.sh > /out/suite.log 2>&1 || s=$?
         cat /out/suite.log
         exit $s
     ' || status=$?
