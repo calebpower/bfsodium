@@ -135,6 +135,21 @@ two bytes can reach the routine, so a larger one would hash its length modulo
 65536 and print a plausible, wrong digest. The six high bytes are checked and
 the program exits 1 if any is set.
 
+**Verified at the boundary**, which is the only place a limit means anything:
+
+| input | | |
+|---|---|---|
+| 65535 bytes | exit 0, correct digest | 30 minutes, 1024 blocks |
+| 65536 bytes | exit 1, no output, temp removed | 7 seconds |
+
+Neither is in the suite. The refusal is seven seconds but needs a 64 KiB
+fixture, and the acceptance is half an hour; the three lengths tier 12 does run
+are chosen to cover the relay loop's boundary and the length prefix instead.
+This table is the record that somebody checked.
+
+The refusal case is also what found brainstem's `spawn` deadlock — it hung for
+fifteen minutes rather than exiting — so it has earned its keep once already.
+
 ### Cost, because it decides what is worth writing
 
 SHA-256 is about 1.2 billion interpreter instructions per 64 byte block,
