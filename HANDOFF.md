@@ -6,15 +6,31 @@ actually built and where it has bitten.
 
 ## State
 
-**Gated: 339 pass, 0 fail on `ubuntu-26.04`, at `8edf0f6`** -- `reaper test`,
-which the lane section below calls the gate of record.
+**Gated: 345 pass, 0 fail on `ubuntu-26.04`, at `7436078`** -- `reaper test`,
+which the lane section below calls the gate of record. That run was the first
+to provision a broker: `tools/guest-setup.sh` clones and builds brainstem at
+`BRAINSTEM_COMMIT`, so it is also the first gate that needed the network.
 
-**The container lane is at 343 on the commit that added `programs/`, and the
-gate has not seen that one yet.** The four new checks are tier 12, and they
-need a broker: `tools/guest-setup.sh` clones and builds brainstem at
-`BRAINSTEM_COMMIT`, so the first gate run after this will provision it.
+**ONE GUEST, AND TIER 12 DOES NOT CHANGE THAT -- but the reason moved.** It
+used to be simply that this library is pure computation with no platform
+surface to disagree about. Tier 12 gave it one: those checks run brainstem's
+`spawn`, `pipe`, `open`, `stat` and `readdir`, and brainstem's PRIMARY platform
+is FreeBSD, which this gate has never run.
 
-The lane and the commit are named because "the suite is 339 pass, 0 fail" is
+The gap is narrower than it looks, and it is covered somewhere. What tier 12
+adds here is a brainfuck program and a brainfuck routine, and those are
+platform-independent by construction -- tier 2 proves they are nothing but the
+eight instructions. The platform-dependent half is the broker, and the broker
+is gated on BOTH guests in its own repo, byte-identically, by brainstem's tier
+10 at the very commit this pins. Testing it a second time from here would not
+be a second opinion; it would be the same opinion in a worse place to read it.
+
+A FreeBSD guest is also not merely unnecessary, it is currently impossible: the
+eight design proofs FAIL rather than skip when Cryptol is absent, and Cryptol
+ships release tarballs for Linux and macOS only. Adding the guest would trade a
+covered gap for eight red checks with nothing wrong behind them.
+
+The lane and the commit are named because "the suite is 345 pass, 0 fail" is
 not a fact, it is a measurement, and a measurement with neither of those is a
 sentence that starts expiring the moment it is written. Update both together
 or neither.
