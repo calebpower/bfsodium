@@ -110,13 +110,19 @@ not one anybody should depend on either.
 | `sha256.poke` | reads stdin, writes the SHA-256 digest to stdout | FIPS 180-4, end to end, at three lengths |
 
 ```sh
-cat something | brainstem -- bfi sha256.bf | hx
+cat something | sh tools/bfprog.sh programs/sha256.bf | ./tools/hx
+sh tools/bfprog.sh programs/sha256.bf < something > digest.bin
 ```
 
 Bytes in, digest out, the ordinary Unix shape — done entirely by a brainfuck
 program driving another brainfuck program. `tools/bfprog.sh` is the supported
 way to run one; a routine is `bfi routine.bf < input` and a program cannot be,
 which is most of what makes it a program.
+
+**A program takes no input filename, and could not usefully take one.** Its
+bytes arrive on the *broker's* stdin, which it reads sequentially and never
+seeks, so a filename would be a second spelling of a redirect — and the only
+spelling of the two that cannot be a pipe.
 
 ### The temporary file, which is the one surprising thing
 

@@ -655,21 +655,25 @@ run "programs are nothing but the eight brainfuck instructions" sh -c '
 # INHERIT FUNCTIONS. The first version was a function, and it would have failed
 # by producing an empty digest that compared unequal -- which reads as "the
 # program is wrong" rather than "the harness is".
+# The middle one is fed by a PIPE rather than a redirect, and that is the
+# point of it being written differently from its neighbours. A program reads
+# the broker's stdin sequentially and must never seek it; a regular file would
+# let a seek succeed and hide the defect, where a pipe fails it outright. It
+# is also the shape a reader will actually type -- something | hash -- so the
+# suite ought to run it at least once.
 bf_msg=$(mktemp -d)
 : > "$bf_msg/empty"
-printf abc > "$bf_msg/abc"
 printf 'a%.0s' $(seq 1 100) > "$bf_msg/a100"
 
 run "a program hashes nothing at all, through the broker" sh -c '
-    test "$(sh tools/bfprog.sh programs/sha256.bf "$1" | ./tools/hx)" = "$2"' \
+    test "$(sh tools/bfprog.sh programs/sha256.bf < "$1" | ./tools/hx)" = "$2"' \
     _ "$bf_msg/empty" \
     e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-run "a program hashes abc, through the broker" sh -c '
-    test "$(sh tools/bfprog.sh programs/sha256.bf "$1" | ./tools/hx)" = "$2"' \
-    _ "$bf_msg/abc" \
-    ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+run "a program hashes abc off a pipe, through the broker" sh -c '
+    test "$(printf abc | sh tools/bfprog.sh programs/sha256.bf | ./tools/hx)" = "$1"' \
+    _ ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
 run "a program hashes across two blocks, through the broker" sh -c '
-    test "$(sh tools/bfprog.sh programs/sha256.bf "$1" | ./tools/hx)" = "$2"' \
+    test "$(sh tools/bfprog.sh programs/sha256.bf < "$1" | ./tools/hx)" = "$2"' \
     _ "$bf_msg/a100" \
     2816597888e4a0d3a36b82b83316ab32680eb8f00f8cd3b904d681246d285a0e
 rm -rf "$bf_msg"

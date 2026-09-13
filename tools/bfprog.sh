@@ -1,7 +1,16 @@
 #!/bin/sh
 # bfprog.sh -- run a program from programs/ under the pinned broker.
 #
-#   sh tools/bfprog.sh programs/sha256.bf INPUTFILE     > digest.bin
+#   sh tools/bfprog.sh programs/sha256.bf < myfile > digest.bin
+#   cat myfile | sh tools/bfprog.sh programs/sha256.bf | ./tools/hx
+#
+# ONE ARGUMENT, AND THE BYTES COME DOWN STDIN. That is not a style choice: a
+# program reads the BROKER's stdin, sequentially, and never seeks it, so there
+# is nothing a filename would buy. Taking one would be a second way to say the
+# same thing, and the only one of the two that cannot be a pipe -- this script
+# could not then be fed by another program, by a process substitution, or by a
+# here-document. The first version did take one and then immediately
+# redirected it, which is a redirect spelled the long way.
 #
 # A program is not a routine and cannot be run the way one is. A routine is
 # `bfi routine.bf < input`: pure computation, stdin to stdout, nothing else in
@@ -32,15 +41,13 @@ set -eu
 
 BS=${BRAINSTEM_DIR:-/opt/brainstem}
 
-[ $# -eq 2 ] || { echo "usage: bfprog.sh PROGRAM.bf INPUTFILE" >&2; exit 2; }
+[ $# -eq 1 ] || { echo "usage: bfprog.sh PROGRAM.bf < INPUT" >&2; exit 2; }
 prog=$1
-input=$2
 
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo"
 
-[ -r "$prog" ]  || { echo "bfprog: no such program: $prog" >&2; exit 2; }
-[ -r "$input" ] || { echo "bfprog: no such input: $input" >&2; exit 2; }
+[ -r "$prog" ] || { echo "bfprog: no such program: $prog" >&2; exit 2; }
 [ -x "$BS/build/brainstem" ] || {
     echo "bfprog: no broker at $BS/build/brainstem" >&2
     echo "bfprog: tools/guest-setup.sh builds it from BRAINSTEM_COMMIT" >&2
@@ -62,5 +69,7 @@ for r in */*.bf; do
     cp "$r" "$d/$(basename "$r")"
 done
 
+# stdin and stdout are inherited untouched: the shell has already connected
+# them to whatever the caller meant, and the broker hands them to the program.
 ( cd "$d" && timeout 900 "$BS/build/brainstem" --op-timeout 600000 \
-    -- ./bfi ./prog.bf ) < "$input"
+    -- ./bfi ./prog.bf )
