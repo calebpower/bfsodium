@@ -103,13 +103,26 @@ READ 3
 #   zero length -- three bytes -- when there is not. Both shapes begin with a
 #   status and a two byte length, so those three are always taken; only the
 #   data byte is conditional, which is what the branch flag is for.
+#
+#   THE STATUS CELL IS SET TO 1 BEFORE IT IS READ, and that is not decoration.
+#   ',' at end of input leaves the cell UNCHANGED under this interpreter's
+#   default, so a loop that cleared the cell first would read a stale zero as
+#   OK and spin for ever the moment the broker stopped answering. Presetting it
+#   to a non-zero value makes "no reply at all" arrive as END, which is the
+#   only sane reading of it.
+#
+#   That is not hypothetical. The oversize guard below exits, brainstem answers
+#   and then closes this program's stdin, and the first version of this loop
+#   span until a 1800 second timeout killed it -- with the broker itself stuck
+#   in waitpid for a child that was never going to finish. ANY brainstem client
+#   wants this idiom.
 >>+<<
 >>
 LOOP
 <<
 #   read  op 0a, handle 1, one byte, flags 0
 EMIT 0a 08 00 01 00 00 00 01 00 00 00
->,<,,
+>[-]+,<,,
 >>>>+<<<
 [>>>[-]<[-]>>[-]<<<[-]]
 >>>
@@ -172,7 +185,7 @@ LOOP
 <<
 #   read  op 0a, handle 9, one byte, flags 0
 EMIT 0a 08 00 09 00 00 00 01 00 00 00
->,<,,
+>[-]+,<,,
 >>>>+<<<
 [>>>[-]<[-]>>[-]<<<[-]]
 >>>
