@@ -41,7 +41,7 @@
   <<<                                                          ; continued
                                                                ; ASSERT ptr=0
 
-; ==== row 1 rotates left one ====
+; ============================================================ ; row 1 rotates left one
 >>>>>>>>>>>>>>>>
                                                                ; ASSERT ptr=16
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<   ; the first word steps aside
@@ -96,7 +96,7 @@
   <<<<<<<                                                      ; continued
                                                                ; ASSERT ptr=0
 
-; ==== row 2 rotates left two  its halves change places ====
+; ============================================================ ; row 2 rotates left two  its halves change places
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                                                ; ASSERT ptr=32
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<   ; byte 0 of the half exchange
@@ -165,7 +165,8 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=0
 
-; ==== row 3 rotates left three  which is a rotate right by one ====
+; ============================================================ ; row 3 rotates left three  which is a rotate right by
+                                                               ; one
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                                                ; ASSERT ptr=60
   [->>>>+<<<<]                                                 ; the LAST word steps aside

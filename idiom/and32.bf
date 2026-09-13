@@ -49,7 +49,7 @@
                                                                ; ASSERT ptr=8
                                                                ; ASSERT zero 8:25
 
-; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
+; ============================================================ ; byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08
 <<<<<<<<                                                       ; move x0 into a
                                                                ; ASSERT ptr=0
   [->>>>>>>>>>>>+<<<<<<<<<<<<]
@@ -102,7 +102,7 @@
 <<<<<<<<<<<<<<                                                 ; back to the head of the result
                                                                ; ASSERT ptr=8
 
-; ==== byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09 ====
+; ============================================================ ; byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09
 <<<<<<<                                                        ; move x1 into a
                                                                ; ASSERT ptr=1
   [->>>>>>>>>>>+<<<<<<<<<<<]
@@ -155,7 +155,7 @@
 <<<<<<<<<<<<<<                                                 ; back to the head of the result
                                                                ; ASSERT ptr=8
 
-; ==== byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a ====
+; ============================================================ ; byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a
 <<<<<<                                                         ; move x2 into a
                                                                ; ASSERT ptr=2
   [->>>>>>>>>>+<<<<<<<<<<]
@@ -208,7 +208,7 @@
 <<<<<<<<<<<<<<                                                 ; back to the head of the result
                                                                ; ASSERT ptr=8
 
-; ==== byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b ====
+; ============================================================ ; byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b
 <<<<<                                                          ; move x3 into a
                                                                ; ASSERT ptr=3
   [->>>>>>>>>+<<<<<<<<<]

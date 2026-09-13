@@ -9,5 +9,11 @@
 *.o
 *.out
 
+# tools/rebuild.sh expands each skeleton to "$out.new" and only then moves it
+# over the committed file, so a rebuild that is interrupted leaves one behind.
+# One was, and "git add -A" committed it as an empty file -- which no tier
+# could see, because every glob in the suite is "*/*.bf" and this is not.
+*.bf.new
+
 # reaper run artifacts collected back from the guest
 /out/

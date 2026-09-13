@@ -29,6 +29,15 @@
 # kilobyte is half a minute. A megabyte is about nine hours. Hash small
 # things.
 #
+# IO  in:  the bytes to hash, on the broker's stdin, any length to 65535
+#     out: the digest{32} raw, on the broker's stdout
+#
+# A routine declares an INTERFACE here, an entry and exit offset and a
+# footprint, because a routine is PASTED into a caller and those are what make
+# that safe. A program is not pasted into anything -- it is the outermost
+# thing there is -- so it has no interface to declare, and the line is absent
+# rather than empty.
+#
 # TAPE MAP
 # cell 0 is the working cell: every EMIT and every READ uses it.
 # cell 1 holds the status byte of a read, which drives the relay loops.
@@ -116,26 +125,46 @@ READ 3
 #   span until a 1800 second timeout killed it -- with the broker itself stuck
 #   in waitpid for a child that was never going to finish. ANY brainstem client
 #   wants this idiom.
+#   cell 2 is the continue flag: set it and stand on it. The loop below runs
+#   while it holds, and only an END status clears it.
 >>+<<
 >>
 LOOP
+#   back to the working cell, which is where every frame is built
 <<
 #   read  op 0a, handle 1, one byte, flags 0
 EMIT 0a 08 00 01 00 00 00 01 00 00 00
+#   cell 1 takes the status -- SET TO 1 FIRST, so that no reply at all, which
+#   leaves a cell unchanged, arrives as END rather than as OK. Then cell 0
+#   takes the two length bytes and discards them: a one byte read returns one
+#   byte or none, and the status has already said which.
 >[-]+,<,,
+#   cell 4 is the branch flag, set to 1 on the way past; the pointer comes
+#   back to rest on cell 1, the status, for the test below
 >>>>+<<<
+#   a non-zero status is END: clear the continue flag in cell 2 so the outer
+#   loop stops, clear the branch flag in cell 4 so the body below is skipped,
+#   and clear the status itself so this runs once instead of looping
 [>>>[-]<[-]>>[-]<<<[-]]
+#   stand on the branch flag
 >>>
 LOOP
+#   the status was OK, so a data byte is still in the pipe: cell 3 takes it,
+#   then back to the working cell
 <,<<<
 #   write  op 0b, handle 8, flags 0, the byte just read
 EMIT 0b 07 00 08 00 00 00 00 00
+#   the header is literal and the byte is not, so the byte is emitted from
+#   cell 3 with raw brainfuck
 >>>.<<<
 READ 5
+#   consume the branch flag, which is what makes this an if and not a loop
 >>>>[-]
 END
+#   back to the continue flag, where the outer loop expects to test
 <<
 END
+#   and back to the working cell
 <<
 #   stat  op 13, dir ffffffff, flags 0, path "bfsha.tmp".  Thirty five bytes
 #   back: status, two length bytes, then the thirty two byte record.
@@ -162,43 +191,69 @@ READ 20
 #   after this one is written into a pipe nobody is reading and the unlink at
 #   the foot of this file never happens. A refusal that left the caller's
 #   directory holding a copy of their own input would be a poor way to say no.
+#   stand on cell 7: non-zero means at least one high byte was set
 >>>>>>>
 LOOP
+#   back to the working cell to say so
 <<<<<<<
 EMIT 15 0f 00 ff ff ff ff 00 00 62 66 73 68 61 2e 74 6d 70
 READ 3
 EMIT 02 01 00 01
 READ 3
+#   clear cell 7, so this refuses once rather than for ever
 >>>>>>>[-]
 END
+#   back to the working cell
 <<<<<<<
 #   write  op 0b, handle 5, flags 0, the two size bytes -- sha256.bf's length
 #   prefix, straight out of the stat record.
 EMIT 0b 08 00 05 00 00 00 00 00
+#   the two size bytes, emitted from cells 5 and 6 in the order they were read
+#   -- which is the order sha256.bf wants them
 >>>>>.>.<<<<<<
 READ 5
 #   THE SECOND RELAY, the same loop again: the temporary file, handle 9, into
 #   the child's stdin, handle 5.
+#   cell 2 is the continue flag: set it and stand on it. The loop below runs
+#   while it holds, and only an END status clears it.
 >>+<<
 >>
 LOOP
+#   back to the working cell, which is where every frame is built
 <<
 #   read  op 0a, handle 9, one byte, flags 0
 EMIT 0a 08 00 09 00 00 00 01 00 00 00
+#   cell 1 takes the status -- SET TO 1 FIRST, so that no reply at all, which
+#   leaves a cell unchanged, arrives as END rather than as OK. Then cell 0
+#   takes the two length bytes and discards them: a one byte read returns one
+#   byte or none, and the status has already said which.
 >[-]+,<,,
+#   cell 4 is the branch flag, set to 1 on the way past; the pointer comes
+#   back to rest on cell 1, the status, for the test below
 >>>>+<<<
+#   a non-zero status is END: clear the continue flag in cell 2 so the outer
+#   loop stops, clear the branch flag in cell 4 so the body below is skipped,
+#   and clear the status itself so this runs once instead of looping
 [>>>[-]<[-]>>[-]<<<[-]]
+#   stand on the branch flag
 >>>
 LOOP
+#   the status was OK, so a data byte is still in the pipe: cell 3 takes it,
+#   then back to the working cell
 <,<<<
 #   write  op 0b, handle 5, flags 0, the byte just read
 EMIT 0b 07 00 05 00 00 00 00 00
+#   the header is literal and the byte is not, so the byte is emitted from
+#   cell 3 with raw brainfuck
 >>>.<<<
 READ 5
+#   consume the branch flag, which is what makes this an if and not a loop
 >>>>[-]
 END
+#   back to the continue flag, where the outer loop expects to test
 <<
 END
+#   and back to the working cell
 <<
 #   close handle 5, so the child sees end of input
 EMIT 0c 04 00 05 00 00 00
@@ -209,19 +264,27 @@ READ 3
 #   it blocks until there is a byte and then returns exactly it. The first of
 #   these is where the child's work is waited on, because it writes nothing
 #   until it has hashed.
+#   cell 9 counts the digest down from thirty two. This loop is counted rather
+#   than status-driven because the length is known: a miscount here would
+#   desync the conversation rather than merely truncate the answer.
 >>>>>>>>>++++++++++++++++++++++++++++++++
 LOOP
+#   back to the working cell
 <<<<<<<<<
 #   read  op 0a, handle 6, one byte, flags 0
 EMIT 0a 08 00 06 00 00 00 01 00 00 00
 READ 3
+#   cell 3 takes the digest byte, then back to the working cell
 >>>,<<<
 #   write  op 0b, handle 2 -- the broker's stdout -- flags 0, one byte
 EMIT 0b 07 00 02 00 00 00 00 00
+#   emit it from cell 3, the header above having been literal
 >>>.<<<
 READ 5
+#   one byte done: count cell 9 down and let the loop test it
 >>>>>>>>>-
 END
+#   back to the working cell
 <<<<<<<<<
 #   wait  op 10, handle 10, flags 0 -- blocking.  state 1 exited, code 0.
 EMIT 10 06 00 0a 00 00 00 00 00

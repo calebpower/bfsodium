@@ -31,35 +31,35 @@ routine, the suite fails until it has a row here.
 | routine | `.bf` | `.skel` | verified against |
 |---|---|---|---|
 | `idiom/add8` | 175 | 183 | every one of the 65536 pairs + two proved identities |
-| `chacha20/add32` | 630 | 166 | boundary vectors + Cryptol |
+| `chacha20/add32` | 631 | 166 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
 | `idiom/rotr32` | 120 | 131 | boundary vectors + Cryptol |
 | `idiom/shr32` | 121 | 133 | boundary vectors + Cryptol |
 | `chacha20/rotl32` | 620 | 155 | boundary vectors + Cryptol |
 | `chacha20/xor32` | 125 | 190 | boundary vectors + Cryptol |
-| `chacha20/stagger` | 224 | 253 | Cryptol |
+| `chacha20/stagger` | 225 | 253 | Cryptol |
 | `chacha20/rowrot` | 246 | 306 | Cryptol |
-| `chacha20/qrloop` | 1546 | 351 | RFC 8439 §2.2.1 |
-| `chacha20/blockloop` | 4587 | 1252 | RFC 8439 §2.3.2 |
-| `chacha20/blockkeep` | 5249 | 341 | RFC 8439 §2.3.2 + its input surviving |
-| `chacha20/stream` | 6527 | 711 | RFC 8439 §2.4.2 + block edges |
+| `chacha20/qrloop` | 1547 | 351 | RFC 8439 §2.2.1 |
+| `chacha20/blockloop` | 4608 | 1252 | RFC 8439 §2.3.2 |
+| `chacha20/blockkeep` | 5271 | 341 | RFC 8439 §2.3.2 + its input surviving |
+| `chacha20/stream` | 6552 | 711 | RFC 8439 §2.4.2 + block edges |
 | `poly1305/add136` | 2563 | 542 | boundary vectors + Cryptol |
 | `poly1305/halve136` | 470 | 539 | boundary vectors + Cryptol |
-| `poly1305/fold136` | 2584 | 97 | boundary vectors + Cryptol |
+| `poly1305/fold136` | 2585 | 97 | boundary vectors + Cryptol |
 | `poly1305/dbl136` | 610 | 763 | boundary vectors + Cryptol |
-| `poly1305/reducep136` | 5456 | 375 | boundary vectors + Cryptol + a proof |
-| `poly1305/mulmod136` | 18597 | 841 | boundary vectors + Cryptol |
+| `poly1305/reducep136` | 5495 | 375 | boundary vectors + Cryptol + a proof |
+| `poly1305/mulmod136` | 18761 | 841 | boundary vectors + Cryptol |
 | `poly1305/clamp` | 248 | 299 | boundary vectors + Cryptol  the mask pinned both ways |
-| `poly1305/absorb` | 21158 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
-| `poly1305/poly1305` | 25605 | 935 | RFC 8439 §2.5.2 + block edges |
-| `aead/keygen` | 4562 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
-| `sha256/round` | 8146 | 1158 | seven vectors + Cryptol |
-| `sha256/expand` | 3307 | 475 | seven vectors + Cryptol |
-| `sha256/hashcore` | 26358 | 1635 | one message from memory, the wire, and both |
-| `sha256/sha256` | 26324 | 60 | FIPS 180-4 + both padding boundaries |
-| `sha256/hmac` | 104471 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
-| `sha256/hkdf` | 293864 | 512 | RFC 5869 A.1, A.2 and A.3 |
-| `aead/chacha20poly1305` | 79518 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `poly1305/absorb` | 21305 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
+| `poly1305/poly1305` | 25845 | 935 | RFC 8439 §2.5.2 + block edges |
+| `aead/keygen` | 4584 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
+| `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
+| `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
+| `sha256/hashcore` | 26476 | 1635 | one message from memory, the wire, and both |
+| `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
+| `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
+| `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
+| `aead/chacha20poly1305` | 80299 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing

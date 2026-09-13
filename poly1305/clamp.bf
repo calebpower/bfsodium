@@ -33,7 +33,7 @@
                                                                ; ASSERT ptr=15
                                                                ; ASSERT zero 16:21
 <<<<<<<<<<<<                                                   ; to the first byte the clamp touches
-; ==== byte 3 ====
+; ============================================================ ; byte 3
   [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]                             ; the byte steps into the working frame
 >>>>>>>>>>>>>>
                                                                ; ASSERT ptr=17
@@ -68,7 +68,7 @@
                                                                ; ASSERT ptr=3
                                                                ; ASSERT zero 17:21
 >                                                              ; on to the next byte the clamp touches
-; ==== byte 4 ====
+; ============================================================ ; byte 4
   [->>>>>>>>>>>>>+<<<<<<<<<<<<<]                               ; the byte steps into the working frame
 >>>>>>>>>>>>>
                                                                ; ASSERT ptr=17
@@ -91,7 +91,7 @@
                                                                ; ASSERT ptr=4
                                                                ; ASSERT zero 17:21
 >>>                                                            ; on to the next byte the clamp touches
-; ==== byte 7 ====
+; ============================================================ ; byte 7
   [->>>>>>>>>>+<<<<<<<<<<]                                     ; the byte steps into the working frame
 >>>>>>>>>>
                                                                ; ASSERT ptr=17
@@ -126,7 +126,7 @@
                                                                ; ASSERT ptr=7
                                                                ; ASSERT zero 17:21
 >                                                              ; on to the next byte the clamp touches
-; ==== byte 8 ====
+; ============================================================ ; byte 8
   [->>>>>>>>>+<<<<<<<<<]                                       ; the byte steps into the working frame
 >>>>>>>>>
                                                                ; ASSERT ptr=17
@@ -149,7 +149,7 @@
                                                                ; ASSERT ptr=8
                                                                ; ASSERT zero 17:21
 >>>                                                            ; on to the next byte the clamp touches
-; ==== byte 11 ====
+; ============================================================ ; byte 11
   [->>>>>>+<<<<<<]                                             ; the byte steps into the working frame
 >>>>>>
                                                                ; ASSERT ptr=17
@@ -184,7 +184,7 @@
                                                                ; ASSERT ptr=11
                                                                ; ASSERT zero 17:21
 >                                                              ; on to the next byte the clamp touches
-; ==== byte 12 ====
+; ============================================================ ; byte 12
   [->>>>>+<<<<<]                                               ; the byte steps into the working frame
 >>>>>
                                                                ; ASSERT ptr=17
@@ -207,7 +207,7 @@
                                                                ; ASSERT ptr=12
                                                                ; ASSERT zero 17:21
 >>>                                                            ; on to the next byte the clamp touches
-; ==== byte 15 ====
+; ============================================================ ; byte 15
   [->>+<<]                                                     ; the byte steps into the working frame
 >>
                                                                ; ASSERT ptr=17

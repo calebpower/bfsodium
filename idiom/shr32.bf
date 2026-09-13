@@ -31,7 +31,7 @@
                                                                ; ASSERT ptr=4
                                                                ; ASSERT zero 5:12
 
-; ==== shift one bit  n times ====
+; ============================================================ ; shift one bit  n times
 [
   -                                                            ; one step consumed
 

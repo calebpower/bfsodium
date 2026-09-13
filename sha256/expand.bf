@@ -36,7 +36,7 @@
                                                                ; ASSERT ptr=15
                                                                ; ASSERT zero 16:132
 
-; ==== sigma0 of W{t minus 15} ====
+; ============================================================ ; sigma0 of W{t minus 15}
 <<<<<<<<<<<                                                    ; the word into the rotate frame
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<   ; continued
@@ -78,7 +78,7 @@
                                                                ; ASSERT ptr=108
                                                                ; ASSERT zero 109:116
 
-; ==== rotate one bit  n times ====
+; ============================================================ ; ; rotate one bit  n times
 [
   -                                                            ; one step consumed
 
@@ -223,7 +223,7 @@
                                                                ; ASSERT ptr=108
                                                                ; ASSERT zero 109:116
 
-; ==== rotate one bit  n times ====
+; ============================================================ ; ; rotate one bit  n times
 [
   -                                                            ; one step consumed
 
@@ -356,7 +356,7 @@
   >>>>>>>>                                                     ; walk in to this routine entry offset
                                                                ; @0x08
 
-; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
+; ============================================================ ; ; byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08
   <<<<<<<< [->>>>>>>>>>>>+<<<<<<<<<<<<]                        ; move x0 into a
   >>>> [->>>>>>>>>>>>+<<<<<<<<<<<<]                            ; move y0 into b
   >>>>>>>>>>>>>>>>>>> +                                        ; p := 1
@@ -376,7 +376,7 @@
   << [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]                          ; store res into r0
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09 ====
+; ============================================================ ; ; byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09
   <<<<<<< [->>>>>>>>>>>+<<<<<<<<<<<]                           ; move x1 into a
   >>>> [->>>>>>>>>>>+<<<<<<<<<<<]                              ; move y1 into b
   >>>>>>>>>>>>>>>>>> +                                         ; p := 1
@@ -396,7 +396,7 @@
   << [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]                            ; store res into r1
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a ====
+; ============================================================ ; ; byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a
   <<<<<< [->>>>>>>>>>+<<<<<<<<<<]                              ; move x2 into a
   >>>> [->>>>>>>>>>+<<<<<<<<<<]                                ; move y2 into b
   >>>>>>>>>>>>>>>>> +                                          ; p := 1
@@ -416,7 +416,7 @@
   << [-<<<<<<<<<<<<+>>>>>>>>>>>>]                              ; store res into r2
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b ====
+; ============================================================ ; ; byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b
   <<<<< [->>>>>>>>>+<<<<<<<<<]                                 ; move x3 into a
   >>>> [->>>>>>>>>+<<<<<<<<<]                                  ; move y3 into b
   >>>>>>>>>>>>>>>> +                                           ; p := 1
@@ -484,7 +484,7 @@
                                                                ; ASSERT ptr=124
                                                                ; ASSERT zero 125:132
 
-; ==== shift one bit  n times ====
+; ============================================================ ; ; shift one bit  n times
 [
   -                                                            ; one step consumed
 
@@ -628,7 +628,7 @@
   >>>>>>>>                                                     ; walk in to this routine entry offset
                                                                ; @0x08
 
-; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
+; ============================================================ ; ; byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08
   <<<<<<<< [->>>>>>>>>>>>+<<<<<<<<<<<<]                        ; move x0 into a
   >>>> [->>>>>>>>>>>>+<<<<<<<<<<<<]                            ; move y0 into b
   >>>>>>>>>>>>>>>>>>> +                                        ; p := 1
@@ -648,7 +648,7 @@
   << [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]                          ; store res into r0
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09 ====
+; ============================================================ ; ; byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09
   <<<<<<< [->>>>>>>>>>>+<<<<<<<<<<<]                           ; move x1 into a
   >>>> [->>>>>>>>>>>+<<<<<<<<<<<]                              ; move y1 into b
   >>>>>>>>>>>>>>>>>> +                                         ; p := 1
@@ -668,7 +668,7 @@
   << [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]                            ; store res into r1
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a ====
+; ============================================================ ; ; byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a
   <<<<<< [->>>>>>>>>>+<<<<<<<<<<]                              ; move x2 into a
   >>>> [->>>>>>>>>>+<<<<<<<<<<]                                ; move y2 into b
   >>>>>>>>>>>>>>>>> +                                          ; p := 1
@@ -688,7 +688,7 @@
   << [-<<<<<<<<<<<<+>>>>>>>>>>>>]                              ; store res into r2
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b ====
+; ============================================================ ; ; byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b
   <<<<< [->>>>>>>>>+<<<<<<<<<]                                 ; move x3 into a
   >>>> [->>>>>>>>>+<<<<<<<<<]                                  ; move y3 into b
   >>>>>>>>>>>>>>>> +                                           ; p := 1
@@ -723,7 +723,7 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]           ; continued
 
-; ==== sigma1 of W{t minus 2} ====
+; ============================================================ ; sigma1 of W{t minus 2}
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the word into the rotate frame
   <<<<<<<<<<<                                                  ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -762,7 +762,7 @@
                                                                ; ASSERT ptr=108
                                                                ; ASSERT zero 109:116
 
-; ==== rotate one bit  n times ====
+; ============================================================ ; ; rotate one bit  n times
 [
   -                                                            ; one step consumed
 
@@ -903,7 +903,7 @@
                                                                ; ASSERT ptr=108
                                                                ; ASSERT zero 109:116
 
-; ==== rotate one bit  n times ====
+; ============================================================ ; ; rotate one bit  n times
 [
   -                                                            ; one step consumed
 
@@ -1036,7 +1036,7 @@
   >>>>>>>>                                                     ; walk in to this routine entry offset
                                                                ; @0x08
 
-; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
+; ============================================================ ; ; byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08
   <<<<<<<< [->>>>>>>>>>>>+<<<<<<<<<<<<]                        ; move x0 into a
   >>>> [->>>>>>>>>>>>+<<<<<<<<<<<<]                            ; move y0 into b
   >>>>>>>>>>>>>>>>>>> +                                        ; p := 1
@@ -1056,7 +1056,7 @@
   << [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]                          ; store res into r0
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09 ====
+; ============================================================ ; ; byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09
   <<<<<<< [->>>>>>>>>>>+<<<<<<<<<<<]                           ; move x1 into a
   >>>> [->>>>>>>>>>>+<<<<<<<<<<<]                              ; move y1 into b
   >>>>>>>>>>>>>>>>>> +                                         ; p := 1
@@ -1076,7 +1076,7 @@
   << [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]                            ; store res into r1
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a ====
+; ============================================================ ; ; byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a
   <<<<<< [->>>>>>>>>>+<<<<<<<<<<]                              ; move x2 into a
   >>>> [->>>>>>>>>>+<<<<<<<<<<]                                ; move y2 into b
   >>>>>>>>>>>>>>>>> +                                          ; p := 1
@@ -1096,7 +1096,7 @@
   << [-<<<<<<<<<<<<+>>>>>>>>>>>>]                              ; store res into r2
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b ====
+; ============================================================ ; ; byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b
   <<<<< [->>>>>>>>>+<<<<<<<<<]                                 ; move x3 into a
   >>>> [->>>>>>>>>+<<<<<<<<<]                                  ; move y3 into b
   >>>>>>>>>>>>>>>> +                                           ; p := 1
@@ -1160,7 +1160,7 @@
                                                                ; ASSERT ptr=124
                                                                ; ASSERT zero 125:132
 
-; ==== shift one bit  n times ====
+; ============================================================ ; ; shift one bit  n times
 [
   -                                                            ; one step consumed
 
@@ -1304,7 +1304,7 @@
   >>>>>>>>                                                     ; walk in to this routine entry offset
                                                                ; @0x08
 
-; ==== byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08 ====
+; ============================================================ ; ; byte 0 : x0 @0x00  y0 @0x04  into r0 @0x08
   <<<<<<<< [->>>>>>>>>>>>+<<<<<<<<<<<<]                        ; move x0 into a
   >>>> [->>>>>>>>>>>>+<<<<<<<<<<<<]                            ; move y0 into b
   >>>>>>>>>>>>>>>>>>> +                                        ; p := 1
@@ -1324,7 +1324,7 @@
   << [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]                          ; store res into r0
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09 ====
+; ============================================================ ; ; byte 1 : x1 @0x01  y1 @0x05  into r1 @0x09
   <<<<<<< [->>>>>>>>>>>+<<<<<<<<<<<]                           ; move x1 into a
   >>>> [->>>>>>>>>>>+<<<<<<<<<<<]                              ; move y1 into b
   >>>>>>>>>>>>>>>>>> +                                         ; p := 1
@@ -1344,7 +1344,7 @@
   << [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]                            ; store res into r1
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a ====
+; ============================================================ ; ; byte 2 : x2 @0x02  y2 @0x06  into r2 @0x0a
   <<<<<< [->>>>>>>>>>+<<<<<<<<<<]                              ; move x2 into a
   >>>> [->>>>>>>>>>+<<<<<<<<<<]                                ; move y2 into b
   >>>>>>>>>>>>>>>>> +                                          ; p := 1
@@ -1364,7 +1364,7 @@
   << [-<<<<<<<<<<<<+>>>>>>>>>>>>]                              ; store res into r2
   <<<<<<<<<<<<<<                                               ; back to r0
 
-; ==== byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b ====
+; ============================================================ ; ; byte 3 : x3 @0x03  y3 @0x07  into r3 @0x0b
   <<<<< [->>>>>>>>>+<<<<<<<<<]                                 ; move x3 into a
   >>>> [->>>>>>>>>+<<<<<<<<<]                                  ; move y3 into b
   >>>>>>>>>>>>>>>> +                                           ; p := 1
@@ -1399,7 +1399,7 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                   ; continued
 
-; ==== the four are added  modulo two to the thirty second ====
+; ============================================================ ; the four are added  modulo two to the thirty second
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; W{t minus 16} starts it
   <<<<<<<<<<<<<<<<<<<<<<<                                      ; continued
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
@@ -1436,7 +1436,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 56:67
 
-; ==== byte 0 : a @0x00  b @0x04 ====
+; ============================================================ ; ; byte 0 : a @0x00  b @0x04
 <<<<<<<<                                                       ; move a0 into the accumulator
                                                                ; ASSERT ptr=48
   [->>>>>>>>>+<<<<<<<<<]
@@ -1491,7 +1491,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -1549,7 +1549,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -1581,7 +1581,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 1 : a @0x01  b @0x05 ====
+; ============================================================ ; ; byte 1 : a @0x01  b @0x05
 <<<<<<<                                                        ; move a1 into the accumulator
                                                                ; ASSERT ptr=49
   [->>>>>>>>+<<<<<<<<]
@@ -1636,7 +1636,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -1694,7 +1694,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -1726,7 +1726,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 2 : a @0x02  b @0x06 ====
+; ============================================================ ; ; byte 2 : a @0x02  b @0x06
 <<<<<<                                                         ; move a2 into the accumulator
                                                                ; ASSERT ptr=50
   [->>>>>>>+<<<<<<<]
@@ -1781,7 +1781,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -1839,7 +1839,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -1871,7 +1871,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 3 : a @0x03  b @0x07 ====
+; ============================================================ ; ; byte 3 : a @0x03  b @0x07
 <<<<<                                                          ; move a3 into the accumulator
                                                                ; ASSERT ptr=51
   [->>>>>>+<<<<<<]
@@ -1926,7 +1926,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -1984,7 +1984,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -2016,8 +2016,9 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== the carry out of byte 3 is the final carry  and it is dropped ====
-  [-]
+; ============================================================ ; ; the carry out of byte 3 is the final carry  and it
+                                                               ; is
+  [-]                                                          ; ; dropped
                                                                ; ASSERT ptr=56
                                                                ; the addend has been consumed and every scratch cell
                                                                ; is back at nought; a{4} is NOT clear  because a{4} is
@@ -2068,7 +2069,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 56:67
 
-; ==== byte 0 : a @0x00  b @0x04 ====
+; ============================================================ ; ; byte 0 : a @0x00  b @0x04
 <<<<<<<<                                                       ; move a0 into the accumulator
                                                                ; ASSERT ptr=48
   [->>>>>>>>>+<<<<<<<<<]
@@ -2123,7 +2124,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -2181,7 +2182,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -2213,7 +2214,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 1 : a @0x01  b @0x05 ====
+; ============================================================ ; ; byte 1 : a @0x01  b @0x05
 <<<<<<<                                                        ; move a1 into the accumulator
                                                                ; ASSERT ptr=49
   [->>>>>>>>+<<<<<<<<]
@@ -2268,7 +2269,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -2326,7 +2327,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -2358,7 +2359,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 2 : a @0x02  b @0x06 ====
+; ============================================================ ; ; byte 2 : a @0x02  b @0x06
 <<<<<<                                                         ; move a2 into the accumulator
                                                                ; ASSERT ptr=50
   [->>>>>>>+<<<<<<<]
@@ -2413,7 +2414,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -2471,7 +2472,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -2503,7 +2504,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 3 : a @0x03  b @0x07 ====
+; ============================================================ ; ; byte 3 : a @0x03  b @0x07
 <<<<<                                                          ; move a3 into the accumulator
                                                                ; ASSERT ptr=51
   [->>>>>>+<<<<<<]
@@ -2558,7 +2559,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -2616,7 +2617,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -2648,8 +2649,9 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== the carry out of byte 3 is the final carry  and it is dropped ====
-  [-]
+; ============================================================ ; ; the carry out of byte 3 is the final carry  and it
+                                                               ; is
+  [-]                                                          ; ; dropped
                                                                ; ASSERT ptr=56
                                                                ; the addend has been consumed and every scratch cell
                                                                ; is back at nought; a{4} is NOT clear  because a{4} is
@@ -2696,7 +2698,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 56:67
 
-; ==== byte 0 : a @0x00  b @0x04 ====
+; ============================================================ ; ; byte 0 : a @0x00  b @0x04
 <<<<<<<<                                                       ; move a0 into the accumulator
                                                                ; ASSERT ptr=48
   [->>>>>>>>>+<<<<<<<<<]
@@ -2751,7 +2753,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -2809,7 +2811,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -2841,7 +2843,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 1 : a @0x01  b @0x05 ====
+; ============================================================ ; ; byte 1 : a @0x01  b @0x05
 <<<<<<<                                                        ; move a1 into the accumulator
                                                                ; ASSERT ptr=49
   [->>>>>>>>+<<<<<<<<]
@@ -2896,7 +2898,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -2954,7 +2956,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -2986,7 +2988,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 2 : a @0x02  b @0x06 ====
+; ============================================================ ; ; byte 2 : a @0x02  b @0x06
 <<<<<<                                                         ; move a2 into the accumulator
                                                                ; ASSERT ptr=50
   [->>>>>>>+<<<<<<<]
@@ -3041,7 +3043,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -3099,7 +3101,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -3131,7 +3133,7 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== byte 3 : a @0x03  b @0x07 ====
+; ============================================================ ; ; byte 3 : a @0x03  b @0x07
 <<<<<                                                          ; move a3 into the accumulator
                                                                ; ASSERT ptr=51
   [->>>>>>+<<<<<<]
@@ -3186,7 +3188,7 @@
 <<<<<
                                                                ; ASSERT ptr=62
   [-[[-]>>>>+<<<<]]
-; ==== the carry out is bit 7 of that  and nothing else ====
+; ============================================================ ; ; ; the carry out is bit 7 of that  and nothing else
 >>>>
                                                                ; ASSERT ptr=66
   [-<<<<<<+>>>>>>]
@@ -3244,7 +3246,7 @@
                                                                ; ASSERT ptr=60
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ==== the sum is twice the halves plus the two low bits ====
+; ============================================================ ; ; ; the sum is twice the halves plus the two low bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
                                                                ; ASSERT ptr=64
@@ -3276,8 +3278,9 @@
                                                                ; ASSERT ptr=56
                                                                ; ASSERT zero 57:67
 
-; ==== the carry out of byte 3 is the final carry  and it is dropped ====
-  [-]
+; ============================================================ ; ; the carry out of byte 3 is the final carry  and it
+                                                               ; is
+  [-]                                                          ; ; dropped
                                                                ; ASSERT ptr=56
                                                                ; the addend has been consumed and every scratch cell
                                                                ; is back at nought; a{4} is NOT clear  because a{4} is

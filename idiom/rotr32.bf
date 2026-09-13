@@ -29,7 +29,7 @@
                                                                ; ASSERT ptr=4
                                                                ; ASSERT zero 5:12
 
-; ==== rotate one bit  n times ====
+; ============================================================ ; rotate one bit  n times
 [
   -                                                            ; one step consumed
 

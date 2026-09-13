@@ -39,7 +39,7 @@
 <<<<<<<<<<<<<<<<                                               ; to the bottom of the value  which is where a shift
                                                                ; left starts
 
-; ==== byte 0 ====
+; ============================================================ ; byte 0
                                                                ; ASSERT ptr=0
   [->>>>>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]          ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -73,7 +73,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<<<<                                               ; to the byte above
 
-; ==== byte 1 ====
+; ============================================================ ; byte 1
                                                                ; ASSERT ptr=1
   [->>>>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]            ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -106,7 +106,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<<<                                                ; to the byte above
 
-; ==== byte 2 ====
+; ============================================================ ; byte 2
                                                                ; ASSERT ptr=2
   [->>>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<<]              ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -139,7 +139,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<<                                                 ; to the byte above
 
-; ==== byte 3 ====
+; ============================================================ ; byte 3
                                                                ; ASSERT ptr=3
   [->>>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<<]                ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -172,7 +172,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<<<<<                                                  ; to the byte above
 
-; ==== byte 4 ====
+; ============================================================ ; byte 4
                                                                ; ASSERT ptr=4
   [->>>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<<]                  ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -205,7 +205,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<<<<                                                   ; to the byte above
 
-; ==== byte 5 ====
+; ============================================================ ; byte 5
                                                                ; ASSERT ptr=5
   [->>>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<<]                    ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -238,7 +238,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<<<                                                    ; to the byte above
 
-; ==== byte 6 ====
+; ============================================================ ; byte 6
                                                                ; ASSERT ptr=6
   [->>>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<<]                      ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -271,7 +271,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<<                                                     ; to the byte above
 
-; ==== byte 7 ====
+; ============================================================ ; byte 7
                                                                ; ASSERT ptr=7
   [->>>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<<]                        ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -304,7 +304,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<<                                                      ; to the byte above
 
-; ==== byte 8 ====
+; ============================================================ ; byte 8
                                                                ; ASSERT ptr=8
   [->>>>>>>>>+>>>>>>+<<<<<<<<<<<<<<<]                          ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -337,7 +337,7 @@
   [->>>>>+<<<<<]
 <<<<<<<<                                                       ; to the byte above
 
-; ==== byte 9 ====
+; ============================================================ ; byte 9
                                                                ; ASSERT ptr=9
   [->>>>>>>>+>>>>>>+<<<<<<<<<<<<<<]                            ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -370,7 +370,7 @@
   [->>>>>+<<<<<]
 <<<<<<<                                                        ; to the byte above
 
-; ==== byte 10 ====
+; ============================================================ ; byte 10
                                                                ; ASSERT ptr=10
   [->>>>>>>+>>>>>>+<<<<<<<<<<<<<]                              ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -403,7 +403,7 @@
   [->>>>>+<<<<<]
 <<<<<<                                                         ; to the byte above
 
-; ==== byte 11 ====
+; ============================================================ ; byte 11
                                                                ; ASSERT ptr=11
   [->>>>>>+>>>>>>+<<<<<<<<<<<<]                                ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -436,7 +436,7 @@
   [->>>>>+<<<<<]
 <<<<<                                                          ; to the byte above
 
-; ==== byte 12 ====
+; ============================================================ ; byte 12
                                                                ; ASSERT ptr=12
   [->>>>>+>>>>>>+<<<<<<<<<<<]                                  ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -469,7 +469,7 @@
   [->>>>>+<<<<<]
 <<<<                                                           ; to the byte above
 
-; ==== byte 13 ====
+; ============================================================ ; byte 13
                                                                ; ASSERT ptr=13
   [->>>>+>>>>>>+<<<<<<<<<<]                                    ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -502,7 +502,7 @@
   [->>>>>+<<<<<]
 <<<                                                            ; to the byte above
 
-; ==== byte 14 ====
+; ============================================================ ; byte 14
                                                                ; ASSERT ptr=14
   [->>>+>>>>>>+<<<<<<<<<]                                      ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -535,7 +535,7 @@
   [->>>>>+<<<<<]
 <<                                                             ; to the byte above
 
-; ==== byte 15 ====
+; ============================================================ ; byte 15
                                                                ; ASSERT ptr=15
   [->>+>>>>>>+<<<<<<<<]                                        ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit
@@ -568,7 +568,7 @@
   [->>>>>+<<<<<]
 <                                                              ; to the byte above
 
-; ==== byte 16 ====
+; ============================================================ ; byte 16
                                                                ; ASSERT ptr=16
   [->+>>>>>>+<<<<<<<]                                          ; the byte is taken twice: once to be doubled and once
                                                                ; to give up its top bit

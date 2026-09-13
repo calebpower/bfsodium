@@ -88,17 +88,52 @@ my $seen_code = 0;   # the header keeps column zero; the body does not
 #
 # A tape map row belongs to the header block and is a table, not a remark.
 #
-# A section banner is the matter of taste: it is wider than the annotation
-# column, so indenting it would wrap it across three lines and make the thing
-# it is meant to separate harder to find, not easier.
+# A section banner is no longer one of them, and that is the change. It used to
+# sit whole at column zero, on the grounds that it was wider than the
+# annotation column -- which was true, and which broke the right hand column
+# once per section for the sake of a rule the eye is trying to run past.
+#
+# It is now a RULE in the left column and an ORDINARY ANNOTATION in the right:
+#
+#   ; ============================================================ ; the text
+#   ^ column 1                                                     ^ column 64
+#
+# So every ";" in a laid-out file sits at column 64 except a rule's own, the
+# English runs down one column with nothing stranded beside it, and a banner is
+# still the widest thing on the page. See banner_text and emit_banner below.
 sub anchored_left {
     my ($c) = @_;
     return 1 if $c =~ /^;\s*$/;                 # a spacer has nothing to align
     return 1 if $c =~ /^\s*; emit\b/;           # bffoot and bfexpand cut on this
     return 1 if $c =~ /^\s*; INTERFACE\b/;      # bfexpand greps for it
-    return 1 if $c =~ /^\s*; ====/;             # a banner is wider than the column
     return 1 if $c =~ /^;\s+\@/;                # a tape map row
     return 0;
+}
+
+# The words of a banner, with the "=" rules either side taken off. An authored
+# banner is "; ==== the text ====" and those runs carry no meaning: they are
+# the rule, and the rule is REGENERATED here rather than preserved, so a
+# skeleton may go on using whatever width reads well while it is being written.
+sub banner_text {
+    my ($c) = @_;
+    my $t = $c;
+    $t =~ s/^\s*;\s*//;
+    $t =~ s/^=+\s*//;
+    $t =~ s/\s*=+\s*$//;
+    return $t;
+}
+
+# The rule is "; " then "=" out to column 62, then a space -- so the annotation
+# after it begins its ";" at $COL, exactly like every other annotation in the
+# file. A banner too long for one line wraps down that same column, with the
+# rule drawn only once.
+sub emit_banner {
+    my ($c) = @_;
+    my @parts = wrap_ann(banner_text($c));
+    @parts = ('') unless @parts;
+    my $rule = '; ' . ('=' x ($COL - 4)) . ' ';
+    print $rule, '; ', shift(@parts), "\n";
+    print ' ' x ($COL - 1), "; $_\n" for @parts;
 }
 
 # Everything else in the body is indented into the annotation column, so the
@@ -128,6 +163,13 @@ sub flush_pending {
         @para = ();
     };
     for my $c (@pending) {
+        # A banner is drawn the same way wherever it appears, INCLUDING before
+        # the first code line. chacha20/stream.bf opens with one, which took
+        # the header path and came out in the old form -- so the tree had two
+        # kinds of banner in it and the odd one out was the first thing in the
+        # file. The header keeps column zero for its title, INTERFACE, IO and
+        # tape map; none of those begin "; ====", so nothing else is caught.
+        if ($c =~ /^\s*; ====/) { $flush_para->(); emit_banner($c); next }
         if (!$seen_code || anchored_left($c)) { $flush_para->(); print "$c\n"; next }
         my $t = $c;
         $t =~ s/^\s*;\s?//;

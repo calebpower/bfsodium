@@ -20,7 +20,7 @@
  *      which is what made this form workable at all.
  *   3. A standalone annotation starts either at column 0 or at the annotation
  *      column, and nowhere else. Column 0 is for the things that ANCHOR: the
- *      file header, a tape map row, a section banner, and the "; emit" and
+ *      file header, a tape map row, a banner's rule, and the "; emit" and
  *      "; INTERFACE" lines that bffoot and bfexpand both find by looking at
  *      column 0. Everything else in the body -- a remark that needed its own
  *      line, a wrapped annotation, and a contract that binds to the next
@@ -33,6 +33,11 @@
  *      that is not the same requirement as keeping column 0. Left there it
  *      broke the right hand column several times per screen, which is most of
  *      what two columns are for.
+ *   3a. A SECTION BANNER is a rule in the left column and an ordinary
+ *      annotation in the right, so the right hand column is unbroken by it:
+ *      "; ====...==== ; the text", the second ";" at the annotation column.
+ *      It too used to sit whole at column 0, breaking the column once per
+ *      section for the sake of the one line the eye is trying to run PAST.
  *   4. No run of more than MAXRUN consecutive code lines without an
  *      annotation, so no block goes unexplained.
  *   5. No more than MAXLINES lines -- counted on the sibling .skel when there
@@ -164,6 +169,33 @@ static int scan(const char *path, struct fp *f, int quiet) {
                                    "     column 1 and a wrapped one at column %d\n",
                                    path, lineno, col + 1, STYLECOL);
                 bad = 1;
+            }
+            /* rule 3a: a SECTION BANNER is a rule in the left column and an
+             * ordinary annotation in the right:
+             *
+             *   ; ============================================================ ; the text
+             *   ^ column 1                                                     ^ column 64
+             *
+             * A banner used to sit whole at column 0, which broke the right
+             * hand column once per section -- for the sake of the one line the
+             * eye is trying to run PAST. Drawn this way the rule is still the
+             * widest thing on the page and the English still runs down one
+             * column with nothing stranded beside it.
+             *
+             * tools/bflayout.pl draws them, and tier 9c proves every committed
+             * .bf is that tool's output, so this rule is belt to that brace.
+             * It is here because a convention nothing checks is a convention
+             * that lasts until the first person who has not read the tool. */
+            if (col == 0 && strncmp(line, "; ===", 5) == 0) {
+                char *ann = strchr(line + 1, ';');
+                long acol = ann ? ann - line : -1;
+                if (acol != STYLECOL - 1) {
+                    f->badcomment++;
+                    if (!quiet) printf("FAIL %s:%d: a section banner carries its text as an annotation at\n"
+                                       "     column %d, after the rule; this one has it at column %ld\n",
+                                       path, lineno, STYLECOL, acol + 1);
+                    bad = 1;
+                }
             }
             if (f->io_line < 0 && strstr(line, "IO ")) f->io_line = lineno;
             if (f->map_line < 0 && strstr(line, "TAPE MAP")) f->map_line = lineno;
