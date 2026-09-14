@@ -6,6 +6,12 @@ actually built and where it has bitten.
 
 ## State
 
+**The container lane is at 347 and the gate has not seen it**, nor the two
+commits before it: the tape buffer that removed `programs/sha256`'s temporary
+file, and the move to brainstem 1.1 so the program stops naming its own
+interpreter. The pin moved with that last one, so the gate's `[build]` step
+will clone a different brainstem than the one it last saw.
+
 **Gated: 345 pass, 0 fail on `ubuntu-26.04`, at `7436078`** -- `reaper test`,
 which the lane section below calls the gate of record. That run was the first
 to provision a broker: `tools/guest-setup.sh` clones and builds brainstem at

@@ -124,6 +124,20 @@ bytes arrive on the *broker's* stdin, which it reads sequentially and never
 seeks, so a filename would be a second spelling of a redirect — and the only
 spelling of the two that cannot be a pipe.
 
+**And it does not name its interpreter either.** `sha256.poke` used to emit
+`03 00 62 66 69` — the string `bfi` — because that was the only name it could
+know, which made it wrong the moment anybody ran `brainstem --interp`
+something else: the program went on spawning `bfi` while running under
+another interpreter. brainstem **1.1** gives a zero length `spawn` path the
+meaning *the interpreter the broker launched you under*, so the program now
+sends `00 00` and cannot be wrong about it. It asks for minor 1 in its
+handshake, which turns an older broker into a clean refusal at the handshake
+rather than an `INVAL` from `spawn` mid-conversation.
+
+That is also why the pin moved. It cost 217 bytes of committed brainfuck,
+downward: `0x62` is ninety eight `+` characters from a cleared cell, and there
+is now one `bfi` in the file rather than two.
+
 ### The buffer, which is the one surprising thing
 
 `sha256/sha256.bf` wants a two byte little-endian **length** before the

@@ -83,8 +83,11 @@
 #
 # Frames transcribed by hand from brainstem's ABI.md sections 3, 7.10 to 7.23.
 #
-#   hello  op 01, len 10, magic "BSTM", want major 1, want minor 0, flags 0
-EMIT 01 0a 00 42 53 54 4d 01 00 00 00 00 00
+#   hello  op 01, len 10, magic "BSTM", want major 1, want MINOR 1, flags 0.
+#   Minor 1 because the spawn below sends an empty path, which a 1.0 broker
+#   would refuse as INVAL halfway through the conversation; asking for it
+#   here turns that into a clean VERSION refusal at the handshake.
+EMIT 01 0a 00 42 53 54 4d 01 00 01 00 00 00
 READ 107
 #   pipe  op 0e, flags 0.  Handles 4 (read) and 5 (write): this program writes
 #   the message into 5 and the child reads it from 4.
@@ -94,19 +97,26 @@ READ 11
 #   into 7 and this program reads it from 6.
 EMIT 0e 02 00 00 00
 READ 11
-#   spawn  op 0f, len 0x29 = 41.
+#   spawn  op 0f, len 0x26 = 38 -- three less than it was, which is the
+#   difference between a two byte empty path and a five byte "bfi".
 #     dir ffffffff meaning the broker's working directory, flags 0,
 #     nfdmap 2, nargv 2, nenv 0, reserved 0
-EMIT 0f 29 00 ff ff ff ff 00 00 02 02 00 00
+EMIT 0f 26 00 ff ff ff ff 00 00 02 02 00 00
 #     the descriptor map: child fd 0 gets handle 4, child fd 1 gets handle 7.
 #     ANY CHILD DESCRIPTOR NOT NAMED HERE IS CLOSED, so the child gets these
 #     two and nothing else.
 EMIT 00 04 00 00 00
 EMIT 01 07 00 00 00
-#     the path, then argv: "bfi", "bfi", "sha256.bf". No environment at all:
+#     THE PATH IS EMPTY, meaning "the interpreter the broker launched this
+#     program under" -- brainstem ABI 1.1, section 7.15. This file used to
+#     name "bfi", which was the only name it could know, and it was wrong the
+#     moment anyone ran the broker with --interp pointing elsewhere: the
+#     program went on spawning bfi while running under something else.
+EMIT 00 00
+#     argv: "bfi", "sha256.bf". argv[0] stays a literal because it is a LABEL
+#     the child sees, not a name anything resolves.  No environment at all:
 #     sha256.bf reads an exact, known byte count and never reads past it, so
 #     BFI_EOF cannot matter to it.
-EMIT 03 00 62 66 69
 EMIT 03 00 62 66 69
 EMIT 09 00 73 68 61 32 35 36 2e 62 66
 #     the reply is a process handle: 8
