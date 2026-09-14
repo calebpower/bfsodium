@@ -260,7 +260,20 @@ LOOP
 EMIT 0b 08 00 05 00 00 00 00 00
 #   emitted from cells 5 and 6, low byte first, which is the order it wants
 >>>>>.>.<<<<<<
-READ 5
+#   THE REPLY IS DRAINED BY ITS DECLARED LENGTH, not by an assumed one. A
+#   write that succeeds replies with nwritten{2}; a write that FAILS replies
+#   with no payload at all, because ABI rule I6 says an error response never
+#   carries one. A plain "READ 5" therefore swallows the next reply's first
+#   two bytes the first time a write fails, and every frame after that is
+#   shifted -- the silent desync the ABI names as the realistic catastrophic
+#   failure. It is reachable here: if sha256.bf is missing the child dies at
+#   exec and the very next write to its stdin is PIPE 07 with no payload.
+>[-]+,
+>>>>>>>>[-],
+<<<<<<<<<,
+>>>>>>>>>
+[-<<<<<<<<<,>>>>>>>>>]
+<<<<<<<<<
 #   THE REPLAY: the buffer, pair by pair, into the child's stdin, handle 5.
 #
 #   This loop CONSUMES the buffer, and it has to leave a way home. The frame
@@ -278,7 +291,23 @@ EMIT 0b 07 00 05 00 00 00 00 00
 #   the header is literal and the byte is not, so the byte goes out from the
 #   pair's own second cell with raw brainfuck
 >.
-READ 5
+#   THE REPLY IS DRAINED BY ITS DECLARED LENGTH HERE TOO, and it has to be
+#   done IN PLACE: the pointer is halfway along the buffer, so the fixed
+#   cells the other two drains use are an unknown distance away. The pair
+#   itself is the scratch. The flag cell has already been spent by the EMIT
+#   above and is holding zero, so it can take the length; the byte cell has
+#   already been sent and can take everything else.
+#   the status, discarded -- a failed write here means the child is gone, and
+#   the loop below will drain the rest of the buffer into a closed pipe and
+#   finish, which is the right shape for a child that died
+,
+#   the low length byte into the flag cell, the high one discarded
+<[-],
+>,
+#   then exactly that many payload bytes
+<
+[->,<]
+>
 #   lay the trail: this cell is now the walkable one
 [-]+
 #   on to the next pair's flag, which is what the loop tests
@@ -295,39 +324,95 @@ READ 3
 #   it blocks until there is a byte and then returns exactly it. The first of
 #   these is where the child's work is waited on, because it writes nothing
 #   until it has hashed.
-#   cell 11 counts the digest down from thirty two. This loop is counted rather
-#   than status-driven because the length is known: a miscount here would
-#   desync the conversation rather than merely truncate the answer.
+#   cell 11 counts the digest down from thirty two, AND the status is checked
+#   as well. It used to be counted alone, on the grounds that the length was
+#   known and a miscount would desync rather than truncate -- which was true
+#   of a child that runs, and false of one that does not. With sha256.bf
+#   missing, the interpreter cannot exec it, handle 6 answers END with an
+#   empty payload, and a loop that read a data byte anyway blocked for a
+#   fourth byte that was never coming. That is the desync it was trying to
+#   avoid, arrived at from the other side.
+#
+#   Keeping BOTH is what is wanted. The count still says how many bytes a
+#   digest has, so a short answer comes out short and visibly wrong rather
+#   than being waited on for ever; the status says when to stop asking.
 >>>>>>>>>>>++++++++++++++++++++++++++++++++
 LOOP
 #   back to the working cell
 <<<<<<<<<<<
 #   read  op 0a, handle 6, one byte, flags 0
 EMIT 0a 08 00 06 00 00 00 01 00 00 00
-READ 3
+#   cell 1 takes the status, preset so that no reply at all reads as END
+>[-]+,<,,
+#   cell 4 is the branch flag, set on the way past
+>>>>+<<<
+#   an END means the child stopped early: clear the status, the branch flag
+#   and the counter, which ends the loop without a byte to write
+[[-]>>>[-]>>>>>>>[-]<<<<<<<<<<]
+#   stand on the branch flag
+>>>
+LOOP
 #   cell 3 takes the digest byte, then back to the working cell
->>>,<<<
+<,<<<
 #   write  op 0b, handle 2 -- the broker's stdout -- flags 0, one byte
 EMIT 0b 07 00 02 00 00 00 00 00
 #   emit it from cell 3, the header above having been literal
 >>>.<<<
-READ 5
-#   one byte done: count cell 11 down and let the loop test it
+#   THE REPLY IS DRAINED BY ITS DECLARED LENGTH, not by an assumed one. A
+#   write that succeeds replies with nwritten{2}; a write that FAILS replies
+#   with no payload at all, because ABI rule I6 says an error response never
+#   carries one. A plain "READ 5" therefore swallows the next reply's first
+#   two bytes the first time a write fails, and every frame after that is
+#   shifted -- the silent desync the ABI names as the realistic catastrophic
+#   failure. It is reachable here: if sha256.bf is missing the child dies at
+#   exec and the very next write to its stdin is PIPE 07 with no payload.
+>[-]+,
+>>>>>>>>[-],
+<<<<<<<<<,
+>>>>>>>>>
+[-<<<<<<<<<,>>>>>>>>>]
+<<<<<<<<<
+#   ONE BYTE DONE: count cell 11 down INSIDE the branch, not outside it. A
+#   decrement that also ran on the END path took the counter from nought to
+#   255 and the loop never ended -- a live spin rather than a block, so the
+#   broker's op timeout never fired either and only the outer wall clock
+#   stopped it.
 >>>>>>>>>>>-
+#   then consume the branch flag, which is what makes this an if
+<<<<<<<[-]
+END
+#   stand on the counter, where the outer loop expects to test
+>>>>>>>
 END
 #   back to the working cell
 <<<<<<<<<<<
-#   wait  op 10, handle 8, flags 0 -- blocking.  state 1 exited, code 0.
+#   wait  op 10, handle 8, flags 0 -- blocking.  The reply is status, two
+#   length bytes, then state{1} code{1} signal{1} reserved{1}.
+#
+#   THE CHILD'S EXIT CODE BECOMES THIS PROGRAM'S. Run this in a directory
+#   with no sha256.bf in it: the interpreter cannot exec it, the child exits
+#   127, nothing is hashed -- and a program that reported success there would
+#   be indistinguishable from one that hashed correctly into something that
+#   swallowed the output.
+#
+#   The shell sees 1 rather than 127, because brainstem collapses any nonzero
+#   program exit into its own small pinned set so that 70 and 71 keep meaning
+#   what they say. The distinction that survives is the one worth having.
 EMIT 10 06 00 08 00 00 00 00 00
-READ 7
+READ 4
+#   cell 3 takes the code; the state byte before it and the two after tell a
+#   caller nothing it does not already have
+>>>,<<<
+READ 2
 #   close everything still open: the digest pipe and the process handle.
 #   Closing a process handle stops tracking the child; it does not kill it.
 EMIT 0c 04 00 06 00 00 00
 READ 3
 EMIT 0c 04 00 08 00 00 00
 READ 3
-#   exit  op 02, len 1, code 0
-EMIT 02 01 00 00
+#   exit  op 02, len 1, and the code is the child's own, out of cell 3
+EMIT 02 01 00
+>>>.<<<
 READ 3
 #   consume the proceed flag, which is what makes the block above run once
 #   rather than for ever

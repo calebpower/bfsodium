@@ -108,6 +108,42 @@ not one anybody should depend on either.
 | program | does | oracle |
 |---|---|---|
 | `sha256.poke` | reads stdin, writes the SHA-256 digest to stdout | FIPS 180-4, end to end, at three lengths |
+| `run.poke` | runs **any** routine, named at run time | three routines with nothing in common |
+
+## Two shapes, and the difference is who does the framing
+
+**An adapter** hides one routine's calling convention behind an ordinary Unix
+interface. `sha256.poke` is one: `cat file | … | hx`, no framing, no length —
+and to manage that it must know that `sha256/sha256.bf` wants `len{2} LE`
+first, must buffer the stream to count it, and must therefore cap the input at
+65535. *The friendly interface is precisely the part that cannot be generic*,
+because every routine's `IO` line is different.
+
+**A runner** does the opposite: the caller frames the input exactly as the
+routine's own header specifies, and the program is a pure relay. It knows
+nothing about any routine, which is why it works with all of them — including
+ones not yet written.
+
+```sh
+printf '\003\000abc' | sh tools/bfrun.sh sha256.bf | ./tools/hx
+printf '\007\005'    | sh tools/bfrun.sh add8.bf   | ./tools/hx   # 7+5 -> 0c00
+```
+
+`tools/bfrun.sh` exists to write one byte for you — `run.bf` reads a name
+length before the name, and typing an octal escape and counting characters is
+wrong once in twenty and looks like a broken routine when it is.
+
+Because nothing here supplies a length, **the runner has no size limit** and
+no tape buffer: a relay never needs to see a byte twice. It is also smaller
+than the adapter.
+
+Its one real limitation is a hang rather than a wrong answer. The relay is
+**sequential** — all of stdin into the routine, then the routine's answer
+back — so a routine that writes as it reads, as `aead/chacha20poly1305` does,
+can fill the 64 KiB pipe before its input is finished and deadlock against
+itself. `poll` (op `0d`) is the fix and brainstem has it; it is not done
+because it roughly doubles a file whose whole value is being small, and
+because the failure ends in the broker's op timeout with a diagnosis.
 
 ```sh
 cat something | sh tools/bfprog.sh programs/sha256.bf | ./tools/hx

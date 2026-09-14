@@ -709,6 +709,56 @@ run "a program runs from outside the checkout, by relative path" sh -c '
 # costs about twenty three seconds, nearly all of it the buffer walk, and it
 # never reaches the hash -- the accepting side of the same boundary is 1862
 # seconds and is recorded in programs/README.md rather than run here.
+# THE GENERIC RUNNER, which is the other half of programs/. sha256's program
+# hides sha256's calling convention behind an ordinary Unix interface and
+# therefore cannot be generic about which convention it hides. run.bf takes
+# the routine's NAME at run time and relays bytes both ways, so the caller
+# does the framing and the same program drives every routine in the tree --
+# including ones not written yet.
+#
+# Two routines with nothing in common are run through it deliberately. One
+# would show that it works; two show that it is not secretly about sha256.
+run "the runner drives sha256 by name, with the caller framing it" sh -c '
+    test "$(printf "\\003\\000abc" | sh tools/bfrun.sh sha256.bf | ./tools/hx)" = "$1"' \
+    _ ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+run "and add8, which shares nothing with it" sh -c '
+    test "$(printf "\\007\\005" | sh tools/bfrun.sh add8.bf | ./tools/hx)" = "0c00"'
+run "and xor32, whose answer is four bytes rather than two" sh -c '
+    test "$(printf "\\377\\000\\377\\000\\017\\017\\017\\017" | sh tools/bfrun.sh xor32.bf \
+        | ./tools/hx)" = "f00ff00f"'
+# A ROUTINE THAT IS NOT THERE MUST FAIL, NOT HANG, and this check is here
+# because it did hang -- for two separate reasons, both of which were latent
+# in programs/sha256 as well.
+#
+# The first: spawn SUCCEEDS for a name that does not exist, the child dies at
+# exec, and the next write to its stdin returns PIPE with no payload. A reply
+# read at an assumed length then swallows the next reply's first bytes and
+# every frame after it is shifted. The second: a read of the child's stdout
+# returns END with no payload, and a loop that took a data byte anyway waited
+# for one that was never coming.
+#
+# The timeout is part of the check rather than a safety net. Without it a
+# regression here stalls the suite for an hour inside bfprog.sh, which reads
+# as the suite being broken rather than this program being wrong.
+run "a routine that is not there fails instead of hanging" sh -c '
+    rc=0; out=$(printf "x" | timeout 60 sh tools/bfrun.sh nosuch.bf) || rc=$?
+    test "$rc" -ne 0 || { echo "exited 0 with no routine to run"; exit 1; }
+    test "$rc" -ne 124 || { echo "timed out: it is hanging again"; exit 1; }
+    test -z "$out" || { echo "produced output: $out"; exit 1; }
+    exit 0'
+# The same failure through the sha256 program, because the fix was needed in
+# both and a check on only one would let the other regress quietly.
+run "and neither does the sha256 program, with its routine missing" sh -c '
+    d=$(mktemp -d); cp tools/bfi "$d/bfi"; cp programs/sha256.bf "$d/hash.bf"
+    rc=0
+    out=$( (cd "$d" && printf abc | timeout 60 "$1/build/brainstem" \
+        --op-timeout 20000 -- ./bfi ./hash.bf) 2>/dev/null ) || rc=$?
+    rm -rf "$d"
+    test "$rc" -ne 124 || { echo "timed out: it is hanging again"; exit 1; }
+    test "$rc" -ne 0 || { echo "exited 0 having hashed nothing"; exit 1; }
+    test -z "$out" || { echo "produced output: $out"; exit 1; }
+    exit 0' _ "$BS"
+
 head -c 65536 /dev/urandom > "$bf_msg/over"
 run "a program refuses an input too large for the length prefix, and stops" sh -c '
     rc=0; out=$(sh tools/bfprog.sh programs/sha256.bf < "$1") || rc=$?
