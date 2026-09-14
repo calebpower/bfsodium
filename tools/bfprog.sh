@@ -21,11 +21,19 @@
 # So this does what tools/kat.sh does for a routine: it is the one place that
 # knows how to invoke the thing, and every caller goes through it.
 #
-# WHAT THE SCRATCH DIRECTORY IS FOR. The program spawns `bfi` on a routine by
-# NAME, resolved against the broker's working directory, and it writes a
-# temporary file there. Handing it a directory of its own means it cannot
-# collide with a parallel run, cannot read a stale temporary, and cannot leave
-# anything behind -- the directory goes when this script returns.
+# WHAT THE SCRATCH DIRECTORY IS FOR, which is now one thing rather than two.
+# The program spawns `bfi` on a routine by NAME, resolved against the broker's
+# working directory, so that directory has to hold the interpreter and every
+# routine a program might spawn. Handing it one of its own means a run cannot
+# be confused by whatever else is lying around, and the directory goes when
+# this script returns.
+#
+# It used to matter for a second reason: the program wrote a temporary file
+# there under a fixed name, so two runs in one directory would corrupt each
+# other. That is gone -- a program buffers on the tape now and touches no
+# file at all -- and the scratch directory is a convenience rather than a
+# safety net. A program can be run in any directory holding bfi and the
+# routines it names.
 #
 # The broker and the interpreter both come from the brainstem checkout that
 # tools/guest-setup.sh pinned and built. If it is missing this FAILS rather
@@ -87,5 +95,13 @@ done
 
 # stdin and stdout are inherited untouched: the shell has already connected
 # them to whatever the caller meant, and the broker hands them to the program.
-( cd "$d" && timeout 900 "$BS/build/brainstem" --op-timeout 600000 \
+#
+# THE WALL CLOCK BOUND MUST EXCEED THE SLOWEST RUN THE PROGRAM WILL ACCEPT,
+# and at 900 seconds it did not. programs/sha256 takes an input up to 65535
+# bytes, which is 1024 compression blocks at about two seconds each -- a bit
+# over half an hour. So the largest input the program was willing to hash was
+# one this script could not run: it returned 124 and no output, which reads as
+# "the program hung" and is not what happened. An hour clears that with room,
+# and the point of the bound is unchanged -- a HANG must end, not a slow run.
+( cd "$d" && timeout 3600 "$BS/build/brainstem" --op-timeout 600000 \
     -- ./bfi ./prog.bf )

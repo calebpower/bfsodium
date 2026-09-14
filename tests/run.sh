@@ -693,6 +693,27 @@ run "a program runs from outside the checkout, by relative path" sh -c '
     test "$(printf abc | sh "$base/tools/bfprog.sh" "$base/programs/sha256.bf" \
             | "$repo/tools/hx")" = "$1"' \
     _ ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+
+# THE OVERSIZE REFUSAL, AND IT IS HERE FOR THE SECOND REASON RATHER THAN THE
+# FIRST. It checks that 65536 bytes are refused instead of hashed modulo 65536
+# into a plausible wrong digest -- but what it really guards is that the
+# program STOPS. A brainfuck program cannot halt: brainstem answers the exit
+# frame, closes the program stdin and waits for the interpreter, which runs on
+# into whatever bytes follow. Everything after the refusal is inside a flag for
+# that reason, and without it the replay emitted one write frame per buffered
+# byte into a pipe nobody was reading, filled it, and deadlocked against
+# waitpid.
+#
+# So a FAILURE HERE MAY PRESENT AS A HANG, and that is the point: this is the
+# only check in the suite whose subject is a program that will not stop. It
+# costs about twenty three seconds, nearly all of it the buffer walk, and it
+# never reaches the hash -- the accepting side of the same boundary is 1862
+# seconds and is recorded in programs/README.md rather than run here.
+head -c 65536 /dev/urandom > "$bf_msg/over"
+run "a program refuses an input too large for the length prefix, and stops" sh -c '
+    rc=0; out=$(sh tools/bfprog.sh programs/sha256.bf < "$1") || rc=$?
+    test "$rc" -eq 1 && test -z "$out"' \
+    _ "$bf_msg/over"
 rm -rf "$bf_msg"
 
 echo
