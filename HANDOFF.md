@@ -6,16 +6,16 @@ actually built and where it has bitten.
 
 ## State
 
-**The container lane is at 347 and the gate has not seen it**, nor the two
-commits before it: the tape buffer that removed `programs/sha256`'s temporary
-file, and the move to brainstem 1.1 so the program stops naming its own
-interpreter. The pin moved with that last one, so the gate's `[build]` step
-will clone a different brainstem than the one it last saw.
+**Gated: 347 pass, 0 fail on `ubuntu-26.04`, at `cc974dc`** -- `reaper test`,
+which the lane section below calls the gate of record. `tools/guest-setup.sh`
+clones and builds brainstem at `BRAINSTEM_COMMIT` before the suite starts, so
+every gate here needs the network, and this one was the first to build a
+DIFFERENT brainstem than the run before it: the pin moved to 1.1 so that
+`programs/sha256` could stop naming its own interpreter.
 
-**Gated: 345 pass, 0 fail on `ubuntu-26.04`, at `7436078`** -- `reaper test`,
-which the lane section below calls the gate of record. That run was the first
-to provision a broker: `tools/guest-setup.sh` clones and builds brainstem at
-`BRAINSTEM_COMMIT`, so it is also the first gate that needed the network.
+That run covers three commits: the tape buffer that removed the program's
+temporary file, the stdin interface on `tools/bfprog.sh`, and the pin move.
+The previous gate was 345 at `7436078`.
 
 **ONE GUEST, AND TIER 12 DOES NOT CHANGE THAT -- but the reason moved.** It
 used to be simply that this library is pure computation with no platform
@@ -36,7 +36,7 @@ eight design proofs FAIL rather than skip when Cryptol is absent, and Cryptol
 ships release tarballs for Linux and macOS only. Adding the guest would trade a
 covered gap for eight red checks with nothing wrong behind them.
 
-The lane and the commit are named because "the suite is 345 pass, 0 fail" is
+The lane and the commit are named because "the suite is 347 pass, 0 fail" is
 not a fact, it is a measurement, and a measurement with neither of those is a
 sentence that starts expiring the moment it is written. Update both together
 or neither.
