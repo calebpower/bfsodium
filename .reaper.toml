@@ -9,7 +9,30 @@
 schema = 1
 project = "bfsodium"
 
-guests = ["ubuntu-26.04"]
+# TWO GUESTS, AND THEY DO NOT RUN THE SAME SET OF CHECKS. That is unusual
+# enough to justify here rather than in a commit message nobody will find.
+#
+# freebsd-15.1 exists for ONE reason: a second C compiler. There are five C
+# programs in this repository -- bfi, hx, bflint, bfstyle, bffoot -- and until
+# this guest every one of them had only ever been compiled by gcc. bfi is the
+# interpreter every correctness claim in the library rests on. The sibling
+# project's `bcmp` trap is the argument in full: clang rewrites
+# memcmp(a, b, n) != 0 into a different symbol and gcc does not, and that was
+# a defect nothing runnable on the development host could reveal.
+#
+# It does NOT run the eight design proofs, and tier 8 in tests/run.sh says so
+# in the log on every run. A proof is a statement over bitvectors -- "for all
+# x, reduceTail (foldOnce x) == x % p136" -- and quantifying over 2^136 inputs
+# does not care which kernel asked. Cryptol is also not a runtime dependency
+# of anything else: the dual oracle's values are pinned literals that Cryptol
+# computed once, at authoring time. So the FreeBSD guest runs every KAT, every
+# metamorphic relation, the composition tier and all five C tools, and is
+# short eight checks that execute no brainfuck.
+#
+# security/hs-cryptol IS in ports, quarterly carries 3.4.0, and that is the
+# version CRYPTOL_VERSION pins -- so this is a choice and not a limitation. An
+# earlier version of this file claimed the latter and was wrong.
+guests = ["ubuntu-26.04", "freebsd-15.1"]
 exec = "host"
 
 [build]

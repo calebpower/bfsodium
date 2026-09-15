@@ -17,47 +17,55 @@ That run covers three commits: the tape buffer that removed the program's
 temporary file, the stdin interface on `tools/bfprog.sh`, and the pin move.
 The previous gate was 345 at `7436078`.
 
-**ONE GUEST, AND TIER 12 DOES NOT CHANGE THAT -- but the reason moved.** It
-used to be simply that this library is pure computation with no platform
-surface to disagree about. Tier 12 gave it one: those checks run brainstem's
-`spawn`, `pipe`, `open`, `stat` and `readdir`, and brainstem's PRIMARY platform
-is FreeBSD, which this gate has never run.
+**TWO GUESTS NOW, AND THEY DO NOT RUN THE SAME CHECKS.** `ubuntu-26.04` runs
+everything; `freebsd-15.1` runs everything except the eight design proofs.
+The full argument is `CONVENTIONS.md` §8.1 and it is worth reading before
+touching either, because it is the one exception this project makes to *"run
+it when present is a skip and this project does not skip"*.
 
-The gap is narrower than it looks, and it is covered somewhere. What tier 12
-adds here is a brainfuck program and a brainfuck routine, and those are
-platform-independent by construction -- tier 2 proves they are nothing but the
-eight instructions. The platform-dependent half is the broker, and the broker
-is gated on BOTH guests in its own repo, byte-identically, by brainstem's tier
-10 at the very commit this pins. Testing it a second time from here would not
-be a second opinion; it would be the same opinion in a worse place to read it.
+The short version: **the second guest exists for a second C compiler**, not
+for a proof. There are five C programs here -- `bfi`, `hx`, `bflint`,
+`bfstyle`, `bffoot` -- and until that guest every one had only ever seen gcc.
+`bfi` is the interpreter every correctness claim in this library rests on.
+brainstem's `bcmp` trap is the argument in full: clang rewrites
+`memcmp(a, b, n) != 0` into a different symbol and gcc does not, and nothing
+runnable on the development host could have revealed it.
 
-**This used to say a FreeBSD guest was IMPOSSIBLE, and that was wrong.** The
-claim was that the eight design proofs fail rather than skip without Cryptol,
-and that Cryptol ships release tarballs for Linux and macOS only. The first
-half is true. The second was true of the GitHub releases and false of
-FreeBSD, which has had `security/hs-cryptol` in ports the whole time --
+And tier 8 does not go there because **a proof is not about the machine**. Every
+property in `spec/` quantifies over bitvectors, and "for all 2^136 inputs"
+does not care which kernel asked. Cryptol is also not a runtime dependency of
+anything else: it is invoked in exactly two places in the suite, and the dual
+oracle's values are pinned literals it computed once at authoring time. So the
+FreeBSD guest runs every KAT, every metamorphic relation, tier 12 and all five
+C tools, and is short eight checks that execute no brainfuck.
+
+It is a DECLARATION rather than a skip, and the difference is mechanical: on
+Ubuntu a missing Cryptol still fails, nothing tests for its presence, and the
+absent tier announces itself in the log twice on the guest that omits it. The
+summary names the platform for the same reason -- one tier declaring a guest
+means two green runs can honestly have different counts, and a count with no
+platform beside it is a number nobody can check.
+
+**Two documented claims here were wrong and are worth remembering as a pair.**
+
+The first said tier 12 gave this library a platform surface that only FreeBSD
+could test. It does run brainstem's `spawn`, `pipe`, `open`, `stat` and
+`readdir` -- but the platform-dependent half is the BROKER, which is gated on
+both guests in its own repository, byte-identically, at the very commit this
+pins. What tier 12 adds here is a brainfuck program and a brainfuck routine,
+and tier 2 proves those are nothing but the eight instructions.
+
+The second said a FreeBSD guest was IMPOSSIBLE, because the proofs fail rather
+than skip without Cryptol and Cryptol ships tarballs for Linux and macOS only.
+The first half is true. The second was true of the GitHub release assets and
+false of FreeBSD, which has carried `security/hs-cryptol` all along --
 `pkg install hs-cryptol`, amd64, FreeBSD 13 through 16, z3 pulled in as a
-dependency. The quarterly branch carries 3.4.0, which is the exact version
-`CRYPTOL_VERSION` pins.
+dependency, and quarterly at 3.4.0, the exact version `CRYPTOL_VERSION` pins.
+**I checked what upstream published and stopped there. A dependency is not
+only what its author publishes.**
 
-I checked the upstream release assets and stopped there. A dependency is not
-only what its author publishes.
-
-**So a second guest is possible, and the reason to want one is not Cryptol at
-all -- it is a second C compiler.** This repository has five C tools (`bfi`,
-`hx`, `bflint`, `bfstyle`, `bffoot`) and every one of them has only ever been
-compiled by gcc. brainstem's `bcmp` trap is the argument in full: clang
-rewrites `memcmp(a, b, n) != 0` into a different symbol and gcc does not, and
-that was a defect nothing runnable on the development host could reveal. Five
-C programs with one compiler between them is the same exposure.
-
-**The obstacle that remains is the pin, and it is real.** `pkg` gives whatever
-its branch carries -- quarterly has 3.4.0 today and will carry 3.6.0 when the
-branch rolls -- while the Linux side installs 3.4.0 by exact tarball. Two
-guests proving things with two different Cryptol versions is not fatal for a
-PROOF, but it does end the property `CRYPTOL_VERSION` exists for: that a guest
-built next month runs the same oracle as one built today. Deciding that is the
-work, not the provisioning.
+So the proofs *could* run on both. They do not, and that is now a choice with
+a reason rather than a limitation with an excuse.
 
 The lane and the commit are named because "the suite is 347 pass, 0 fail" is
 not a fact, it is a measurement, and a measurement with neither of those is a
@@ -153,14 +161,14 @@ must have no marker in the suite at all.
 | 5 | yes | 22 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
-| 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
+| 8 | yes | 8 | Cryptol design proofs, two refuted; DECLARES ubuntu-26.04 (CONVENTIONS 8.1) |
 | 9 | yes | 6 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
 | 9c | yes | 4 | provenance: every .bf equals bfexpand of its skeleton |
 | 9d | yes | 2 | the INTERFACE line tells the truth |
 | 9e | yes | 2 | the routine AND tier tables describe the tree |
-| 10 | yes | 1 | one definition of the toolchain |
+| 10 | yes | 2 | one definition of the toolchain, and the declared guests |
 | 11 | manual | 0 | mutation, a discipline rather than a check |
 | 12 | yes | 14 | composition: a program chains routines through the broker |
 

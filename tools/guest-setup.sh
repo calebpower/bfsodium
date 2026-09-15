@@ -121,8 +121,43 @@ if [ "$do_toolchain" = yes ]; then
 #
 # If neither manager is here, that is not an error worth inventing a third
 # branch for. --skip-deps is the answer, and the message says so.
+# THE PROOF ORACLE IS NOT NEEDED ON EVERY GUEST, and this is where that
+# decision lands in the provisioning. tests/run.sh's tier 8 declares Linux:
+# a proof is a statement over bitvectors and does not care which kernel asked,
+# and Cryptol is not a runtime dependency of anything else here -- the dual
+# oracle's values are pinned literals. So freebsd-15.1 is provisioned WITHOUT
+# z3 and WITHOUT Cryptol, on purpose, and installing them there would be
+# installing a Haskell toolchain to re-ask a settled question.
+#
+# It is a real port, for the record: security/hs-cryptol, and the quarterly
+# branch carries 3.4.0, which is what CRYPTOL_VERSION pins. It was not left
+# out because it is unavailable -- an earlier version of this file said so and
+# was wrong -- it is left out because that guest exists for a second C
+# compiler and nothing else.
+#
+# GUEST freebsd-15.1 FreeBSD
+# GUEST ubuntu-26.04 Linux
+need_proofs=yes
+# An `if` rather than `[ ... ] && need_proofs=no`, because the test is FALSE on
+# the platform that wants the proofs and this script runs under -e: the short
+# form exits 0 on FreeBSD and aborts the provision on Linux, which is the one
+# platform it must not.
+if [ "$(uname -s)" = FreeBSD ]; then need_proofs=no; fi
+
 if [ "$do_deps" = no ]; then
     echo "guest-setup: --skip-deps: assuming cc, git, curl, z3 and cryptol are present"
+elif [ "$(uname -s)" = FreeBSD ]; then
+    # clang and awk are in base and are VERIFIED rather than assumed -- "it is
+    # in base" is exactly what was said about perl in the sibling project, and
+    # perl was absent. git is not in base and is the one thing to install.
+    echo "guest-setup: FreeBSD -- clang is in base; installing git, no proof oracle"
+    for _gs_t in cc awk; do
+        command -v "$_gs_t" >/dev/null 2>&1 || {
+            echo "guest-setup: $_gs_t is missing from base" >&2
+            echo "guest-setup: this is not the guest bfsodium targets" >&2
+            exit 1; }
+    done
+    command -v git >/dev/null 2>&1 || pkg install -y git >/dev/null
 elif command -v apt-get >/dev/null 2>&1; then
     echo "guest-setup: apt toolchain (C compiler, z3, curl)"
     export DEBIAN_FRONTEND=noninteractive
@@ -139,7 +174,9 @@ else
     exit 2
 fi
 
-if command -v cryptol >/dev/null 2>&1; then
+if [ "$need_proofs" = no ]; then
+    echo "guest-setup: this guest does not run the design proofs; no cryptol"
+elif command -v cryptol >/dev/null 2>&1; then
     echo "guest-setup: cryptol already present"
 elif [ "$do_deps" = no ]; then
     # --skip-deps means install NOTHING, and a tarball off GitHub is as much
@@ -214,7 +251,9 @@ fi
 echo "guest-setup: versions"
 cc --version | head -1
 git --version
-if [ "$do_deps" = yes ]; then
+if [ "$need_proofs" = no ]; then
+    echo "guest-setup: no z3 and no cryptol here, by design"
+elif [ "$do_deps" = yes ]; then
     z3 --version
     cryptol --version 2>&1 | head -1
 else

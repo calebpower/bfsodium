@@ -487,7 +487,7 @@ structure**.
 | 5 declared contracts | Does the code obey the interface composition depends on? | `; ASSERT ptr=N` and `; ASSERT zero A:B` are comments, so a plain interpreter ignores them and portability is untouched; `BFI_CONTRACTS=1` checks them **every** time execution reaches that point, including on every pass through a loop. This turns an interface from a comment that might lie into a checked fact, and it catches what the output tiers cannot: a pointer off its anchor, scratch that was not clean on entry, a routine entered at the wrong offset. **These have found more defects than the vectors have.** |
 | 6 differential fuzz | Do untried inputs diverge from the spec? | **DECLARED AND NOT BUILT.** Random inputs, bf against Cryptol, seed printed and replayable. Affordable for the cheap primitives and not for the composites. It is listed here because its absence is a gap and not a decision — **do not let this row read as coverage.** |
 | 7 metamorphic | Do reference-free invariants hold? | Checks needing no oracle: the AEAD ciphertext is the stream cipher at counter one; encrypting the ciphertext again returns the plaintext. Independent of whether the spec is right. |
-| 8 design proofs | Is the structure itself sound, over all inputs? | Cryptol `:prove` over the design, not the bytes: the looped quarter round equals the quarter round, one fold suffices for `reducep136`, the adder's carry and sum identities. Each is paired with a companion that must be **refuted**. |
+| 8 design proofs | Is the structure itself sound, over all inputs? | Cryptol `:prove` over the design, not the bytes: the looped quarter round equals the quarter round, one fold suffices for `reducep136`, the adder's carry and sum identities. Each is paired with a companion that must be **refuted**. **This tier declares its guest — `ubuntu-26.04` — and is the only tier that does.** See §8.1. |
 | 9 legibility and portability | Can a human read this, and is it really brainfuck? | `tools/bflint` proves the instruction stream with `;` honoured is identical to the stream with only command bytes kept, and enforces the legibility floor: a tape map and an IO header, operator-free prose, no wall of command bytes on one line. Self-tested against minified and header-less input. |
 | 9a style consistency | Is the style the same across every source file? | `tools/bfstyle`: a title then `IO` then `TAPE MAP`; a trailing annotation at exactly column 64 and a standalone one at column 0; **no run of more than 12 code lines without an annotation**. This tier exists because style silently drifted and **no other tier could see it** — every other tier checks what the code computes, not how it reads. |
 | 9b size budget | Is this file short enough that a person would actually read it? | `bfstyle` fails any file over 2000 lines, counting the **skeleton** where one exists. Added after the composites drifted to 42k lines, 66k, and — in an AEAD never committed — 903k, every one of which passed all the other checks. The exemption is sound only because the suite separately proves every `.bf` equals `bfexpand` of its skeleton byte for byte; the two halves are one check and removing either reopens the hole. |
@@ -516,6 +516,67 @@ The tenant is wired in `/.reaper.toml`; **`reaper test` is the gate of record.**
 `sh tools/container-test.sh` is a fallback for a host that cannot reach the
 reaper site, running the same suite with nothing skipped — but a pass there has
 not proved the change on the machine of record.
+
+### 8.1 One tier declares its guest, and only one
+
+**`reaper test` runs `ubuntu-26.04` and `freebsd-15.1`, and they do not run the
+same set of checks.** Tier 8 — the eight design proofs — runs on Ubuntu only.
+Everything else runs on both. This is the single exception to *"run it when
+present is a skip and this project does not skip"*, so it is written out in
+full here rather than left to a comment.
+
+**It is a declaration, not a skip, and the difference is mechanical.** The tier
+names the platform it runs on. On that platform a missing Cryptol is a
+**failure**, exactly as before — nothing tests for Cryptol's presence and
+quietly stands down. On the other guest the tier is deliberately absent and
+says so in the log twice: once where it would have run, and once in the
+summary. And the summary now names the platform, because one tier declaring a
+guest means two green runs can legitimately have different counts, and a count
+with no platform beside it is a number nobody can check.
+
+**Why it is allowed:**
+
+- **A proof is not about the machine.** Every property in `spec/` is a
+  statement over bitvectors — *for all x, `reduceTail (foldOnce x) == x % p136`*
+  — and quantifying over 2¹³⁶ inputs does not care which kernel asked. Every
+  other tier has a platform story: the C tools have a compiler, the routines
+  have an interpreter, tier 12 has a broker that forks and opens files. This
+  one has z3.
+- **Cryptol is not a runtime dependency.** It is invoked in exactly two places
+  in `tests/run.sh`: tier 8, and one tier 0 self-test that loads each `.cry` to
+  confirm it parses. **The dual oracle's values are pinned literals** — tier 4
+  compares the brainfuck against constants Cryptol computed once, at authoring
+  time, which live in this repository now. A guest without Cryptol therefore
+  runs every KAT, every metamorphic relation, tier 12, and all five C tools.
+
+**What is given up, stated rather than buried.** Three of the eight are
+`:check tests=2000` rather than `:prove` — randomised sampling, because the
+state space is too large to prove — so a second guest *would* draw a second
+sample. That is worth nothing against raising `tests=`, which costs no guest.
+A second platform would also catch z3 or Cryptol disagreeing with themselves
+across operating systems, which is a bug in somebody else's software that this
+project would be paying a guest's gate time to regression-test.
+
+**Why the second guest exists at all is a C compiler, not a proof.** There are
+five C programs here — `bfi`, `hx`, `bflint`, `bfstyle`, `bffoot` — and until
+`freebsd-15.1` every one had only ever been compiled by gcc. `bfi` is the
+interpreter every correctness claim in this library rests on. The sibling
+project's `bcmp` trap is the argument in full: clang rewrites
+`memcmp(a, b, n) != 0` into a different symbol and gcc does not, and that was a
+defect nothing runnable on the development host could reveal.
+
+**This is a choice and not a limitation**, which matters because an earlier
+version of these documents claimed the opposite. `security/hs-cryptol` is in
+FreeBSD ports, `pkg install hs-cryptol`, amd64, FreeBSD 13 through 16, and the
+quarterly branch carries **3.4.0** — the exact version `CRYPTOL_VERSION` pins.
+The proofs could run on both guests. They do not because there is nothing
+there for a second kernel to say.
+
+**The bar for a second such tier is high, and this argument does not
+generalise.** A tier may declare a guest only if what it checks is
+*independent of the machine by construction* — not merely observed to pass
+everywhere, and not because its dependency is awkward to install. Anything
+that compiles, executes, forks, opens or reads runs on both.
 
 ---
 

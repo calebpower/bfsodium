@@ -226,6 +226,29 @@ run "no lane defines a toolchain of its own" sh -c '
     done
     exit $rc'
 
+# THE GUESTS AND THE BRANCHES MUST BE THE SAME SET, and this check is why the
+# "# GUEST" markers in guest-setup.sh are not decoration. reaper names guests
+# ("freebsd-15.1"); the script branches on uname ("FreeBSD"); nothing in
+# either file relates the two, so the correspondence is DECLARED in a marker
+# and compared here.
+#
+# It matters now in a way it did not with one guest. Adding a guest to the
+# tenant without a branch here means reaper provisions it with whatever arm
+# happens to match -- and a FreeBSD guest falling into the apt arm fails in
+# the package manager, which reads as a broken image rather than a missing
+# branch. The sibling project has carried this check since M0 for the same
+# reason.
+run "the declared guests are exactly the ones guest-setup knows" sh -c '
+    declared=$(sed -n "s/^# GUEST \([^ ]*\) .*/\1/p" tools/guest-setup.sh | sort)
+    tenant=$(sed -n "s/^guests *= *\[\(.*\)\].*/\1/p" .reaper.toml \
+             | tr -d "\" " | tr "," "\n" | grep . | sort)
+    if [ "$declared" != "$tenant" ]; then
+        echo "guest-setup declares: $declared"
+        echo ".reaper.toml wants:   $tenant"
+        exit 1
+    fi
+    exit 0'
+
 echo
 # TIER 2 4
 echo "== tiers 2 and 4: primitives, dual oracle =="
@@ -790,6 +813,61 @@ rm -rf "$bf_msg"
 echo
 # TIER 8
 echo "== design proofs (Cryptol) =="
+# THIS TIER DECLARES ITS GUEST, AND IT IS THE ONLY ONE THAT DOES. Read the
+# whole of this before adding a second, because the argument is narrow and
+# does not generalise.
+#
+# "Run it when present is a skip and this project does not skip" is the house
+# rule, and it is why guest-setup INSTALLS Cryptol rather than testing for it.
+# What follows is not that. The tier NAMES the platform it runs on, and on
+# that platform Cryptol missing is a FAILURE exactly as it always was. On any
+# other declared guest the tier is deliberately absent and says so out loud,
+# in the log, every run. The difference between a declaration and a skip is
+# that a declaration is a decision somebody can disagree with, written where
+# they will see it.
+#
+# WHY IT IS ALLOWED HERE, and this is the whole of the justification:
+#
+#   A PROOF IS NOT ABOUT THE MACHINE. Every property in spec/ is a statement
+#   over bitvectors -- "for all x, reduceTail (foldOnce x) == x % p136" -- and
+#   quantifying over 2^136 inputs does not care which kernel asked. Running
+#   it on a second OS does not sample a second thing; it re-asks a settled
+#   question. Every other tier here has a platform story: the C tools have a
+#   compiler, the routines have an interpreter, tier 12 has a broker that
+#   forks and opens files. This one has z3.
+#
+#   AND IT IS NOT A RUNTIME DEPENDENCY. Cryptol is invoked in exactly two
+#   places in this file: here, and one tier 0 self-test that loads each .cry
+#   to check it parses. THE DUAL ORACLE'S VALUES ARE PINNED LITERALS -- tier 4
+#   compares the brainfuck against constants that Cryptol computed once, at
+#   authoring time, and that live in this repository now. So a guest without
+#   Cryptol still runs every KAT, every metamorphic relation, tier 12, and all
+#   five C tools. It is missing eight checks out of three hundred and fifty
+#   three, and none of the eight runs any brainfuck.
+#
+# WHAT WE ARE GIVING UP, stated plainly rather than buried. Three of the eight
+# are `:check tests=2000` rather than `:prove` -- randomised sampling, because
+# the state space is too large to prove -- so a second guest WOULD draw a
+# second sample and that is not literally zero coverage. It is worth nothing
+# next to raising `tests=`, which costs no guest. And a second platform would
+# catch z3 or Cryptol disagreeing with themselves across operating systems,
+# which is a bug in somebody else's software that this project would be paying
+# a guest's gate time to regression-test.
+#
+# THE REASON THE OTHER GUEST EXISTS AT ALL is a second C compiler. The five C
+# tools here have only ever seen gcc, and brainstem's `bcmp` trap is the
+# argument in full: clang rewrites memcmp(a, b, n) != 0 into a different
+# symbol and gcc does not, which was a defect nothing on the development host
+# could reveal. That is what freebsd-15.1 is for, and Cryptol is not part of
+# it.
+#
+# Named by uname rather than by reaper's guest name, because that is what this
+# script can see. tools/guest-setup.sh maps one to the other and CONVENTIONS
+# section 8 carries this argument in its permanent form.
+BF_PROOF_UNAME=Linux
+if [ "$(uname -s)" != "$BF_PROOF_UNAME" ]; then
+    echo "(declared on $BF_PROOF_UNAME; not run on $(uname -s) -- see the note above)"
+else
 if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
 :l perm.cry
 :prove looped_matches
@@ -859,8 +937,16 @@ if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Coun
 :prove add8_low_bit_term_is_needed
 ICRY
 ); then echo "PASS dropping the low bit term is refuted by counterexample"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
+fi
 
 echo
 echo "== summary =="
-echo "passed $pass, failed $fail"
+# THE PLATFORM IS IN THE SUMMARY, and it is not decoration. One tier declares
+# its guest, so two green runs of this suite can legitimately have different
+# counts -- and a count with no platform beside it is then a number nobody can
+# check. brainstem has named its platform here since M0 for the same reason.
+echo "passed $pass, failed $fail on $(uname -srm)"
+if [ "$(uname -s)" != "$BF_PROOF_UNAME" ]; then
+    echo "(the eight design proofs declare $BF_PROOF_UNAME and did not run here)"
+fi
 [ "$fail" -eq 0 ] || exit 1
