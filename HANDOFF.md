@@ -6,16 +6,27 @@ actually built and where it has bitten.
 
 ## State
 
-**Gated: 347 pass, 0 fail on `ubuntu-26.04`, at `cc974dc`** -- `reaper test`,
-which the lane section below calls the gate of record. `tools/guest-setup.sh`
-clones and builds brainstem at `BRAINSTEM_COMMIT` before the suite starts, so
-every gate here needs the network, and this one was the first to build a
-DIFFERENT brainstem than the run before it: the pin moved to 1.1 so that
-`programs/sha256` could stop naming its own interpreter.
+**Gated: 354 pass, 0 fail on `ubuntu-26.04` AND 354 pass, 0 fail on
+`freebsd-15.1`, at `7ffd67f`** -- `reaper test`, which the lane section below
+calls the gate of record. `tools/guest-setup.sh` clones and builds brainstem
+at `BRAINSTEM_COMMIT` before the suite starts, so every gate here needs the
+network. The previous gates were 347 at `cc974dc` and 345 at `7436078`, both
+on one guest.
 
-That run covers three commits: the tape buffer that removed the program's
-temporary file, the stdin interface on `tools/bfprog.sh`, and the pin move.
-The previous gate was 345 at `7436078`.
+**THE FIRST RUN ON A SECOND PLATFORM, AND IT FOUND NOTHING.** That is worth
+recording rather than passing over. The guest exists because five C programs
+here had only ever seen gcc and `bfi` is the interpreter every correctness
+claim rests on; clang compiled all five clean and every KAT agreed. A guest
+that finds nothing on its first run has still moved something from *assumed*
+to *measured*, and brainstem's `bcmp` trap is the reminder that the reverse
+outcome was entirely available.
+
+It also settled two things that could only be settled by running them:
+`security/hs-cryptol` from ports really does satisfy `CRYPTOL_VERSION` -- the
+version check in `guest-setup.sh` passed, so quarterly is still at 3.4.0 --
+and tier 12 drives the pinned broker through `spawn`, `pipe`, `open`, `stat`
+and `readdir` on FreeBSD, which is brainstem's primary platform and had never
+been exercised from this side.
 
 **TWO GUESTS, AND BOTH RUN ALL OF IT.** `ubuntu-26.04` and `freebsd-15.1`. No
 tier declares a guest. For one commit tier 8 did, and `CONVENTIONS.md` §8.1
@@ -68,7 +79,7 @@ Two things survive from the attempt: the summary names the platform, and tier
 `guest-setup.sh` so a guest without a provisioning branch is a failure rather
 than a guest that falls into whichever arm happens to match.
 
-The lane and the commit are named because "the suite is 347 pass, 0 fail" is
+The lane and the commit are named because "the suite is 354 pass, 0 fail" is
 not a fact, it is a measurement, and a measurement with neither of those is a
 sentence that starts expiring the moment it is written. Update both together
 or neither.
