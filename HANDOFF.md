@@ -17,55 +17,56 @@ That run covers three commits: the tape buffer that removed the program's
 temporary file, the stdin interface on `tools/bfprog.sh`, and the pin move.
 The previous gate was 345 at `7436078`.
 
-**TWO GUESTS NOW, AND THEY DO NOT RUN THE SAME CHECKS.** `ubuntu-26.04` runs
-everything; `freebsd-15.1` runs everything except the eight design proofs.
-The full argument is `CONVENTIONS.md` §8.1 and it is worth reading before
-touching either, because it is the one exception this project makes to *"run
-it when present is a skip and this project does not skip"*.
+**TWO GUESTS, AND BOTH RUN ALL OF IT.** `ubuntu-26.04` and `freebsd-15.1`. No
+tier declares a guest. For one commit tier 8 did, and `CONVENTIONS.md` §8.1
+keeps the account because the reasoning was half right -- which is the
+dangerous kind.
 
-The short version: **the second guest exists for a second C compiler**, not
-for a proof. There are five C programs here -- `bfi`, `hx`, `bflint`,
-`bfstyle`, `bffoot` -- and until that guest every one had only ever seen gcc.
-`bfi` is the interpreter every correctness claim in this library rests on.
-brainstem's `bcmp` trap is the argument in full: clang rewrites
-`memcmp(a, b, n) != 0` into a different symbol and gcc does not, and nothing
-runnable on the development host could have revealed it.
+**The second guest exists for a second C compiler.** Five C programs live here
+-- `bfi`, `hx`, `bflint`, `bfstyle`, `bffoot` -- and until that guest every
+one had only ever seen gcc. `bfi` is the interpreter every correctness claim
+in this library rests on. brainstem's `bcmp` trap is the argument in full:
+clang rewrites `memcmp(a, b, n) != 0` into a different symbol and gcc does
+not, and nothing runnable on the development host could have revealed it.
 
-And tier 8 does not go there because **a proof is not about the machine**. Every
-property in `spec/` quantifies over bitvectors, and "for all 2^136 inputs"
-does not care which kernel asked. Cryptol is also not a runtime dependency of
-anything else: it is invoked in exactly two places in the suite, and the dual
-oracle's values are pinned literals it computed once at authoring time. So the
-FreeBSD guest runs every KAT, every metamorphic relation, tier 12 and all five
-C tools, and is short eight checks that execute no brainfuck.
+**THE MISTAKE, because it cost a gate run and is the kind that sounds like
+analysis.** Tier 8 was taken off FreeBSD on two grounds. First, that a proof
+is a statement over bitvectors and "for all 2^136 inputs" does not care which
+kernel asked -- TRUE, and still true. Second, that Cryptol is therefore not
+needed on that guest at all, because the dual oracle's values are pinned
+literals -- FALSE. `tools/dkat.sh` runs `cryptol -b` ONCE PER VECTOR and
+compares the brainfuck against what the spec computes, live. That is what
+makes it a dual oracle rather than a table of numbers somebody once
+generated. Tiers 2 and 4 are 157 checks and every one needs Cryptol.
 
-It is a DECLARATION rather than a skip, and the difference is mechanical: on
-Ubuntu a missing Cryptol still fails, nothing tests for its presence, and the
-absent tier announces itself in the log twice on the guest that omits it. The
-summary names the platform for the same reason -- one tier declaring a guest
-means two green runs can honestly have different counts, and a count with no
-platform beside it is a number nobody can check.
+I grepped `tests/run.sh` for `cryptol`, found three sites, none of them a KAT,
+and wrote a sentence about the suite. `dkat.sh` is a different file. FreeBSD
+answered with **156 failures in two tiers**, 190 pass against Ubuntu's 354.
 
-**Two documented claims here were wrong and are worth remembering as a pair.**
+`grep -rl cryptol tools/ tests/` answers that question in one command and was
+not run. **"This dependency is only used by tier N" is a claim about the whole
+suite, and the suite is more than one file.**
 
-The first said tier 12 gave this library a platform surface that only FreeBSD
-could test. It does run brainstem's `spawn`, `pipe`, `open`, `stat` and
-`readdir` -- but the platform-dependent half is the BROKER, which is gated on
-both guests in its own repository, byte-identically, at the very commit this
-pins. What tier 12 adds here is a brainfuck program and a brainfuck routine,
-and tier 2 proves those are nothing but the eight instructions.
+**Two more documented claims were wrong, and the three make a set.** One said
+tier 12 gave this library a platform surface only FreeBSD could test; the
+platform-dependent half is the BROKER, gated on both guests in its own
+repository at the very commit this pins. The other said a FreeBSD guest was
+impossible because Cryptol ships tarballs for Linux and macOS only -- true of
+the GitHub release assets, false of FreeBSD, which has carried
+`security/hs-cryptol` all along. **I checked what upstream published and
+stopped there. A dependency is not only what its author publishes.**
 
-The second said a FreeBSD guest was IMPOSSIBLE, because the proofs fail rather
-than skip without Cryptol and Cryptol ships tarballs for Linux and macOS only.
-The first half is true. The second was true of the GitHub release assets and
-false of FreeBSD, which has carried `security/hs-cryptol` all along --
-`pkg install hs-cryptol`, amd64, FreeBSD 13 through 16, z3 pulled in as a
-dependency, and quarterly at 3.4.0, the exact version `CRYPTOL_VERSION` pins.
-**I checked what upstream published and stopped there. A dependency is not
-only what its author publishes.**
+**So Cryptol is installed on both guests**, from ports on FreeBSD, and the
+version is VERIFIED against `CRYPTOL_VERSION` rather than trusted: `pkg`
+installs whatever quarterly carries, quarterly rolls, and the day it carries
+3.6.0 two guests would be proving things with two oracles while the pin
+quietly meant nothing. `guest-setup.sh` fails the provision and says which of
+the two to move.
 
-So the proofs *could* run on both. They do not, and that is now a choice with
-a reason rather than a limitation with an excuse.
+Two things survive from the attempt: the summary names the platform, and tier
+10 compares `.reaper.toml`'s guests against the `# GUEST` markers in
+`guest-setup.sh` so a guest without a provisioning branch is a failure rather
+than a guest that falls into whichever arm happens to match.
 
 The lane and the commit are named because "the suite is 347 pass, 0 fail" is
 not a fact, it is a measurement, and a measurement with neither of those is a
@@ -161,7 +162,7 @@ must have no marker in the suite at all.
 | 5 | yes | 22 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
-| 8 | yes | 8 | Cryptol design proofs, two refuted; DECLARES ubuntu-26.04 (CONVENTIONS 8.1) |
+| 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
 | 9 | yes | 6 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
