@@ -22,6 +22,35 @@
 # and its own Cryptol version is a SECOND definition of the toolchain, and the
 # day it drifts is the day the fallback starts passing what the gate would
 # fail. There is one definition, and this is it.
+#
+# --SKIP-DEPS, WHICH MATTERS MORE THAN THE DISTRO BRANCHES. There are two of
+# those, apt and pacman, and only apt is tested: it is what the gate guest and
+# the container run, so every gate exercises it. pacman is a convenience for a
+# development machine and nothing here will ever prove it works. It is
+# labelled untested where it is written rather than left to look equal, which
+# is the honest way to carry a branch nobody runs.
+#
+# That is also why the list stops at two. A script with a branch per package
+# manager is a script nobody can test, and the untested ones rot quietly until
+# somebody trusts one. --skip-deps is what covers everything else, and it
+# covers it better than a guess at the right incantation would.
+#
+# The install is the ONLY part that cares. Everything else here --
+# the pinned Cryptol version, the pinned brainstem commit, the build, the
+# version report -- is the same on any Unix, and refusing to run it because
+# the package manager is unfamiliar makes the script useless on a machine
+# where every dependency is already installed. So --skip-deps skips the
+# install and nothing else.
+#
+# What that leaves is an honest division: this script still says WHAT is
+# needed and pins the versions that matter, and stops having an opinion about
+# HOW it arrived. Arch, Fedora, NixOS and a hand-built compiler all work; none
+# of them needs a line in here.
+#
+#   Needs, for the record: a C compiler, git, curl, z3, and cryptol 3.4.0.
+#   The last two are only for the design proofs -- a guest that just RUNS
+#   programs needs neither, which is why their absence is reported rather
+#   than fatal once the install has been skipped.
 set -eu
 
 CRYPTOL_VERSION=3.4.0
@@ -51,29 +80,75 @@ CRYPTOL_VERSION=3.4.0
 BRAINSTEM_COMMIT=49906b93b589017d54cde789885aa80dd832a95b
 
 usage() {
-    echo "usage: guest-setup.sh [--toolchain|--build]" >&2
+    echo "usage: guest-setup.sh [--toolchain|--build] [--skip-deps]" >&2
+    echo "  (no phase flag)  provision the toolchain AND build the tools" >&2
+    echo "  --toolchain      provision only: deps, cryptol, the pinned broker" >&2
+    echo "  --build          build only: the interpreter and the checkers" >&2
+    echo "  --skip-deps      do not install packages; everything else as usual" >&2
     exit 2
 }
 
 do_toolchain=yes
 do_build=yes
-case "${1-}" in
-    '')          [ $# -le 1 ] || usage ;;
-    --toolchain) do_build=no ;;
-    --build)     do_toolchain=no ;;
-    *)           usage ;;
-esac
-[ $# -le 1 ] || usage
+do_deps=yes
+phase=
+
+# A LOOP RATHER THAN A CASE ON $1, because --skip-deps composes with the phase
+# flags instead of replacing one. It is also why a second PHASE flag is an
+# error rather than the last one winning: "--toolchain --build" reads like
+# "both", means "build only", and would provision nothing.
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --toolchain) [ -z "$phase" ] || usage; phase=toolchain; do_build=no ;;
+        --build)     [ -z "$phase" ] || usage; phase=build; do_toolchain=no ;;
+        --skip-deps) do_deps=no ;;
+        *)           usage ;;
+    esac
+    shift
+done
 
 if [ "$do_toolchain" = yes ]; then
 
-echo "guest-setup: apt toolchain (C compiler, z3, curl)"
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq build-essential z3 curl ca-certificates git >/dev/null
+# TWO PACKAGE MANAGERS, AND ONLY ONE OF THEM IS TESTED. apt is what the gate
+# guest and the container run, so it is exercised on every single gate. pacman
+# is not exercised by anything here and never will be -- it is a convenience
+# for a development machine, and it is written down as untested rather than
+# left to look equal.
+#
+# The list is the same in both because the NEEDS are the same; only the
+# spelling differs. Arch's base-devel is Debian's build-essential, and neither
+# carries cryptol -- that comes from the pinned tarball below on either.
+#
+# If neither manager is here, that is not an error worth inventing a third
+# branch for. --skip-deps is the answer, and the message says so.
+if [ "$do_deps" = no ]; then
+    echo "guest-setup: --skip-deps: assuming cc, git, curl, z3 and cryptol are present"
+elif command -v apt-get >/dev/null 2>&1; then
+    echo "guest-setup: apt toolchain (C compiler, z3, curl)"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y -qq build-essential z3 curl ca-certificates git >/dev/null
+elif command -v pacman >/dev/null 2>&1; then
+    echo "guest-setup: pacman toolchain (C compiler, z3, curl) -- UNTESTED by the gate"
+    pacman -Sy --needed --noconfirm base-devel z3 curl ca-certificates git >/dev/null
+else
+    echo "guest-setup: no apt-get and no pacman on this system." >&2
+    echo "guest-setup: install a C compiler, git, curl and z3 yourself, then" >&2
+    echo "guest-setup: re-run with --skip-deps. Everything else here is" >&2
+    echo "guest-setup: the same on any Unix and does not need a branch." >&2
+    exit 2
+fi
 
 if command -v cryptol >/dev/null 2>&1; then
     echo "guest-setup: cryptol already present"
+elif [ "$do_deps" = no ]; then
+    # --skip-deps means install NOTHING, and a tarball off GitHub is as much
+    # an install as an apt transaction. Downloading one here would be the
+    # script having an opinion about how a dependency arrived, which is the
+    # opinion the flag exists to drop. The version is still pinned above and
+    # is still the version to install: CRYPTOL_VERSION is the statement, and
+    # the download was only ever one way of satisfying it.
+    echo "guest-setup: --skip-deps: not installing cryptol $CRYPTOL_VERSION"
 else
     echo "guest-setup: installing cryptol $CRYPTOL_VERSION"
     # Asset names have changed between releases (Linux-x86_64, ubuntu-NN.NN-X64,
@@ -129,10 +204,24 @@ else
 ' "$BRAINSTEM_COMMIT" > /opt/brainstem/PINNED
 fi
 
+# THE VERSION REPORT IS THE RECEIPT, and it is strict when this script did the
+# installing and tolerant when it did not. Having just run the apt line, a
+# missing z3 is a broken provision and should stop the run. Under --skip-deps
+# the operator installed things by hand and may deliberately have left the
+# proof oracle out -- a guest that only RUNS programs needs neither z3 nor
+# cryptol -- so their absence is reported and carried on from. The C compiler
+# and git are required either way, because nothing below works without them.
 echo "guest-setup: versions"
 cc --version | head -1
-z3 --version
-cryptol --version 2>&1 | head -1
+git --version
+if [ "$do_deps" = yes ]; then
+    z3 --version
+    cryptol --version 2>&1 | head -1
+else
+    z3 --version || echo "guest-setup: no z3 -- the design proofs will fail"
+    cryptol --version 2>&1 | head -1 \
+        || echo "guest-setup: no cryptol -- the design proofs will fail"
+fi
 echo "brainstem $(cat /opt/brainstem/PINNED)"
 
 fi
