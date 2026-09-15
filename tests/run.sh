@@ -618,22 +618,43 @@ run "the pinned broker and expander are present" sh -c '
 # The committed .bf is the expansion of its .poke, byte for byte. Same claim
 # tier 9c makes for every routine, and the same reason: a .bf carries no
 # comments, so the skeleton is the only artifact review can happen on.
-run "programs/sha256.bf is what its skeleton says" sh -c '
-    sh "$1/tools/bfgen.sh" programs/sha256.poke \
-        | cmp -s - programs/sha256.bf' _ "$BS"
+run "every program is what its skeleton says" sh -c '
+    BRAINSTEM_DIR=$1 sh tools/progbuild.sh --check' _ "$BS"
 
-# A PROGRAM IS BARE BRAINFUCK, and this is the check that says so. The routine
-# tiers above deliberately skip programs/, because a routine's legibility floor
-# demands comments and a program's portability claim forbids them: it must run
-# under ANY conforming interpreter, and ";" comments are an extension of the
-# pinned one. brainstem's bsbf proves the property directly -- nothing in the
-# file but the eight instructions and whitespace -- which is the mechanical
-# form of the claim the whole scheme rests on.
-run "programs are nothing but the eight brainfuck instructions" sh -c '
-    rc=0
-    for f in programs/*.bf; do
-        "$1/build/bsbf" "$f" || { echo "$f is not portable brainfuck"; rc=1; }
+# A PROGRAM CARRIES ITS PROSE, AND THE PROSE IS INERT -- which is a stronger
+# claim than the one this tier used to make and the reason it changed.
+#
+# It used to run brainstem's bsbf, which requires a committed file to hold
+# nothing but the eight instructions and whitespace. That rule is right for
+# brainstem's own fixtures, whose whole purpose is to prove bareness, and it
+# was adopted here without noticing that THIS repository had already answered
+# the question differently and better. Thirty routines carry their annotations
+# in the committed .bf. Two programs beside them were a wall of "+" with no
+# way in, and the stated reason -- that a program must run under any
+# conforming interpreter and comments are an extension of the pinned one --
+# was simply wrong: a comment is only an extension if its PROSE would execute,
+# and tools/bflint exists to prove that it does not.
+#
+# So the check is now the same one the routines get. bflint extracts the
+# instruction stream twice, once treating ";" as a comment to end of line and
+# once not, and requires the two to be IDENTICAL. A full stop is an
+# instruction and so is a comma, so that is a real property and not a
+# formality -- it is why the prose in these files says "non_zero" and ends its
+# sentences with a semicolon.
+run "every program is portable brainfuck, prose and all" sh -c '
+    ./tools/bflint programs/*.bf'
+# AND THE PROSE DID NOT CHANGE THE PROGRAM. bflint proves the comments are
+# inert; this proves they were not paid for by moving an instruction. Strip
+# everything but the eight bytes from the committed file and from a BARE
+# expansion of the same skeleton, and the two must match.
+run "and adding it moved no instruction" sh -c '
+    d=$(mktemp -d); rc=0
+    for p in programs/*.poke; do
+        sh "$1/tools/bfgen.sh" "$p" | tr -cd "><+-.,[]" > "$d/bare"
+        tr -cd "><+-.,[]" < "${p%.poke}.bf" > "$d/laid"
+        cmp -s "$d/bare" "$d/laid" || { echo "$p: the prose moved an instruction"; rc=1; }
     done
+    rm -rf "$d"
     exit $rc' _ "$BS"
 
 # AND THE DIGESTS ARE RIGHT, end to end. The program reads the bytes the shell

@@ -25,6 +25,7 @@
  *   -  -> _                 +  -> "plus"     < > -> "lt" "gt"     [ ] -> { }
  * It never touches bytes outside comments, so program semantics cannot change.
  */
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +37,13 @@ static int is_cmd(int c) {
 /* Replace a command byte appearing inside comment prose with safe text. */
 static const char *safe_for(int c) {
     switch (c) {
-        case ',': return " ";      /* prose comma: just drop it            */
+        /* A prose comma is dropped OUTRIGHT rather than turned into a space.
+         * A space would leave a double one, and in this project a double
+         * space is punctuation -- CONVENTIONS says so, because a full stop
+         * is an instruction and the double space is what ends a sentence
+         * instead. Replacing a comma with one therefore reads as a sentence
+         * break in the middle of a clause, which is worse than no comma. */
+        case ',': return "";
         case '.': return ";";      /* sentence end: semicolon reads fine   */
         case '-': return "_";      /* hyphen in names                      */
         case '+': return " plus ";
@@ -85,7 +92,21 @@ static int fix_file(const char *path) {
         if (!cmt && c == ';') cmt = 1;
         else if (cmt && c == '\n') cmt = 0;
         if (cmt && is_cmd(c)) {
-            const char *rep = safe_for(c);
+            const char *rep;
+            /* A FULL STOP BETWEEN TWO ALPHANUMERICS IS NOT A SENTENCE END.
+             * It is a version, a section number or a filename -- 1.1, 7.15,
+             * sha256.bf -- and turning those into 1;1 and sha256;bf hides
+             * what they are. An underscore is what this project's prose
+             * already uses for exactly that: the routines say FIPS 180_4 and
+             * SHA_256 because their authors hit this by hand. Matching the
+             * dialect a human would have written is the whole job of --fix. */
+            if (c == '.' && i > 0 && i + 1 < n &&
+                isalnum((unsigned char)src[i - 1]) &&
+                isalnum((unsigned char)src[i + 1])) {
+                rep = "_";
+            } else {
+                rep = safe_for(c);
+            }
             size_t rl = strlen(rep);
             memcpy(out + k, rep, rl); k += rl; changed = 1;
         } else {

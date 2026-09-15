@@ -139,7 +139,7 @@ must have no marker in the suite at all.
 | 9e | yes | 2 | the routine AND tier tables describe the tree |
 | 10 | yes | 1 | one definition of the toolchain |
 | 11 | manual | 0 | mutation, a discipline rather than a check |
-| 12 | yes | 13 | composition: a program chains routines through the broker |
+| 12 | yes | 14 | composition: a program chains routines through the broker |
 
 ## What is next
 

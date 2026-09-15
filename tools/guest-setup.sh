@@ -48,7 +48,7 @@ CRYPTOL_VERSION=3.4.0
 # signal: a library that depends on an untagged commit of its infrastructure
 # is not a library anybody should be depending on either. The version number
 # is downstream of that, not a decision of its own.
-BRAINSTEM_COMMIT=6c537d7fe3627364a0a5f450e22869b80eab68ef
+BRAINSTEM_COMMIT=49906b93b589017d54cde789885aa80dd832a95b
 
 usage() {
     echo "usage: guest-setup.sh [--toolchain|--build]" >&2

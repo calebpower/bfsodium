@@ -37,26 +37,48 @@ And the boundary enforces itself, which is why there is no lint for it: a
 routine that emitted protocol frames would fail its own known-answer test,
 because a KAT compares stdout and frames are extra bytes on stdout.
 
-### Two legibility rules, because there are two portability claims
+### A program carries its prose, exactly like a routine
 
-This is the part that surprised me and is worth stating plainly: **the routine
-tiers do not run on `programs/`.**
+**This section used to say the opposite, and the opposite was wrong.** It
+claimed a program had to be bare — nothing but the eight instructions —
+because it must run under any conforming interpreter and `;` comments are an
+extension of the pinned one. Both halves of that are false, and this
+repository had already disproved them thirty times over.
 
-A routine is COMMENTED brainfuck — a title, an `IO` line, a `TAPE MAP`,
-annotations at column 64, no run of more than twelve code lines without one.
-That floor is this project's central promise and `bflint` and `bfstyle`
-enforce it.
+A comment is only an extension if its **prose would execute**. That is a real
+hazard and not a pedantic one: a full stop is `.`, a comma is `,`, and this
+sentence performs two outputs and an input. But `tools/bflint` exists for
+exactly that. It extracts the instruction stream twice — once treating `;` as
+a comment to end of line, once not — and requires the two to be **identical**.
+A file that passes is portable brainfuck *with its comments in it*, and every
+routine here passes on every run. It is why the prose in this tree says
+`SHA_256`, `FIPS 180_4`, `ABI 1_1`.
 
-A program is BARE brainfuck: nothing but the eight instructions. It has to be,
-because it must run under **any** conforming interpreter, and `;` comments are
-an extension of the pinned one. Demanding the routine floor of a program would
-demand comments that break the program's own claim.
+What actually happened is that `programs/` was checked with brainstem's
+`bsbf`, whose rule is *"a committed fixture carries only the eight bytes and
+whitespace, because the prose belongs in the `.poke`"*. That rule is right for
+brainstem's fixtures, whose entire purpose is proving bareness. Borrowing it
+left two files sitting beside thirty commented routines as a wall of `+` with
+no way in — an inconsistency inside one repository, dressed up as a property
+of the language.
 
-So `programs/` is covered by tier 12 instead, where brainstem's `bsbf` proves
-bareness directly — the mechanical form of the claim the whole scheme rests
-on. Its legibility lives where a routine's does: in the skeleton. Nothing is
-uncovered; the coverage follows the artifact's portability claim rather than
-its directory.
+So programs are built by `tools/progbuild.sh`, in three steps:
+
+| step | does |
+|---|---|
+| `bfgen --annotate` | carries the `.poke`'s `#` comments through as `;` comments |
+| `bflint --fix` | rewrites prose that would execute into the house dialect |
+| `bflayout` | turns *annotation above its operation* into *brainfuck left, English right* |
+
+and tier 12 checks three things about the result: it is what the skeleton
+says, it is portable prose and all, and **adding the prose moved no
+instruction** — the committed file stripped to the eight bytes must equal a
+bare expansion of the same skeleton.
+
+`bfstyle` still does not run on `programs/`, and that part was always right: a
+routine declares an `INTERFACE` and a tape map because it is pasted into
+callers, and a program is the outermost thing there is. Demanding that
+furniture here would be demanding it for no reader.
 
 ## `.poke`, not `.skel`
 
