@@ -31,10 +31,33 @@ is gated on BOTH guests in its own repo, byte-identically, by brainstem's tier
 10 at the very commit this pins. Testing it a second time from here would not
 be a second opinion; it would be the same opinion in a worse place to read it.
 
-A FreeBSD guest is also not merely unnecessary, it is currently impossible: the
-eight design proofs FAIL rather than skip when Cryptol is absent, and Cryptol
-ships release tarballs for Linux and macOS only. Adding the guest would trade a
-covered gap for eight red checks with nothing wrong behind them.
+**This used to say a FreeBSD guest was IMPOSSIBLE, and that was wrong.** The
+claim was that the eight design proofs fail rather than skip without Cryptol,
+and that Cryptol ships release tarballs for Linux and macOS only. The first
+half is true. The second was true of the GitHub releases and false of
+FreeBSD, which has had `security/hs-cryptol` in ports the whole time --
+`pkg install hs-cryptol`, amd64, FreeBSD 13 through 16, z3 pulled in as a
+dependency. The quarterly branch carries 3.4.0, which is the exact version
+`CRYPTOL_VERSION` pins.
+
+I checked the upstream release assets and stopped there. A dependency is not
+only what its author publishes.
+
+**So a second guest is possible, and the reason to want one is not Cryptol at
+all -- it is a second C compiler.** This repository has five C tools (`bfi`,
+`hx`, `bflint`, `bfstyle`, `bffoot`) and every one of them has only ever been
+compiled by gcc. brainstem's `bcmp` trap is the argument in full: clang
+rewrites `memcmp(a, b, n) != 0` into a different symbol and gcc does not, and
+that was a defect nothing runnable on the development host could reveal. Five
+C programs with one compiler between them is the same exposure.
+
+**The obstacle that remains is the pin, and it is real.** `pkg` gives whatever
+its branch carries -- quarterly has 3.4.0 today and will carry 3.6.0 when the
+branch rolls -- while the Linux side installs 3.4.0 by exact tarball. Two
+guests proving things with two different Cryptol versions is not fatal for a
+PROOF, but it does end the property `CRYPTOL_VERSION` exists for: that a guest
+built next month runs the same oracle as one built today. Deciding that is the
+work, not the provisioning.
 
 The lane and the commit are named because "the suite is 347 pass, 0 fail" is
 not a fact, it is a measurement, and a measurement with neither of those is a
