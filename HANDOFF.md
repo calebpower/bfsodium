@@ -102,6 +102,7 @@ routine, the suite fails until it has a row here.
 | `idiom/rotr64` | 206 | 225 | boundary vectors + Cryptol  SHA_512 Sigma1 counts |
 | `idiom/shr32` | 121 | 133 | boundary vectors + Cryptol |
 | `idiom/shr64` | 210 | 229 | boundary vectors + Cryptol  SHA_512 sigma shifts |
+| `idiom/and64` | 480 | 601 | boundary vectors + Cryptol |
 | `idiom/xor64` | 290 | 427 | boundary vectors + Cryptol |
 | `chacha20/rotl32` | 620 | 155 | boundary vectors + Cryptol |
 | `chacha20/xor32` | 125 | 190 | boundary vectors + Cryptol |
@@ -171,9 +172,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 183 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 183 | golden vectors, dual oracle |
-| 5 | yes | 25 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 191 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 191 | golden vectors, dual oracle |
+| 5 | yes | 26 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |

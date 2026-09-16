@@ -370,6 +370,18 @@ dk idiom/xor64.bf 55aa55aa55aa55aaaa55aa55aa55aa55 ffffffffffffffff xor64Run "xo
 dk idiom/xor64.bf efcdab8967452301efcdab8967452301 0000000000000000 xor64Run "xor64 a real word against itself"
 dk idiom/xor64.bf 00000000000000000000000000000000 0000000000000000 xor64Run "xor64 nought against nought"
 dk idiom/xor64.bf 8040201008040201ffffffffffffffff 7fbfdfeff7fbfdfe xor64Run "xor64 one bit per byte against all ones"
+# AND64, the same widening again. The AND8 frame is unchanged down to the
+# character and so is every arrow inside the bit step; only the ASSERT
+# numbers move, because those are absolute. The pairs are xor64's, so the
+# two answer sets can be read against each other.
+dk idiom/and64.bf ffffffffffffffff0000000000000000 0000000000000000 and64Run "and64 all ones against nought"
+dk idiom/and64.bf ffffffffffffffffffffffffffffffff ffffffffffffffff and64Run "and64 all ones against all ones"
+dk idiom/and64.bf 0f0f0f0f0f0f0f0ff0f0f0f0f0f0f0f0 0000000000000000 and64Run "and64 nibbles that share no bit"
+dk idiom/and64.bf efcdab89674523011032547698badcfe 0000000000000000 and64Run "and64 a word against its complement"
+dk idiom/and64.bf 55aa55aa55aa55aaaa55aa55aa55aa55 0000000000000000 and64Run "and64 alternating bits"
+dk idiom/and64.bf efcdab8967452301efcdab8967452301 efcdab8967452301 and64Run "and64 a real word against itself"
+dk idiom/and64.bf 00000000000000000000000000000000 0000000000000000 and64Run "and64 nought against nought"
+dk idiom/and64.bf 8040201008040201ffffffffffffffff 8040201008040201 and64Run "and64 one bit per byte against all ones"
 
 dk chacha20/rotl32.bf 0100000001 02000000 rotl32nRun "rotl32 by 1"
 dk chacha20/rotl32.bf 0100000008 00010000 rotl32nRun "rotl32 by 8"
@@ -617,6 +629,7 @@ run "shr32 honours its declared contracts" sh -c "printf 7856341203 | ./tools/hx
 run "rotr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr64.bf >/dev/null"
 run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "xor64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/xor64.bf >/dev/null"
+run "and64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and64.bf >/dev/null"
 run "rotl32 honours its declared contracts" sh -c "printf 7856341210 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/rotl32.bf >/dev/null"
 run "blockkeep honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockkeep.bf >/dev/null"
 run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"
