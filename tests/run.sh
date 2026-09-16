@@ -382,6 +382,24 @@ dk idiom/and64.bf 55aa55aa55aa55aaaa55aa55aa55aa55 0000000000000000 and64Run "an
 dk idiom/and64.bf efcdab8967452301efcdab8967452301 efcdab8967452301 and64Run "and64 a real word against itself"
 dk idiom/and64.bf 00000000000000000000000000000000 0000000000000000 and64Run "and64 nought against nought"
 dk idiom/and64.bf 8040201008040201ffffffffffffffff 8040201008040201 and64Run "and64 one bit per byte against all ones"
+# ADD64, the last of the set and the easy one: a ripple carry does not care
+# how long the chain is, so this is chacha20/add32 with eight byte blocks
+# instead of four, the same idiom/add8 paste and the same carry cell walking
+# along. It gets four vectors the bitwise pair do not need, because it is
+# the only one of the three that can be wrong in a way that depends on the
+# byte to its right.
+dk idiom/add64.bf ffffffffffffffff0000000000000000 ffffffffffffffff add64Run "add64 all ones against nought"
+dk idiom/add64.bf ffffffffffffffffffffffffffffffff feffffffffffffff add64Run "add64 all ones against all ones"
+dk idiom/add64.bf 0f0f0f0f0f0f0f0ff0f0f0f0f0f0f0f0 ffffffffffffffff add64Run "add64 nibbles that share no bit"
+dk idiom/add64.bf efcdab89674523011032547698badcfe ffffffffffffffff add64Run "add64 a word against its complement"
+dk idiom/add64.bf 55aa55aa55aa55aaaa55aa55aa55aa55 ffffffffffffffff add64Run "add64 alternating bits"
+dk idiom/add64.bf efcdab8967452301efcdab8967452301 de9b5713cf8a4602 add64Run "add64 a real word against itself"
+dk idiom/add64.bf 00000000000000000000000000000000 0000000000000000 add64Run "add64 nought against nought"
+dk idiom/add64.bf 8040201008040201ffffffffffffffff 7f40201008040201 add64Run "add64 one bit per byte against all ones"
+dk idiom/add64.bf ff000000000000000100000000000000 0001000000000000 add64Run "add64 one carry across one boundary"
+dk idiom/add64.bf ffffffffffffffff0100000000000000 0000000000000000 add64Run "add64 the carry cascades the whole way and is dropped"
+dk idiom/add64.bf 12000000000000003400000000000000 4600000000000000 add64Run "add64 18 plus 52"
+dk idiom/add64.bf efcdab89674523011111111111111111 00dfbc9a78563412 add64Run "add64 mixed"
 
 dk chacha20/rotl32.bf 0100000001 02000000 rotl32nRun "rotl32 by 1"
 dk chacha20/rotl32.bf 0100000008 00010000 rotl32nRun "rotl32 by 8"
@@ -630,6 +648,7 @@ run "rotr64 honours its declared contracts" sh -c "printf efcdab896745230107 | .
 run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "xor64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/xor64.bf >/dev/null"
 run "and64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and64.bf >/dev/null"
+run "add64 honours its declared contracts" sh -c "printf ffffffffffffffff0100000000000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/add64.bf >/dev/null"
 run "rotl32 honours its declared contracts" sh -c "printf 7856341210 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/rotl32.bf >/dev/null"
 run "blockkeep honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockkeep.bf >/dev/null"
 run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"

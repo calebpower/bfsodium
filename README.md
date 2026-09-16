@@ -121,7 +121,8 @@ helpers — no hex, base64 or JSON canonicalization.
 **The ambition is every NIST-approved algorithm**, and `CONVENTIONS.md` §9.1 is
 the wish list — staged by what each addition actually needs rather than listed
 as one pile. The short version: about fifteen of them need no new mathematics
-at all, just a 64-bit idiom set. **AES** and **Keccak** are the two keystones,
+at all, just a 64-bit idiom set — which `idiom/add64`, `rotr64`, `shr64`,
+`xor64` and `and64` now are. **AES** and **Keccak** are the two keystones,
 each unlocking a family of about ten, and AES is what `index/fetch8` was
 written for and nothing has used yet. Post-quantum sits behind Keccak because
 its sampling is SHAKE. **RSA and elliptic curve are out of scope with a

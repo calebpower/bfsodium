@@ -476,6 +476,14 @@ xor64Run inb = leBytes64 (leWord64 (take`{8} inb) ^ leWord64 (drop`{8} inb))
 and64Run : [16][8] -> [8][8]
 and64Run inb = leBytes64 (leWord64 (take`{8} inb) && leWord64 (drop`{8} inb))
 
+// ADD64: the 64-bit widening of chacha20/add32.
+// in = a(8 LE) # b(8 LE); out = (a plus b mod 2^64)(8 LE). Cryptol's + on
+// [64] drops the carry out of bit 63 by construction, so this spec says
+// nothing at all about the wrap and the brainfuck is what has to get it
+// right -- which is why the pinned vectors carry the cascade case.
+add64Run : [16][8] -> [8][8]
+add64Run inb = leBytes64 (leWord64 (take`{8} inb) + leWord64 (drop`{8} inb))
+
 // ---------------------------------------------------------------------------
 // SHA-256 (FIPS 180-4). Written out from the standard rather than taken from
 // Cryptol's own library, so that oracle B is independent of whatever the

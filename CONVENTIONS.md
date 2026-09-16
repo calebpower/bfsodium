@@ -626,7 +626,7 @@ this is where to start.
 | target | needs | note |
 |---|---|---|
 | SHA-224 | nothing new | SHA-256 with a different IV and a truncation |
-| SHA-384, SHA-512, SHA-512/224, SHA-512/256 | `add64`, `rotr64`, `shr64` | mechanical extensions of the 32-bit idioms: eight cells per word rather than four |
+| SHA-384, SHA-512, SHA-512/224, SHA-512/256 | `add64`, `rotr64`, `shr64`, `xor64`, `and64` — **all five now built** | mechanical extensions of the 32-bit idioms: eight cells per word rather than four |
 | HMAC over each of the above | nothing new | FIPS 198-1 |
 | HKDF over each | nothing new | RFC 5869 |
 | HMAC_DRBG | nothing new | SP 800-90A; nearly free given HMAC-SHA-256 |
