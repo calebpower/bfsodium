@@ -599,6 +599,50 @@ sha256ExpandRun inb = leBytes (w0 + sg0 w1 + w9 + sg1 w14)
     sg0 x = (x >>> 7) ^ (x >>> 18) ^ (x >> 3)
     sg1 x = (x >>> 17) ^ (x >>> 19) ^ (x >> 10)
 
+// ---------------------------------------------------------------------------
+// SHA-512 (FIPS 180-4). Written out from the standard for the same reason
+// SHA-256 was: oracle B has to be independent of whatever Cryptol ships.
+//
+// EXPAND: in = w0 # w1 # w9 # w14, each eight LE bytes; out = the next word.
+// The recurrence is SHA-256's; only the six rotation and shift counts differ.
+sha512ExpandRun : [32][8] -> [8][8]
+sha512ExpandRun inb = leBytes64 (w0 + sg0 w1 + w9 + sg1 w14)
+  where
+    w0  = leWord64 (take`{8} inb)
+    w1  = leWord64 (take`{8} (drop`{8} inb))
+    w9  = leWord64 (take`{8} (drop`{16} inb))
+    w14 = leWord64 (drop`{24} inb)
+    sg0 x = (x >>> 1) ^ (x >>> 8) ^ (x >> 7)
+    sg1 x = (x >>> 19) ^ (x >>> 61) ^ (x >> 6)
+
+// One round of the SHA-512 compression function. The same shape as
+// sha256Step; only the six big sigma counts and the word width differ.
+sha512Step : [8][64] -> [64] -> [64] -> [8][64]
+sha512Step v kt wt = [t1 + t2, a, b, c, d + t1, e, f, g]
+  where
+    a  = v @ (0 : [8])
+    b  = v @ (1 : [8])
+    c  = v @ (2 : [8])
+    d  = v @ (3 : [8])
+    e  = v @ (4 : [8])
+    f  = v @ (5 : [8])
+    g  = v @ (6 : [8])
+    h  = v @ (7 : [8])
+    s1 = (e >>> 14) ^ (e >>> 18) ^ (e >>> 41)
+    ch = g ^ (e && (f ^ g))
+    t1 = h + s1 + ch + kt + wt
+    s0 = (a >>> 28) ^ (a >>> 34) ^ (a >>> 39)
+    mj = (a && b) ^ (a && c) ^ (b && c)
+    t2 = s0 + mj
+
+// ROUND: in = v(8 words LE) # Wt(8 LE) # Kt(8 LE); out = v(8 words LE).
+sha512RoundRun : [80][8] -> [64][8]
+sha512RoundRun inb = join [ leBytes64 x | x <- sha512Step v kt wt ]
+  where
+    v  = [ leWord64 grp | grp <- split`{8} (take`{64} inb) ]
+    wt = leWord64 (take`{8} (drop`{64} inb))
+    kt = leWord64 (drop`{72} inb)
+
 
 // Written out per length, as the Poly1305 and AEAD oracles are: the number of
 // blocks and the width of the padding are type level facts here.

@@ -125,6 +125,8 @@ routine, the suite fails until it has a row here.
 | `aead/keygen` | 4584 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
 | `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
 | `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
+| `sha512/expand` | 6707 | 561 | eight vectors + Cryptol |
+| `sha512/round` | 16706 | 1366 | FIPS 180-4 first abc round + six more + Cryptol |
 | `sha256/hashcore` | 26476 | 1635 | one message from memory, the wire, and both |
 | `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
@@ -173,9 +175,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 203 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 203 | golden vectors, dual oracle |
-| 5 | yes | 27 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 218 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 218 | golden vectors, dual oracle |
+| 5 | yes | 29 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |

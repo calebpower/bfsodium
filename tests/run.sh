@@ -601,6 +601,30 @@ dk sha256/expand.bf 01000000010000000100000001000000 02e00002 sha256ExpandRun "s
 dk sha256/expand.bf 6d25cf734c49a1dd273e4d8fab5f5bdb 78008f97 sha256ExpandRun "sha256 expand: random"
 dk sha256/expand.bf 8d1099ec05e8fdc7c1d734777648ab73 ef3c689a sha256ExpandRun "sha256 expand: random"
 dk sha256/expand.bf bde201825045e4da32da5e96796b9d30 8fccfddc sha256ExpandRun "sha256 expand: random"
+# SHA-512 expand, the same recurrence as sha256/expand with six different
+# counts and eight byte words. The taps are chosen the way the 32 bit ones
+# were, plus one the smaller routine did not need: the top bit alone in
+# every tap, which is where a rotation that forgot to wrap and a shift that
+# forgot to discard would answer the same thing.
+dk sha512/expand.bf 0000000000000000000000000000000000000000000000000000000000000000 0000000000000000 sha512ExpandRun "sha512 expand: all nought"
+dk sha512/expand.bf ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff fcffffffffffff05 sha512ExpandRun "sha512 expand: all set"
+dk sha512/expand.bf 0100000000000000010000000000000001000000000000000100000000000000 0a00000000200081 sha512ExpandRun "sha512 expand: all one"
+dk sha512/expand.bf 0000000080636261000000000000000000000000000000001800000000000000 c000000080636561 sha512ExpandRun "sha512 expand: the abc block's first expansion"
+dk sha512/expand.bf 0000000000000080000000000000008000000000000000800000000000000080 0400000000108043 sha512ExpandRun "sha512 expand: the top bit alone in each tap"
+dk sha512/expand.bf 3454dc047afd91d0982073702e56532427a199542ca2bce381ff786935bda15c 63ade34d5f43233a sha512ExpandRun "sha512 expand: random"
+dk sha512/expand.bf bdcf6eedb9cda49fb2bcd167b11052c829846b2bd9885c38bdeac63d849da53d 7dca8bc6df3201e0 sha512ExpandRun "sha512 expand: random"
+dk sha512/expand.bf 75372a013b3272d3a20cc1bfe1ea6e199bc9c17f75dca78f3cae186901e4a81f cf04eecf6ed5b4fa sha512ExpandRun "sha512 expand: random"
+# SHA-512 round, the same wiring as sha256/round with six different big
+# sigma counts and eight byte words. The first vector is the first round
+# of the abc block  so the routine is checked against the standard's own
+# worked example before it is checked against anything generated.
+dk sha512/round.bf 08c9bcf367e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b000000008063626122ae28d7982f8a42 f5ddfcbcb8ceaff608c9bcf367e6096a3ba7ca8485ae67bb2bf894fe72f36e3c911fb57a3402cb58d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f sha512RoundRun "sha512 round: the first round of the abc block"
+dk sha512/round.bf 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 sha512RoundRun "sha512 round: everything nought"
+dk sha512/round.bf ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff f9fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff sha512RoundRun "sha512 round: everything set"
+dk sha512/round.bf efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301efcdab896745230100000000000000800100000000000000 e080c9dc695b32b2efcdab8967452301efcdab8967452301efcdab896745230135bf4ad059e16cfaefcdab8967452301efcdab8967452301efcdab8967452301 sha512RoundRun "sha512 round: a repeated word"
+dk sha512/round.bf 38b4e652e44da7f2370d9e260e27136550a4a3a6d07f5c0c332f8b1224083fd22b902f8911e81818f8c99d5d5d9831957504d90e945de2e8f54ee781cc75f636d85099095aa300165a67036f9b540d6b fbbd0e28b2d0e7ab38b4e652e44da7f2370d9e260e27136550a4a3a6d07f5c0c5705bbac284598272b902f8911e81818f8c99d5d5d9831957504d90e945de2e8 sha512RoundRun "sha512 round: a random round"
+dk sha512/round.bf 8f0be21124179c3dd9f73817ce6e118d264aad6cb6dd210faf94acd3cf92c190237cb11f5d108cf25930263938b370a1b5769fa0f1483f95a90d9df2f130d60fcf04bd93f50ae69514da8c659ce2b10c 7739351817c337388f0be21124179c3dd9f73817ce6e118d264aad6cb6dd210ff1325ccd39f86b69237cb11f5d108cf25930263938b370a1b5769fa0f1483f95 sha512RoundRun "sha512 round: a random round"
+dk sha512/round.bf ccdaebf990d19838b0d7ec0b3e97818ecb96c4dbadbe172296d5234a42b24c6ba4e6ed24ec636a8ac0a1271e5866279238aaf84e58056d8f2fa8edd094ba97ae8b15442ee2db611a91bfe39469733a92 30c920237b134ba3ccdaebf990d19838b0d7ec0b3e97818ecb96c4dbadbe172236ab7d713ba0d162a4e6ed24ec636a8ac0a1271e5866279238aaf84e58056d8f sha512RoundRun "sha512 round: a random round"
 
 
 # HKDF, RFC 5869, all three published vectors. Each demands something the
@@ -641,6 +665,8 @@ run "hashcore honours its declared contracts" sh -c "printf 00000300000000000000
 run "sha256 honours its declared contracts" sh -c "printf 0300616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha256/sha256.bf >/dev/null"
 run "sha256 round honours its declared contracts" sh -c "printf 6a09e667bb67ae853c6ef372a54ff53a510e527f9b05688c1f83d9ab5be0cd1980636261982f8a42 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha256/round.bf >/dev/null"
 run "sha256 expand honours its declared contracts" sh -c "printf ffffffffffffffffffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha256/expand.bf >/dev/null"
+run "sha512 expand honours its declared contracts" sh -c "printf ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha512/expand.bf >/dev/null"
+run "sha512 round honours its declared contracts" sh -c "printf 08c9bcf367e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b000000008063626122ae28d7982f8a42 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi sha512/round.bf >/dev/null"
 run "and32 honours its declared contracts" sh -c "printf ffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and32.bf >/dev/null"
 run "rotr32 honours its declared contracts" sh -c "printf 7856341219 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr32.bf >/dev/null"
 run "shr32 honours its declared contracts" sh -c "printf 7856341203 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr32.bf >/dev/null"

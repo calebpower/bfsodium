@@ -1,0 +1,1366 @@
+; bfsodium SHA_512 ROUND : one round of the compression function
+;
+; HAND WRITTEN skeleton; The rotate  the exclusive or  the and and the adder
+; are each PASTED from their own verified files; what is here is the wiring
+; that FIPS 180_4 section 6 point 4 point 2 lays down and nothing else;
+;
+; INTERFACE entry=79 exit=0 footprint=0:276
+; IO  in:  v{8} LE  Wt{8} LE  Kt{8} LE      (80 bytes)
+;     out: v{8} LE                          (64 bytes)
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x3f  v{8}   u64 LE  a b c d e f g h  in and out
+;   @0x40:0x47  Wt{8}  u64 LE  this round's schedule word; SPENT
+;   @0x48:0x4f  Kt{8}  u64 LE  this round's constant; SPENT
+;   @0x50:0x57  T1{8}  u64 LE
+;   @0x58:0x5f  T2{8}  u64 LE
+;   @0x60:0x67  s1{8}  u64 LE  scratch
+;   @0x68:0x6f  s2{8}  u64 LE  scratch
+;   @0x70:0x77  s3{8}  u64 LE  scratch
+;   @0x78:0x7f  s4{8}  u64 LE  scratch
+;   @0x80:0x87  s5{8}  u64 LE  scratch
+;   @0x88:0x8f  tmp{8} u64 LE  the copy a read hands back
+;   @0x90:0xab  the adder frame; add64 footprint 0:27 at @0x90
+;   @0xb0:0xd5  the exclusive or frame; xor64 0:37 at @0xb0
+;   @0xd8:0xfd  the and frame; and64 0:37 at @0xd8
+;   @0x100:0x114  the rotate frame; rotr64 0:20 at @0x100
+;
+; The round is
+;   T1 = h plus Sigma1(e) plus Ch(e f g) plus Kt plus Wt
+;   T2 = Sigma0(a) plus Maj(a b c)
+;   h g f e d c b a  becomes  g f e (d plus T1) c b a (T1 plus T2)
+; and that last line is a CONVEYOR: the whole array shifts one word down and
+; then two words are written; no variable is ever addressed by name;
+;
+; Ch is written  g xor (e and (f xor g))  and Maj  (a and b) xor (a and c) xor
+; (b and c)  so between and64 and xor64 there is no need for a NOT;
+;
+; THE SAME SHAPE AS sha256/round  step for step; The two differ in the width
+; of a word  in the six big sigma counts  and in nothing else: SHA_512 uses
+; Sigma0 = ROTR 28 xor ROTR 34 xor ROTR 39 and Sigma1 = ROTR 14 xor ROTR 18
+; xor ROTR 41  where SHA_256 uses 2 13 22 and 6 11 25; Read the two together;
+;
+; EVERY DISTANCE BELOW IS A NUMBER WORKED OUT FROM THE MAP ABOVE; the ones
+; that recur are worth naming: 224 carries e to the rotate frame  256 carries
+; a there  120 is the rotate frame back down to tmp  and 160 is the rotate
+; frame down to s1;
+
+; read a b c d e f g h  then Wt  then Kt
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=79
+; ASSERT zero 80:276
+
+; ==== Sigma1(e)  which is e rotated right by 14  18 and 41 ====
+; e is at @0x20  the rotate frame at @0x100 and tmp at @0x88  so the three way
+; copy steps 224 right then 120 left then 104 left  and lands where it began
+L47
+; ASSERT ptr=32
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104]
+; and the temp hands the original straight back
+R97
+; ASSERT ptr=136
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104]
+; to the rotation count
+R121
+; ASSERT ptr=264
+  ++++++++++++++
+L8
+; ASSERT ptr=256
+@@ROTR64@@ 256
+; ASSERT ptr=256
+; the rotated word comes back
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160]
+; e into the rotate frame a second time
+L231
+; ASSERT ptr=32
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104]
+; and the temp hands the original straight back
+R97
+; ASSERT ptr=136
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104]
+; to the rotation count
+R121
+; ASSERT ptr=264
+  ++++++++++++++++++
+L8
+; ASSERT ptr=256
+@@ROTR64@@ 256
+; ASSERT ptr=256
+; the rotated word comes back
+  [-L152+R152] R1
+  [-L152+R152] R1
+  [-L152+R152] R1
+  [-L152+R152] R1
+  [-L152+R152] R1
+  [-L152+R152] R1
+  [-L152+R152] R1
+  [-L152+R152]
+; the two rotations are exclusive ored  s1 first
+L167
+; ASSERT ptr=96
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+; and s2 after it
+R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+R65
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; the result comes back as s3
+R16
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80]
+; e into the rotate frame a third time
+L167
+; ASSERT ptr=32
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104] R1
+  [-R224+L120+L104]
+; and the temp hands the original straight back
+R97
+; ASSERT ptr=136
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104]
+; to the rotation count
+R121
+; ASSERT ptr=264
+  +++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=256
+@@ROTR64@@ 256
+; ASSERT ptr=256
+; the rotated word comes back
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160]
+; the two so far  ready for the third
+L151
+; ASSERT ptr=112
+  [-L8+R8] R1
+  [-L8+R8] R1
+  [-L8+R8] R1
+  [-L8+R8] R1
+  [-L8+R8] R1
+  [-L8+R8] R1
+  [-L8+R8] R1
+  [-L8+R8]
+; the first operand of the exclusive or
+L15
+; ASSERT ptr=104
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72]
+; and the second
+L15
+; ASSERT ptr=96
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88]
+R73
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; and Sigma1 is done  in s3
+R16
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80]
+
+; ==== Ch(e f g)  which is  g xor (e and (f xor g)) ====
+; f and g meet
+L159
+; ASSERT ptr=40
+  [-R56+R40+L96] R1
+  [-R56+R40+L96] R1
+  [-R56+R40+L96] R1
+  [-R56+R40+L96] R1
+  [-R56+R40+L96] R1
+  [-R56+R40+L96] R1
+  [-R56+R40+L96] R1
+  [-R56+R40+L96]
+; and the temp hands the original straight back
+R89
+; ASSERT ptr=136
+  [-L96+R96] R1
+  [-L96+R96] R1
+  [-L96+R96] R1
+  [-L96+R96] R1
+  [-L96+R96] R1
+  [-L96+R96] R1
+  [-L96+R96] R1
+  [-L96+R96]
+L95
+; ASSERT ptr=48
+  [-R56+R32+L88] R1
+  [-R56+R32+L88] R1
+  [-R56+R32+L88] R1
+  [-R56+R32+L88] R1
+  [-R56+R32+L88] R1
+  [-R56+R32+L88] R1
+  [-R56+R32+L88] R1
+  [-R56+R32+L88]
+; and the temp hands the original straight back
+R81
+; ASSERT ptr=136
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88]
+; the first operand of the exclusive or
+L47
+; ASSERT ptr=96
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+; and the second
+R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+R65
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; the result comes back as s4
+R16
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72]
+; and e selects between them
+L167
+; ASSERT ptr=32
+  [-R64+R40+L104] R1
+  [-R64+R40+L104] R1
+  [-R64+R40+L104] R1
+  [-R64+R40+L104] R1
+  [-R64+R40+L104] R1
+  [-R64+R40+L104] R1
+  [-R64+R40+L104] R1
+  [-R64+R40+L104]
+; and the temp hands the original straight back
+R97
+; ASSERT ptr=136
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104]
+; the first operand of the and
+L47
+; ASSERT ptr=96
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120]
+; and the second
+R17
+; ASSERT ptr=120
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104]
+R89
+; ASSERT ptr=216
+@@AND64@@ 216
+; ASSERT ptr=216
+; the result comes back as s2
+R16
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128]
+; g is the other arm
+L191
+; ASSERT ptr=48
+  [-R48+R40+L88] R1
+  [-R48+R40+L88] R1
+  [-R48+R40+L88] R1
+  [-R48+R40+L88] R1
+  [-R48+R40+L88] R1
+  [-R48+R40+L88] R1
+  [-R48+R40+L88] R1
+  [-R48+R40+L88]
+; and the temp hands the original straight back
+R81
+; ASSERT ptr=136
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88]
+; the first operand of the exclusive or
+L47
+; ASSERT ptr=96
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+; and the second
+R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+R65
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; and Ch is done  in s4
+R16
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72]
+
+; ==== T1 is h plus Sigma1 plus Ch plus the constant plus the word ====
+; h starts it
+L143
+; ASSERT ptr=56
+  [-R24+R56+L80] R1
+  [-R24+R56+L80] R1
+  [-R24+R56+L80] R1
+  [-R24+R56+L80] R1
+  [-R24+R56+L80] R1
+  [-R24+R56+L80] R1
+  [-R24+R56+L80] R1
+  [-R24+R56+L80]
+; and the temp hands the original straight back
+R73
+; ASSERT ptr=136
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80]
+; the accumulator into the adder
+L63
+; ASSERT ptr=80
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64]
+; and Sigma1 after it
+R25
+; ASSERT ptr=112
+  [-R40+L40] R1
+  [-R40+L40] R1
+  [-R40+L40] R1
+  [-R40+L40] R1
+  [-R40+L40] R1
+  [-R40+L40] R1
+  [-R40+L40] R1
+  [-R40+L40]
+R25
+; ASSERT ptr=144
+@@ADD64@@ 144
+; ASSERT ptr=144
+; the sum comes back
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64]
+; the accumulator into the adder
+L71
+; ASSERT ptr=80
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64]
+; and Ch after it
+R33
+; ASSERT ptr=120
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32]
+R17
+; ASSERT ptr=144
+@@ADD64@@ 144
+; ASSERT ptr=144
+; the sum comes back
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64]
+; the constant and the schedule word are both spent here
+; the accumulator into the adder
+L71
+; ASSERT ptr=80
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64]
+; and the constant after it
+L15
+; ASSERT ptr=72
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+R65
+; ASSERT ptr=144
+@@ADD64@@ 144
+; ASSERT ptr=144
+; the sum comes back
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64]
+; the accumulator into the adder
+L71
+; ASSERT ptr=80
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64]
+; and the schedule word last
+L23
+; ASSERT ptr=64
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88]
+R73
+; ASSERT ptr=144
+@@ADD64@@ 144
+; ASSERT ptr=144
+; the sum comes back
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64] R1
+  [-L64+R64]
+
+; ==== Sigma0(a)  which is a rotated right by 28  34 and 39 ====
+L151
+; ASSERT ptr=0
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136]
+; and the temp hands the original straight back
+R129
+; ASSERT ptr=136
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136]
+; to the rotation count
+R121
+; ASSERT ptr=264
+  ++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=256
+@@ROTR64@@ 256
+; ASSERT ptr=256
+; the rotated word comes back
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160]
+; a into the rotate frame a second time
+L263
+; ASSERT ptr=0
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136]
+; and the temp hands the original straight back
+R129
+; ASSERT ptr=136
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136]
+; to the rotation count
+R121
+; ASSERT ptr=264
+  ++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=256
+@@ROTR64@@ 256
+; ASSERT ptr=256
+; the rotated word comes back
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144]
+; the first operand of the exclusive or
+L167
+; ASSERT ptr=96
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80] R1
+  [-R80+L80]
+; and the second
+R9
+; ASSERT ptr=112
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72] R1
+  [-R72+L72]
+R57
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; the result comes back as s2
+R16
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88]
+; a into the rotate frame a third time
+L199
+; ASSERT ptr=0
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136] R1
+  [-R256+L120+L136]
+; and the temp hands the original straight back
+R129
+; ASSERT ptr=136
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136]
+; to the rotation count
+R121
+; ASSERT ptr=264
+  +++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=256
+@@ROTR64@@ 256
+; ASSERT ptr=256
+; the rotated word comes back
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160] R1
+  [-L160+R160]
+; the two so far  ready for the third
+L159
+; ASSERT ptr=104
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; the first operand of the exclusive or
+R1
+; ASSERT ptr=112
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64]
+; and the second
+L23
+; ASSERT ptr=96
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88] R1
+  [-R88+L88]
+R73
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; and Sigma0 is done  in s2
+R16
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88] R1
+  [-L88+R88]
+
+; ==== Maj(a b c)  the bit that two of the three agree on ====
+L199
+; ASSERT ptr=0
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136]
+; and the temp hands the original straight back
+R129
+; ASSERT ptr=136
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136]
+L135
+; ASSERT ptr=8
+  [-R104+R24+L128] R1
+  [-R104+R24+L128] R1
+  [-R104+R24+L128] R1
+  [-R104+R24+L128] R1
+  [-R104+R24+L128] R1
+  [-R104+R24+L128] R1
+  [-R104+R24+L128] R1
+  [-R104+R24+L128]
+; and the temp hands the original straight back
+R121
+; ASSERT ptr=136
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128]
+; the first operand of the and
+L47
+; ASSERT ptr=96
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120]
+; and the second
+R9
+; ASSERT ptr=112
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112]
+R97
+; ASSERT ptr=216
+@@AND64@@ 216
+; ASSERT ptr=216
+; a and b comes back as s4
+R16
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112]
+L239
+; ASSERT ptr=0
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136] R1
+  [-R96+R40+L136]
+; and the temp hands the original straight back
+R129
+; ASSERT ptr=136
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136] R1
+  [-L136+R136]
+L127
+; ASSERT ptr=16
+  [-R96+R24+L120] R1
+  [-R96+R24+L120] R1
+  [-R96+R24+L120] R1
+  [-R96+R24+L120] R1
+  [-R96+R24+L120] R1
+  [-R96+R24+L120] R1
+  [-R96+R24+L120] R1
+  [-R96+R24+L120]
+; and the temp hands the original straight back
+R113
+; ASSERT ptr=136
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120]
+; the first operand of the and
+L47
+; ASSERT ptr=96
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120]
+; and the second
+R9
+; ASSERT ptr=112
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112]
+R97
+; ASSERT ptr=216
+@@AND64@@ 216
+; ASSERT ptr=216
+; a and c comes back as s5
+R16
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104]
+; the first operand of the exclusive or
+L119
+; ASSERT ptr=120
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56]
+; and the second
+R1
+; ASSERT ptr=128
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56]
+R41
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; the first two terms come back as s3
+R16
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80]
+L191
+; ASSERT ptr=8
+  [-R88+R40+L128] R1
+  [-R88+R40+L128] R1
+  [-R88+R40+L128] R1
+  [-R88+R40+L128] R1
+  [-R88+R40+L128] R1
+  [-R88+R40+L128] R1
+  [-R88+R40+L128] R1
+  [-R88+R40+L128]
+; and the temp hands the original straight back
+R121
+; ASSERT ptr=136
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128] R1
+  [-L128+R128]
+L127
+; ASSERT ptr=16
+  [-R104+R16+L120] R1
+  [-R104+R16+L120] R1
+  [-R104+R16+L120] R1
+  [-R104+R16+L120] R1
+  [-R104+R16+L120] R1
+  [-R104+R16+L120] R1
+  [-R104+R16+L120] R1
+  [-R104+R16+L120]
+; and the temp hands the original straight back
+R113
+; ASSERT ptr=136
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120] R1
+  [-L120+R120]
+; the first operand of the and
+L47
+; ASSERT ptr=96
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120] R1
+  [-R120+L120]
+; and the second
+R17
+; ASSERT ptr=120
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104] R1
+  [-R104+L104]
+R89
+; ASSERT ptr=216
+@@AND64@@ 216
+; ASSERT ptr=216
+; b and c comes back as s5
+R16
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104] R1
+  [-L104+R104]
+; the first operand of the exclusive or
+L127
+; ASSERT ptr=112
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64]
+; and the second
+R9
+; ASSERT ptr=128
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56]
+R41
+; ASSERT ptr=176
+@@XOR64@@ 176
+; ASSERT ptr=176
+; and Maj is done  in s4
+R16
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72] R1
+  [-L72+R72]
+
+; ==== T2 is Sigma0 plus Maj ====
+L95
+; ASSERT ptr=104
+  [-L16+R16] R1
+  [-L16+R16] R1
+  [-L16+R16] R1
+  [-L16+R16] R1
+  [-L16+R16] R1
+  [-L16+R16] R1
+  [-L16+R16] R1
+  [-L16+R16]
+; the accumulator into the adder
+L23
+; ASSERT ptr=88
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56]
+; and the addend after it
+R25
+; ASSERT ptr=120
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32] R1
+  [-R32+L32]
+R17
+; ASSERT ptr=144
+@@ADD64@@ 144
+; ASSERT ptr=144
+; the sum comes back
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56]
+
+; ==== the working variables shift one word down ====
+; h falls off the end; a is left empty for the new value
+; h is discarded
+L95
+; ASSERT ptr=56
+  [-] R1
+  [-] R1
+  [-] R1
+  [-] R1
+  [-] R1
+  [-] R1
+  [-] R1
+  [-]
+; g becomes h
+L15
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; f becomes g
+L15
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; e becomes f
+L15
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; d becomes e
+L15
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; c becomes d
+L15
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; b becomes c
+L15
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; a becomes b
+L15
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8] R1
+  [-R8+L8]
+; ASSERT zero 0:7
+
+; ==== e gains T1  and a becomes T1 plus T2 ====
+; after the shift the cell holding e is the OLD d  which is what the
+; standard adds T1 to;
+R73
+; ASSERT ptr=80
+  [-R16+R40+L56] R1
+  [-R16+R40+L56] R1
+  [-R16+R40+L56] R1
+  [-R16+R40+L56] R1
+  [-R16+R40+L56] R1
+  [-R16+R40+L56] R1
+  [-R16+R40+L56] R1
+  [-R16+R40+L56]
+; and the temp hands the original straight back
+R49
+; ASSERT ptr=136
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56] R1
+  [-L56+R56]
+; the accumulator into the adder
+L111
+; ASSERT ptr=32
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112] R1
+  [-R112+L112]
+; and the addend after it
+R57
+; ASSERT ptr=96
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56] R1
+  [-R56+L56]
+R41
+; ASSERT ptr=144
+@@ADD64@@ 144
+; ASSERT ptr=144
+; the sum comes back as the new e
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112] R1
+  [-L112+R112]
+L71
+; ASSERT ptr=80
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80] R1
+  [-L80+R80]
+; the accumulator into the adder
+L87
+; ASSERT ptr=0
+  [-R144+L144] R1
+  [-R144+L144] R1
+  [-R144+L144] R1
+  [-R144+L144] R1
+  [-R144+L144] R1
+  [-R144+L144] R1
+  [-R144+L144] R1
+  [-R144+L144]
+; and the addend after it
+R81
+; ASSERT ptr=88
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64] R1
+  [-R64+L64]
+R49
+; ASSERT ptr=144
+@@ADD64@@ 144
+; ASSERT ptr=144
+; the sum comes back as the new a
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144] R1
+  [-L144+R144]
+L151
+; ASSERT ptr=0
+; ASSERT zero 64:276
+
+; emit
+; the eight working variables  little endian
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

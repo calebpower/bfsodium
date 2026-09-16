@@ -115,6 +115,11 @@ while IFS= read -r line; do
         '@@EXPAND@@'*)  import "$repo/sha256/expand.bf" "${line##* }"; continue ;;
         '@@SHR32@@'*)   import "$repo/idiom/shr32.bf" "${line##* }"; continue ;;
         '@@ROTR32@@'*)  import "$repo/idiom/rotr32.bf" "${line##* }"; continue ;;
+        '@@ROTR64@@'*)  import "$repo/idiom/rotr64.bf" "${line##* }"; continue ;;
+        '@@SHR64@@'*)   import "$repo/idiom/shr64.bf" "${line##* }"; continue ;;
+        '@@XOR64@@'*)   import "$repo/idiom/xor64.bf" "${line##* }"; continue ;;
+        '@@AND64@@'*)   import "$repo/idiom/and64.bf" "${line##* }"; continue ;;
+        '@@ADD64@@'*)   import "$repo/idiom/add64.bf" "${line##* }"; continue ;;
         '@@AND32@@'*)   import "$repo/idiom/and32.bf" "${line##* }"; continue ;;
         '@@CLAMP@@'*)   import "$repo/poly1305/clamp.bf" "${line##* }"; continue ;;
         '@@ABSORB@@'*)  import "$repo/poly1305/absorb.bf" "${line##* }"; continue ;;
