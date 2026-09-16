@@ -666,20 +666,59 @@ theta/rho/pi/chi/iota. Large but extremely regular.
 paste discipline has to carry more weight, or the budget needs a reasoned
 exception — not a silent one.
 
-#### Tier C — post-quantum, after Keccak and not before
+#### Tier C — the hybrid handshake, after Keccak and not before
 
-ML-KEM (FIPS 203), ML-DSA (204), SLH-DSA (205). More tractable than they sound:
+ML-KEM (FIPS 203), ML-DSA (204), SLH-DSA (205). **Cheaper than X25519 in this
+cost model, which inverts the usual intuition.** ML-KEM's arithmetic is all mod
+q = 3329, a 13 bit modulus, so a modular multiply is a TWO LIMB multiply
+against 25519's thirty two; the work is thousands of cheap butterflies rather
+than thousands of expensive big-integer multiplies. More tractable than it
+sounds:
 small moduli, no bignums, mostly NTT butterflies over Z_q. **Blocked on
 Keccak**, because the sampling is SHAKE.
 
-#### Out of scope, with the reason — RSA and elliptic curve
+#### X25519 is IN scope, and this section used to say otherwise
 
-**RSA (PKCS#1), ECDSA, ECDH and EdDSA are out of scope, and this is a decision
-rather than an omission.** The blocker is general modular multiplication.
+**This is a correction.** An earlier version of §9.1 put RSA, ECDSA, ECDH and
+EdDSA out of scope together, on the grounds that `poly1305/mulmod136` is cheap
+only because 2¹³⁰−5 has a special form and *"that trick does not transfer"*.
+
+It does not transfer to RSA, and it does not transfer to the NIST P-curves.
+**It transfers exactly to Curve25519**, whose prime is 2²⁵⁵−19 — the same
+pseudo-Mersenne shape, reduced the same way, by multiplying the high half by a
+small constant and adding. X25519 is not "elliptic curve, therefore new
+mathematics"; it is `mulmod136` with more limbs and a Montgomery ladder around
+it. Lumping it in with RSA was a category error, and the whole point of the
+`mulmod136` sentence was that the *form of the prime* decides the cost — which
+should have pointed straight at 25519 rather than away from it.
+
+**The cost is the real obstacle, and it is measurable rather than unknown.**
+`mulmod136` is **987,082,567 instructions** for a 17-limb multiply. The 25519
+field is 32 limbs at one byte each, and partial products go as the square of
+the limb count, so a multiply is roughly 3.5× that — about **3.5 billion**. A
+Montgomery ladder is 255 steps of some ten field multiplications, so a single
+scalar multiplication is on the order of **9 × 10¹² instructions, about four
+hours** at the measured 570 million per second. A handshake needs one or two.
+
+That is slow and it is not a reason to decline: this library's claim has never
+been speed. It *is* a reason to write the cheaper `mulmod136` first — already
+recorded as an open item — since every saving there multiplies by 2550.
+
+**RSA and the NIST P-curves stay out**, for the reason the old text gave: their
+moduli have no exploitable form, so they need Montgomery or Barrett reduction,
+which really is new mathematics here. And RSA-2048 modexp is two thousand
+squarings of two-thousand-bit numbers, which is a different order of problem
+again.
+
+#### Out of scope, with the reason — RSA and the NIST P-curves
+
+**RSA (PKCS#1), ECDSA and ECDH over P-256/384/521 are out of scope, and this
+is a decision rather than an omission.** The blocker is general modular
+multiplication.
 
 `poly1305/mulmod136` is 18,761 lines and works because 2¹³⁰−5 has a special
-form that makes reduction cheap. **That trick does not transfer.** A general
-256-bit or 2048-bit modmul needs Montgomery or Barrett reduction, which is new
+form that makes reduction cheap. A general 256-bit or 2048-bit modmul needs
+Montgomery or Barrett reduction, which is new
 mathematics for this library rather than a bigger version of something it has.
 
 And the arithmetic does not fit the cost model. RSA-2048 modexp is roughly two
