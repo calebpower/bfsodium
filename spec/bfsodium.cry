@@ -456,6 +456,13 @@ rotr64nRun inb = leBytes64 (leWord64 (take`{8} inb) >>> (inb @ 8))
 shr32nRun : [5][8] -> [4][8]
 shr32nRun inb = leBytes (leWord (take`{4} inb) >> (inb @ 4))
 
+// SHR64 with the count on the wire: in = w(8 LE) # n(1);
+// out = (w shifted right by n)(8 LE). One operator apart from rotr64nRun,
+// exactly as idiom/shr64.bf is one line apart from idiom/rotr64.bf, and
+// SHA-512's sigma functions need both.
+shr64nRun : [9][8] -> [8][8]
+shr64nRun inb = leBytes64 (leWord64 (take`{8} inb) >> (inb @ 8))
+
 // ---------------------------------------------------------------------------
 // SHA-256 (FIPS 180-4). Written out from the standard rather than taken from
 // Cryptol's own library, so that oracle B is independent of whatever the

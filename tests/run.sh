@@ -342,6 +342,21 @@ dk idiom/shr32.bf 000000801f 01000000 shr32nRun "shr32 by 31"
 dk idiom/shr32.bf 7856341210 34120000 shr32nRun "shr32 by 16"
 dk idiom/shr32.bf ffffffff01 ffffff7f shr32nRun "shr32 by 1"
 dk idiom/shr32.bf 0100000001 00000000 shr32nRun "shr32 by 1"
+# SHR64, which is idiom/rotr64 with exactly one line changed -- the bit that
+# falls out of the bottom is discarded instead of wrapped -- and which
+# SHA_512 needs alongside the rotation, since its sigma functions are two
+# rotations and one shift exclusive-ored together. Every vector here starts
+# from a word whose low bits are set, so a routine that forgot to throw c0
+# away answers differently rather than passing by symmetry.
+dk idiom/shr64.bf 000000000000008001 0000000000000040 shr64nRun "shr64 by 1  the edge at one"
+dk idiom/shr64.bf 000000000000008008 0000000000008000 shr64nRun "shr64 by 8  a whole byte"
+dk idiom/shr64.bf 00000000000000803f 0100000000000000 shr64nRun "shr64 by 63  the other edge  the top bit to the bottom"
+dk idiom/shr64.bf efcdab896745230107 9b5713cf8a460200 shr64nRun "shr64 by 7  SHA_512 sigma0  and every bit crossing"
+dk idiom/shr64.bf efcdab896745230106 37af269e158d0400 shr64nRun "shr64 by 6  SHA_512 sigma1"
+dk idiom/shr64.bf 010000000000000001 0000000000000000 shr64nRun "shr64 by 1  the lone low bit is DISCARDED not wrapped"
+dk idiom/shr64.bf ffffffffffffffff0d ffffffffffff0700 shr64nRun "shr64 by 13  every bit set grows zeros at the top"
+dk idiom/shr64.bf efcdab89674523013f 0000000000000000 shr64nRun "shr64 by 63  all but the top bit falls out"
+dk idiom/shr64.bf efcdab896745230108 cdab896745230100 shr64nRun "shr64 by 8  a whole byte of a real word"
 
 dk chacha20/rotl32.bf 0100000001 02000000 rotl32nRun "rotl32 by 1"
 dk chacha20/rotl32.bf 0100000008 00010000 rotl32nRun "rotl32 by 8"
@@ -586,6 +601,8 @@ run "sha256 expand honours its declared contracts" sh -c "printf fffffffffffffff
 run "and32 honours its declared contracts" sh -c "printf ffffffffffffffff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and32.bf >/dev/null"
 run "rotr32 honours its declared contracts" sh -c "printf 7856341219 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr32.bf >/dev/null"
 run "shr32 honours its declared contracts" sh -c "printf 7856341203 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr32.bf >/dev/null"
+run "rotr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr64.bf >/dev/null"
+run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "rotl32 honours its declared contracts" sh -c "printf 7856341210 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/rotl32.bf >/dev/null"
 run "blockkeep honours its declared contracts" sh -c "printf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01000000000000090000004a00000000 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi chacha20/blockkeep.bf >/dev/null"
 run "keygen honours its declared contracts" sh -c "printf 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f000000000001020304050607 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aead/keygen.bf >/dev/null"
