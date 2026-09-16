@@ -314,6 +314,21 @@ dk idiom/rotr32.bf 7856341207 ac6824f0 rotr32nRun "rotr32 by 7"
 dk idiom/rotr32.bf 7856341202 9e158d04 rotr32nRun "rotr32 by 2"
 dk idiom/rotr32.bf ffffffff0d ffffffff rotr32nRun "rotr32 by 13"
 dk idiom/rotr32.bf 0000008001 00000040 rotr32nRun "rotr32 by 1"
+# ROTR64, the 64 bit widening, and the piece that unlocks a tier rather than
+# a primitive: SHA_384, SHA_512 and both SHA_512/t work on 64 bit words, and
+# so does Keccak, whose rho step is nothing but 64 bit rotations. The counts
+# are the edges at one and sixty three, a whole byte, and 28, 34 and 39 --
+# which are the three rotations SHA_512 Sigma1 asks for, so the routine is
+# exercised at the widths its first consumer actually needs.
+dk idiom/rotr64.bf 010000000000000001 0000000000000080 rotr64nRun "rotr64 by 1  the edge at one"
+dk idiom/rotr64.bf 010000000000000008 0000000000000001 rotr64nRun "rotr64 by 8  a whole byte"
+dk idiom/rotr64.bf 01000000000000003f 0200000000000000 rotr64nRun "rotr64 by 63  the other edge"
+dk idiom/rotr64.bf efcdab896745230107 9b5713cf8a4602de rotr64nRun "rotr64 by 7  seven, every bit crossing"
+dk idiom/rotr64.bf efcdab89674523011c 78563412f0debc9a rotr64nRun "rotr64 by 28  SHA_512 Sigma1"
+dk idiom/rotr64.bf efcdab896745230122 59d148c07bf36ae2 rotr64nRun "rotr64 by 34  SHA_512 Sigma1"
+dk idiom/rotr64.bf efcdab896745230127 8a4602de9b5713cf rotr64nRun "rotr64 by 39  SHA_512 Sigma1"
+dk idiom/rotr64.bf ffffffffffffffff0d ffffffffffffffff rotr64nRun "rotr64 by 13  every bit set is unchanged"
+dk idiom/rotr64.bf 000000000000008001 0000000000000040 rotr64nRun "rotr64 by 1  the top bit alone"
 dk idiom/rotr32.bf 7856341219 093c2b1a rotr32nRun "rotr32 by 25"
 # The shift differs from the rotation only in what happens to the bit that
 # falls out of the bottom, so the cases that matter are the ones where a bit

@@ -435,6 +435,21 @@ and32Run inb = leBytes (leWord (take`{4} inb) && leWord (drop`{4} inb))
 rotr32nRun : [5][8] -> [4][8]
 rotr32nRun inb = leBytes (leWord (take`{4} inb) >>> (inb @ 4))
 
+// A 64-bit word is eight little-endian bytes on the wire (LSB first). The
+// 32-bit pair above is kept beside this rather than generalised away,
+// because every call site reads better named than parameterised.
+leWord64 : [8][8] -> [64]
+leWord64 bs = join (reverse bs)
+
+leBytes64 : [64] -> [8][8]
+leBytes64 w = reverse (split w)
+
+// ROTR64 with the count on the wire, as idiom/rotr64.bf reads it:
+// in = w(8 LE) # n(1); out = (w rotated right by n)(8 LE). The 64-bit
+// widening of rotr32, and the piece SHA-512 and Keccak both need.
+rotr64nRun : [9][8] -> [8][8]
+rotr64nRun inb = leBytes64 (leWord64 (take`{8} inb) >>> (inb @ 8))
+
 // SHR32 with the count on the wire: in = w(4 LE) # n(1);
 // out = (w shifted right by n)(4 LE). The bits that fall out are gone, which
 // is the only thing separating this from rotr32.

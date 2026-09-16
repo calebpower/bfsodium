@@ -99,6 +99,7 @@ routine, the suite fails until it has a row here.
 | `chacha20/add32` | 631 | 166 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
 | `idiom/rotr32` | 120 | 131 | boundary vectors + Cryptol |
+| `idiom/rotr64` | 206 | 225 | boundary vectors + Cryptol  SHA_512 Sigma1 counts |
 | `idiom/shr32` | 121 | 133 | boundary vectors + Cryptol |
 | `chacha20/rotl32` | 620 | 155 | boundary vectors + Cryptol |
 | `chacha20/xor32` | 125 | 190 | boundary vectors + Cryptol |
@@ -168,8 +169,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 157 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 157 | golden vectors, dual oracle |
+| 2 | yes | 166 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 166 | golden vectors, dual oracle |
 | 5 | yes | 22 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
