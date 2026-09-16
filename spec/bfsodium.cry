@@ -463,6 +463,13 @@ shr32nRun inb = leBytes (leWord (take`{4} inb) >> (inb @ 4))
 shr64nRun : [9][8] -> [8][8]
 shr64nRun inb = leBytes64 (leWord64 (take`{8} inb) >> (inb @ 8))
 
+// XOR64: the 64-bit widening of chacha20/xor32.
+// in = x(8 LE) # y(8 LE); out = (x xor y)(8 LE). Stated on its own rather
+// than parameterised over the width, for the same reason leWord64 sits
+// beside leWord: every call site reads better named.
+xor64Run : [16][8] -> [8][8]
+xor64Run inb = leBytes64 (leWord64 (take`{8} inb) ^ leWord64 (drop`{8} inb))
+
 // ---------------------------------------------------------------------------
 // SHA-256 (FIPS 180-4). Written out from the standard rather than taken from
 // Cryptol's own library, so that oracle B is independent of whatever the
