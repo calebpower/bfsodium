@@ -115,9 +115,18 @@ modern x86-64 at roughly 750 million instructions a second.
 | AEAD, the full RFC 8439 §2.8.2 vector | 11.6 billion | — |
 
 **Not present at all:** any public-key primitive — no X25519, no signatures, no
-key exchange. No post-quantum anything; ML-KEM, ML-DSA and Keccak are deferred,
-see *Scope and roadmap* in CONVENTIONS.md. No AES, SHA-3 or BLAKE. No encoding
+key exchange. No post-quantum anything. No AES, SHA-3 or BLAKE. No encoding
 helpers — no hex, base64 or JSON canonicalization.
+
+**The ambition is every NIST-approved algorithm**, and `CONVENTIONS.md` §9.1 is
+the wish list — staged by what each addition actually needs rather than listed
+as one pile. The short version: about fifteen of them need no new mathematics
+at all, just a 64-bit idiom set. **AES** and **Keccak** are the two keystones,
+each unlocking a family of about ten, and AES is what `index/fetch8` was
+written for and nothing has used yet. Post-quantum sits behind Keccak because
+its sampling is SHAKE. **RSA and elliptic curve are out of scope with a
+reason** rather than merely absent: `mulmod136` is cheap because 2¹³⁰−5 has a
+special form, and that does not transfer to a general modulus.
 
 **Not proven**, and named here rather than left to be discovered:
 

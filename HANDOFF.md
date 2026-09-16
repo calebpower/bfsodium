@@ -193,17 +193,30 @@ must have no marker in the suite at all.
    output against it yet, and that is the thing that would prove the set is
    actually sufficient rather than merely complete.
 
-   **THE SMALLER PROOF INSIDE IT IS BUILT.** `programs/sha256-abc.poke` is a
-   brainfuck program that spawns an interpreter on `sha256/sha256.bf` through
-   the broker, feeds it "abc", reads the digest back a byte at a time and
-   writes it out — and tier 12 checks the result against FIPS 180-4 end to
-   end. One second. The seam this section said nothing tested is tested.
+   **THE MACHINERY IS BUILT AND WHAT REMAINS IS THE CORPUS.** This item used
+   to say the next step was a program that hashes a caller-named FILE, and
+   that it would need `open`, `stat`, a relay loop and a guard over 64 KiB.
+   All of that happened, and then half of it was deleted again:
 
-   **What remains of this item is the corpus**, which is nine sequenced calls
-   against BoneMesh's vectors rather than one, and a program that hashes a
-   FILE the caller names rather than a fixed message — that needs `open`,
-   `stat`, a relay loop and a guard for files over 64 KiB, none of which the
-   first program required.
+   - `programs/sha256.poke` reads the broker's stdin, buffers the message on
+     the TAPE as flag/byte pairs, counts it in two cells, and spawns an
+     interpreter on `sha256/sha256.bf` through the broker. It hashed a 27,430
+     byte JPEG against `sha256sum` in 764 seconds. There is no `open` and no
+     `stat` in it: the temporary file those were for is gone, and with it the
+     writable working directory it needed.
+   - `programs/run.poke` is the generic form — it takes a routine's NAME at
+     run time, relays stdin into it and its answer back out, and therefore
+     drives every routine in the tree including ones not yet written. The
+     caller does the framing, so it has no length prefix to overflow and no
+     size limit. `tools/bfrun.sh` writes the one byte of name length.
+   - Tier 12 runs three routines with nothing in common through the runner,
+     because one would show that it works and three show it is not secretly
+     about SHA-256.
+
+   So the harness for the corpus check exists and is gated on both guests.
+   **What is left is the corpus**: nine sequenced calls against BoneMesh's
+   vectors rather than one, which is a fixture-writing job rather than a
+   capability one.
 
    The original reasoning, kept because it is why the directory exists: the
    corpus check is nine sequenced calls, and what was unproven was the

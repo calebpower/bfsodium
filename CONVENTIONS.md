@@ -582,19 +582,113 @@ command — and it was not checked.
 **v1 — the symmetric set. Complete.**
 
 ChaCha20 (RFC 8439), Poly1305, ChaCha20-Poly1305, SHA-256 with HMAC, and
-HKDF-SHA-256. All five are in, hand-written, and gated.
+HKDF-SHA-256. All five are in, hand-written, and gated on two guests.
 
 **What v1 does not yet have:**
 
 1. **Proof that the set is sufficient.** The downstream target is the BoneMesh
    shared corpus — `keyschedule.json`, `transport-frame.json` — and nothing has
    ever been checked against it. That is the thing that would show the set is
-   sufficient rather than merely complete.
-2. **Tier 6.** Declared above, not built.
+   sufficient rather than merely complete. **`v1.0.0` waits on it.** The harness
+   no longer does: `programs/run.bf` drives any routine named at run time and
+   `tools/bfrun.sh` frames it, so what remains is the corpus rather than the
+   machinery.
+2. **Tier 6.** Declared in §8, not built. The only `no` in the status table.
 3. Cheaper `mulmod136`, and `qrloop` pasting `rotr32` rather than `rotl32`,
    both recorded with measurements in `HANDOFF.md`. Neither is needed; both are
    written down so the next person does not rediscover them.
 
-**Later — the mountain:** Keccak and SHAKE, then the NTT and sampling for ML-KEM
-and ML-DSA. **Post-quantum is explicitly out of scope** and stays out until the
-questions above are answered.
+---
+
+### 9.1 The NIST wish list
+
+**The ambition is every NIST-approved algorithm.** This is a wish list and not
+a plan: nothing here is scheduled, and the ordering is the useful part. It is
+written down because the *dependency order* is most of the value — and because
+"all of NIST" as one undifferentiated pile is how a roadmap becomes
+demoralising rather than useful.
+
+**The anchor for every cost below** is the one measurement this library has:
+`sha256` of "abc" is **1,180,129,364 instructions in about two seconds** under
+`bfi`, so roughly **570 million instructions per second**. Any number here
+without that behind it is a guess and is labelled as one.
+
+**And the per-algorithm cost is not the brainfuck.** It is the Cryptol spec and
+the published vectors, because §8's dual oracle is what makes an addition
+trustworthy, and `tools/dkat.sh` runs Cryptol *once per vector*. Budget that
+first.
+
+#### Tier A — no new mathematics
+
+Everything here follows from what is already built plus one new idiom set, and
+this is where to start.
+
+| target | needs | note |
+|---|---|---|
+| SHA-224 | nothing new | SHA-256 with a different IV and a truncation |
+| SHA-384, SHA-512, SHA-512/224, SHA-512/256 | `add64`, `rotr64`, `shr64` | mechanical extensions of the 32-bit idioms: eight cells per word rather than four |
+| HMAC over each of the above | nothing new | FIPS 198-1 |
+| HKDF over each | nothing new | RFC 5869 |
+| HMAC_DRBG | nothing new | SP 800-90A; nearly free given HMAC-SHA-256 |
+| SP 800-108 KDFs (counter, feedback) | nothing new | loops over HMAC |
+| PBKDF2 | nothing new | SP 800-132; a counted loop over HMAC |
+
+About fifteen approved algorithms, no new mathematics, and the 64-bit idiom set
+is reusable for everything after it.
+
+#### Tier B — two keystones, each unlocking a family
+
+**AES (FIPS 197)** unlocks CMAC (SP 800-38B), GCM and GMAC (38D), CTR_DRBG
+(90A), CCM (38C), XTS (38E) and KW/KWP (38F) — around ten further approved
+constructions from one primitive.
+
+**`index/fetch8`, `store8` and `fetchword` were written for this.** They are in
+the tree, nothing uses them, and `HANDOFF.md` calls them *"the escape hatch if
+a future primitive genuinely needs a run-time index — but so far nothing has."*
+AES's S-box is a 256-entry runtime lookup. It is the primitive those routines
+were anticipating.
+
+**MEASURE THE LOOKUP BEFORE COMMITTING TO AES.** On paper an AES-128 block
+should cost *less* than SHA-256's two seconds — ten rounds of table lookups
+against sixty-four rounds of 32-bit arithmetic. But an indexed read in
+brainfuck is **O(index)**, which is the exact cost *"conveyors, not indices"*
+(§5) exists to avoid: one S-box lookup may be up to 256 steps of walking, and
+there are 160 of them per block. That is a day's work to measure and it
+de-risks the whole of this tier. Do not write AES first and find out.
+
+**Keccak-f[1600] (FIPS 202)** unlocks SHA3-224/256/384/512, SHAKE128/256, KMAC,
+cSHAKE, TupleHash and ParallelHash — and it is a hard prerequisite for every
+post-quantum standard, since ML-KEM and ML-DSA both sample from SHAKE. It wants
+the 64-bit idioms from tier A, a 5×5 lane state, and twenty-four rounds of
+theta/rho/pi/chi/iota. Large but extremely regular.
+
+**Both keystones will strain the 2000-line skeleton budget** (§8 tier 9b). The
+paste discipline has to carry more weight, or the budget needs a reasoned
+exception — not a silent one.
+
+#### Tier C — post-quantum, after Keccak and not before
+
+ML-KEM (FIPS 203), ML-DSA (204), SLH-DSA (205). More tractable than they sound:
+small moduli, no bignums, mostly NTT butterflies over Z_q. **Blocked on
+Keccak**, because the sampling is SHAKE.
+
+#### Out of scope, with the reason — RSA and elliptic curve
+
+**RSA (PKCS#1), ECDSA, ECDH and EdDSA are out of scope, and this is a decision
+rather than an omission.** The blocker is general modular multiplication.
+
+`poly1305/mulmod136` is 18,761 lines and works because 2¹³⁰−5 has a special
+form that makes reduction cheap. **That trick does not transfer.** A general
+256-bit or 2048-bit modmul needs Montgomery or Barrett reduction, which is new
+mathematics for this library rather than a bigger version of something it has.
+
+And the arithmetic does not fit the cost model. RSA-2048 modexp is roughly two
+thousand squarings of two-thousand-bit numbers; P-256 scalar multiplication is
+roughly two hundred and fifty-six point operations, each several 256-bit
+modmuls. At 570 million instructions per second that is plausibly **hours per
+operation** — a guess, and one nobody should refine without first measuring a
+single general modmul.
+
+It is written here rather than left off the list because *"not yet"* and *"not
+without new mathematics and a different cost model"* are different statements,
+and a reader deserves the second one.
