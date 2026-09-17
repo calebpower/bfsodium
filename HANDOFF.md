@@ -197,6 +197,37 @@ must have no marker in the suite at all.
 
 ## What is next
 
+0. **The 64-bit set and SHA-512 are done.** `idiom/add64`, `rotr64`, `shr64`,
+   `xor64` and `and64` are built and gated, and on them SHA-512, HMAC-SHA-512
+   and HKDF-SHA-512. That is the whole of CONVENTIONS §9.1 tier A's SHA-512
+   line and the HMAC and HKDF rows over it; SHA-384 and both SHA-512/t are the
+   same core with a different IV and a truncation, and HMAC_DRBG, the SP 800-108
+   KDFs and PBKDF2 are loops over an HMAC that now exists at both widths.
+
+   Two things to know before touching them:
+
+   - **HKDF-SHA-512's info is capped at 63 bytes** and the cap is arithmetic,
+     not arbitrary: the expand message is T(64) ‖ info ‖ counter(1), and
+     `sha512/hmac` takes at most 128 bytes from memory because
+     `sha512/hashcore`'s prefix buffer is 256 and the pad block takes half.
+     Raising it means widening that buffer, which moves every cell above it in
+     hashcore, hmac and hkdf. `sha256/hkdf` has the same cap at 192 for the
+     same reason. This is the one limit in the set that a real caller might
+     hit — a TLS 1.3 `HkdfLabel` with a 48-byte context does not fit.
+   - **An eight byte move may not be written the way sha256/* writes a four
+     byte one.** Fifteen consecutive code lines with no annotation is what it
+     comes to, and `bfstyle` rule 4 refuses thirteen. The step to the next byte
+     goes on the same line as the move it follows; that is also what keeps
+     `sha512/round.skel` under the size budget.
+
+   **Keccak is the next keystone** and CONVENTIONS §9.1 tier B says why: it
+   unlocks SHA3-224/256/384/512, SHAKE128/256, cSHAKE, KMAC, TupleHash and
+   ParallelHash, and the post-quantum tier behind it. It needs no new idiom —
+   theta and chi are exclusive or and and over 64-bit lanes, rho is nothing but
+   64-bit rotations, and a NOT is an exclusive or with all ones — so it is a
+   5×5 lane state, twenty four rounds and the sponge, and nothing that has to
+   be invented first.
+
 1. **v1 is done.** CONVENTIONS §9 lists ChaCha20, Poly1305, the AEAD, SHA-256
    and HKDF-SHA-256, and all five are in. The next real target named there is
    the BoneMesh corpus — `keyschedule.json`, `transport-frame.json` — which is
