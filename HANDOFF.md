@@ -129,6 +129,8 @@ routine, the suite fails until it has a row here.
 | `sha512/round` | 16706 | 1366 | FIPS 180-4 first abc round + six more + Cryptol |
 | `sha256/hashcore` | 26476 | 1635 | one message from memory, the wire, and both |
 | `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
+| `sha512/hashcore` | 57785 | 1791 | one message from memory, the wire, and both |
+| `sha512/sha512` | 57853 | 64 | FIPS 180-4 + both padding boundaries |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `aead/chacha20poly1305` | 80299 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
@@ -175,9 +177,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 218 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 218 | golden vectors, dual oracle |
-| 5 | yes | 29 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 231 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 231 | golden vectors, dual oracle |
+| 5 | yes | 31 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |

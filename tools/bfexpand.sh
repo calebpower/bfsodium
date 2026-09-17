@@ -111,8 +111,11 @@ while IFS= read -r line; do
         '@@ADD8@@'*)    import "$repo/idiom/add8.bf" "${line##* }"; continue ;;
         '@@ROUND@@'*)   import "$repo/sha256/round.bf" "${line##* }"; continue ;;
         '@@HASHCORE@@'*) import "$repo/sha256/hashcore.bf" "${line##* }"; continue ;;
+        '@@HASHCORE512@@'*) import "$repo/sha512/hashcore.bf" "${line##* }"; continue ;;
         '@@HMAC@@'*)     import "$repo/sha256/hmac.bf" "${line##* }"; continue ;;
         '@@EXPAND@@'*)  import "$repo/sha256/expand.bf" "${line##* }"; continue ;;
+        '@@ROUND512@@'*)  import "$repo/sha512/round.bf" "${line##* }"; continue ;;
+        '@@EXPAND512@@'*) import "$repo/sha512/expand.bf" "${line##* }"; continue ;;
         '@@SHR32@@'*)   import "$repo/idiom/shr32.bf" "${line##* }"; continue ;;
         '@@ROTR32@@'*)  import "$repo/idiom/rotr32.bf" "${line##* }"; continue ;;
         '@@ROTR64@@'*)  import "$repo/idiom/rotr64.bf" "${line##* }"; continue ;;
