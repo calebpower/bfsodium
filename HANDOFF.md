@@ -118,10 +118,10 @@ routine, the suite fails until it has a row here.
 | `poly1305/fold136` | 2714 | 107 | boundary vectors + Cryptol |
 | `poly1305/dbl136` | 610 | 763 | boundary vectors + Cryptol |
 | `poly1305/reducep136` | 5615 | 375 | boundary vectors + Cryptol + a proof |
-| `poly1305/mulmod136` | 19242 | 841 | boundary vectors + Cryptol |
+| `poly1305/mulmod136` | 17200 | 472 | boundary vectors + Cryptol |
 | `poly1305/clamp` | 248 | 299 | boundary vectors + Cryptol  the mask pinned both ways |
-| `poly1305/absorb` | 21788 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
-| `poly1305/poly1305` | 26326 | 935 | RFC 8439 §2.5.2 + block edges |
+| `poly1305/absorb` | 19725 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
+| `poly1305/poly1305` | 24264 | 935 | RFC 8439 §2.5.2 + block edges |
 | `aead/keygen` | 4584 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
 | `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
 | `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
@@ -135,7 +135,7 @@ routine, the suite fails until it has a row here.
 | `sha512/hkdf` | 538206 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
-| `aead/chacha20poly1305` | 81742 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `aead/chacha20poly1305` | 75556 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -179,8 +179,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 244 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 244 | golden vectors, dual oracle |
+| 2 | yes | 246 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 246 | golden vectors, dual oracle |
 | 5 | yes | 33 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -358,14 +358,14 @@ must have no marker in the suite at all.
    one by commit -- see `BRAINSTEM_COMMIT` there, and the note beside it about
    what the pin turning into a TAG will mean.
 
-2. **A cheaper `mulmod136`, continued.** It is 676 million instructions now
-   that `fold136` places five times H as one addend rather than five, and the
-   measurement in *Cost* says where the rest is: **more than half of it is
-   carrying seventeen byte operands to and from the work frame**, not any
-   kernel. Pasting each kernel at a base where its input slots ARE the live
-   variables removes those carries outright, and walking `b` a byte at a time
-   instead of shifting it one bit per turn removes another 117 million. Neither
-   needs a new algorithm; both are tape layout.
+2. **A cheaper fold after the double, if Poly1305's speed still matters.**
+   `mulmod136` is 145 million instructions now, 6.8× the original, and the
+   work frame and the per-turn shift of `b` are both gone; see *Cost*. What is
+   left is 37% in the fold that follows the doubling, and that fold is doing
+   general work on a value that can only ever have 0, 1 or 2 above bit 130.
+   A routine that adds at most ten to the low byte and lets the carry die would
+   take most of it. It needs its own vectors and its own Cryptol entry, which
+   is why it was left out of the re-laying.
 
 3. **`qrloop` could paste `rotr32`** with the counts 16, 20, 24, 25 instead of
    `rotl32` with 16, 12, 8, 7, for about 2.4× on ChaCha's rotations. Four
@@ -596,16 +596,56 @@ one carry `add8` computes is the only carry in the file.
 It also cost nothing in tape: `add8`'s frame is pasted INSIDE the addend's
 unused tail, so the footprint went DOWN, from 0:52 to 0:50.
 
-**The glue is next, and it needs no new algorithm either.** A paste site already
+**Then the glue itself, and it needed no new algorithm either.** A paste site
 names the base its routine runs at, and every site is its own copy of the code,
-so the fold after the double can sit over `t`, the fold after the add over
-`acc`, and `dbl136` over `t`, with no carry at all; `add136` wants its two
-operands adjacent, which is a layout choice rather than a cost. And the 117
-million spent shifting `b` right one bit 136 times goes away entirely if `b` is
-walked a BYTE at a time with eight halvings inside each byte — which also hands
-you a free deferral, since folding `acc` once per byte instead of once per set
-bit is eight adds between folds and `acc` plus eight times `t` stays well under
-2^136.
+so `mulmod136` was re-laid with the fold and the double over `t` pasted AT `t`
+and the add, the fold and the final reduction over `acc` pasted AT `acc`. There
+is no work frame and nothing is carried to one. `b` is walked a BYTE at a time,
+slid down one place every eight turns, and only the byte in hand is halved, so
+the 117 million spent shifting seventeen bytes right one bit per turn is gone.
+The nested shape — seventeen bytes of eight bits rather than 136 flat — also
+pays for itself: `acc` is folded ONCE PER BYTE instead of once per set bit,
+which is sound because eight turns can each add a `t` under 2^130 + 315, so
+`acc` stays under 2^134 between folds and seventeen bytes hold 2^136.
+
+One move survives inside the loop and it is worth saying why: `add136` spends
+its addend, so `t` is COPIED into the addend slot and put straight back from
+the cell that kept it, before the adder is entered. That is 34 cells out and 17
+back rather than 220 each way, and the cell that keeps it is `add136`'s own
+carry frame, which is why the putting back happens first.
+
+| | before | after | |
+| ---|--- | --- | 0 |
+| `mulmod136` large | 675,977,009 | 145,361,714 | 4.65× |
+| **`mulmod136` large, against the original** | 987,082,567 | 145,361,714 | **6.79×** |
+| `AEAD, RFC §2.8.2` | 8,587,084,818 | 3,581,010,128 | 2.40× |
+| **AEAD, against the original** | 11,584,909,050 | 3,581,010,128 | **3.24×** |
+
+Its footprint fell from 0:286 to 0:124, which is why `absorb` is now 0:141
+rather than 0:303 and `poly1305` 0:555 rather than 0:717. The callers' own
+offsets were NOT re-laid to close the gap that leaves: those distances are
+correct as they stand, and `poly1305`'s per-block moves are a rounding error
+beside the multiply. If someone wants them, `[-L303+R303]` appearing 17 times
+in `poly1305.skel` is where to start.
+
+**And the profile again, after all of it.** The same run, now 146 million:
+
+| | instructions | share |
+| --- | --- | 0 |
+| `fold136` after the double, 136 calls | 53,903,009 | 36.9% |
+| `add136` | 37,199,789 | 25.5% |
+| `dbl136` | 32,051,014 | 22.0% |
+| `mulmod136`'s own glue | 13,727,482 | 9.4% |
+| `fold136` after the byte, 17 calls | 7,098,315 | 4.9% |
+| `reducep136` | 1,616,787 | 1.1% |
+
+The glue is 9.4% where it was 52.9%, and the next item is visible without
+guessing: **the fold after the double does not need a general fold.** `t` stays
+under 2^130 + 315, so doubling it can only put 0, 1 or 2 above bit 130 — five
+times which is at most 10. A general `fold136` spends a whole 17 byte add to
+place that; adding at most ten to the low byte and letting the carry die where
+it dies would turn 54 million into something near one. That wants its own
+routine and its own vectors, which is why it is not in this change.
 
 **And a third time, from the other end: shifting right is far cheaper than
 shifting left.** `rotl32` shifts left by DOUBLING, and doubling a byte is an

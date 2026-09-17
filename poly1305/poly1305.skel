@@ -4,7 +4,7 @@
 ; with a ONE appended after its bytes is added in and multiplied by the clamped
 ; r; the tag is the low sixteen bytes of acc plus s;
 ;
-; INTERFACE entry=34 exit=0 footprint=0:717
+; INTERFACE entry=34 exit=0 footprint=0:555
 ; IO  in:  key{32}  len{2} LE  msg{len}
 ;     out: tag{16}
 ;
@@ -29,8 +29,8 @@
 ;   @0x182        u        puts that copy back
 ;   @0x184        k        sixteen rounds  one per byte position
 ;   @0x186:0x196  tmp{17}  hands r back after it has been copied
-;   @0x19e:0x2cd  the absorb frame; poly1305/absorb runs HERE  and its
-;                 footprint 0:303 is what sets the size of it; while a call is
+;   @0x19e:0x22b  the absorb frame; poly1305/absorb runs HERE  and its
+;                 footprint 0:141 is what sets the size of it; while a call is
 ;                 in progress the accumulator sits at @0x1af and the block it
 ;                 consumes at @0x1c0; it is placed past everything this file
 ;                 keeps  so no operand of it overlaps r  s  acc  blk or a count
@@ -50,7 +50,7 @@
 ; read the key and the length prefix
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
 ; ASSERT ptr=34
-; ASSERT zero 34:717
+; ASSERT zero 34:555
 ; to the head of the key
 L34
 ; ASSERT ptr=0
@@ -468,7 +468,7 @@ R7
 ; adds them in; It does not catch a glue offset that merely lands wrong INSIDE
 ; the frame  since absorb consumes whatever is in there either way; the two
 ; block vectors are what catch that;
-; ASSERT zero 414:717
+; ASSERT zero 414:555
 L83
 ; ASSERT ptr=300
   [-R114+L24+L90]
@@ -930,6 +930,6 @@ R1
 ; back to the head of the tag
 L316
 ; ASSERT ptr=0
-; ASSERT zero 16:717
+; ASSERT zero 16:555
 ; emit the tag little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

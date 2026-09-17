@@ -505,6 +505,14 @@ dk poly1305/mulmod136.bf deadbeefcafebabe01020304050607ffff030000000000000000000
 # no random vector reaches them. p times one lands on exactly p and must come out
 # nought, which is the one input that proves the reduction happens at all.
 dk poly1305/mulmod136.bf fbffffffffffffffffffffffffffffff030100000000000000000000000000000000 0000000000000000000000000000000000 mulmod136Run "mulmod p times one is nought"
+# The turns are nested now, seventeen bytes of eight bits, and the answer is
+# folded once per byte rather than once per set bit. These two pin that shape.
+# p minus one is almost all 0xff, so every byte of the multiplier has all eight
+# bits set and the fold is asked to absorb eight adds of a near maximal value;
+# and a full byte in the MIDDLE of the multiplier fails if the byte slide is
+# off, where a low or a top byte would not.
+dk poly1305/mulmod136.bf faffffffffffffffffffffffffffffff03faffffffffffffffffffffffffffffff03 0100000000000000000000000000000000 mulmod136Run "mulmod p minus one squared is one"
+dk poly1305/mulmod136.bf faffffffffffffffffffffffffffffff030000000000000000ff0000000000000000 fbffffffffffffff00ffffffffffffff03 mulmod136Run "mulmod a full byte in the middle of b"
 
 dk poly1305/dbl136.bf 0100000000000000000000000000000000 0200000000000000000000000000000000 dbl136Run "dbl136 one becomes two"
 dk poly1305/dbl136.bf 8000000000000000000000000000000000 0001000000000000000000000000000000 dbl136Run "dbl136 a bit crosses a byte"

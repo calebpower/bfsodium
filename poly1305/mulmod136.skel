@@ -5,730 +5,412 @@
 ; gains t  t doubles  and b shifts down one; After 136 turns every bit of b has
 ; had its say  and one reduction at the end brings the answer below p;
 ;
-; INTERFACE entry=34 exit=0 footprint=0:286
+; INTERFACE entry=34 exit=0 footprint=0:124
 ; IO  in:  a{17} LE  followed by  b{17} LE     (34 bytes)
 ;     out: (a times b mod p){17} LE            (17 bytes)
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x068  the work frame; every pasted routine runs HERE  at this file's
-;                 own zero  and the operands are carried to it and back; the
-;                 frame is 0:104 because reducep136 is the largest of them
-;   @0x0c8:0x0d8  acc{17}   the answer being accumulated
-;   @0x0dc:0x0ec  t{17}     a doubled once per turn  reduced each time
-;   @0x0f0:0x100  bv{17}    b  shifted down one per turn until it is gone
-;   @0x104:0x114  tmp{17}   hands t back after it has been copied
-;   @0x118        h         HALVE frame: a copy of bv's low byte
-;   @0x119        q         HALVE frame: that byte shifted right one  discarded
-;   @0x11a        bit       HALVE frame: that byte low bit  which is b's bit
-;   @0x11b        f         HALVE frame scratch  restored to nought
-;   @0x11e        n         136 turns
+;   @0x00:0x10  acc{17}  the answer being accumulated; it is ALSO add136's
+;                        accumulator  fold136's value and reducep136's value
+;                        because each of those is pasted at cell nought
+;   @0x11:0x21  b{17}    add136's addend  which the adder spends to nought
+;   @0x22:0x32  tmp{17}  hands the running double back after it has been copied;
+;               these same cells are add136's own carry frame at @0x22:0x2d and
+;               the rest of fold136's frame above it  which is WHY the double is
+;               put back before the adder is entered rather than after
+;               (reducep136 pasted at nought reaches @0x68  and everything up to
+;               there is clear of other business by the time it runs)
+;   @0x33:0x43  t{17}    a doubled once per turn  folded each time
+;   @0x44:0x65  the frame the pastes over t share: dbl136 at @0x33 reaches
+;               @0x4b and fold136 at @0x33 reaches @0x65
+;   @0x66:0x76  bv{17}   b  slid down one BYTE per eight turns until it is gone
+;   @0x77       cur      the byte of b being spent  halved once per turn
+;   @0x78       q        HALVE frame: cur shifted right one
+;   @0x79       bit      HALVE frame: cur's low bit  which is b's bit
+;   @0x7a       f        HALVE frame scratch  restored to nought
+;   @0x7b       bitn     eight turns  one per bit of the byte in hand
+;   @0x7c       byten    seventeen turns  one per byte of b
 ;
-; NOTHING here is reduced by the adder twice over: t doubles with dbl136  which
-; costs about half a million instructions  where add136 on two full values costs
-; about twelve million because its cost is the PRODUCT of the byte values it is
-; adding; Doubling is a shift and should cost what a shift costs;
+; NOTHING IS CARRIED TO A WORK FRAME AND BACK  and that is the whole of this
+; file's cost; A paste site names the cell its routine's zero lands on  and
+; every site is its own copy of the code  so the double and the fold over t are
+; pasted AT t  and the add  the fold and the reduction over acc are pasted AT
+; acc; The only seventeen byte moves left inside the loop are t into add136's
+; addend slot and t back out of the cell that kept it  thirty four cells and
+; seventeen cells  where the work frame version moved everything two hundred
+; and twenty;
 ;
-; Every value stays under 2^130 plus fifteen between turns  because fold136 is
-; applied after each add and after each double; So acc plus t stays under 2^131
-; and the doubling never loses the bit it drops;
+; MEASURED  on the large vector: the version that kept one work frame at cell
+; nought and carried both operands to it spent 527 of its 996 million
+; instructions on those carries alone  because a move costs about twice the
+; DISTANCE for every unit of the byte's value; A hundred and seventeen million
+; more went on shifting b right one bit per turn  which is why b is now walked
+; a byte at a time and only the byte in hand is halved;
+;
+; THE TURNS ARE NESTED  seventeen bytes of eight bits rather than 136 flat  and
+; that is what makes the fold on acc affordable: acc is folded ONCE PER BYTE
+; instead of once per set bit; Eight turns can each add a t under 2^130 plus
+; 315  so acc stays under 2^134 between folds and seventeen bytes hold 2^136;
+; t is still folded every turn  because doubling an unfolded value would lose
+; its top bit;
 ;
 ; a is folded ONCE before the loop; it arrives as any seventeen byte value  and
 ; doubling one of those would lose its top bit;
+;
+; The seventeen byte moves and the slide below are written as REPETITIONS of one
+; token  the way sha512/hashcore writes its long runs; every distance in them is
+; a number worked out from the map above;
 
 ; read a{0:16} then b{0:16}  leaving the pointer past both
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
 ; ASSERT ptr=34
-; ASSERT zero 34:286
+; ASSERT zero 34:124
 ; to the head of a
 L34
 ; ASSERT ptr=0
 
-; ==== a is put aside as the running double  and b as the multiplier ====
-  [-R220+L220]
+; ==== a becomes the running double  and b the multiplier  each in its own ====
+; ==== place  so that nothing needs carrying once the loop starts ====
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
 ; the next byte
 R1
-  [-R220+L220]
+  [-R51+L51]
+; ASSERT ptr=16
 ; to the head of b
 R1
 ; ASSERT ptr=17
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
+  [-R85+L85]
 ; the next byte
 R1
-  [-R223+L223]
-; to the running double
-R187
-; ASSERT ptr=220
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; back to the work frame
-L236
-; ASSERT ptr=0
-; ASSERT zero 17:50
-@@FOLD136@@ 0
-; ASSERT ptr=0
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; to the turn counter
-R270
-; ASSERT ptr=286
-; one hundred and thirty six bits of b  one hundred and thirty six turns
-  ++++++++++++++++++++++++++++++++++++++++
-; continued
-  ++++++++++++++++++++++++++++++++++++++++
-; continued
-  ++++++++++++++++++++++++++++++++++++++++
-; continued
-  ++++++++++++++++
-[
-  -
+  [-R85+L85]
+; ASSERT ptr=33
 
-; ==== b's low bit decides whether the running double is added in ====
-; to the low byte of b
-L46
-; ASSERT ptr=240
-; the byte is copied out and handed straight back  so the shift still has it
-  [-R40+L20+L20]
-R20
-  [-L20+R20]
-R20
-; ASSERT ptr=280
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-; the half is not wanted  only the bit that fell off it
-R1
-  [-]
-R1
-; ASSERT ptr=282
+; ==== a is folded once  because the doubling below would lose its top bit ====
+; to the running double
+R18
+; ASSERT ptr=51
+; ASSERT zero 68:101
+@@FOLD136@@ 51
+; ASSERT ptr=51
+
+; ==== seventeen bytes of b  eight bits each ====
+; to the byte counter
+R73
+; ASSERT ptr=124
+  +++++++++++++++++
 [
   -
-; ==== the running double is added into the answer  and folded back down ====
-L82
-; ASSERT ptr=200
-  [-L200+R200]
+; to the bottom byte of what is left of b
+L22
+; ASSERT ptr=102
+; it steps out into the cell the halving spends
+  [-R17+L17]
+; and the rest of b slides down one place to take its turn next
+R1
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
 ; the next byte
 R1
-  [-L200+R200]
+  [-L1+R1]
+; ASSERT ptr=118
+; to the bit counter
+R5
+; ASSERT ptr=123
+  ++++++++
+[
+  -
+; to the byte in hand
+L4
+; ASSERT ptr=119
+; the halving leaves the byte's low bit beside its own half
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+; the half goes back to be halved again next turn
+R1
+; ASSERT ptr=120
+  [-L1+R1]
+; to the bit itself
+R1
+; ASSERT ptr=121
+[
+; the bit is spent here  so this arm runs once and not once per unit
+  [-]
+; to the running double
+L70
+; ASSERT ptr=51
+; the double is copied  not moved: the adder spends what it is given and the
+; next turn still needs it
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L200+R200]
-; to the running double  which is copied because the next turn still needs it
-R4
-; ASSERT ptr=220
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
 ; the next byte
 R1
-  [-L203+R243+L40]
+  [-L34+R17+R17]
+; ASSERT ptr=67
+; to the cell that kept it
+L33
+; ASSERT ptr=34
+  [-R17+L17]
 ; the next byte
 R1
-  [-L203+R243+L40]
-; the temps hand it straight back
-R24
-; ASSERT ptr=260
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
+  [-R17+L17]
 ; the next byte
 R1
-  [-L40+R40]
-; the next byte
-R1
-  [-L40+R40]
-; back to the work frame
-L276
+  [-R17+L17]
+; ASSERT ptr=50
+; to the answer  which is the adder's accumulator
+L50
 ; ASSERT ptr=0
 ; ASSERT zero 34:45
 @@ADD136@@ 0
 ; ASSERT ptr=0
-; ASSERT zero 17:50
-@@FOLD136@@ 0
-; ASSERT ptr=0
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; the next byte
-R1
-  [-R200+L200]
-; back to the bit  which the loop is about to leave
-R266
-; ASSERT ptr=282
+; back to the bit  which is nought now  so this arm is done
+R121
 ]
-
-; ==== the running double doubles  and is folded back down ====
-L62
-; ASSERT ptr=220
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; the next byte
-R1
-  [-L220+R220]
-; to the work frame
-L236
-; ASSERT ptr=0
-; ASSERT zero 17:24
-@@DBL136@@ 0
+; ASSERT ptr=121
+; to the running double  which doubles whether the bit was set or not
+L70
+; ASSERT ptr=51
+; ASSERT zero 68:75
+@@DBL136@@ 51
+; ASSERT ptr=51
+; ASSERT zero 68:101
+@@FOLD136@@ 51
+; ASSERT ptr=51
+; back to the bit counter
+R72
+]
+; ASSERT ptr=123
+; the byte is spent  so the answer is folded once for the eight adds it took
+L123
 ; ASSERT ptr=0
 ; ASSERT zero 17:50
 @@FOLD136@@ 0
 ; ASSERT ptr=0
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; the next byte
-R1
-  [-R220+L220]
-; ==== b shifts down one  so the next turn reads the next bit ====
-R224
-; ASSERT ptr=240
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; the next byte
-R1
-  [-L240+R240]
-; to the work frame
-L256
-; ASSERT ptr=0
-; ASSERT zero 17:21
-@@HALVE136@@ 0
-; ASSERT ptr=0
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; the next byte
-R1
-  [-R240+L240]
-; back to the turn counter
-R270
-; ASSERT ptr=286
+; back to the byte counter
+R124
 ]
-; ASSERT ptr=286
+; ASSERT ptr=124
 
-; ==== the running double has done its work ====
-L66
-; ASSERT ptr=220
+; ==== the running double has done its work and is emptied  because the ====
+; ==== reduction below is pasted over the cells it was using ====
+L73
+; ASSERT ptr=51
   [-]
 ; the next byte
 R1
@@ -778,64 +460,13 @@ R1
 ; the next byte
 R1
   [-]
+; ASSERT ptr=67
 ; to the answer
-L36
-; ASSERT ptr=200
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; the next byte
-R1
-  [-L200+R200]
-; back to the work frame
-L216
+L67
 ; ASSERT ptr=0
-; ASSERT zero 17:286
+; ASSERT zero 17:104
 @@REDUCEP136@@ 0
 ; ASSERT ptr=0
-; ASSERT zero 17:286
+; ASSERT zero 17:124
 ; emit the product little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

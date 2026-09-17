@@ -4,7 +4,7 @@
 ; only place the accumulator changes; It was lifted out of poly1305 so the AEAD
 ; can take the same step without a second copy of it existing;
 ;
-; INTERFACE entry=50 exit=17 footprint=0:303
+; INTERFACE entry=50 exit=17 footprint=0:141
 ; IO  in:  r{17} LE  acc{17} LE  blk{17} LE    (51 bytes)
 ;     out: acc{17} LE                          (17 bytes)
 ;
@@ -15,9 +15,9 @@
 ;   @0x11:0x21  acc{17}  u8  the accumulator  in and out
 ;   @0x22:0x32  blk{17}  u8  this block  with its ONE already appended;
 ;                           CONSUMED by the addition
-;   @0x11:0x12f  the work frame; BOTH pasted routines run at @0x11  add136
-;                           reaching 0x11:0x38 and mulmod136 0x11:0x12f  whose
-;                           footprint 0:286 is what sets the size of it
+;   @0x11:0x8d   the work frame; BOTH pasted routines run at @0x11  add136
+;                           reaching 0x11:0x38 and mulmod136 0x11:0x8d  whose
+;                           footprint 0:124 is what sets the size of it
 ;
 ; The three operands are laid out so that neither pasted routine needs its
 ; arguments moved to reach it; add136 wants its accumulator and its addend
@@ -37,7 +37,7 @@
 L33
 ; ASSERT ptr=+17
 ; nothing above the two operands has been touched yet
-; ASSERT zero +51:+303
+; ASSERT zero +51:+141
 ; the block is added into the accumulator  modulo two to the 136
 @@ADD136@@ 17
 ; ASSERT ptr=+17

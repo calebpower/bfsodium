@@ -53,8 +53,8 @@
 ;   @0x1b0:0x1c0  r{17}    the clamped r  copied into absorb's slot each block
 ;   @0x1c4:0x1d4  s{17}    added in once at the very end
 ;   @0x1d8:0x1e8  tmp{17}  hands r back  and hands a length back
-;   @0x200:0x32f  the absorb frame; poly1305/absorb runs HERE and its footprint
-;                 0:303 sets the size of it; absorb takes r at @0x200  and the
+;   @0x200:0x28d  the absorb frame; poly1305/absorb runs HERE and its footprint
+;                 0:141 sets the size of it; absorb takes r at @0x200  and the
 ;                 accumulator at @0x211 and the block at @0x222 LIVE there
 ;                 between calls  so only r is handed in afresh each time;
 ;                 clamp borrows the head of this frame once  before any block
@@ -77,7 +77,7 @@
 ; read the key  step over the counter  then read the nonce
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>>>>>,>,>,>,>,>,>,>,>,>,>,>,
 ; ASSERT ptr=47
-; ASSERT zero 48:815
+; ASSERT zero 48:653
 
 ; ==== the AAD length  read above blockkeep's frame and copied ====
 ; It is read here rather than in the prologue because it must live above that
