@@ -1,7 +1,8 @@
 ; bfsodium SHA_512 EXPAND : one word of the message schedule
 ;
 ; HAND WRITTEN skeleton; The rotate  the shift  the exclusive or and the adder
-; are each PASTED from their own verified files;
+; are each PASTED from their own verified files; what is here is the wiring
+; that FIPS 180_4 section 6 point 4 point 2 lays down and nothing else;
 ;
 ; INTERFACE entry=31 exit=0 footprint=0:196
 ; IO  in:  w0{8} LE  w1{8} LE  w9{8} LE  w14{8} LE     (32 bytes)
@@ -41,10 +42,20 @@
 ; Note that the two small sigmas mix rotations with a genuine SHIFT  which is
 ; the only reason idiom/shr64 exists at all;
 ;
-; EVERY DISTANCE BELOW IS A NUMBER WORKED OUT FROM THE MAP ABOVE  and the four
-; that recur are worth naming here: 144 carries w1 to the rotate frame  128
-; carries w14 there  80 is the rotate frame back down to tmp  and 112 is the
-; rotate frame down to s1;
+; THE DISTANCES  worked out from the map above and used over and over; A word
+; is read by a THREE WAY COPY that drops it in a frame and in tmp at the same
+; time  and tmp then hands the original straight back  because the word is
+; wanted again for the next rotation;
+;   w1 @0x08 to the rotate frame @0x98 is 144  and tmp @0x48 sits 80 below it
+;   w14 @0x18 to the rotate frame is 128  and tmp sits 48 above w14
+;   the rotate frame down to s1 @0x28 is 112  and to s2 @0x30 is 104
+;   s1 and s2 up to the xor frame @0x70 are both 72  since both gaps are 40
+;   the xor result @0x80 down to s3 @0x38 is 72  and down to s4 @0x40 is 64
+;
+; A STEP RIGHT SHARES THE LINE WITH THE MOVE IT FOLLOWS; eight bytes written
+; the way sha256/expand writes four is fifteen consecutive code lines with no
+; annotation between them  and bfstyle rule 4 refuses thirteen; the step is
+; punctuation rather than a thought  so it goes where punctuation goes;
 
 ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; read the four taps
   ,>,                                                          ; continued
@@ -52,13 +63,12 @@
                                                                ; ASSERT zero 32:196
 
 ; ============================================================ ; sigma0 of W{t minus 15}
-                                                               ; w1 is at @0x08  the rotate frame at @0x98 and tmp at
-                                                               ; @0x48  so the three way copy steps 144 right then 80
-                                                               ; left then 64 left  and lands back where it began
+                                                               ; ____ rotated right by one ____ w1 into the rotate
+                                                               ; frame  and tmp keeps a copy
 <<<<<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=8
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the word into the rotate frame  and the temp keeps a
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; copy
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -105,7 +115,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<]                                                          ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      ; and the temp hands the original straight back
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      ; and tmp hands the original straight back
                                                                ; ASSERT ptr=72
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -335,9 +345,13 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]       ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the word into the rotate frame a second time
+
+                                                               ; ____ rotated right by eight ____ w1 into the rotate
+                                                               ; frame a second time
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                            ; continued
+                                                               ; ASSERT ptr=8
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -386,7 +400,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<]                                                          ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      ; and the temp hands the original back again
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      ; and tmp hands the original back again
                                                                ; ASSERT ptr=72
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -616,7 +630,10 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                       ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the two rotations are exclusive ored  s1 first
+
+                                                               ; ____ the two rotations are exclusive ored ____ s1 is
+                                                               ; the first operand
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <                                                            ; continued
                                                                ; ASSERT ptr=40
@@ -644,7 +661,7 @@
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                             ; continued
->                                                              ; and s2 after it
+>                                                              ; and s2 is the second  which sits directly above it
                                                                ; ASSERT ptr=48
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -911,7 +928,7 @@
 
   <<<<<<<<<<<<<<<<                                             ; walk back out to the routine base
                                                                ; ASSERT ptr=112
->>>>>>>>>>>>>>>>                                               ; the result comes back as the sigma0 accumulator
+>>>>>>>>>>>>>>>>                                               ; and the result is the sigma0 accumulator
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] >                           ; continued
@@ -936,9 +953,13 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                             ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the word into the shift frame  and it is spent
+
+                                                               ; ____ shifted right by seven ____ w1 into the shift
+                                                               ; frame  and it is spent from here on
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<                                                    ; continued
+                                                               ; ASSERT ptr=8
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<   ; continued
@@ -1202,9 +1223,14 @@
   <<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                 ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the two rotations so far step down into s2
+
+                                                               ; ____ and the shift joins the two rotations ____ the
+                                                               ; accumulator steps down into s2  so the two operands
+                                                               ; are adjacent again
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<                                                    ; continued
+                                                               ; ASSERT ptr=56
   [-<<<<<<<<+>>>>>>>>] >
   [-<<<<<<<<+>>>>>>>>] >
   [-<<<<<<<<+>>>>>>>>] >
@@ -1213,7 +1239,7 @@
   [-<<<<<<<<+>>>>>>>>] >
   [-<<<<<<<<+>>>>>>>>] >
   [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<<<<<<<<                                                ; and the last exclusive or  s2 first
+<<<<<<<<<<<<<<<                                                ; s2 is the first operand
                                                                ; ASSERT ptr=48
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -1239,7 +1265,7 @@
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<]                                             ; continued
-<<<<<<<<<<<<<<<                                                ; then s1
+<<<<<<<<<<<<<<<                                                ; and s1 the second
                                                                ; ASSERT ptr=40
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -1507,7 +1533,7 @@
 
   <<<<<<<<<<<<<<<<                                             ; walk back out to the routine base
                                                                ; ASSERT ptr=112
->>>>>>>>>>>>>>>>                                               ; and sigma0 is done
+>>>>>>>>>>>>>>>>                                               ; and sigma0 is done  in s3
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] >                           ; continued
@@ -1534,15 +1560,16 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                             ; continued
 
 ; ============================================================ ; sigma1 of W{t minus 2}
-                                                               ; w14 is at @0x18  so the same copy steps 128 right
-                                                               ; then 80 left then 48 left; the accumulator is s4
-                                                               ; rather than s3  because s3 is holding sigma0 and
-                                                               ; nothing in this routine is ever overwritten
+                                                               ; w14 sits sixteen cells above w1  so the three way
+                                                               ; copy steps 128 right then 80 left then 48 left; The
+                                                               ; accumulator is s4 rather than s3  because s3 is
+                                                               ; holding sigma0 and nothing in this routine is ever
+                                                               ; overwritten; ____ rotated right by nineteen ____
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<          ; continued
                                                                ; ASSERT ptr=24
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the word into the rotate frame  and the temp keeps a
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; copy
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<] >                              ; continued
@@ -1581,7 +1608,7 @@
   >>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<]                                ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                      ; and the temp hands the original straight back
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                      ; and tmp hands the original straight back
                                                                ; ASSERT ptr=72
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] >                 ; continued
@@ -1803,9 +1830,11 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]       ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the word into the rotate frame a second time
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; ____ rotated right by sixty one ____
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<                                            ; continued
+                                                               ; ASSERT ptr=24
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -1846,7 +1875,7 @@
   >>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<]                                ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                      ; and the temp hands the original back again
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                      ; and tmp hands the original back again
                                                                ; ASSERT ptr=72
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] >                 ; continued
@@ -2069,7 +2098,10 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                       ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the two rotations are exclusive ored  s1 first
+
+                                                               ; ____ the two rotations are exclusive ored ____ s1 is
+                                                               ; the first operand
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <                                                            ; continued
                                                                ; ASSERT ptr=40
@@ -2097,7 +2129,7 @@
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]                             ; continued
->                                                              ; and s2 after it
+>                                                              ; and s2 the second
                                                                ; ASSERT ptr=48
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -2364,7 +2396,7 @@
 
   <<<<<<<<<<<<<<<<                                             ; walk back out to the routine base
                                                                ; ASSERT ptr=112
->>>>>>>>>>>>>>>>                                               ; the result comes back as the sigma1 accumulator
+>>>>>>>>>>>>>>>>                                               ; and the result is the sigma1 accumulator
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>] >                                           ; continued
@@ -2389,8 +2421,12 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>]                                             ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the word into the shift frame  and it is spent
+
+                                                               ; ____ shifted right by six ____ w14 into the shift
+                                                               ; frame  and it is spent from here on
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<          ; continued
+                                                               ; ASSERT ptr=24
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<   ; continued
@@ -2654,9 +2690,14 @@
   <<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                 ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; the two rotations so far step down into s2
+
+                                                               ; ____ and the shift joins the two rotations ____ the
+                                                               ; accumulator steps down into s2  a word further than
+                                                               ; sigma0 stepped because s4 sits a word above s3
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <                                                            ; continued
+                                                               ; ASSERT ptr=64
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>] >
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>] >
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>] >
@@ -2665,7 +2706,7 @@
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>] >
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>] >
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
-<<<<<<<<<<<<<<<<<<<<<<<                                        ; and the last exclusive or  s2 first
+<<<<<<<<<<<<<<<<<<<<<<<                                        ; s2 is the first operand
                                                                ; ASSERT ptr=48
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -2691,7 +2732,7 @@
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<]                                             ; continued
-<<<<<<<<<<<<<<<                                                ; then s1
+<<<<<<<<<<<<<<<                                                ; and s1 the second
                                                                ; ASSERT ptr=40
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -2959,7 +3000,7 @@
 
   <<<<<<<<<<<<<<<<                                             ; walk back out to the routine base
                                                                ; ASSERT ptr=112
->>>>>>>>>>>>>>>>                                               ; and sigma1 is done
+>>>>>>>>>>>>>>>>                                               ; and sigma1 is done  in s4
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>] >                                           ; continued
@@ -4236,6 +4277,7 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] >                 ; continued
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                   ; continued
+
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        ; the accumulator into the adder
                                                                ; ASSERT ptr=32
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<
@@ -5474,6 +5516,7 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] >                 ; continued
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]                   ; continued
+
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        ; the accumulator into the adder
                                                                ; ASSERT ptr=32
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<

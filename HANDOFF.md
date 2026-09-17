@@ -125,14 +125,14 @@ routine, the suite fails until it has a row here.
 | `aead/keygen` | 4584 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
 | `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
 | `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
-| `sha512/expand` | 6707 | 561 | eight vectors + Cryptol |
-| `sha512/round` | 16706 | 1366 | FIPS 180-4 first abc round + six more + Cryptol |
+| `sha512/expand` | 6750 | 595 | eight vectors + Cryptol |
+| `sha512/round` | 16760 | 1419 | FIPS 180-4 first abc round + six more + Cryptol |
 | `sha256/hashcore` | 26476 | 1635 | one message from memory, the wire, and both |
 | `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
-| `sha512/hashcore` | 57785 | 1791 | one message from memory, the wire, and both |
-| `sha512/sha512` | 57853 | 64 | FIPS 180-4 + both padding boundaries |
-| `sha512/hmac` | 233777 | 1868 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
-| `sha512/hkdf` | 537585 | 555 | RFC 5869's three shapes at SHA-512 + one byte out |
+| `sha512/hashcore` | 57916 | 1815 | one message from memory, the wire, and both |
+| `sha512/sha512` | 57976 | 64 | FIPS 180-4 + both padding boundaries |
+| `sha512/hmac` | 234083 | 1700 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
+| `sha512/hkdf` | 538206 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `aead/chacha20poly1305` | 80299 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |

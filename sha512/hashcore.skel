@@ -4,6 +4,16 @@
 ; their own verified files; what is here is the constant table  the padding and
 ; the conveyors;
 ;
+; TWO THINGS IN THIS FILE ARE NOT TYPED OUT ONE CHARACTER AT A TIME  and it is
+; better to say so than to let a reader assume otherwise; The eighty round
+; constants and the eight initial words are FIPS 180_4's own numbers  rendered
+; as byte deltas by the rule the comment above them states  and they are the
+; same table the vectors check; And a run of ONE repeated token  clearing six
+; hundred and forty cells or sliding a block down one place  is a repetition
+; rather than a decision  which is what Rn is for one level down; Every offset
+; every section and every branch below was worked out from the map and written
+; down;
+;
 ; INTERFACE entry=259 exit=1836 footprint=0:1859
 ; IO  in:  plen{2} LE  slen{2} LE  pbuf{256}  then slen bytes from the wire
 ;     out: digest{64}  big endian  as the standard prints it
@@ -41,14 +51,14 @@
 ;   @0x734:0x73b  len{8}  u64 LE  the message length  kept for the last block
 ;   @0x73c:0x743  ksave{8}        holds K{t} while the table rotates past it
 ;
-; THE SAME SHAPE AS sha256/hashcore  section for section  and the two should be
-; read together; What changes is the width of a word  the size of a block  the
-; number of rounds  the constants  and the sixteen byte length field instead of
-; eight; THE FLAGS  THE LENGTH AND KSAVE SIT AT THE SAME OFFSETS ABOVE THE TOP
-; OF THE BLOCK AS THEY DO THERE  which is on purpose: it means every distance
-; in the padding machinery measured from the block top is the same number in
-; both files  and only the ones reaching down into plen  slen  pbuf and the
-; frames had to be worked out again;
+; THE ONE CHOICE THAT MADE THIS PORT TRACTABLE; the flags  the length and ksave
+; sit at the SAME offsets above the top of the block as they do in
+; sha256/hashcore: onep is three above it  room four  more five  the byte
+; counter six  the have flag seven  the else arm eight  the two test cells nine
+; and ten  and the second else arm eleven; So every distance in the padding
+; machinery measured from the top of the block is the same number in both files
+; and only the ones reaching down into plen  slen  pbuf and the frames had to be
+; worked out again; Read the two side by side;
 ;
 ; The tables are CLEARED before they are written  because writing a byte here
 ; ADDS to what the cell held; HMAC enters this routine three times over and the
@@ -280,6 +290,7 @@ L63
 ; and both are copied rather than moved;
 ; the prefix count into the adder
 L323
+; ASSERT ptr=0
   [-R552+R1288+L1840]
 R1840
   [-L1840+R1840]
@@ -313,6 +324,7 @@ L1288
   [-R1292+L1292]
 ; the ONE that ends the message still needs placing
 R1275
+; ASSERT ptr=1834
   [-]
   +
 ; and there is at least one block to do
@@ -322,8 +334,8 @@ R2
 
 ; ==== one turn is one padded block ====
 [
-R1
 ; a hundred and twelve bytes  which is as far as a length can be added after
+R1
   [-]
   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 [
@@ -461,6 +473,7 @@ L3
 L2
 ]
 ; ASSERT ptr=1837
+
 ; is there room for the length in this block
 L2
   [-]
@@ -472,15 +485,12 @@ R7
   [-L7+R7]
 L1
   [[-]L5-R5]
+; and the last sixteen bytes of the block  the same loop with a smaller count
 L3
-; and the last sixteen bytes of the block
   [-]
   ++++++++++++++++
 [
   -
-; the block slides down BEFORE the byte lands  not after; sliding after
-; would shift the first byte one place too far and it would fall out
-; of the bottom  where the next byte would then land on top of it;
 ; every byte of the block slides down one place
 L132
   [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
@@ -612,13 +622,16 @@ L2
 ]
 ; ASSERT ptr=1837
 
-; if there is room  the length goes in and this is the last block
+; ==== if there is room  the length goes in and this is the last block ====
 L2
 [
   -
-; the bit count is the byte count times eight  three doublings
+; the bit count is the byte count times eight  which is three doublings of
+; the length against itself;
+; ____ the first doubling ____
 ; the length into the adder
 R9
+; ASSERT ptr=1844
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292] R1
@@ -627,8 +640,9 @@ R9
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292]
-; added to itself  which doubles it
+; added to itself  so the addend is a copy and tmp hands the first back
 L1299
+; ASSERT ptr=552
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
@@ -637,8 +651,8 @@ L1299
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12]
-; and the temp hands the original straight back
 L19
+; ASSERT ptr=540
   [-R12+L12] R1
   [-R12+L12] R1
   [-R12+L12] R1
@@ -660,8 +674,9 @@ R5
   [-R1292+L1292] R1
   [-R1292+L1292] R1
   [-R1292+L1292]
-; the length into the adder
+; ____ the second doubling ____
 R1285
+; ASSERT ptr=1844
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292] R1
@@ -670,8 +685,8 @@ R1285
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292]
-; added to itself  which doubles it
 L1299
+; ASSERT ptr=552
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
@@ -680,8 +695,8 @@ L1299
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12]
-; and the temp hands the original straight back
 L19
+; ASSERT ptr=540
   [-R12+L12] R1
   [-R12+L12] R1
   [-R12+L12] R1
@@ -694,7 +709,6 @@ R5
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; and back
   [-R1292+L1292] R1
   [-R1292+L1292] R1
   [-R1292+L1292] R1
@@ -703,8 +717,9 @@ R5
   [-R1292+L1292] R1
   [-R1292+L1292] R1
   [-R1292+L1292]
-; the length into the adder
+; ____ the third doubling ____
 R1285
+; ASSERT ptr=1844
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292] R1
@@ -713,8 +728,8 @@ R1285
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292]
-; added to itself  which doubles it
 L1299
+; ASSERT ptr=552
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
@@ -723,8 +738,8 @@ L1299
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12]
-; and the temp hands the original straight back
 L19
+; ASSERT ptr=540
   [-R12+L12] R1
   [-R12+L12] R1
   [-R12+L12] R1
@@ -737,7 +752,6 @@ R5
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; and back
   [-R1292+L1292] R1
   [-R1292+L1292] R1
   [-R1292+L1292] R1
@@ -746,9 +760,13 @@ R5
   [-R1292+L1292] R1
   [-R1292+L1292] R1
   [-R1292+L1292]
-; and it is written big endian into the last sixteen bytes
-; only the low eight are ever other than nought
+; and it is written big endian into the last sixteen bytes; only the low
+; eight are ever other than nought  so the top eight stay as the block was
+; cleared; the least significant byte goes LAST  which is the reversal  and
+; the distance grows by two each step because source and destination walk
+; in opposite directions
 R1285
+; ASSERT ptr=1844
   [-L13+R13] R1
   [-L15+R15] R1
   [-L17+R17] R1
@@ -772,9 +790,12 @@ L1447
 ; ASSERT zero 388:515
 
 ; ==== the block is read in as words  most significant byte first ====
-; This is the only place endianness is touched on the way in;
+; This is the only place endianness is touched on the way in; the top byte of
+; each group is the LOW cell of the little endian word  so the source walks
+; left while the destination walks right and the eight distances shrink by two;
 ; word 0  most significant byte first
 R1196
+; ASSERT ptr=1711
   [-L1323+R1323] L1
   [-L1321+R1321] L1
   [-L1319+R1319] L1
@@ -936,8 +957,11 @@ R15
 ; ASSERT zero 1704:1831
 
 ; ==== the working variables start as the hash ====
+; H is COPIED rather than moved  because the block's sum is added back into
+; it at the end; tmp hands each word straight back;
 ; hash word 0
 L1564
+; ASSERT ptr=260
   [-R64+R216+L280] R1
   [-R64+R216+L280] R1
   [-R64+R216+L280] R1
@@ -948,6 +972,7 @@ L1564
   [-R64+R216+L280]
 ; and the temp hands the original straight back
 R273
+; ASSERT ptr=540
   [-L280+R280] R1
   [-L280+R280] R1
   [-L280+R280] R1
@@ -966,7 +991,6 @@ L279
   [-R64+R208+L272] R1
   [-R64+R208+L272] R1
   [-R64+R208+L272]
-; and the temp hands the original straight back
 R265
   [-L272+R272] R1
   [-L272+R272] R1
@@ -986,7 +1010,6 @@ L271
   [-R64+R200+L264] R1
   [-R64+R200+L264] R1
   [-R64+R200+L264]
-; and the temp hands the original straight back
 R257
   [-L264+R264] R1
   [-L264+R264] R1
@@ -1006,7 +1029,6 @@ L263
   [-R64+R192+L256] R1
   [-R64+R192+L256] R1
   [-R64+R192+L256]
-; and the temp hands the original straight back
 R249
   [-L256+R256] R1
   [-L256+R256] R1
@@ -1026,7 +1048,6 @@ L255
   [-R64+R184+L248] R1
   [-R64+R184+L248] R1
   [-R64+R184+L248]
-; and the temp hands the original straight back
 R241
   [-L248+R248] R1
   [-L248+R248] R1
@@ -1046,7 +1067,6 @@ L247
   [-R64+R176+L240] R1
   [-R64+R176+L240] R1
   [-R64+R176+L240]
-; and the temp hands the original straight back
 R233
   [-L240+R240] R1
   [-L240+R240] R1
@@ -1066,7 +1086,6 @@ L239
   [-R64+R168+L232] R1
   [-R64+R168+L232] R1
   [-R64+R168+L232]
-; and the temp hands the original straight back
 R225
   [-L232+R232] R1
   [-L232+R232] R1
@@ -1086,7 +1105,6 @@ L231
   [-R64+R160+L224] R1
   [-R64+R160+L224] R1
   [-R64+R160+L224]
-; and the temp hands the original straight back
 R217
   [-L224+R224] R1
   [-L224+R224] R1
@@ -1098,6 +1116,7 @@ R217
   [-L224+R224]
 ; sixteen rounds take their word straight from the window
 L15
+; ASSERT ptr=532
   [-]
   ++++++++++++++++
 ; and there are eighty rounds in all
@@ -1128,6 +1147,7 @@ L2
   -
 ; the head of the window IS this round's word
 L146
+; ASSERT ptr=388
   [-R128+L128] R1
   [-R128+L128] R1
   [-R128+L128] R1
@@ -1144,6 +1164,7 @@ R1
   -
 ; W{t minus 16} is spent  the window is about to drop it
 L147
+; ASSERT ptr=388
   [-R476+L476] R1
   [-R476+L476] R1
   [-R476+L476] R1
@@ -1164,6 +1185,7 @@ R1
   [-R476+L332+L144]
 ; and the temp hands the original straight back
 R137
+; ASSERT ptr=540
   [-L144+R144] R1
   [-L144+R144] R1
   [-L144+R144] R1
@@ -1174,6 +1196,7 @@ R137
   [-L144+R144]
 ; W{t minus 7}
 L87
+; ASSERT ptr=460
   [-R420+L340+L80] R1
   [-R420+L340+L80] R1
   [-R420+L340+L80] R1
@@ -1184,6 +1207,7 @@ L87
   [-R420+L340+L80]
 ; and the temp hands the original straight back
 R73
+; ASSERT ptr=540
   [-L80+R80] R1
   [-L80+R80] R1
   [-L80+R80] R1
@@ -1194,6 +1218,7 @@ R73
   [-L80+R80]
 ; W{t minus 2}
 L47
+; ASSERT ptr=500
   [-R388+L348+L40] R1
   [-R388+L348+L40] R1
   [-R388+L348+L40] R1
@@ -1204,6 +1229,7 @@ L47
   [-R388+L348+L40]
 ; and the temp hands the original straight back
 R33
+; ASSERT ptr=540
   [-L40+R40] R1
   [-L40+R40] R1
   [-L40+R40] R1
@@ -1231,6 +1257,7 @@ L368
 ; ASSERT zero 534:535
 ; the window keeps a copy of the word
 L19
+; ASSERT ptr=516
   [-R8+R16+L24] R1
   [-R8+R16+L24] R1
   [-R8+R16+L24] R1
@@ -1241,6 +1268,7 @@ L19
   [-R8+R16+L24]
 ; and the temp hands the original straight back
 R17
+; ASSERT ptr=540
   [-L24+R24] R1
   [-L24+R24] R1
   [-L24+R24] R1
@@ -1251,8 +1279,11 @@ R17
   [-L24+R24]
 
 ; ==== the round itself ====
+; the eight working variables go in as one continuous run of sixty four
+; bytes  because v and the round's own v sit at the same spacing
 ; working variable 0 goes in
 L223
+; ASSERT ptr=324
   [-R260+L260] R1
   [-R260+L260] R1
   [-R260+L260] R1
@@ -1333,6 +1364,7 @@ R1
   [-R260+L260]
 ; with this round's word
 R129
+; ASSERT ptr=516
   [-R132+L132] R1
   [-R132+L132] R1
   [-R132+L132] R1
@@ -1341,8 +1373,9 @@ R129
   [-R132+L132] R1
   [-R132+L132] R1
   [-R132+L132]
-; and a copy of this round's constant
+; and a copy of this round's constant  which the table must keep
 R541
+; ASSERT ptr=1064
   [-L408+L116+R524] R1
   [-L408+L116+R524] R1
   [-L408+L116+R524] R1
@@ -1353,6 +1386,7 @@ R541
   [-L408+L116+R524]
 ; and the temp hands the original straight back
 L531
+; ASSERT ptr=540
   [-R524+L524] R1
   [-R524+L524] R1
   [-R524+L524] R1
@@ -1451,6 +1485,7 @@ L251
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
 ; and the new word lands at the top
 R9
+; ASSERT ptr=524
   [-L16+R16] R1
   [-L16+R16] R1
   [-L16+R16] R1
@@ -1465,6 +1500,7 @@ R9
 ; where it started  which is what lets a second block use it again;
 ; the constant just used steps aside
 R533
+; ASSERT ptr=1064
   [-R788+L788] R1
   [-R788+L788] R1
   [-R788+L788] R1
@@ -1478,6 +1514,7 @@ R1
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
 ; and the one that stepped aside goes to the end
 R149
+; ASSERT ptr=1852
   [-L156+R156] R1
   [-L156+R156] R1
   [-L156+R156] R1
@@ -1493,8 +1530,9 @@ L1326
 ; ASSERT ptr=533
 
 ; ==== the hash takes this block ====
-; the accumulator into the adder
+; hash word 0 into the adder
 L273
+; ASSERT ptr=260
   [-R292+L292] R1
   [-R292+L292] R1
   [-R292+L292] R1
@@ -1503,7 +1541,7 @@ L273
   [-R292+L292] R1
   [-R292+L292] R1
   [-R292+L292]
-; and the addend after it
+; and working variable 0 after it
 R57
   [-R236+L236] R1
   [-R236+L236] R1
@@ -1526,7 +1564,7 @@ R221
   [-L292+R292] R1
   [-L292+R292] R1
   [-L292+R292]
-; the accumulator into the adder
+; hash word 1 into the adder
 L291
   [-R284+L284] R1
   [-R284+L284] R1
@@ -1536,7 +1574,6 @@ L291
   [-R284+L284] R1
   [-R284+L284] R1
   [-R284+L284]
-; and the addend after it
 R57
   [-R228+L228] R1
   [-R228+L228] R1
@@ -1550,7 +1587,6 @@ R213
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; the sum comes back
   [-L284+R284] R1
   [-L284+R284] R1
   [-L284+R284] R1
@@ -1559,7 +1595,7 @@ R213
   [-L284+R284] R1
   [-L284+R284] R1
   [-L284+R284]
-; the accumulator into the adder
+; hash word 2 into the adder
 L283
   [-R276+L276] R1
   [-R276+L276] R1
@@ -1569,7 +1605,6 @@ L283
   [-R276+L276] R1
   [-R276+L276] R1
   [-R276+L276]
-; and the addend after it
 R57
   [-R220+L220] R1
   [-R220+L220] R1
@@ -1583,7 +1618,6 @@ R205
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; the sum comes back
   [-L276+R276] R1
   [-L276+R276] R1
   [-L276+R276] R1
@@ -1592,7 +1626,7 @@ R205
   [-L276+R276] R1
   [-L276+R276] R1
   [-L276+R276]
-; the accumulator into the adder
+; hash word 3 into the adder
 L275
   [-R268+L268] R1
   [-R268+L268] R1
@@ -1602,7 +1636,6 @@ L275
   [-R268+L268] R1
   [-R268+L268] R1
   [-R268+L268]
-; and the addend after it
 R57
   [-R212+L212] R1
   [-R212+L212] R1
@@ -1616,7 +1649,6 @@ R197
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; the sum comes back
   [-L268+R268] R1
   [-L268+R268] R1
   [-L268+R268] R1
@@ -1625,7 +1657,7 @@ R197
   [-L268+R268] R1
   [-L268+R268] R1
   [-L268+R268]
-; the accumulator into the adder
+; hash word 4 into the adder
 L267
   [-R260+L260] R1
   [-R260+L260] R1
@@ -1635,7 +1667,6 @@ L267
   [-R260+L260] R1
   [-R260+L260] R1
   [-R260+L260]
-; and the addend after it
 R57
   [-R204+L204] R1
   [-R204+L204] R1
@@ -1649,7 +1680,6 @@ R189
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; the sum comes back
   [-L260+R260] R1
   [-L260+R260] R1
   [-L260+R260] R1
@@ -1658,7 +1688,7 @@ R189
   [-L260+R260] R1
   [-L260+R260] R1
   [-L260+R260]
-; the accumulator into the adder
+; hash word 5 into the adder
 L259
   [-R252+L252] R1
   [-R252+L252] R1
@@ -1668,7 +1698,6 @@ L259
   [-R252+L252] R1
   [-R252+L252] R1
   [-R252+L252]
-; and the addend after it
 R57
   [-R196+L196] R1
   [-R196+L196] R1
@@ -1682,7 +1711,6 @@ R181
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; the sum comes back
   [-L252+R252] R1
   [-L252+R252] R1
   [-L252+R252] R1
@@ -1691,7 +1719,7 @@ R181
   [-L252+R252] R1
   [-L252+R252] R1
   [-L252+R252]
-; the accumulator into the adder
+; hash word 6 into the adder
 L251
   [-R244+L244] R1
   [-R244+L244] R1
@@ -1701,7 +1729,6 @@ L251
   [-R244+L244] R1
   [-R244+L244] R1
   [-R244+L244]
-; and the addend after it
 R57
   [-R188+L188] R1
   [-R188+L188] R1
@@ -1715,7 +1742,6 @@ R173
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; the sum comes back
   [-L244+R244] R1
   [-L244+R244] R1
   [-L244+R244] R1
@@ -1724,7 +1750,7 @@ R173
   [-L244+R244] R1
   [-L244+R244] R1
   [-L244+R244]
-; the accumulator into the adder
+; hash word 7 into the adder
 L243
   [-R236+L236] R1
   [-R236+L236] R1
@@ -1734,7 +1760,6 @@ L243
   [-R236+L236] R1
   [-R236+L236] R1
   [-R236+L236]
-; and the addend after it
 R57
   [-R180+L180] R1
   [-R180+L180] R1
@@ -1748,7 +1773,6 @@ R165
 ; ASSERT ptr=552
 @@ADD64@@ 552
 ; ASSERT ptr=552
-; the sum comes back
   [-L236+R236] R1
   [-L236+R236] R1
   [-L236+R236] R1

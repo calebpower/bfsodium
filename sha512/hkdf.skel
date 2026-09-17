@@ -3,6 +3,10 @@
 ; HAND WRITTEN skeleton; The keyed hash is sha512/hmac  PASTED  and entered once
 ; to extract and once per sixty four bytes of output to expand;
 ;
+; As in sha512/hashcore  a run of ONE repeated token is a repetition rather
+; than a decision and is written as such; every offset and every branch below
+; was worked out from the map and written down;
+;
 ; IO  in:  saltlen{2} LE  ikmlen{2} LE  infolen{2} LE  okmlen{2} LE
 ;          salt{256}  ikm{256}  info{256}
 ;     out: okm{okmlen}
@@ -28,7 +32,7 @@
 ;   @0x310:0xd7f  sha512/hmac's frame  pasted at @0x310; footprint 0:2671
 ;   @0xd88:0xdc7  prk{64}   the pseudorandom key extract makes
 ;   @0xdd0:0xe0f  T{64}     the block expand is on  and the next message's head
-;   @0xe18:0xe57  a sixty four byte temp  which hands a buffer back after a copy
+;   @0xe18:0xe57  a sixty four byte temp  which hands the key and T back
 ;   @0xe60:0xe6d  the counter  the count still owed  T's length and the slide
 ;                 count  with the flags the counts are tested through
 ;   @0xe74:0xe8f  the adder frame; add64 footprint 0:27 at @0xe74
@@ -45,14 +49,18 @@
 ; library has no index; so the byte is dropped on the top of an empty message
 ; buffer and the whole buffer slides down until it is where it belongs; info and
 ; T are then ADDED underneath it  which cannot disturb it because the bytes of
-; each beyond its own length are nought;
+; each beyond its own length are nought; The slide count starts at two hundred
+; and fifty five  which is one short of the buffer  and info's length and T's
+; are taken off it;
 ;
 ; Nothing buffers the output; each T is written as it is made and the last is
 ; cut short  so the tape does not grow with the length asked for;
 ;
 ; A digest is a byte string and hmac leaves its answer in H as words  so every
 ; path that carries one out reverses each word; that is the same boundary
-; sha512/hmac documents and gets wrong at its peril;
+; sha512/hmac documents and gets wrong at its peril; hmac's own H sits at 1564
+; because its hashcore is pasted at 1304 and a hashcore keeps H 260 above its
+; base;
 ;
 ; THE SAME SHAPE AS sha256/hkdf  section for section; T is sixty four bytes
 ; rather than thirty two  the key padding block is a hundred and twenty eight
@@ -129,8 +137,10 @@ R265
 ; ASSERT ptr=784
 @@HMAC512@@ 784
 ; ASSERT ptr=784
-; and that is the pseudorandom key
+; and that is the pseudorandom key; the digest is words and prk is a byte
+; string  so the source walks left while the destination walks right
 R787
+; ASSERT ptr=1571
   [-R1893+L1893] L1
   [-R1895+L1895] L1
   [-R1897+L1897] L1
@@ -306,6 +316,7 @@ R7
   -
 ; info  at nought
 L3172
+; ASSERT ptr=520
   [-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]>[-R526+R2714+L3240]
 ; handed back
 R3177
@@ -327,12 +338,14 @@ L1
   -
 ; info  after T
 L3169
+; ASSERT ptr=520
   [-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]>[-R590+R2650+L3240]
 ; handed back
 R3177
   [-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]>[-L3240+R3240]
 ; and T itself at the beginning
 L287
+; ASSERT ptr=3536
   [-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]>[-L2490+R2562+L72]
 ; handed back
 R9
@@ -343,6 +356,7 @@ R18
 ; ____ the message length is T plus info plus the one counter byte ____
 ; info's length
 L3685
+; ASSERT ptr=4
   [-R3696+L10+L3686]
 R3686
   [-L3686+R3686]
@@ -376,12 +390,14 @@ L2923
 ; ASSERT ptr=784
 @@HMAC512@@ 784
 ; ASSERT ptr=784
-; T is emptied before the new one lands  because a move
+; T is emptied before the new one lands  because a move ADDS  and the turn
+; just gone left the old T here for this turn's message
 R2752
+; ASSERT ptr=3536
   [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
-; ADDS  and the turn just gone left the old T here for this turn's message
 ; T for this turn  and for the next one's message
 L2028
+; ASSERT ptr=1571
   [-R1965+L1965] L1
   [-R1967+L1967] L1
   [-R1969+L1969] L1
@@ -455,6 +471,7 @@ R15
   [-R1979+L1979]
 ; a copy to write out
 R1916
+; ASSERT ptr=3536
   [-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]>[-R336+L264+L72]
 ; T itself is kept
 R9
@@ -522,9 +539,11 @@ L242
 ]
 ; whatever was not owed is discarded
 R179
+; ASSERT ptr=3872
   [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
 ; the counter steps on
 L255
+; ASSERT ptr=3680
   +
 ; and from here T is sixty four bytes long
 R4

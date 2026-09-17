@@ -40,10 +40,23 @@
 ; Sigma0 = ROTR 28 xor ROTR 34 xor ROTR 39 and Sigma1 = ROTR 14 xor ROTR 18
 ; xor ROTR 41  where SHA_256 uses 2 13 22 and 6 11 25; Read the two together;
 ;
-; EVERY DISTANCE BELOW IS A NUMBER WORKED OUT FROM THE MAP ABOVE; the ones
-; that recur are worth naming: 224 carries e to the rotate frame  256 carries
-; a there  120 is the rotate frame back down to tmp  and 160 is the rotate
-; frame down to s1;
+; THE DISTANCES  worked out from the map above; A working variable is read by
+; a THREE WAY COPY that drops it in a frame and in tmp at once  and tmp then
+; hands the original straight back  because the round needs a b c e f g and h
+; again after it has read them;
+;   e @0x20 to the rotate frame @0x100 is 224  and tmp @0x88 sits 120 below it
+;   a @0x00 to the rotate frame is 256  and tmp sits 136 above a
+;   the rotate frame down to s1 @0x60 is 160  to s2 @0x68 is 152  to s3 @0x70
+;     is 144
+;   s1 and s2 up to the xor frame @0xb0 are both 80  and up to the and frame
+;     @0xd8 are 120 and 112
+;   the xor result @0xc0 comes down to s2 by 88  to s3 by 80 and to s4 by 72
+;   the and result @0xe8 comes down to s2 by 128  to s4 by 112 and to s5 by 104
+;
+; A STEP RIGHT SHARES THE LINE WITH THE MOVE IT FOLLOWS  for the reason
+; sha512/expand gives: eight bytes written the way sha256/round writes four is
+; fifteen consecutive code lines with no annotation and bfstyle rule 4 refuses
+; thirteen; it is also what keeps this file inside the size budget;
 
 ; read a b c d e f g h  then Wt  then Kt
 ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
@@ -51,8 +64,8 @@
 ; ASSERT zero 80:276
 
 ; ==== Sigma1(e)  which is e rotated right by 14  18 and 41 ====
-; e is at @0x20  the rotate frame at @0x100 and tmp at @0x88  so the three way
-; copy steps 224 right then 120 left then 104 left  and lands where it began
+; ____ rotated right by fourteen ____
+; e into the rotate frame  and tmp keeps a copy
 L47
 ; ASSERT ptr=32
   [-R224+L120+L104] R1
@@ -63,7 +76,7 @@ L47
   [-R224+L120+L104] R1
   [-R224+L120+L104] R1
   [-R224+L120+L104]
-; and the temp hands the original straight back
+; and tmp hands the original straight back
 R97
 ; ASSERT ptr=136
   [-L104+R104] R1
@@ -82,7 +95,7 @@ L8
 ; ASSERT ptr=256
 @@ROTR64@@ 256
 ; ASSERT ptr=256
-; the rotated word comes back
+; the rotated word comes back as s1
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160] R1
@@ -91,7 +104,8 @@ L8
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160]
-; e into the rotate frame a second time
+
+; ____ rotated right by eighteen ____
 L231
 ; ASSERT ptr=32
   [-R224+L120+L104] R1
@@ -102,7 +116,7 @@ L231
   [-R224+L120+L104] R1
   [-R224+L120+L104] R1
   [-R224+L120+L104]
-; and the temp hands the original straight back
+; and tmp hands the original back again
 R97
 ; ASSERT ptr=136
   [-L104+R104] R1
@@ -121,7 +135,7 @@ L8
 ; ASSERT ptr=256
 @@ROTR64@@ 256
 ; ASSERT ptr=256
-; the rotated word comes back
+; the second rotated word comes back as s2
   [-L152+R152] R1
   [-L152+R152] R1
   [-L152+R152] R1
@@ -130,7 +144,9 @@ L8
   [-L152+R152] R1
   [-L152+R152] R1
   [-L152+R152]
-; the two rotations are exclusive ored  s1 first
+
+; ____ the first two rotations are exclusive ored ____
+; s1 is the first operand
 L167
 ; ASSERT ptr=96
   [-R80+L80] R1
@@ -141,8 +157,9 @@ L167
   [-R80+L80] R1
   [-R80+L80] R1
   [-R80+L80]
-; and s2 after it
+; and s2 the second  which sits directly above it
 R1
+; ASSERT ptr=104
   [-R80+L80] R1
   [-R80+L80] R1
   [-R80+L80] R1
@@ -165,7 +182,8 @@ R16
   [-L80+R80] R1
   [-L80+R80] R1
   [-L80+R80]
-; e into the rotate frame a third time
+
+; ____ rotated right by forty one ____
 L167
 ; ASSERT ptr=32
   [-R224+L120+L104] R1
@@ -176,7 +194,7 @@ L167
   [-R224+L120+L104] R1
   [-R224+L120+L104] R1
   [-R224+L120+L104]
-; and the temp hands the original straight back
+; and tmp hands the original back a third time
 R97
 ; ASSERT ptr=136
   [-L104+R104] R1
@@ -195,7 +213,7 @@ L8
 ; ASSERT ptr=256
 @@ROTR64@@ 256
 ; ASSERT ptr=256
-; the rotated word comes back
+; the third rotated word comes back as s1
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160] R1
@@ -204,7 +222,9 @@ L8
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160]
-; the two so far  ready for the third
+
+; ____ and the third joins the first two ____
+; the two so far step down into s2  so the operands are adjacent again
 L151
 ; ASSERT ptr=112
   [-L8+R8] R1
@@ -215,7 +235,7 @@ L151
   [-L8+R8] R1
   [-L8+R8] R1
   [-L8+R8]
-; the first operand of the exclusive or
+; s2 is the first operand
 L15
 ; ASSERT ptr=104
   [-R72+L72] R1
@@ -226,7 +246,7 @@ L15
   [-R72+L72] R1
   [-R72+L72] R1
   [-R72+L72]
-; and the second
+; and s1 the second
 L15
 ; ASSERT ptr=96
   [-R88+L88] R1
@@ -253,7 +273,8 @@ R16
   [-L80+R80]
 
 ; ==== Ch(e f g)  which is  g xor (e and (f xor g)) ====
-; f and g meet
+; ____ f exclusive or g ____
+; f into s1  with tmp keeping a copy
 L159
 ; ASSERT ptr=40
   [-R56+R40+L96] R1
@@ -264,7 +285,7 @@ L159
   [-R56+R40+L96] R1
   [-R56+R40+L96] R1
   [-R56+R40+L96]
-; and the temp hands the original straight back
+; and tmp hands f straight back
 R89
 ; ASSERT ptr=136
   [-L96+R96] R1
@@ -275,6 +296,7 @@ R89
   [-L96+R96] R1
   [-L96+R96] R1
   [-L96+R96]
+; g into s2  with tmp keeping a copy
 L95
 ; ASSERT ptr=48
   [-R56+R32+L88] R1
@@ -285,7 +307,7 @@ L95
   [-R56+R32+L88] R1
   [-R56+R32+L88] R1
   [-R56+R32+L88]
-; and the temp hands the original straight back
+; and tmp hands g straight back
 R81
 ; ASSERT ptr=136
   [-L88+R88] R1
@@ -296,7 +318,7 @@ R81
   [-L88+R88] R1
   [-L88+R88] R1
   [-L88+R88]
-; the first operand of the exclusive or
+; s1 is the first operand
 L47
 ; ASSERT ptr=96
   [-R80+L80] R1
@@ -307,8 +329,9 @@ L47
   [-R80+L80] R1
   [-R80+L80] R1
   [-R80+L80]
-; and the second
+; and s2 the second
 R1
+; ASSERT ptr=104
   [-R80+L80] R1
   [-R80+L80] R1
   [-R80+L80] R1
@@ -321,7 +344,7 @@ R65
 ; ASSERT ptr=176
 @@XOR64@@ 176
 ; ASSERT ptr=176
-; the result comes back as s4
+; f xor g comes back as s4
 R16
   [-L72+R72] R1
   [-L72+R72] R1
@@ -331,7 +354,9 @@ R16
   [-L72+R72] R1
   [-L72+R72] R1
   [-L72+R72]
-; and e selects between them
+
+; ____ and e selects between them ____
+; e into s1  with tmp keeping a copy
 L167
 ; ASSERT ptr=32
   [-R64+R40+L104] R1
@@ -342,7 +367,7 @@ L167
   [-R64+R40+L104] R1
   [-R64+R40+L104] R1
   [-R64+R40+L104]
-; and the temp hands the original straight back
+; and tmp hands e straight back
 R97
 ; ASSERT ptr=136
   [-L104+R104] R1
@@ -353,7 +378,7 @@ R97
   [-L104+R104] R1
   [-L104+R104] R1
   [-L104+R104]
-; the first operand of the and
+; s1 is the first operand of the and
 L47
 ; ASSERT ptr=96
   [-R120+L120] R1
@@ -364,7 +389,7 @@ L47
   [-R120+L120] R1
   [-R120+L120] R1
   [-R120+L120]
-; and the second
+; and s4 the second
 R17
 ; ASSERT ptr=120
   [-R104+L104] R1
@@ -389,7 +414,9 @@ R16
   [-L128+R128] R1
   [-L128+R128] R1
   [-L128+R128]
-; g is the other arm
+
+; ____ g is the other arm ____
+; g into s1  with tmp keeping a copy
 L191
 ; ASSERT ptr=48
   [-R48+R40+L88] R1
@@ -400,7 +427,7 @@ L191
   [-R48+R40+L88] R1
   [-R48+R40+L88] R1
   [-R48+R40+L88]
-; and the temp hands the original straight back
+; and tmp hands g straight back
 R81
 ; ASSERT ptr=136
   [-L88+R88] R1
@@ -411,7 +438,7 @@ R81
   [-L88+R88] R1
   [-L88+R88] R1
   [-L88+R88]
-; the first operand of the exclusive or
+; s1 is the first operand
 L47
 ; ASSERT ptr=96
   [-R80+L80] R1
@@ -422,8 +449,9 @@ L47
   [-R80+L80] R1
   [-R80+L80] R1
   [-R80+L80]
-; and the second
+; and s2 the second
 R1
+; ASSERT ptr=104
   [-R80+L80] R1
   [-R80+L80] R1
   [-R80+L80] R1
@@ -448,7 +476,7 @@ R16
   [-L72+R72]
 
 ; ==== T1 is h plus Sigma1 plus Ch plus the constant plus the word ====
-; h starts it
+; h starts it  and T1 is the accumulator from here on
 L143
 ; ASSERT ptr=56
   [-R24+R56+L80] R1
@@ -459,7 +487,7 @@ L143
   [-R24+R56+L80] R1
   [-R24+R56+L80] R1
   [-R24+R56+L80]
-; and the temp hands the original straight back
+; and tmp hands h straight back
 R73
 ; ASSERT ptr=136
   [-L80+R80] R1
@@ -505,6 +533,7 @@ R25
   [-L64+R64] R1
   [-L64+R64] R1
   [-L64+R64]
+
 ; the accumulator into the adder
 L71
 ; ASSERT ptr=80
@@ -540,6 +569,7 @@ R17
   [-L64+R64] R1
   [-L64+R64] R1
   [-L64+R64]
+
 ; the constant and the schedule word are both spent here
 ; the accumulator into the adder
 L71
@@ -576,6 +606,7 @@ R65
   [-L64+R64] R1
   [-L64+R64] R1
   [-L64+R64]
+
 ; the accumulator into the adder
 L71
 ; ASSERT ptr=80
@@ -613,6 +644,7 @@ R73
   [-L64+R64]
 
 ; ==== Sigma0(a)  which is a rotated right by 28  34 and 39 ====
+; ____ rotated right by twenty eight ____
 L151
 ; ASSERT ptr=0
   [-R256+L120+L136] R1
@@ -623,7 +655,7 @@ L151
   [-R256+L120+L136] R1
   [-R256+L120+L136] R1
   [-R256+L120+L136]
-; and the temp hands the original straight back
+; and tmp hands a straight back
 R129
 ; ASSERT ptr=136
   [-L136+R136] R1
@@ -642,7 +674,7 @@ L8
 ; ASSERT ptr=256
 @@ROTR64@@ 256
 ; ASSERT ptr=256
-; the rotated word comes back
+; the rotated word comes back as s1
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160] R1
@@ -651,7 +683,8 @@ L8
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160]
-; a into the rotate frame a second time
+
+; ____ rotated right by thirty four ____
 L263
 ; ASSERT ptr=0
   [-R256+L120+L136] R1
@@ -662,7 +695,7 @@ L263
   [-R256+L120+L136] R1
   [-R256+L120+L136] R1
   [-R256+L120+L136]
-; and the temp hands the original straight back
+; and tmp hands a back again
 R129
 ; ASSERT ptr=136
   [-L136+R136] R1
@@ -681,7 +714,7 @@ L8
 ; ASSERT ptr=256
 @@ROTR64@@ 256
 ; ASSERT ptr=256
-; the rotated word comes back
+; the second rotated word comes back as s3
   [-L144+R144] R1
   [-L144+R144] R1
   [-L144+R144] R1
@@ -690,7 +723,9 @@ L8
   [-L144+R144] R1
   [-L144+R144] R1
   [-L144+R144]
-; the first operand of the exclusive or
+
+; ____ the first two rotations are exclusive ored ____
+; s1 is the first operand
 L167
 ; ASSERT ptr=96
   [-R80+L80] R1
@@ -701,7 +736,7 @@ L167
   [-R80+L80] R1
   [-R80+L80] R1
   [-R80+L80]
-; and the second
+; and s3 the second  s2 being skipped because it is one word further up
 R9
 ; ASSERT ptr=112
   [-R72+L72] R1
@@ -726,7 +761,8 @@ R16
   [-L88+R88] R1
   [-L88+R88] R1
   [-L88+R88]
-; a into the rotate frame a third time
+
+; ____ rotated right by thirty nine ____
 L199
 ; ASSERT ptr=0
   [-R256+L120+L136] R1
@@ -737,7 +773,7 @@ L199
   [-R256+L120+L136] R1
   [-R256+L120+L136] R1
   [-R256+L120+L136]
-; and the temp hands the original straight back
+; and tmp hands a back a third time
 R129
 ; ASSERT ptr=136
   [-L136+R136] R1
@@ -756,7 +792,7 @@ L8
 ; ASSERT ptr=256
 @@ROTR64@@ 256
 ; ASSERT ptr=256
-; the rotated word comes back
+; the third rotated word comes back as s1
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160] R1
@@ -765,7 +801,10 @@ L8
   [-L160+R160] R1
   [-L160+R160] R1
   [-L160+R160]
-; the two so far  ready for the third
+
+; ____ and the third joins the first two ____
+; the two so far step UP into s3  because here the pair lands one word lower
+; than Sigma1's did
 L159
 ; ASSERT ptr=104
   [-R8+L8] R1
@@ -776,7 +815,7 @@ L159
   [-R8+L8] R1
   [-R8+L8] R1
   [-R8+L8]
-; the first operand of the exclusive or
+; s3 is the first operand
 R1
 ; ASSERT ptr=112
   [-R64+L64] R1
@@ -787,7 +826,7 @@ R1
   [-R64+L64] R1
   [-R64+L64] R1
   [-R64+L64]
-; and the second
+; and s1 the second
 L23
 ; ASSERT ptr=96
   [-R88+L88] R1
@@ -814,6 +853,7 @@ R16
   [-L88+R88]
 
 ; ==== Maj(a b c)  the bit that two of the three agree on ====
+; ____ a and b ____
 L199
 ; ASSERT ptr=0
   [-R96+R40+L136] R1
@@ -824,7 +864,7 @@ L199
   [-R96+R40+L136] R1
   [-R96+R40+L136] R1
   [-R96+R40+L136]
-; and the temp hands the original straight back
+; and tmp hands a straight back
 R129
 ; ASSERT ptr=136
   [-L136+R136] R1
@@ -835,6 +875,7 @@ R129
   [-L136+R136] R1
   [-L136+R136] R1
   [-L136+R136]
+; b into s3  with tmp keeping a copy
 L135
 ; ASSERT ptr=8
   [-R104+R24+L128] R1
@@ -845,7 +886,7 @@ L135
   [-R104+R24+L128] R1
   [-R104+R24+L128] R1
   [-R104+R24+L128]
-; and the temp hands the original straight back
+; and tmp hands b straight back
 R121
 ; ASSERT ptr=136
   [-L128+R128] R1
@@ -856,7 +897,7 @@ R121
   [-L128+R128] R1
   [-L128+R128] R1
   [-L128+R128]
-; the first operand of the and
+; s1 is the first operand of the and
 L47
 ; ASSERT ptr=96
   [-R120+L120] R1
@@ -867,7 +908,7 @@ L47
   [-R120+L120] R1
   [-R120+L120] R1
   [-R120+L120]
-; and the second
+; and s3 the second
 R9
 ; ASSERT ptr=112
   [-R112+L112] R1
@@ -892,6 +933,8 @@ R16
   [-L112+R112] R1
   [-L112+R112] R1
   [-L112+R112]
+
+; ____ a and c ____
 L239
 ; ASSERT ptr=0
   [-R96+R40+L136] R1
@@ -902,7 +945,7 @@ L239
   [-R96+R40+L136] R1
   [-R96+R40+L136] R1
   [-R96+R40+L136]
-; and the temp hands the original straight back
+; and tmp hands a back again
 R129
 ; ASSERT ptr=136
   [-L136+R136] R1
@@ -913,6 +956,7 @@ R129
   [-L136+R136] R1
   [-L136+R136] R1
   [-L136+R136]
+; c into s3  with tmp keeping a copy
 L127
 ; ASSERT ptr=16
   [-R96+R24+L120] R1
@@ -923,7 +967,7 @@ L127
   [-R96+R24+L120] R1
   [-R96+R24+L120] R1
   [-R96+R24+L120]
-; and the temp hands the original straight back
+; and tmp hands c straight back
 R113
 ; ASSERT ptr=136
   [-L120+R120] R1
@@ -934,7 +978,7 @@ R113
   [-L120+R120] R1
   [-L120+R120] R1
   [-L120+R120]
-; the first operand of the and
+; s1 is the first operand of the and
 L47
 ; ASSERT ptr=96
   [-R120+L120] R1
@@ -945,7 +989,7 @@ L47
   [-R120+L120] R1
   [-R120+L120] R1
   [-R120+L120]
-; and the second
+; and s3 the second
 R9
 ; ASSERT ptr=112
   [-R112+L112] R1
@@ -970,7 +1014,9 @@ R16
   [-L104+R104] R1
   [-L104+R104] R1
   [-L104+R104]
-; the first operand of the exclusive or
+
+; ____ the first two terms are exclusive ored ____
+; s4 is the first operand
 L119
 ; ASSERT ptr=120
   [-R56+L56] R1
@@ -981,7 +1027,7 @@ L119
   [-R56+L56] R1
   [-R56+L56] R1
   [-R56+L56]
-; and the second
+; and s5 the second
 R1
 ; ASSERT ptr=128
   [-R56+L56] R1
@@ -996,7 +1042,7 @@ R41
 ; ASSERT ptr=176
 @@XOR64@@ 176
 ; ASSERT ptr=176
-; the first two terms come back as s3
+; and they come back as s3
 R16
   [-L80+R80] R1
   [-L80+R80] R1
@@ -1006,6 +1052,8 @@ R16
   [-L80+R80] R1
   [-L80+R80] R1
   [-L80+R80]
+
+; ____ b and c ____
 L191
 ; ASSERT ptr=8
   [-R88+R40+L128] R1
@@ -1016,7 +1064,7 @@ L191
   [-R88+R40+L128] R1
   [-R88+R40+L128] R1
   [-R88+R40+L128]
-; and the temp hands the original straight back
+; and tmp hands b back again
 R121
 ; ASSERT ptr=136
   [-L128+R128] R1
@@ -1027,6 +1075,7 @@ R121
   [-L128+R128] R1
   [-L128+R128] R1
   [-L128+R128]
+; c into s4  with tmp keeping a copy
 L127
 ; ASSERT ptr=16
   [-R104+R16+L120] R1
@@ -1037,7 +1086,7 @@ L127
   [-R104+R16+L120] R1
   [-R104+R16+L120] R1
   [-R104+R16+L120]
-; and the temp hands the original straight back
+; and tmp hands c back again
 R113
 ; ASSERT ptr=136
   [-L120+R120] R1
@@ -1048,7 +1097,7 @@ R113
   [-L120+R120] R1
   [-L120+R120] R1
   [-L120+R120]
-; the first operand of the and
+; s1 is the first operand of the and
 L47
 ; ASSERT ptr=96
   [-R120+L120] R1
@@ -1059,7 +1108,7 @@ L47
   [-R120+L120] R1
   [-R120+L120] R1
   [-R120+L120]
-; and the second
+; and s4 the second
 R17
 ; ASSERT ptr=120
   [-R104+L104] R1
@@ -1084,7 +1133,9 @@ R16
   [-L104+R104] R1
   [-L104+R104] R1
   [-L104+R104]
-; the first operand of the exclusive or
+
+; ____ and the third term joins the first two ____
+; s3 is the first operand
 L127
 ; ASSERT ptr=112
   [-R64+L64] R1
@@ -1095,7 +1146,7 @@ L127
   [-R64+L64] R1
   [-R64+L64] R1
   [-R64+L64]
-; and the second
+; and s5 the second
 R9
 ; ASSERT ptr=128
   [-R56+L56] R1
@@ -1122,6 +1173,7 @@ R16
   [-L72+R72]
 
 ; ==== T2 is Sigma0 plus Maj ====
+; Sigma0 steps down into T2  which is the accumulator
 L95
 ; ASSERT ptr=104
   [-L16+R16] R1
@@ -1143,7 +1195,7 @@ L23
   [-R56+L56] R1
   [-R56+L56] R1
   [-R56+L56]
-; and the addend after it
+; and Maj after it
 R25
 ; ASSERT ptr=120
   [-R32+L32] R1
@@ -1266,7 +1318,7 @@ R73
   [-R16+R40+L56] R1
   [-R16+R40+L56] R1
   [-R16+R40+L56]
-; and the temp hands the original straight back
+; and tmp hands T1 straight back  because a wants it too
 R49
 ; ASSERT ptr=136
   [-L56+R56] R1
@@ -1277,7 +1329,7 @@ R49
   [-L56+R56] R1
   [-L56+R56] R1
   [-L56+R56]
-; the accumulator into the adder
+; e into the adder
 L111
 ; ASSERT ptr=32
   [-R112+L112] R1
@@ -1288,7 +1340,7 @@ L111
   [-R112+L112] R1
   [-R112+L112] R1
   [-R112+L112]
-; and the addend after it
+; and the copy of T1 after it
 R57
 ; ASSERT ptr=96
   [-R56+L56] R1
@@ -1312,6 +1364,7 @@ R41
   [-L112+R112] R1
   [-L112+R112] R1
   [-L112+R112]
+; T1 itself lands in the empty a
 L71
 ; ASSERT ptr=80
   [-L80+R80] R1
@@ -1322,7 +1375,7 @@ L71
   [-L80+R80] R1
   [-L80+R80] R1
   [-L80+R80]
-; the accumulator into the adder
+; a into the adder
 L87
 ; ASSERT ptr=0
   [-R144+L144] R1
@@ -1333,7 +1386,7 @@ L87
   [-R144+L144] R1
   [-R144+L144] R1
   [-R144+L144]
-; and the addend after it
+; and T2 after it
 R81
 ; ASSERT ptr=88
   [-R64+L64] R1
