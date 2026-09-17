@@ -228,17 +228,31 @@ must have no marker in the suite at all.
    5×5 lane state, twenty four rounds and the sponge, and nothing that has to
    be invented first.
 
-1. **v1 is done.** CONVENTIONS §9 lists ChaCha20, Poly1305, the AEAD, SHA-256
-   and HKDF-SHA-256, and all five are in. The next real target named there is
-   the BoneMesh corpus — `keyschedule.json`, `transport-frame.json` — which is
-   what the symmetric set was chosen to cover; nobody has checked bfsodium's
-   output against it yet, and that is the thing that would prove the set is
-   actually sufficient rather than merely complete.
+1. **Done, and struck: the corpus check was never this repository's to write.**
+   v1's set is in — CONVENTIONS §9 lists ChaCha20, Poly1305, the AEAD, SHA-256
+   and HKDF-SHA-256 — and the BoneMesh corpus has been checked against it.
+   It was checked in **BoneMesh**, by `bf/keyschedule.poke`, which holds the
+   transcript hash and the chaining key on its own tape and spawns an
+   interpreter on the right routine for each of the nine steps. Its own header
+   makes the claim this item was reaching for: *no shell in the middle*.
 
-   **THE MACHINERY IS BUILT AND WHAT REMAINS IS THE CORPUS.** This item used
-   to say the next step was a program that hashes a caller-named FILE, and
-   that it would need `open`, `stat`, a relay loop and a guard over 64 KiB.
-   All of that happened, and then half of it was deleted again:
+   **THE ITEM WAS WRONG ABOUT OWNERSHIP AND CONTRADICTED ITS OWN TABLE**, which
+   is why it is struck rather than quietly edited. The ownership table further
+   down says BoneMesh owns the conformance vectors, *beside five other
+   implementations* — and then this item asked bfsodium to write the fixture
+   anyway. A corpus is a compatibility artifact belonging to the protocol that
+   froze it; P2 is for algorithmic implementations, and a `keyschedule.json`
+   is not an algorithm. The reasoning below is kept because the DIRECTION it
+   argues — infrastructure must not know its consumers — is right and was only
+   applied one repository short: brainstem must not know bfsodium, and equally
+   bfsodium must not know BMX.
+
+   **v1.0.0 no longer waits on anything technical.** It waited on the
+   composition story being run end to end, and it has been.
+
+   What the machinery below bought is still real, and still lives here,
+   because a runner that drives any routine by name is a general capability
+   rather than a BMX one:
 
    - `programs/sha256.poke` reads the broker's stdin, buffers the message on
      the TAPE as flag/byte pairs, counts it in two cells, and spawns an
@@ -255,32 +269,34 @@ must have no marker in the suite at all.
      because one would show that it works and three show it is not secretly
      about SHA-256.
 
-   So the harness for the corpus check exists and is gated on both guests.
-   **What is left is the corpus**: nine sequenced calls against BoneMesh's
-   vectors rather than one, which is a fixture-writing job rather than a
-   capability one.
+   So the harness is here, gated on both guests, and general: `run.poke` drives
+   a routine named at run time, which is a capability rather than a fixture.
+   The nine-call corpus fixture built on that kind of harness lives in
+   BoneMesh, where its vectors do.
 
-   The original reasoning, kept because it is why the directory exists: the
-   corpus check is nine sequenced calls, and what was unproven was the
-   SEQUENCING rather than any one call. bfsodium gates every routine against
-   Cryptol and the RFCs, brainstem gates the broker across two kernels, and
-   **nothing anywhere tests the seam between them** — that a brainfuck
-   program can take one primitive's OUTPUT and make it the next primitive's
-   INPUT, with no shell in the middle. That is the capability the whole
-   three-phase scheme was designed around and the one nobody has shown.
+   The original reasoning, kept because it is why the directory exists: what
+   was unproven was the SEQUENCING rather than any one call. bfsodium gates
+   every routine against Cryptol and the RFCs, brainstem gates the broker
+   across two kernels, and **nothing tested the seam between them** — that a
+   brainfuck program can take one primitive's OUTPUT and make it the next
+   primitive's INPUT, with no shell in the middle. That was the capability the
+   whole three-phase scheme was designed around and the one nobody had shown.
+   It has been shown; see `bonemesh/bf/keyschedule.poke`.
 
-   It matters to this repository in particular, because a library's claim is
-   not "each routine is correct" — it is "these compose". Composition here
-   is currently source-level pasting through `bfexpand`. Composition at
-   RUNTIME, one program driving several, is a different claim and an untested
-   one.
+   It mattered to this repository in particular, because a library's claim is
+   not "each routine is correct" — it is "these compose". Composition here is
+   source-level pasting through `bfexpand`. Composition at RUNTIME, one
+   program driving several, is a different claim, and the thing worth keeping
+   in mind is that **it is now proved by a consumer rather than by us**. That
+   is the correct direction and also a standing risk: if BoneMesh ever drops
+   that fixture, this library loses its only runtime composition evidence and
+   would need its own. `programs/` and tier 12 are what make that cheap to
+   rebuild.
 
-   **v1.0.0 waits on this.** Tagging a library whose composition story has
-   never been run end to end would be tagging on faith, and nothing about the
-   version number is urgent.
-
-   It is ONE piece of work with the corpus check rather than two, since the
-   harness is the same harness.
+   The tagging argument that used to sit here — *tagging a library whose
+   composition story has never been run end to end would be tagging on faith*
+   — is answered rather than abandoned. The story has been run; it was run one
+   repository over.
 
    **And the cost is affordable, which was not obvious and is now measured.**
    `sha256` is about **1.15 billion instructions, roughly two seconds** under
