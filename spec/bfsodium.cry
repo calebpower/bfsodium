@@ -472,6 +472,135 @@ shr32nRun inb = leBytes (leWord (take`{4} inb) >> (inb @ 4))
 shr64nRun : [9][8] -> [8][8]
 shr64nRun inb = leBytes64 (leWord64 (take`{8} inb) >> (inb @ 8))
 
+// ==== Keccak-f[1600], FIPS 202 ====
+//
+// The state is 200 bytes read as twenty five 64-bit little endian lanes, and
+// lane k is the lane FIPS 202 calls A[x][y] with k = 5y + x. So a ROW is five
+// consecutive lanes and a COLUMN is five lanes forty bytes apart, which is the
+// whole reason keccak/theta.bf carries its operands to a frame.
+keccakLanes : [200][8] -> [25][64]
+keccakLanes bs = [ leWord64 l | l <- split`{25} bs ]
+
+keccakBytes : [25][64] -> [200][8]
+keccakBytes ls = join [ leBytes64 l | l <- ls ]
+
+// THETA, section 3.2.1. The five column sums, the two neighbours each column
+// contributes to, and then every lane takes its own column's contribution.
+// Both index arithmetics are written out rather than taken modulo five, so
+// this reads the same way the five blocks of keccak/theta.skel do.
+keccakThetaC : [25][64] -> [5][64]
+keccakThetaC a =
+  [ a@0 ^ a@5 ^ a@10 ^ a@15 ^ a@20
+  , a@1 ^ a@6 ^ a@11 ^ a@16 ^ a@21
+  , a@2 ^ a@7 ^ a@12 ^ a@17 ^ a@22
+  , a@3 ^ a@8 ^ a@13 ^ a@18 ^ a@23
+  , a@4 ^ a@9 ^ a@14 ^ a@19 ^ a@24 ]
+
+keccakThetaD : [5][64] -> [5][64]
+keccakThetaD c =
+  [ c@4 ^ (c@1 <<< 1)
+  , c@0 ^ (c@2 <<< 1)
+  , c@1 ^ (c@3 <<< 1)
+  , c@2 ^ (c@4 <<< 1)
+  , c@3 ^ (c@0 <<< 1) ]
+
+keccakTheta : [25][64] -> [25][64]
+keccakTheta a = [ (a@k) ^ (d@(k % 5)) | k <- [0 .. 24] ]
+  where d = keccakThetaD (keccakThetaC a)
+
+// in = A(200); out = A(200) with theta applied.
+keccakThetaRun : [200][8] -> [200][8]
+keccakThetaRun inb = keccakBytes (keccakTheta (keccakLanes inb))
+
+// RHO and PI, sections 3.2.2 and 3.2.3, as ONE table. rho turns the lane at
+// 5y+x left by the offset FIPS 202 gives it and pi sends that lane to
+// 5*((2x+3y) mod 5) + y, so the two together are twenty five (source,
+// rotation) pairs. The list below is ordered by DESTINATION, which is the
+// order keccak/rhopichi.skel is written in and the order that lets rotl64 be
+// pasted at the destination lane.
+keccakRhoPi : [25][64] -> [25][64]
+keccakRhoPi a =
+  [ a@0  <<< 0,  a@6  <<< 44, a@12 <<< 43, a@18 <<< 21, a@24 <<< 14
+  , a@3  <<< 28, a@9  <<< 20, a@10 <<< 3,  a@16 <<< 45, a@22 <<< 61
+  , a@1  <<< 1,  a@7  <<< 6,  a@13 <<< 25, a@19 <<< 8,  a@20 <<< 18
+  , a@4  <<< 27, a@5  <<< 36, a@11 <<< 10, a@17 <<< 15, a@23 <<< 56
+  , a@2  <<< 62, a@8  <<< 55, a@14 <<< 39, a@15 <<< 41, a@21 <<< 2 ]
+
+// CHI, section 3.2.4, the one non-linear step. Written out lane by lane
+// rather than with index arithmetic, so that the wrap at x = 3 and x = 4 --
+// where the neighbour is back at the start of the row rather than above it --
+// is visible rather than implied. This is the same twenty five blocks the
+// skeleton has, in the same order.
+keccakChi : [25][64] -> [25][64]
+keccakChi b =
+  [ (b@0 ) ^ ((~ (b@1 )) && (b@2 ))
+  , (b@1 ) ^ ((~ (b@2 )) && (b@3 ))
+  , (b@2 ) ^ ((~ (b@3 )) && (b@4 ))
+  , (b@3 ) ^ ((~ (b@4 )) && (b@0 ))
+  , (b@4 ) ^ ((~ (b@0 )) && (b@1 ))
+  , (b@5 ) ^ ((~ (b@6 )) && (b@7 ))
+  , (b@6 ) ^ ((~ (b@7 )) && (b@8 ))
+  , (b@7 ) ^ ((~ (b@8 )) && (b@9 ))
+  , (b@8 ) ^ ((~ (b@9 )) && (b@5 ))
+  , (b@9 ) ^ ((~ (b@5 )) && (b@6 ))
+  , (b@10) ^ ((~ (b@11)) && (b@12))
+  , (b@11) ^ ((~ (b@12)) && (b@13))
+  , (b@12) ^ ((~ (b@13)) && (b@14))
+  , (b@13) ^ ((~ (b@14)) && (b@10))
+  , (b@14) ^ ((~ (b@10)) && (b@11))
+  , (b@15) ^ ((~ (b@16)) && (b@17))
+  , (b@16) ^ ((~ (b@17)) && (b@18))
+  , (b@17) ^ ((~ (b@18)) && (b@19))
+  , (b@18) ^ ((~ (b@19)) && (b@15))
+  , (b@19) ^ ((~ (b@15)) && (b@16))
+  , (b@20) ^ ((~ (b@21)) && (b@22))
+  , (b@21) ^ ((~ (b@22)) && (b@23))
+  , (b@22) ^ ((~ (b@23)) && (b@24))
+  , (b@23) ^ ((~ (b@24)) && (b@20))
+  , (b@24) ^ ((~ (b@20)) && (b@21))
+  ]
+
+// in = A(200); out = A(200) with rho and pi applied.
+keccakRhoPiRun : [200][8] -> [200][8]
+keccakRhoPiRun inb = keccakBytes (keccakRhoPi (keccakLanes inb))
+
+// in = A(200); out = A(200) with rho, pi and then chi applied. The array pi
+// writes is the array chi reads, which is why one brainfuck routine does both.
+keccakRhoPiChiRun : [200][8] -> [200][8]
+keccakRhoPiChiRun inb = keccakBytes (keccakChi (keccakRhoPi (keccakLanes inb)))
+
+// IOTA, section 3.2.5: lane nought takes the round's constant and nothing
+// else changes. One exclusive or, which is why keccak/permute1600.skel has it
+// inline rather than in a routine of its own.
+keccakRound : ([25][64], [64]) -> [25][64]
+keccakRound (a, rc) = update b 0 ((b@0) ^ rc)
+  where b = keccakChi (keccakRhoPi (keccakTheta a))
+
+// The twenty four round constants of Appendix A, written out rather than
+// generated from the linear feedback register of section 3.2.5. A constant has
+// bits only at positions one less than a power of two, which is why only bytes
+// nought, one, three and seven of a lane are ever anything but nought -- and
+// why keccak/permute1600.skel can write the whole table as plusses.
+keccakRC : [24][64]
+keccakRC =
+  [ 0x0000000000000001, 0x0000000000008082, 0x800000000000808a
+  , 0x8000000080008000, 0x000000000000808b, 0x0000000080000001
+  , 0x8000000080008081, 0x8000000000008009, 0x000000000000008a
+  , 0x0000000000000088, 0x0000000080008009, 0x000000008000000a
+  , 0x000000008000808b, 0x800000000000008b, 0x8000000000008089
+  , 0x8000000000008003, 0x8000000000008002, 0x8000000000000080
+  , 0x000000000000800a, 0x800000008000000a, 0x8000000080008081
+  , 0x8000000000008080, 0x0000000080000001, 0x8000000080008008
+  ]
+
+keccakPermute : [25][64] -> [25][64]
+keccakPermute a0 = ss ! 0
+  where ss = [a0] # [ keccakRound (s, rc) | s <- ss | rc <- keccakRC ]
+
+// in = A(200); out = A(200) with all twenty four rounds applied.
+keccakPermuteRun : [200][8] -> [200][8]
+keccakPermuteRun inb = keccakBytes (keccakPermute (keccakLanes inb))
+
 // XOR64: the 64-bit widening of chacha20/xor32.
 // in = x(8 LE) # y(8 LE); out = (x xor y)(8 LE). Stated on its own rather
 // than parameterised over the width, for the same reason leWord64 sits

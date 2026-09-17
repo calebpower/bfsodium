@@ -137,6 +137,10 @@ routine, the suite fails until it has a row here.
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `aead/chacha20poly1305` | 75556 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `keccak/theta` | 20860 | 852 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
+| `keccak/rhopi` | 9666 | 326 | the same six states + Cryptol |
+| `keccak/rhopichi` | 39312 | 954 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
+| `keccak/permute1600` | 61028 | 268 | the published all zero vector and a random state + Cryptol |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -180,9 +184,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 256 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 256 | golden vectors, dual oracle |
-| 5 | yes | 34 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 276 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 276 | golden vectors, dual oracle |
+| 5 | yes | 38 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -227,6 +231,51 @@ must have no marker in the suite at all.
    exclusive or and and over 64-bit lanes, a NOT is an exclusive or with all
    ones, and ρ is nothing but 64-bit rotations — so it is a 5×5 lane state,
    twenty four rounds and the sponge.
+
+   **THE PERMUTATION IS IN.** `keccak/theta`, `keccak/rhopi`,
+   `keccak/rhopichi` and `keccak/permute1600`. Each was checked against a
+   reference Keccak that agrees with a third party's SHA3-256 and SHAKE128,
+   and then against Cryptol, so every step has three independent witnesses
+   rather than two. A round is θ then ρπχ, both **in place on cells 0 to 199**,
+   and `permute1600` computes the published permutation of the all-zero state,
+   `e7dde140798f25f18a47c033f9ccd584...`, in **3,939,144,956 instructions** —
+   about eight seconds, a third of the AEAD, three times SHA-256 of one block.
+
+   **WHY ρπ AND χ ARE ONE FILE**, since the rest of this library splits as far
+   as it can: χ's input is the array π writes, which lives at cell 400, so a χ
+   of its own would have to read two hundred bytes into cells four hundred
+   upward. A read prologue may contain nothing but commas and steps, and
+   `bffoot` refuses a routine whose prologue is preceded by any other command
+   byte — because a paste begins at the prologue and would silently drop what
+   came before it. Joining the two removes the question and, more usefully,
+   makes the round in place: two pastes at the same base, nothing carried
+   between them.
+
+   `keccak/rhopi` is still a routine of its own — it reads at nought and has no
+   such problem — and **`rhopichi` PASTES it rather than carrying a copy**,
+   which matters and was nearly got wrong: the first version of `rhopichi` was
+   built by concatenating the two skeletons' text, which put ρπ's twenty five
+   journeys in two files that nothing would keep in step. A composite contains
+   its parts by paste (§5), and tier 9c only proves a `.bf` matches its own
+   skeleton, so a copied body is a divergence no tier would catch. χ alone is
+   covered by `rhopichi`'s vectors and by having been checked on its own
+   against the reference before the two were joined.
+
+   **ι is inline in `permute1600` rather than a routine**, because it is one
+   exclusive or of lane nought and because the constant it wants comes from
+   that file's own table. And the table was far cheaper to write than
+   `sha512/hashcore`'s K: a Keccak round constant has bits only at positions
+   one less than a power of two, so only bytes 0, 1, 3 and 7 of a lane are
+   ever anything but nought and most of those are 128 — twenty four blocks of
+   at most four numbers, each read straight out of Appendix A. There is no
+   index, so the constant in hand is always the lowest eight cells of the
+   table and the rest slides down when it is spent.
+
+   What is left is the **sponge**: SHAKE128 and SHAKE256 at rates 168 and 136,
+   then SHA3-224/256/384/512 as the same sponge with a different pad byte and
+   squeeze length. That is absorbing, padding and squeezing around a
+   permutation that already works, which makes it the same shape of job as
+   `sha256/hashcore` around `sha256/round`.
 
    **THIS ITEM USED TO SAY "IT NEEDS NO NEW IDIOM" AND THAT WAS WRONG**, which
    is worth keeping rather than quietly fixing, because the way it was wrong is

@@ -674,9 +674,27 @@ post-quantum standard, since ML-KEM and ML-DSA both sample from SHAKE. It wants
 the 64-bit idioms from tier A, a 5×5 lane state, and twenty-four rounds of
 theta/rho/pi/chi/iota. Large but extremely regular.
 
-**One piece of it is built and it was the piece that decided whether the rest
-is affordable.** ρ is twenty-five 64-bit rotations a round, six hundred per
-permutation, and its offsets run up to 62. Done with `rotr64` — a left rotation
+**Keccak-f[1600] IS BUILT.** `keccak/theta` and `keccak/rhopichi` are a round,
+both working in place on the same two hundred cells, and `keccak/permute1600`
+is the twenty-four-round loop with ι inline and FIPS 202's round constants
+written out as plusses. It computes the published permutation of the all-zero
+state in **3.94 billion instructions** — a third of the AEAD, about three times
+SHA-256 of one block. Affordable, and not yet optimised: the profile will say
+where, and the lesson from `mulmod136` is that it will say *the glue*.
+
+**A Keccak round constant is unusually cheap to write down**, which is worth
+knowing before anyone reaches for the linear feedback register that generates
+them: the constants have bits only at positions one less than a power of two,
+so only bytes 0, 1, 3 and 7 of a lane are ever anything but zero, and most of
+those are 128. The whole table is twenty-four blocks of at most four numbers.
+
+What is left of the tier is the **sponge**: SHAKE128 and SHAKE256 at rates 168
+and 136, then SHA3-224/256/384/512 as the same sponge with a different pad
+byte and a different squeeze length.
+
+**The rotation was the piece that decided whether any of it was affordable.**
+ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its
+offsets run up to 62. Done with `rotr64` — a left rotation
 by `r` being a right rotation by `64-r` — that is **1.40 billion instructions
 on ρ alone**, per permutation, which would have made Keccak cost more than the
 whole AEAD. `idiom/rotl64` (§5) does the same twenty-five for **9.5 million a

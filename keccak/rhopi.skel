@@ -1,0 +1,326 @@
+; bfsodium KECCAK RHO PI : the rho and pi steps of Keccak_f{1600}  FIPS 202 sect 3
+;
+; HAND WRITTEN; The two steps that move the state without mixing it; rho turns
+; each lane left by its own fixed amount and pi sends each lane to a different
+; place; They are done as ONE pass  because a turn and a move are the same
+; journey and doing them apart would move every lane twice;
+;
+; INTERFACE entry=200 exit=400 footprint=0:619
+; IO  in:  A{200}  twenty five 64 bit lanes  each little endian
+;     out: B{200}  the same lanes  turned and permuted
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x0c7  A{200}   the state coming in; lane k at cell 8k  where k is
+;                          5y plus x for the lane FIPS 202 calls A{x y}
+;   @0x0c8:0x187  the frames theta and chi use  untouched here; this file keeps
+;                          the round's map so that the three steps can be
+;                          pasted one after another with nothing repacked
+;   @0x190:0x257  B{200}   the state going out; lane k at cell 400 plus 8k
+;   @0x258:0x26b  the last rotation's frame  which reaches 27 cells past B{24}
+;
+; THE TWENTY FIVE JOURNEYS  each one lane  are FIPS 202's own tables: pi sends
+; the lane at 5y plus x to 5 times ((2x plus 3y) mod 5) plus y  and rho turns it
+; left by the offset table in section 3 2 2; Both were worked out from those
+; rules once and written down below  destination by destination;
+;
+; A LANE IS MOVED  NOT COPIED  because pi is a permutation: every lane of A is
+; read exactly once and A is finished when B is full; So there is no hand back
+; and no temporary  and this step is the cheapest of the three;
+;
+; AND THE ROTATION IS PASTED AT THE DESTINATION  not at a work frame; rotl64
+; turns the word at its own base and its frame reaches 27 cells beyond it  which
+; is the three lanes above; Those lanes are still EMPTY  because the
+; destinations are filled in ASCENDING order  which is the only reason this
+; works and the reason the table below is ordered by destination rather than by
+; source; One long move per lane instead of two  and no frame to carry to;
+;
+; The count of the turn is written as that many plusses into the cell rotl64
+; reads it from; A count of nought is no plusses at all  and rotl64 turns a word
+; by nought correctly  so the first lane needs no special case;
+
+; read the state little endian  leaving the pointer past it
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
+; ASSERT ptr=200
+; ASSERT zero 200:619
+; to the lane pi wants first
+L200
+; ASSERT ptr=0
+
+; ==== destination nought  from lane nought  turned nought ====
+  [-R400+L400]>[-R400+L400]>[-R400+L400]>[-R400+L400]>[-R400+L400]>[-R400+L400]>[-R400+L400]>[-R400+L400]
+R401
+; ASSERT ptr=408
+L8
+; ASSERT ptr=400
+@@ROTL64@@ 400
+L352
+; ASSERT ptr=48
+
+; ==== destination one  from lane six  turned 44 ====
+  [-R360+L360]>[-R360+L360]>[-R360+L360]>[-R360+L360]>[-R360+L360]>[-R360+L360]>[-R360+L360]>[-R360+L360]
+R361
+; ASSERT ptr=416
+  ++++++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=408
+@@ROTL64@@ 408
+L312
+; ASSERT ptr=96
+
+; ==== destination two  from lane twelve  turned 43 ====
+  [-R320+L320]>[-R320+L320]>[-R320+L320]>[-R320+L320]>[-R320+L320]>[-R320+L320]>[-R320+L320]>[-R320+L320]
+R321
+; ASSERT ptr=424
+  +++++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=416
+@@ROTL64@@ 416
+L272
+; ASSERT ptr=144
+
+; ==== destination three  from lane eighteen  turned 21 ====
+  [-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]
+R281
+; ASSERT ptr=432
+  +++++++++++++++++++++
+L8
+; ASSERT ptr=424
+@@ROTL64@@ 424
+L232
+; ASSERT ptr=192
+
+; ==== destination four  from lane twenty four  turned 14 ====
+  [-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]
+R241
+; ASSERT ptr=440
+  ++++++++++++++
+L8
+; ASSERT ptr=432
+@@ROTL64@@ 432
+L408
+; ASSERT ptr=24
+
+; ==== destination five  from lane three  turned 28 ====
+  [-R416+L416]>[-R416+L416]>[-R416+L416]>[-R416+L416]>[-R416+L416]>[-R416+L416]>[-R416+L416]>[-R416+L416]
+R417
+; ASSERT ptr=448
+  ++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=440
+@@ROTL64@@ 440
+L368
+; ASSERT ptr=72
+
+; ==== destination six  from lane nine  turned 20 ====
+  [-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]
+R377
+; ASSERT ptr=456
+  ++++++++++++++++++++
+L8
+; ASSERT ptr=448
+@@ROTL64@@ 448
+L368
+; ASSERT ptr=80
+
+; ==== destination seven  from lane ten  turned 3 ====
+  [-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]>[-R376+L376]
+R377
+; ASSERT ptr=464
+  +++
+L8
+; ASSERT ptr=456
+@@ROTL64@@ 456
+L328
+; ASSERT ptr=128
+
+; ==== destination eight  from lane sixteen  turned 45 ====
+  [-R336+L336]>[-R336+L336]>[-R336+L336]>[-R336+L336]>[-R336+L336]>[-R336+L336]>[-R336+L336]>[-R336+L336]
+R337
+; ASSERT ptr=472
+  +++++++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=464
+@@ROTL64@@ 464
+L288
+; ASSERT ptr=176
+
+; ==== destination nine  from lane twenty two  turned 61 ====
+  [-R296+L296]>[-R296+L296]>[-R296+L296]>[-R296+L296]>[-R296+L296]>[-R296+L296]>[-R296+L296]>[-R296+L296]
+R297
+; ASSERT ptr=480
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=472
+@@ROTL64@@ 472
+L464
+; ASSERT ptr=8
+
+; ==== destination ten  from lane one  turned 1 ====
+  [-R472+L472]>[-R472+L472]>[-R472+L472]>[-R472+L472]>[-R472+L472]>[-R472+L472]>[-R472+L472]>[-R472+L472]
+R473
+; ASSERT ptr=488
+  +
+L8
+; ASSERT ptr=480
+@@ROTL64@@ 480
+L424
+; ASSERT ptr=56
+
+; ==== destination eleven  from lane seven  turned 6 ====
+  [-R432+L432]>[-R432+L432]>[-R432+L432]>[-R432+L432]>[-R432+L432]>[-R432+L432]>[-R432+L432]>[-R432+L432]
+R433
+; ASSERT ptr=496
+  ++++++
+L8
+; ASSERT ptr=488
+@@ROTL64@@ 488
+L384
+; ASSERT ptr=104
+
+; ==== destination twelve  from lane thirteen  turned 25 ====
+  [-R392+L392]>[-R392+L392]>[-R392+L392]>[-R392+L392]>[-R392+L392]>[-R392+L392]>[-R392+L392]>[-R392+L392]
+R393
+; ASSERT ptr=504
+  +++++++++++++++++++++++++
+L8
+; ASSERT ptr=496
+@@ROTL64@@ 496
+L344
+; ASSERT ptr=152
+
+; ==== destination thirteen  from lane nineteen  turned 8 ====
+  [-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]
+R353
+; ASSERT ptr=512
+  ++++++++
+L8
+; ASSERT ptr=504
+@@ROTL64@@ 504
+L344
+; ASSERT ptr=160
+
+; ==== destination fourteen  from lane twenty  turned 18 ====
+  [-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]>[-R352+L352]
+R353
+; ASSERT ptr=520
+  ++++++++++++++++++
+L8
+; ASSERT ptr=512
+@@ROTL64@@ 512
+L480
+; ASSERT ptr=32
+
+; ==== destination fifteen  from lane four  turned 27 ====
+  [-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]
+R489
+; ASSERT ptr=528
+  +++++++++++++++++++++++++++
+L8
+; ASSERT ptr=520
+@@ROTL64@@ 520
+L480
+; ASSERT ptr=40
+
+; ==== destination sixteen  from lane five  turned 36 ====
+  [-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]>[-R488+L488]
+R489
+; ASSERT ptr=536
+  ++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=528
+@@ROTL64@@ 528
+L440
+; ASSERT ptr=88
+
+; ==== destination seventeen  from lane eleven  turned 10 ====
+  [-R448+L448]>[-R448+L448]>[-R448+L448]>[-R448+L448]>[-R448+L448]>[-R448+L448]>[-R448+L448]>[-R448+L448]
+R449
+; ASSERT ptr=544
+  ++++++++++
+L8
+; ASSERT ptr=536
+@@ROTL64@@ 536
+L400
+; ASSERT ptr=136
+
+; ==== destination eighteen  from lane seventeen  turned 15 ====
+  [-R408+L408]>[-R408+L408]>[-R408+L408]>[-R408+L408]>[-R408+L408]>[-R408+L408]>[-R408+L408]>[-R408+L408]
+R409
+; ASSERT ptr=552
+  +++++++++++++++
+L8
+; ASSERT ptr=544
+@@ROTL64@@ 544
+L360
+; ASSERT ptr=184
+
+; ==== destination nineteen  from lane twenty three  turned 56 ====
+  [-R368+L368]>[-R368+L368]>[-R368+L368]>[-R368+L368]>[-R368+L368]>[-R368+L368]>[-R368+L368]>[-R368+L368]
+R369
+; ASSERT ptr=560
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=552
+@@ROTL64@@ 552
+L536
+; ASSERT ptr=16
+
+; ==== destination twenty  from lane two  turned 62 ====
+  [-R544+L544]>[-R544+L544]>[-R544+L544]>[-R544+L544]>[-R544+L544]>[-R544+L544]>[-R544+L544]>[-R544+L544]
+R545
+; ASSERT ptr=568
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=560
+@@ROTL64@@ 560
+L496
+; ASSERT ptr=64
+
+; ==== destination twenty one  from lane eight  turned 55 ====
+  [-R504+L504]>[-R504+L504]>[-R504+L504]>[-R504+L504]>[-R504+L504]>[-R504+L504]>[-R504+L504]>[-R504+L504]
+R505
+; ASSERT ptr=576
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=568
+@@ROTL64@@ 568
+L456
+; ASSERT ptr=112
+
+; ==== destination twenty two  from lane fourteen  turned 39 ====
+  [-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]
+R465
+; ASSERT ptr=584
+  +++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=576
+@@ROTL64@@ 576
+L456
+; ASSERT ptr=120
+
+; ==== destination twenty three  from lane fifteen  turned 41 ====
+  [-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]>[-R464+L464]
+R465
+; ASSERT ptr=592
+  +++++++++++++++++++++++++++++++++++++++++
+L8
+; ASSERT ptr=584
+@@ROTL64@@ 584
+L416
+; ASSERT ptr=168
+
+; ==== destination twenty four  from lane twenty one  turned 2 ====
+  [-R424+L424]>[-R424+L424]>[-R424+L424]>[-R424+L424]>[-R424+L424]>[-R424+L424]>[-R424+L424]>[-R424+L424]
+R425
+; ASSERT ptr=600
+  ++
+L8
+; ASSERT ptr=592
+@@ROTL64@@ 592
+; ASSERT ptr=592
+; ASSERT zero 0:399
+; to the bottom of the answer
+L192
+; ASSERT ptr=400
+; emit the turned and permuted state little endian
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
