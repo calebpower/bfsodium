@@ -100,6 +100,7 @@ routine, the suite fails until it has a row here.
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
 | `idiom/rotr32` | 120 | 131 | boundary vectors + Cryptol |
 | `idiom/rotr64` | 206 | 225 | boundary vectors + Cryptol  SHA_512 Sigma1 counts |
+| `idiom/rotl64` | 307 | 148 | boundary vectors + Cryptol  both ends of the byte and bit split |
 | `idiom/shr32` | 121 | 133 | boundary vectors + Cryptol |
 | `idiom/shr64` | 210 | 229 | boundary vectors + Cryptol  SHA_512 sigma shifts |
 | `idiom/add64` | 1220 | 291 | boundary vectors + Cryptol  carry cascade and wrap |
@@ -179,9 +180,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 246 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 246 | golden vectors, dual oracle |
-| 5 | yes | 33 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 256 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 256 | golden vectors, dual oracle |
+| 5 | yes | 34 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -220,13 +221,37 @@ must have no marker in the suite at all.
      goes on the same line as the move it follows; that is also what keeps
      `sha512/round.skel` under the size budget.
 
-   **Keccak is the next keystone** and CONVENTIONS §9.1 tier B says why: it
-   unlocks SHA3-224/256/384/512, SHAKE128/256, cSHAKE, KMAC, TupleHash and
-   ParallelHash, and the post-quantum tier behind it. It needs no new idiom —
-   theta and chi are exclusive or and and over 64-bit lanes, rho is nothing but
-   64-bit rotations, and a NOT is an exclusive or with all ones — so it is a
-   5×5 lane state, twenty four rounds and the sponge, and nothing that has to
-   be invented first.
+   **Keccak is being built and CONVENTIONS §9.1 tier B says why** it is the
+   keystone: it unlocks SHA3-224/256/384/512, SHAKE128/256, cSHAKE, KMAC,
+   TupleHash and ParallelHash, and the post-quantum tier behind it. θ and χ are
+   exclusive or and and over 64-bit lanes, a NOT is an exclusive or with all
+   ones, and ρ is nothing but 64-bit rotations — so it is a 5×5 lane state,
+   twenty four rounds and the sponge.
+
+   **THIS ITEM USED TO SAY "IT NEEDS NO NEW IDIOM" AND THAT WAS WRONG**, which
+   is worth keeping rather than quietly fixing, because the way it was wrong is
+   the project's own recurring lesson. ρ's rotations are to the LEFT and by up
+   to 62, and `idiom/rotr64` rotates right, so a left rotation by `r` is a
+   right rotation by `64-r` — sixty three single-bit steps in the worst case,
+   at about sixty thousand instructions each. The twenty five offsets FIPS 202
+   gives ρ cost **58.5 million a round, 1.40 billion per permutation**, on the
+   rotations alone. That is more than the whole AEAD and it would have made the
+   tier look closed.
+
+   **`idiom/rotl64` is the new idiom, and it never shifts left.** A rotation by
+   `8q+s` is a rotation by `8(q+1)` — whole BYTES, which is just which cell a
+   byte is copied into — followed by a right rotation of `8-s` bits, which is
+   one pasted `rotr64`. Nothing doubles, so the adder is never entered. The
+   same twenty five offsets cost **9.5 million a round, 229 million per
+   permutation, 6.1× less**, which puts a whole Keccak permutation on the order
+   of a billion instructions: the same order as SHA-256 of ONE block, and about
+   a tenth of the AEAD. Affordable.
+
+   One measured improvement is left in it and is deliberately not taken: when
+   `s` is nought the answer needs no bit rotation at all, and the uniform
+   formula spends eight steps where nought would do. That is `n` = 0, 8 and 56
+   among ρ's offsets, 1.80 million of the 9.5, so about 4% of a permutation for
+   the cost of a branch and an else arm. Written down rather than built.
 
 1. **Done, and struck: the corpus check was never this repository's to write.**
    v1's set is in — CONVENTIONS §9 lists ChaCha20, Poly1305, the AEAD, SHA-256

@@ -450,6 +450,15 @@ leBytes64 w = reverse (split w)
 rotr64nRun : [9][8] -> [8][8]
 rotr64nRun inb = leBytes64 (leWord64 (take`{8} inb) >>> (inb @ 8))
 
+// ROTL64 with the count on the wire: in = w(8 LE) # n(1);
+// out = (w rotated left by n)(8 LE). One operator apart from rotr64nRun, and
+// the implementation underneath is not: idiom/rotl64.bf never shifts left,
+// because a left shift is a doubling and a doubling is an addition. It turns
+// whole bytes and then pastes rotr64 for the one to eight bits left over.
+// Keccak's rho step is twenty five of these a round.
+rotl64nRun : [9][8] -> [8][8]
+rotl64nRun inb = leBytes64 (leWord64 (take`{8} inb) <<< (inb @ 8))
+
 // SHR32 with the count on the wire: in = w(4 LE) # n(1);
 // out = (w shifted right by n)(4 LE). The bits that fall out are gone, which
 // is the only thing separating this from rotr32.

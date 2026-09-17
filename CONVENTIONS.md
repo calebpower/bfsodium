@@ -330,6 +330,18 @@ bytes and feeds each carry into the next byte cyclically; a doubled byte is
 even, so adding the neighbour's carry bit cannot overflow and no second carry
 pass is needed. Shipped as [`chacha20/rotl32.bf`](chacha20/rotl32.bf).
 
+#### ROTL64 — rotate left by n, *without ever shifting left*
+The direction brainfuck is bad at, built out of the direction it is good at.
+`rotl(w, 8q+s) = rotl(w, 8(q+1))` then `rotr(w, 8-s)`: a rotation by a whole
+multiple of eight is a rotation of whole BYTES, which costs two instructions
+per unit of a byte's value, and what is left is a right rotation of one to
+eight bits, which is `rotr64` pasted once. So no byte is ever doubled and the
+adder is never entered. `q+1` is deliberately **not** reduced modulo eight —
+turning an eight-byte word left by eight whole bytes returns it to itself, so
+`q = 7` costs eight cheap turns instead of a comparison. Shipped as
+[`idiom/rotl64.bf`](idiom/rotl64.bf); measured at 78 thousand to 685 thousand
+instructions against `rotr64`'s 4.3 million for a left rotation by one.
+
 ---
 
 ### Composition
@@ -661,6 +673,16 @@ cSHAKE, TupleHash and ParallelHash — and it is a hard prerequisite for every
 post-quantum standard, since ML-KEM and ML-DSA both sample from SHAKE. It wants
 the 64-bit idioms from tier A, a 5×5 lane state, and twenty-four rounds of
 theta/rho/pi/chi/iota. Large but extremely regular.
+
+**One piece of it is built and it was the piece that decided whether the rest
+is affordable.** ρ is twenty-five 64-bit rotations a round, six hundred per
+permutation, and its offsets run up to 62. Done with `rotr64` — a left rotation
+by `r` being a right rotation by `64-r` — that is **1.40 billion instructions
+on ρ alone**, per permutation, which would have made Keccak cost more than the
+whole AEAD. `idiom/rotl64` (§5) does the same twenty-five for **9.5 million a
+round, 229 million per permutation, 6.1× less**, by turning whole bytes instead
+of shifting. Measure the rotation before costing the permutation; the naive
+figure is the one that would have made this tier look closed.
 
 **Both keystones will strain the 2000-line skeleton budget** (§8 tier 9b). The
 paste discipline has to carry more weight, or the budget needs a reasoned

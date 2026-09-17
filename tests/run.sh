@@ -331,6 +331,23 @@ dk idiom/rotr64.bf efcdab896745230122 59d148c07bf36ae2 rotr64nRun "rotr64 by 34 
 dk idiom/rotr64.bf efcdab896745230127 8a4602de9b5713cf rotr64nRun "rotr64 by 39  SHA_512 Sigma1"
 dk idiom/rotr64.bf ffffffffffffffff0d ffffffffffffffff rotr64nRun "rotr64 by 13  every bit set is unchanged"
 dk idiom/rotr64.bf 000000000000008001 0000000000000040 rotr64nRun "rotr64 by 1  the top bit alone"
+
+# ROTL64 is the direction Keccak's rho step needs and the direction brainfuck
+# is bad at, so it is built out of the one it is good at: whole byte turns,
+# then rotr64 for the one to eight bits left over. The counts below pin both
+# ends of that split -- n = 0 and n = 56 take eight bit steps and are the
+# dearest, n = 7 takes one and is the cheapest -- plus two of the twenty five
+# offsets FIPS 202 gives rho.
+dk idiom/rotl64.bf efcdab896745230100 efcdab8967452301 rotl64nRun "rotl64 by nought  the identity"
+dk idiom/rotl64.bf efcdab896745230101 de9b5713cf8a4602 rotl64nRun "rotl64 by 1  the edge at one"
+dk idiom/rotl64.bf efcdab896745230107 80f7e6d5c4b3a291 rotl64nRun "rotl64 by 7  one bit step  the cheapest path"
+dk idiom/rotl64.bf efcdab896745230108 01efcdab89674523 rotl64nRun "rotl64 by 8  a whole byte and no bit left over"
+dk idiom/rotl64.bf efcdab896745230138 cdab8967452301ef rotl64nRun "rotl64 by 56  eight byte turns  the dearest path"
+dk idiom/rotl64.bf efcdab89674523013f f7e6d5c4b3a29180 rotl64nRun "rotl64 by 63  the other edge"
+dk idiom/rotl64.bf efcdab89674523013e 7bf36ae259d148c0 rotl64nRun "rotl64 by 62  Keccak rho at x two y nought"
+dk idiom/rotl64.bf efcdab896745230124 78563412f0debc9a rotl64nRun "rotl64 by 36  Keccak rho at x nought y one"
+dk idiom/rotl64.bf ffffffffffffffff0d ffffffffffffffff rotl64nRun "rotl64 by 13  every bit set is unchanged"
+dk idiom/rotl64.bf 000000000000008001 0100000000000000 rotl64nRun "rotl64 by 1  the top bit alone wraps to the bottom"
 dk idiom/rotr32.bf 7856341219 093c2b1a rotr32nRun "rotr32 by 25"
 # The shift differs from the rotation only in what happens to the bit that
 # falls out of the bottom, so the cases that matter are the ones where a bit
@@ -739,6 +756,7 @@ run "and32 honours its declared contracts" sh -c "printf ffffffffffffffff | ./to
 run "rotr32 honours its declared contracts" sh -c "printf 7856341219 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr32.bf >/dev/null"
 run "shr32 honours its declared contracts" sh -c "printf 7856341203 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr32.bf >/dev/null"
 run "rotr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotr64.bf >/dev/null"
+run "rotl64 honours its declared contracts" sh -c "printf efcdab896745230138 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/rotl64.bf >/dev/null"
 run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "xor64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/xor64.bf >/dev/null"
 run "and64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and64.bf >/dev/null"
