@@ -113,6 +113,7 @@ while IFS= read -r line; do
         '@@HASHCORE@@'*) import "$repo/sha256/hashcore.bf" "${line##* }"; continue ;;
         '@@HASHCORE512@@'*) import "$repo/sha512/hashcore.bf" "${line##* }"; continue ;;
         '@@HMAC@@'*)     import "$repo/sha256/hmac.bf" "${line##* }"; continue ;;
+        '@@HMAC512@@'*)  import "$repo/sha512/hmac.bf" "${line##* }"; continue ;;
         '@@EXPAND@@'*)  import "$repo/sha256/expand.bf" "${line##* }"; continue ;;
         '@@ROUND512@@'*)  import "$repo/sha512/round.bf" "${line##* }"; continue ;;
         '@@EXPAND512@@'*) import "$repo/sha512/expand.bf" "${line##* }"; continue ;;

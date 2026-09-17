@@ -131,6 +131,8 @@ routine, the suite fails until it has a row here.
 | `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
 | `sha512/hashcore` | 57785 | 1791 | one message from memory, the wire, and both |
 | `sha512/sha512` | 57853 | 64 | FIPS 180-4 + both padding boundaries |
+| `sha512/hmac` | 233777 | 1868 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
+| `sha512/hkdf` | 537585 | 555 | RFC 5869's three shapes at SHA-512 + one byte out |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `aead/chacha20poly1305` | 80299 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
@@ -177,9 +179,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 231 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 231 | golden vectors, dual oracle |
-| 5 | yes | 31 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 242 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 242 | golden vectors, dual oracle |
+| 5 | yes | 33 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
