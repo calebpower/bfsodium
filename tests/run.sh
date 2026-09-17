@@ -470,6 +470,14 @@ dk poly1305/fold136.bf 0000000000000000000000000000000004 0500000000000000000000
 dk poly1305/fold136.bf 0100000000000000000000000000000004 0600000000000000000000000000000000 fold136Run "fold two to the 130 plus one"
 dk poly1305/fold136.bf 0000000000000000000000000000000003 0000000000000000000000000000000003 fold136Run "fold keeps bits 128 and 129"
 dk poly1305/fold136.bf ffffffffffffffffffffffffffffffffff 3a01000000000000000000000000000004 fold136Run "fold maximum value"
+# Five times the part above the split is a TWO byte addend, and these two pin
+# the boundary between its bytes: 51 times five is 255 and 52 times five is 260,
+# so a top byte of 0xcf must leave the high byte of the addend clear and 0xd0
+# must set it. Every vector above is either far from that boundary or lands on
+# the carrying side of it, so a carry that fired one step early or late would
+# pass all five.
+dk poly1305/fold136.bf ffffffffffffffffffffffffffffffffcf fe00000000000000000000000000000004 fold136Run "fold the largest part that does not carry"
+dk poly1305/fold136.bf ffffffffffffffffffffffffffffffffd0 0301000000000000000000000000000001 fold136Run "fold the smallest part that carries"
 
 dk poly1305/reducep136.bf faffffffffffffffffffffffffffffff03 faffffffffffffffffffffffffffffff03 reducep136Run "reducep p minus one unchanged"
 dk poly1305/reducep136.bf fbffffffffffffffffffffffffffffff03 0000000000000000000000000000000000 reducep136Run "reducep p becomes zero"

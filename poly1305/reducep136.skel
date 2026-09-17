@@ -23,7 +23,7 @@
 ;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x10  x{17}   u8   the value  and the result
-;   @0x11:0x34  the pasted routines' frames; fold136 is 0:52 and add136 is 0:45
+;   @0x11:0x32  the pasted routines' frames; fold136 is 0:50 and add136 is 0:45
 ;               and both are pasted at this file's own zero
 ;   @0x38:0x48  S{17}   u8   the value as it stood before five was added
 ;   @0x49       g       u8   bit 130 after the add; nought or one
@@ -42,7 +42,7 @@
 ; ==== one fold is all this needs  and spec/perm_cry proves it ====
 L16
 ; ASSERT ptr=0
-; ASSERT zero 17:52
+; ASSERT zero 17:50
 @@FOLD136@@ 0
 ; ASSERT ptr=0
 

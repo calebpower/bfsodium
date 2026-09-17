@@ -5,93 +5,103 @@
 ; the part below it is that byte with all but its bottom two bits removed; No
 ; shifting of the whole seventeen bytes is needed anywhere;
 ;
-; INTERFACE entry=16 exit=0 footprint=0:52
+; INTERFACE entry=16 exit=0 footprint=0:50
 ; IO  in:  x{17} LE                     (17 bytes)
 ;     out: (L plus 5H){17} LE           (17 bytes)  where x = L plus H times 2^130
 ;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x10  x{17}   u8   the value  and the result; also add136's accumulator
-;   @0x11:0x21  b{17}   u8   add136's addend
+;   @0x11:0x21  b{17}   u8   add136's addend: five times H  as a TWO byte number
+;                            at @0x11 and @0x12  the other fifteen bytes nought
+;   @0x13:0x1d  the eight bit adder's frame  pasted INSIDE the addend's unused
+;               tail; nothing else needs those cells while five times H is being
+;               worked out  and add8 leaves them as it found them
 ;   @0x22:0x2d  add136's carry and adder frame; its footprint is 0:45 pasted
 ;               here  which is what fixes everything below it
 ;   @0x2e       H       u8   the part of the value at or above bit 130; at most 63
-;   @0x2f       tmp     u8   puts H back after it has been copied
-;   @0x30       h       u8   HALVE frame: the byte being halved
-;   @0x31       q       u8   HALVE frame: that byte shifted right one
-;   @0x32       bit     u8   HALVE frame: that byte low bit
-;   @0x33       f       u8   HALVE frame scratch  restored to nought
-;   @0x34       n       u8   five turns of the adder
+;   @0x2f       h       u8   HALVE frame: the byte being halved
+;   @0x30       q       u8   HALVE frame: that byte shifted right one
+;   @0x31       bit     u8   HALVE frame: that byte low bit
+;   @0x32       f       u8   HALVE frame scratch  restored to nought
 ;
 ; H is at most 63  so five times H is at most 315 and the value below the split
 ; is under 2^130; their sum cannot reach 2^136  so the adder's dropped top carry
 ; is never reached and folding never loses anything;
 ;
-; The five is done as FIVE TURNS of one pasted adder rather than as a multiply
-; or as five pasted adders; add136 clears its own frame on the way out and
-; asserts it clear on the way in  which is what makes entering it five times
-; mean the same thing as entering it once;
+; FIVE TIMES H IS ONE ADDEND  not five turns of the adder  and that is the whole
+; cost of this file; Five times sixty three is three hundred and fifteen  which
+; is two bytes  so the old version spent five whole seventeen byte adds to place
+; a number that never exceeds two bytes; This one builds four times H and one
+; copy of H side by side  adds those two bytes with add8  and enters add136 ONCE
+; with the sum as the low byte of the addend and the carry as the high byte;
+;
+; MEASURED  on mulmod136's large vector  which enters this file two hundred and
+; seventy two times: the five turn version cost about two million instructions a
+; call and 387 of mulmod136's 996 million; four times H can never wrap  because
+; four times sixty three is two hundred and fifty two  so the only carry in the
+; whole arrangement is the one add8 computes;
 
 ; read the value little endian
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 
 ; ==== split the top byte at bit 130 ====
 ; ASSERT ptr=16
-; ASSERT zero 17:52
+; ASSERT zero 17:50
 ; the top byte steps into the halving frame
-  [-R32+L32]
-R32
-; ASSERT ptr=48
+  [-R31+L31]
+R31
+; ASSERT ptr=47
 ; the first halving; the bit it drops is bit 128
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; which is worth one in what is left below the split
 R2
-; ASSERT ptr=50
-  [-L34+R34]
+; ASSERT ptr=49
+  [-L33+R33]
 ; the half steps back into the frame to be halved again
 L1
-; ASSERT ptr=49
+; ASSERT ptr=48
   [-L1+R1]
 L1
-; ASSERT ptr=48
+; ASSERT ptr=47
 ; the second halving; the bit it drops is bit 129
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; which is worth two
 R2
-; ASSERT ptr=50
-  [-L34++R34]
+; ASSERT ptr=49
+  [-L33++R33]
 ; and what is left in the quotient is everything at bit 130 and above
 L1
-; ASSERT ptr=49
-  [-L3+R3]
+; ASSERT ptr=48
+  [-L2+R2]
 
-; ==== two to the hundred and thirtieth is five  so add that part five times ====
-R3
-; ASSERT ptr=52
-  +++++
-[
-  -
-; the part above the split is copied into the addend and kept for the next turn
-L6
+; ==== two to the hundred and thirtieth is five  so add five times that part ====
+; to the part above the split
+L2
 ; ASSERT ptr=46
-  [-L29+R30+L1]
-R1
-; ASSERT ptr=47
-  [-L1+R1]
-L47
+; it is spent ONCE  into four copies of itself and one copy of itself  which is
+; where the five comes from; neither cell can wrap  because four times sixty
+; three is two hundred and fifty two
+  [-L27++++R1+R26]
+; ASSERT ptr=46
+; to the byte pair the eight bit adder works on
+L27
+; ASSERT ptr=19
+; ASSERT zero 21:29
+@@ADD8@@ 19
+; ASSERT ptr=19
+; the sum is five times H modulo 256  and it is the addend's low byte
+  [-L2+R2]
+; to the carry add8 computed
+R2
+; ASSERT ptr=21
+; which is the addend's high byte  worth two hundred and fifty six
+  [-L3+R3]
+; to the head of the value
+L21
 ; ASSERT ptr=0
 ; ASSERT zero 34:45
 @@ADD136@@ 0
 ; ASSERT ptr=0
-; back to the turn counter
-R52
-]
-; ASSERT ptr=52
-; the part above the split has been spent five times over
-L6
-; ASSERT ptr=46
-  [-]
-L46
-; ASSERT ptr=0
-; ASSERT zero 17:52
+; ASSERT zero 17:50
 ; emit the folded value little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

@@ -115,13 +115,13 @@ routine, the suite fails until it has a row here.
 | `chacha20/stream` | 6552 | 711 | RFC 8439 §2.4.2 + block edges |
 | `poly1305/add136` | 2563 | 542 | boundary vectors + Cryptol |
 | `poly1305/halve136` | 470 | 539 | boundary vectors + Cryptol |
-| `poly1305/fold136` | 2585 | 97 | boundary vectors + Cryptol |
+| `poly1305/fold136` | 2714 | 107 | boundary vectors + Cryptol |
 | `poly1305/dbl136` | 610 | 763 | boundary vectors + Cryptol |
-| `poly1305/reducep136` | 5495 | 375 | boundary vectors + Cryptol + a proof |
-| `poly1305/mulmod136` | 18761 | 841 | boundary vectors + Cryptol |
+| `poly1305/reducep136` | 5615 | 375 | boundary vectors + Cryptol + a proof |
+| `poly1305/mulmod136` | 19242 | 841 | boundary vectors + Cryptol |
 | `poly1305/clamp` | 248 | 299 | boundary vectors + Cryptol  the mask pinned both ways |
-| `poly1305/absorb` | 21305 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
-| `poly1305/poly1305` | 25845 | 935 | RFC 8439 §2.5.2 + block edges |
+| `poly1305/absorb` | 21788 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
+| `poly1305/poly1305` | 26326 | 935 | RFC 8439 §2.5.2 + block edges |
 | `aead/keygen` | 4584 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
 | `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
 | `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
@@ -135,7 +135,7 @@ routine, the suite fails until it has a row here.
 | `sha512/hkdf` | 538206 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
-| `aead/chacha20poly1305` | 80299 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `aead/chacha20poly1305` | 81742 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -179,8 +179,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 242 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 242 | golden vectors, dual oracle |
+| 2 | yes | 244 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 244 | golden vectors, dual oracle |
 | 5 | yes | 33 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -358,9 +358,14 @@ must have no marker in the suite at all.
    one by commit -- see `BRAINSTEM_COMMIT` there, and the note beside it about
    what the pin turning into a TAG will mean.
 
-2. **A cheaper `mulmod136`, if Poly1305's speed matters.** It is 987 million
-   instructions and the adder is no longer where that goes; see *Cost*. 136
-   turns each paying two folds is the shape to attack.
+2. **A cheaper `mulmod136`, continued.** It is 676 million instructions now
+   that `fold136` places five times H as one addend rather than five, and the
+   measurement in *Cost* says where the rest is: **more than half of it is
+   carrying seventeen byte operands to and from the work frame**, not any
+   kernel. Pasting each kernel at a base where its input slots ARE the live
+   variables removes those carries outright, and walking `b` a byte at a time
+   instead of shifting it one bit per turn removes another 117 million. Neither
+   needs a new algorithm; both are tape layout.
 
 3. **`qrloop` could paste `rotr32`** with the counts 16, 20, 24, 25 instead of
    `rotl32` with 16, 12, 8, 7, for about 2.4× on ChaCha's rotations. Four
@@ -544,13 +549,63 @@ million. Same kernel, a caller nobody had counted.
 `add136` bought 9.4× on the adder itself and only **1.13×** on the AEAD, across
 four files that had to be re-laid. Poly1305's cost is not the adder: it is
 `mulmod136`'s 136 turns, each paying two `fold136` calls, a `dbl136` and a
-17-byte carry of the operands to and from the work frame. `fold136` at 818
-thousand times 272 calls is already 222 million of `mulmod136`'s 987 million.
+17-byte carry of the operands to and from the work frame.
 
 So do not reach for the adder again here. The next real win for Poly1305 is a
 **better multiply** — fewer than 136 turns, or a reduction that does not fold
 twice a turn — not a faster byte add. Measure it before building it; that
 advice has now been earned twice.
+
+**And measured, this is where `mulmod136`'s 996 million actually went.** With a
+step counter per source line and the paste sites marked, on the large vector:
+
+| | instructions | share |
+| --- | --- | 0 |
+| `mulmod136`'s own glue | 527,025,347 | 52.9% |
+| `fold136` after the double, 136 calls | 269,024,405 | 27.0% |
+| `fold136` after the add, 68 calls | 118,046,136 | 11.9% |
+| `add136` | 37,217,271 | 3.7% |
+| `dbl136` | 32,051,014 | 3.2% |
+| `halve136` | 7,672,872 | 0.8% |
+| `reducep136` | 3,104,969 | 0.3% |
+
+Two things in that table were not what anyone had written down. **The glue is
+the biggest line** — the 17-byte carries in and out of the work frame, and
+shifting `b` down one bit, cost more than every kernel put together, because a
+move `[-R220+L220]` costs about 2×220 instructions PER UNIT of the byte's
+value. And **818 thousand was never `fold136`'s worst case**: that vector is
+all `0xff`, whose first add wraps the accumulator down to small bytes and makes
+the remaining four adds cheap. On mid-range bytes the old file cost 2.14
+million.
+
+**What was done about the folds, and what it bought.** `fold136` spent FIVE
+whole 17-byte adds to place a number that never exceeds two bytes — five times
+63 is 315. It now builds `4H` and `H` side by side, adds those two bytes with
+`add8`, and enters `add136` ONCE with the sum as the addend's low byte and the
+carry as its high byte. `4H` cannot wrap, because four times 63 is 252, so the
+one carry `add8` computes is the only carry in the file.
+
+| | before | after | |
+| ---|--- | --- | 0 |
+| `fold136` on mid-range bytes | 2,143,729 | 449,517 | 4.8× |
+| `fold136` all `0xff` | 817,802 | 635,880 | 1.3× |
+| `reducep136` max | 860,034 | 678,112 | 1.3× |
+| **`mulmod136` large** | 987,082,567 | 675,977,009 | **1.46×** |
+| **AEAD, RFC §2.8.2** | 11,584,909,050 | 8,587,084,818 | **1.35×** |
+
+It also cost nothing in tape: `add8`'s frame is pasted INSIDE the addend's
+unused tail, so the footprint went DOWN, from 0:52 to 0:50.
+
+**The glue is next, and it needs no new algorithm either.** A paste site already
+names the base its routine runs at, and every site is its own copy of the code,
+so the fold after the double can sit over `t`, the fold after the add over
+`acc`, and `dbl136` over `t`, with no carry at all; `add136` wants its two
+operands adjacent, which is a layout choice rather than a cost. And the 117
+million spent shifting `b` right one bit 136 times goes away entirely if `b` is
+walked a BYTE at a time with eight halvings inside each byte — which also hands
+you a free deferral, since folding `acc` once per byte instead of once per set
+bit is eight adds between folds and `acc` plus eight times `t` stays well under
+2^136.
 
 **And a third time, from the other end: shifting right is far cheaper than
 shifting left.** `rotl32` shifts left by DOUBLING, and doubling a byte is an

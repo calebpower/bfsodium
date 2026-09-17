@@ -200,7 +200,7 @@ R1
 ; back to the work frame
 L236
 ; ASSERT ptr=0
-; ASSERT zero 17:52
+; ASSERT zero 17:50
 @@FOLD136@@ 0
 ; ASSERT ptr=0
   [-R220+L220]
@@ -446,7 +446,7 @@ L276
 ; ASSERT zero 34:45
 @@ADD136@@ 0
 ; ASSERT ptr=0
-; ASSERT zero 17:52
+; ASSERT zero 17:50
 @@FOLD136@@ 0
 ; ASSERT ptr=0
   [-R200+L200]
@@ -561,7 +561,7 @@ L236
 ; ASSERT zero 17:24
 @@DBL136@@ 0
 ; ASSERT ptr=0
-; ASSERT zero 17:52
+; ASSERT zero 17:50
 @@FOLD136@@ 0
 ; ASSERT ptr=0
   [-R220+L220]
