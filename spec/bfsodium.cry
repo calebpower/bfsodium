@@ -601,6 +601,50 @@ keccakPermute a0 = ss ! 0
 keccakPermuteRun : [200][8] -> [200][8]
 keccakPermuteRun inb = keccakBytes (keccakPermute (keccakLanes inb))
 
+// ==== the sponge, FIPS 202 section 4 ====
+//
+// One rate of the state takes the block, the permutation stirs it, and the
+// answer is read off the front. keccak/sha3_256.bf is this at rate 136 with
+// the pad byte 0x06.
+keccakXorBlock : [25][64] -> [136][8] -> [25][64]
+keccakXorBlock s blk = [ l ^ x | l <- s | x <- keccakLanes (blk # zero) ]
+
+keccakAbsorb : {b} (fin b, b >= 1) => [b][136][8] -> [25][64]
+keccakAbsorb blocks = ss ! 0
+  where ss = [zero] # [ keccakPermute (keccakXorBlock s blk)
+                      | s <- ss | blk <- blocks ]
+
+// The padding is m # 0x06 # zeros # 0x80 filled out to a whole number of
+// rates, and the 0x80 lands on the last byte of the LAST block only. Where
+// the message leaves exactly one byte of the rate free, the 0x06 and the 0x80
+// are the same byte and it is 0x86 -- which is why there is a Full form.
+keccakPad1 : {n} (fin n, n <= 134) => [n][8] -> [1][136][8]
+keccakPad1 m = [m # [0x06] # (zero : [134 - n][8]) # [0x80]]
+
+keccakPad1Full : [135][8] -> [1][136][8]
+keccakPad1Full m = [m # [0x86]]
+
+keccakPad2 : {n} (fin n, n >= 136, n <= 270) => [n][8] -> [2][136][8]
+keccakPad2 m = split (m # [0x06] # (zero : [270 - n][8]) # [0x80])
+
+sha3_256Out : [25][64] -> [32][8]
+sha3_256Out s = take`{32} (keccakBytes s)
+
+// SHA3-256 over the wire, as keccak/sha3_256.bf reads it: len(2 LE) then the
+// message. One Run per length, because Cryptol's padding is indexed by it.
+
+sha3_256Run_0 : [2][8] -> [32][8]
+sha3_256Run_0 inb = sha3_256Out (keccakAbsorb (keccakPad1`{0} (drop`{2} inb)))
+
+sha3_256Run_3 : [5][8] -> [32][8]
+sha3_256Run_3 inb = sha3_256Out (keccakAbsorb (keccakPad1`{3} (drop`{2} inb)))
+
+sha3_256Run_135 : [137][8] -> [32][8]
+sha3_256Run_135 inb = sha3_256Out (keccakAbsorb (keccakPad1Full (drop`{2} inb)))
+
+sha3_256Run_136 : [138][8] -> [32][8]
+sha3_256Run_136 inb = sha3_256Out (keccakAbsorb (keccakPad2`{136} (drop`{2} inb)))
+
 // XOR64: the 64-bit widening of chacha20/xor32.
 // in = x(8 LE) # y(8 LE); out = (x xor y)(8 LE). Stated on its own rather
 // than parameterised over the width, for the same reason leWord64 sits

@@ -688,9 +688,13 @@ them: the constants have bits only at positions one less than a power of two,
 so only bytes 0, 1, 3 and 7 of a lane are ever anything but zero, and most of
 those are 128. The whole table is twenty-four blocks of at most four numbers.
 
-What is left of the tier is the **sponge**: SHAKE128 and SHAKE256 at rates 168
-and 136, then SHA3-224/256/384/512 as the same sponge with a different pad
-byte and a different squeeze length.
+**And SHA3-256 is built** — `keccak/sha3_256`, the sponge at rate 136 with pad
+byte 0x06, checked against a third party's implementation on ten lengths across
+three block boundaries. What is left of the tier is the rest of the family:
+SHAKE128 and SHAKE256, which need a squeeze *loop* because their output may
+exceed a rate, and SHA3-224/384/512, which are the same file with a different
+rate and squeeze length. Every rate divides by eight — 168 is twenty-one lanes,
+136 is seventeen, 72 is nine — so the lane-wise absorb carries over unchanged.
 
 **The rotation was the piece that decided whether any of it was affordable.**
 ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its

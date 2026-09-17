@@ -124,6 +124,7 @@ while IFS= read -r line; do
         '@@THETA@@'*)   import "$repo/keccak/theta.bf" "${line##* }"; continue ;;
         '@@RHOPI@@'*)   import "$repo/keccak/rhopi.bf" "${line##* }"; continue ;;
         '@@RHOPICHI@@'*) import "$repo/keccak/rhopichi.bf" "${line##* }"; continue ;;
+        '@@PERMUTE1600@@'*) import "$repo/keccak/permute1600.bf" "${line##* }"; continue ;;
         '@@SHR64@@'*)   import "$repo/idiom/shr64.bf" "${line##* }"; continue ;;
         '@@XOR64@@'*)   import "$repo/idiom/xor64.bf" "${line##* }"; continue ;;
         '@@AND64@@'*)   import "$repo/idiom/and64.bf" "${line##* }"; continue ;;

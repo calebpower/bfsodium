@@ -767,6 +767,20 @@ dk keccak/rhopichi.bf e7eee7615ef35f30e49b482e15cae75007201e12617b0feda7e1647796
 dk keccak/permute1600.bf 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 e7dde140798f25f18a47c033f9ccd584eea95aa61e2698d54d49806f304715bd57d05362054e288bd46f8e7f2da497ffc44746a4a0e5fe90762e19d60cda5b8c9c05191bf7a630ad64fc8fd0b75a933035d617233fa95aeb0321710d26e6a6a95f55cfdb167ca58126c84703cd31b8439f56a5111a2ff20161aed9215a63e505f270c98cf2febe641166c47b95703661cb0ed04f555a7cb8c832cf1c8ae83e8c14263aae22790c94e409c5a224f94118c26504e72635f5163ba1307fe944f67549a2ec5c7bfff1ea keccakPermuteRun "permute the all zero state  which is the published vector"
 dk keccak/permute1600.bf e7eee7615ef35f30e49b482e15cae75007201e12617b0feda7e1647796ff022bea8ed02a82a175930f2337cd3794c52208006d6b1af0c0cbd625658aac2c9faa07d13c447e33051eeef95a60e56143d6c43bcad76c008a9b0a6b5fc933154a6de28404a897c525262e6a7c07bcbee841f745c55d4e9f747f615164c6f728d718353713827ac883d7fb9659234074f5258f6c68082389d2e47f1e175a90bc432fb946e6a9471109f3b79f110a26f6229fa3452526e7bc1642aeb42bf227d50fff07c3c20624292e3b b3633c43f4aa8bfbde66e7729b5b2e36b10cd60b4ffa5303c9a4a6bff6ffec77704f29a29611b70d7304ae85750adecb45e627c8a00f5ccd3666c63aa8606957b280c078f9a439d51ca02573810a14688e34dd57d0787080de585ec27cbb1f27158644ff91854ebd6eee4ac4b6ef35e2238466dea646dce400dc0e8a55f4f4b37fe26bac2ce2c8d72ea3839b19e8dee0a5ea4876b8b6dfce4460fab8f62816e455054ce86f65a6f3b71a21de990c44b4909964e9021cab2691e5bc963b992921a181555e8428a754 keccakPermuteRun "permute a random state"
 
+# SHA3-256 is the sponge: one rate of the state takes the block, the
+# permutation stirs it, and the answer is the front of the state. Each block is
+# about four billion instructions, so these four are chosen to be the cheapest
+# set that covers the padding: nothing, FIPS 202's own "abc", the length where
+# the pad byte and the top bit are the SAME byte, and the length where the
+# padding needs a whole block to itself. That last one is not decoration -- the
+# first version of the file put the top bit on every block instead of the last,
+# which no single-block vector can see.
+
+dk keccak/sha3_256.bf 0000 a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a sha3_256Run_0 "sha3_256 of nothing"
+dk keccak/sha3_256.bf 0300616263 3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532 sha3_256Run_3 "sha3_256 of abc  FIPS 202's own vector"
+dk keccak/sha3_256.bf 8700000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80818283848586 fded8fd9d6551c601eeb3b7c6bc5e5cfd8aad1d015b7e9aaa9c9b9475231d5e2 sha3_256Run_135 "sha3_256 of 135 bytes  the pad byte and the top bit are one byte"
+dk keccak/sha3_256.bf 8800000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384858687 cf3ccff92480a29160c2d38317c430e14749bfee1788106957dfe73f8c4930e5 sha3_256Run_136 "sha3_256 of 136 bytes  the padding takes a block of its own"
+
 
 echo
 # TIER 5
@@ -811,6 +825,7 @@ run "keccak theta honours its declared contracts" sh -c "printf %0400d 0 | tr 0 
 run "keccak rho and pi honour their declared contracts" sh -c "printf %0400d 0 | tr 0 f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/rhopi.bf >/dev/null"
 run "keccak rho pi and chi honour their declared contracts" sh -c "printf %0400d 0 | tr 0 f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/rhopichi.bf >/dev/null"
 run "keccak permute honours its declared contracts" sh -c "printf %0400d 0 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/permute1600.bf >/dev/null"
+run "sha3_256 honours its declared contracts" sh -c "printf 0300616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sha3_256.bf >/dev/null"
 run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "xor64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/xor64.bf >/dev/null"
 run "and64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and64.bf >/dev/null"

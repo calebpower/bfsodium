@@ -141,6 +141,7 @@ routine, the suite fails until it has a row here.
 | `keccak/rhopi` | 9666 | 326 | the same six states + Cryptol |
 | `keccak/rhopichi` | 39312 | 954 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
 | `keccak/permute1600` | 61028 | 268 | the published all zero vector and a random state + Cryptol |
+| `keccak/sha3_256` | 75197 | 500 | FIPS 202's abc + nothing + both padding boundaries + Cryptol |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -184,9 +185,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 276 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 276 | golden vectors, dual oracle |
-| 5 | yes | 38 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 280 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 280 | golden vectors, dual oracle |
+| 5 | yes | 39 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -271,11 +272,32 @@ must have no marker in the suite at all.
    index, so the constant in hand is always the lowest eight cells of the
    table and the rest slides down when it is spent.
 
-   What is left is the **sponge**: SHAKE128 and SHAKE256 at rates 168 and 136,
-   then SHA3-224/256/384/512 as the same sponge with a different pad byte and
-   squeeze length. That is absorbing, padding and squeezing around a
-   permutation that already works, which makes it the same shape of job as
-   `sha256/hashcore` around `sha256/round`.
+   **AND THE SPONGE IS IN, AS SHA3-256.** `keccak/sha3_256` absorbs at rate
+   136 — which is exactly seventeen lanes, so a block is seventeen entries of
+   `xor64` rather than a hundred and thirty six byte exclusive ors — pads by
+   FIPS 202's rule, and squeezes once, because thirty two bytes fit inside one
+   rate. It agrees with a third party's SHA3-256 on ten lengths across three
+   block boundaries, and with Cryptol on the four the suite keeps. A block is
+   about four billion instructions, essentially all of it the permutation: the
+   conveyor that fills the block costs about five million and the absorb
+   twenty five, together under one percent.
+
+   **ONE DEFECT WORTH THE SPACE, because no single-block vector can see it.**
+   The first version added the padding's top bit to the last byte of EVERY
+   block instead of the last byte of the LAST block. Everything up to 135 bytes
+   passed — with one block, the only block *is* the last one — and everything
+   from 136 failed. The block in which the padding byte was placed is the last
+   block by definition, so placing it now sets a flag and the bit is added
+   under that flag. **A vector at a multiple of the rate is not optional for
+   any sponge.**
+
+   What is left of the family: **SHAKE128 and SHAKE256**, which are the same
+   file with the rate at 168 or 136, the pad byte 0x1f, and a squeeze LOOP
+   rather than a single squeeze, since their output may exceed a rate; and
+   SHA3-224/384/512, which are this file with a different rate and squeeze
+   length and nothing else. Every rate in the family divides by eight — 168 is
+   twenty one lanes, 136 seventeen, 72 nine — so the lane-wise absorb carries
+   over unchanged.
 
    **THIS ITEM USED TO SAY "IT NEEDS NO NEW IDIOM" AND THAT WAS WRONG**, which
    is worth keeping rather than quietly fixing, because the way it was wrong is
