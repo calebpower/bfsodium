@@ -427,6 +427,16 @@ dk chacha20/rotl32.bf 0000008001 01000000 rotl32nRun "rotl32 top bit wraps"
 dk chacha20/rotl32.bf 785634120c 23816745 rotl32nRun "rotl32 by 12"
 dk chacha20/rotl32.bf 7856341207 093c2b1a rotl32nRun "rotl32 by 7"
 
+# ROTL32 no longer rotates left at all: whole BYTE turns, which are only moves,
+# and then one right rotation of fewer than eight bits. These three cover the
+# paths the four ChaCha counts do not. 0 is the identity and takes the branch
+# for a bit part of nought with no byte turn either; 24 takes that branch with
+# three turns; 31 is the far end of the bit part, and both it and 0 are counts
+# nothing in this library ever asks for, which is the reason to pin them.
+dk chacha20/rotl32.bf 1234567800 12345678 rotl32nRun "rotl32 by 0  the identity"
+dk chacha20/rotl32.bf 1234567818 34567812 rotl32nRun "rotl32 by 24  three whole byte turns and no bits"
+dk chacha20/rotl32.bf 123456781f 091a2b3c rotl32nRun "rotl32 by 31  the far end of the bit part"
+
 dk chacha20/xor32.bf 0f0f0f0ff0f0f0f0 ffffffff xor32Run "xor32 all ones"
 dk chacha20/xor32.bf ffffffff00000000 ffffffff xor32Run "xor32 identity"
 dk chacha20/xor32.bf 1234567812345678 00000000 xor32Run "xor32 self is zero"

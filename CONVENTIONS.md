@@ -330,11 +330,18 @@ Shipped inside [`chacha20/xor32.bf`](chacha20/xor32.bf).
 #### XOR32
 Four XOR8 blocks over the byte pairs.
 
-#### ROTL32 — rotate left by n
-`n` single-bit rotations under a counter. One bit rotation DOUBLEs all four
-bytes and feeds each carry into the next byte cyclically; a doubled byte is
-even, so adding the neighbour's carry bit cannot overflow and no second carry
-pass is needed. Shipped as [`chacha20/rotl32.bf`](chacha20/rotl32.bf).
+#### ROTL32 — rotate left by n, *without ever shifting left*
+The same identity as ROTL64 below, at half the width: `rotl(w, 8q+s)` is
+`rotl(w, 8(q+1))` — whole *byte* turns, which are only moves — followed by
+`rotr(w, 8−s)`, which is one pasted ROTR32. Nothing is doubled, so the adder
+is never entered. **Unlike ROTL64 it branches on `s = 0`**, because ChaCha20's
+four counts are 16, 12, 8 and 7 and *two* of them have `s = 0`; skipping those
+saves sixteen of the twenty-one bit steps a quarter round would otherwise pay,
+where in Keccak's twenty-five offsets the same branch would save about 4%.
+It used to do `n` single-bit rotations under a counter, each DOUBLEing four
+bytes, and that was more than half of the block function: 7,071,731
+instructions for ChaCha's four counts against 312,906 now. Shipped as
+[`chacha20/rotl32.bf`](chacha20/rotl32.bf).
 
 #### ROTL64 — rotate left by n, *without ever shifting left*
 The direction brainfuck is bad at, built out of the direction it is good at.
@@ -612,9 +619,13 @@ HKDF-SHA-256. All five are in, hand-written, and gated on two guests.
    `tools/bfrun.sh` frames it, so what remains is the corpus rather than the
    machinery.
 2. **Tier 6.** Declared in §8, not built. The only `no` in the status table.
-3. Cheaper `mulmod136`, and `qrloop` pasting `rotr32` rather than `rotl32`,
-   both recorded with measurements in `HANDOFF.md`. Neither is needed; both are
-   written down so the next person does not rediscover them.
+3. **Both done, and neither was the thing that was written down.** The cheaper
+   `mulmod136` turned out to be a cheaper `fold136` — it was entering the
+   seventeen-byte adder to add two bytes — and the cheaper rotation turned out
+   not to be `rotr32` with complementary counts (2.25×) but ROTL32 rebuilt on
+   the byte-turn identity (22×). In both cases the item named a change that
+   would have worked and a better one was one measurement away. **Measure
+   before building, including before building what this list tells you to.**
 
 ---
 

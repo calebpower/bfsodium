@@ -114,9 +114,9 @@ modern x86-64 at roughly 750 million instructions a second.
 | | instructions | wall |
 |---|---|---|
 | SHA-256 of 48 bytes | 1.2 billion | 2 s |
-| AEAD, one byte of plaintext and no AAD | 1.5 billion | 2.6 s |
+| AEAD, one byte of plaintext and no AAD | 0.8 billion | 1.6 s |
 | HKDF, 64-byte output | ≈22 billion | ≈29 s |
-| AEAD, the full RFC 8439 §2.8.2 vector | 3.0 billion | 4.8 s |
+| AEAD, the full RFC 8439 §2.8.2 vector | 1.9 billion | 3.3 s |
 | SHA3-256 or SHAKE256, one block in and one rate out | 2.7 billion | 4.1 s |
 | SHAKE128, one block in and one rate out | 2.8 billion | 4.2 s |
 

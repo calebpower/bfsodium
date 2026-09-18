@@ -106,14 +106,14 @@ routine, the suite fails until it has a row here.
 | `idiom/add64` | 1220 | 291 | boundary vectors + Cryptol  carry cascade and wrap |
 | `idiom/and64` | 480 | 601 | boundary vectors + Cryptol |
 | `idiom/xor64` | 290 | 427 | boundary vectors + Cryptol |
-| `chacha20/rotl32` | 620 | 155 | boundary vectors + Cryptol |
+| `chacha20/rotl32` | 259 | 175 | boundary vectors + Cryptol |
 | `chacha20/xor32` | 125 | 190 | boundary vectors + Cryptol |
 | `chacha20/stagger` | 225 | 253 | Cryptol |
 | `chacha20/rowrot` | 246 | 306 | Cryptol |
-| `chacha20/qrloop` | 1547 | 351 | RFC 8439 §2.2.1 |
-| `chacha20/blockloop` | 4608 | 1252 | RFC 8439 §2.3.2 |
-| `chacha20/blockkeep` | 5271 | 341 | RFC 8439 §2.3.2 + its input surviving |
-| `chacha20/stream` | 6552 | 711 | RFC 8439 §2.4.2 + block edges |
+| `chacha20/qrloop` | 1154 | 351 | RFC 8439 §2.2.1 |
+| `chacha20/blockloop` | 4207 | 1252 | RFC 8439 §2.3.2 |
+| `chacha20/blockkeep` | 4875 | 341 | RFC 8439 §2.3.2 + its input surviving |
+| `chacha20/stream` | 6156 | 711 | RFC 8439 §2.4.2 + block edges |
 | `poly1305/add136` | 2563 | 542 | boundary vectors + Cryptol |
 | `poly1305/halve136` | 470 | 539 | boundary vectors + Cryptol |
 | `poly1305/fold136` | 962 | 588 | boundary vectors + Cryptol |
@@ -123,7 +123,7 @@ routine, the suite fails until it has a row here.
 | `poly1305/clamp` | 248 | 299 | boundary vectors + Cryptol  the mask pinned both ways |
 | `poly1305/absorb` | 12583 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
 | `poly1305/poly1305` | 17070 | 935 | RFC 8439 §2.5.2 + block edges |
-| `aead/keygen` | 4584 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
+| `aead/keygen` | 4188 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
 | `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
 | `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
 | `sha512/expand` | 6750 | 595 | eight vectors + Cryptol |
@@ -136,7 +136,7 @@ routine, the suite fails until it has a row here.
 | `sha512/hkdf` | 538206 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
-| `aead/chacha20poly1305` | 53974 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
@@ -193,8 +193,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 312 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 312 | golden vectors, dual oracle |
+| 2 | yes | 315 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 315 | golden vectors, dual oracle |
 | 5 | yes | 47 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -586,9 +586,20 @@ must have no marker in the suite at all.
    operand. The measurement that settled it took one line profile. Read the
    profile before believing the item, including the ones written here.
 
-3. **`qrloop` could paste `rotr32`** with the counts 16, 20, 24, 25 instead of
-   `rotl32` with 16, 12, 8, 7, for about 2.4× on ChaCha's rotations. Four
-   constants and one paste name; see *Cost*.
+3. **Done, and struck: ROTL32 no longer rotates left.** This item was right
+   that the rotation was the cost and wrong about the fix. Pasting `rotr32`
+   with the complementary counts would have been four constants and one paste
+   name, and worth 2.25×. Rebuilding ROTL32 on the same identity `idiom/rotl64`
+   uses — whole BYTE turns, which are only moves, then one right rotation of
+   fewer than eight bits — was worth **22×** and left `qrloop` untouched,
+   because the interface did not move.
+
+   **And it earns the branch `rotl64` declines.** `rotl64` spends eight bit
+   steps where nought would do when `s = 0`, and records that as 4% not worth
+   an else arm. ChaCha's counts are 16, 12, 8 and 7 and *two* of them have
+   `s = 0`, so the same branch saves sixteen of twenty-one bit steps here. The
+   same idiom, the opposite call, and the difference is entirely in who is
+   calling it.
 
 4. **PQC is not next, and it is not out of scope for ever.** The long-term
    target is the NIST-recommended set, which since FIPS 203 and 204 includes
@@ -861,6 +872,47 @@ byte two at all only when byte one was 255.
 | `mulmod136`, the large vector | 145,361,714 | 89,473,525 | 1.62× |
 | `poly1305`, RFC §2.5.2 | 431,714,708 | 264,557,017 | 1.63× |
 | **AEAD, RFC §2.8.2** | 3,581,010,128 | 3,047,476,642 | **1.18×** |
+
+**AND THEN THE ROTATION, which was more than half of ChaCha and the same
+lesson a fourth time.** `ROTL32` did `n` single-bit rotations under a counter,
+and one bit of rotation DOUBLEs four bytes — and a DOUBLE is `ADD8`. It is now
+built on exactly the identity `idiom/rotl64` uses: `rotl(w, 8q+s)` is
+`rotl(w, 8(q+1))`, which is whole BYTE turns and therefore only moves,
+followed by `rotr(w, 8−s)`, which is one pasted `ROTR32`. Nothing is doubled
+anywhere in the file.
+
+| | before | after | |
+|---|---|---|---|
+| `rotl32` by 16 | 2,636,189 | 40,002 | 66× |
+| `rotl32` by 12 | 1,948,789 | 189,304 | 10× |
+| `rotl32` by 8 | 1,316,645 | 21,835 | 60× |
+| `rotl32` by 7 | 1,170,108 | 61,765 | 19× |
+| ChaCha's four counts together | 7,071,731 | 312,906 | 22.6× |
+| `qrloop`, one quarter round | 6,641,647 | 2,236,329 | 2.97× |
+| **`blockloop`, RFC §2.3.2** | 686,380,403 | 331,136,996 | **2.07×** |
+| **AEAD, RFC §2.8.2** | 3,047,476,642 | 1,937,080,043 | **1.57×** |
+
+**It earns the branch `rotl64` declines, and that is the interesting part.**
+`rotl64` spends eight bit steps where nought would do when `s = 0`, and
+HANDOFF records that as about 4% of a permutation, not worth an else arm.
+ChaCha's four counts are 16, 12, 8 and 7 — **two of them have `s = 0`** — so
+the same branch saves sixteen of the twenty-one bit steps a quarter round
+would otherwise pay. Same idiom, opposite call, and the difference is entirely
+in who is calling it. Whether `rotl64` should now take the branch too is a
+measurement nobody has made: Keccak's twenty-five offsets include three with
+`s = 0`, so the answer is probably still no.
+
+**`qrloop` did not change at all.** `ROTL32`'s interface — `w{4}` then `n{1}`,
+`entry=4 exit=4 footprint=0:19` — is the same to the cell, so the caller that
+keeps the four counts in a table and turns it by one each step never noticed.
+That is the argument for the `INTERFACE` line being a contract rather than a
+comment, made by a file that replaced its entire body.
+
+**Where the AEAD's cost now is.** It began at 13.12 billion and is at 1.94,
+which is 6.8× over five changes, none of which touched an algorithm. The four
+that mattered were: the adder (`add8`, 1.13×), `mulmod136`'s re-lay (3.24×),
+`fold136` leaving the seventeen-byte adder (1.18×), and this (1.57×). **Every
+one of them was found by a profile and none by reading the code.**
 
 **The first draft of the ripple was wrong in a way worth writing down.** Each
 level was `[c ... set c ... ]` — a loop that sets its own condition, so it ran
