@@ -714,11 +714,18 @@ sending a byte out on as many of the first hundred and thirty-six as are still
 owed. One whole turn is thirty-six million instructions — under one percent of
 the permutation that produced the rate being squeezed.
 
-What is left of the tier is SHAKE128, which is rate 168 and therefore a sponge
-file of its own, and SHA3-224/384/512, which are one rate and one output length
-each. Every rate divides by eight — 168 is twenty-one lanes, 144 eighteen, 136
-seventeen, 104 thirteen, 72 nine — so the lane-wise absorb carries over
-unchanged.
+**And SHAKE128 with it** — `keccak/sponge168` and `keccak/shake128`. Rate 168
+is twenty-one lanes and therefore a sponge file of its own, because the rate is
+the one thing that cannot be shared. A rate of 168 is also the cheaper sponge
+per byte: a permutation costs what it costs regardless of the rate, so SHAKE128
+absorbs and squeezes 168 bytes per permutation where SHAKE256 does 136, about a
+quarter cheaper for no reason but the number. It is the function ML-KEM calls,
+since its matrix sampling is a SHAKE128 squeeze.
+
+What is left of the tier is SHA3-224/384/512, which are one rate and one output
+length each. Every rate divides by eight — 168 is twenty-one lanes, 144
+eighteen, 136 seventeen, 104 thirteen, 72 nine — so the lane-wise absorb
+carries over unchanged and only the numbers in it change.
 
 **The rotation was the piece that decided whether any of it was affordable.**
 ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its

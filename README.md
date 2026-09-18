@@ -75,7 +75,8 @@ constant-time story and cannot be one, and nothing is zeroized. See
 
 That is everything CONVENTIONS.md lists as v1. Since then the 64-bit idiom set,
 SHA-512 with HMAC and HKDF over it, and the whole of Keccak — the permutation,
-the sponge, SHA3-256 and SHAKE256 — have been built on top of it. The ML-KEM /
+the sponge, SHA3-256, SHAKE128 and SHAKE256 — have been built on top of it.
+The ML-KEM /
 ML-DSA lattice math is the mountain still ahead.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and
@@ -116,6 +117,7 @@ modern x86-64 at roughly 750 million instructions a second.
 | HKDF, 64-byte output | ≈22 billion | ≈29 s |
 | AEAD, the full RFC 8439 §2.8.2 vector | 11.6 billion | — |
 | SHA3-256 or SHAKE256, one block in and one rate out | 4.0 billion | 6 s |
+| SHAKE128, one block in and one rate out | 4.0 billion | 6 s |
 
 **Not present at all:** any public-key primitive — no X25519, no signatures, no
 key exchange. No post-quantum anything. No AES and no BLAKE. No encoding
@@ -128,8 +130,9 @@ at all, just a 64-bit idiom set — which `idiom/add64`, `rotr64`, `rotl64`,
 `shr64`, `xor64` and `and64` now are, and **SHA-512, HMAC-SHA-512 and
 HKDF-SHA-512 are built on them**. **AES** and **Keccak** are the two keystones,
 each unlocking a family of about ten. **Keccak is built** — the permutation,
-the sponge, SHA3-256 and SHAKE256 — so what sat behind it is now reachable, and
-post-quantum sat behind it because its sampling is SHAKE. AES is what
+the sponge, SHA3-256 and both SHAKEs — so what sat behind it is now reachable:
+post-quantum sat behind Keccak because its sampling is SHAKE128, and that now
+exists. AES is what
 `index/fetch8` was written for and nothing has used yet. **RSA and elliptic
 curve are out of scope with a reason** rather than merely absent: `mulmod136`
 is cheap because 2¹³⁰−5 has a special form, and that does not transfer to a

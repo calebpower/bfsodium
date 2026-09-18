@@ -710,6 +710,68 @@ shake256Run_136_32 : [140][8] -> [32][8]
 shake256Run_136_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{136} 0x1f (drop`{4} inb)))
 
+// ==== the same sponge at rate 168, which is SHAKE128's ====
+//
+// A rate is not a parameter in the brainfuck and it is not one here either,
+// because the point of this file is to be an INDEPENDENT oracle: a rate
+// written twice is two chances to read FIPS 202 the same way, and one shared
+// definition would let a single misreading answer for both. So these are the
+// rate 136 definitions above with 168 in them, and nothing else.
+keccakXorBlock168 : [25][64] -> [168][8] -> [25][64]
+keccakXorBlock168 s blk = [ l ^ x | l <- s | x <- keccakLanes (blk # zero) ]
+
+keccakAbsorb168 : {b} (fin b, b >= 1) => [b][168][8] -> [25][64]
+keccakAbsorb168 blocks = ss ! 0
+  where ss = [zero] # [ keccakPermute (keccakXorBlock168 s blk)
+                      | s <- ss | blk <- blocks ]
+
+keccakPad168B1 : {n} (fin n, n <= 166) => [8] -> [n][8] -> [1][168][8]
+keccakPad168B1 p m = [m # [p] # (zero : [166 - n][8]) # [0x80]]
+
+keccakPad168B1Full : [8] -> [167][8] -> [1][168][8]
+keccakPad168B1Full p m = [m # [p || 0x80]]
+
+keccakPad168B2 : {n} (fin n, n >= 168, n <= 334) => [8] -> [n][8] -> [2][168][8]
+keccakPad168B2 p m = split (m # [p] # (zero : [334 - n][8]) # [0x80])
+
+keccakSqueeze168 : {n} (fin n) => [25][64] -> [n][8]
+keccakSqueeze168 s = take`{n} (join [ take`{168} (keccakBytes t) | t <- ts ])
+  where ts : [inf][25][64]
+        ts = [s] # [ keccakPermute u | u <- ts ]
+
+// SPONGE168 over the wire, as keccak/sponge168.bf reads it: pad(1),
+// mlen(2 LE), olen(2 LE), then the message.
+sponge168Run_0_32 : [5][8] -> [32][8]
+sponge168Run_0_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{0} (inb@0) (drop`{5} inb)))
+
+sponge168Run_0_169 : [5][8] -> [169][8]
+sponge168Run_0_169 inb =
+    keccakSqueeze168`{169} (keccakAbsorb168 (keccakPad168B1`{0} (inb@0) (drop`{5} inb)))
+
+// SHAKE128 over the wire, as keccak/shake128.bf reads it: mlen(2 LE),
+// olen(2 LE), then the message. 0x1f is FIPS 202's padding byte for the SHAKE
+// functions at every rate.
+shake128Run_0_32 : [4][8] -> [32][8]
+shake128Run_0_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{0} 0x1f (drop`{4} inb)))
+
+shake128Run_3_32 : [7][8] -> [32][8]
+shake128Run_3_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{3} 0x1f (drop`{4} inb)))
+
+shake128Run_0_168 : [4][8] -> [168][8]
+shake128Run_0_168 inb =
+    keccakSqueeze168`{168} (keccakAbsorb168 (keccakPad168B1`{0} 0x1f (drop`{4} inb)))
+
+shake128Run_0_169 : [4][8] -> [169][8]
+shake128Run_0_169 inb =
+    keccakSqueeze168`{169} (keccakAbsorb168 (keccakPad168B1`{0} 0x1f (drop`{4} inb)))
+
+shake128Run_168_32 : [172][8] -> [32][8]
+shake128Run_168_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{168} 0x1f (drop`{4} inb)))
+
 // XOR64: the 64-bit widening of chacha20/xor32.
 // in = x(8 LE) # y(8 LE); out = (x xor y)(8 LE). Stated on its own rather
 // than parameterised over the width, for the same reason leWord64 sits

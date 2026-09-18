@@ -1,0 +1,58 @@
+; bfsodium SHAKE128 : FIPS 202's SHAKE128  the sponge at rate 168 with pad 31
+;
+; HAND WRITTEN; All of the work is keccak/sponge168  PASTED; What this file adds
+; is the head of the frame that sponge wants: the padding byte FIPS 202 gives the
+; SHAKE functions  which is 31  and the caller's own output length  which may be
+; anything up to 65535 and may be longer than a rate;
+;
+; INTERFACE entry=3 exit=0 footprint=0:1057
+; IO  in:  mlen{2} LE  olen{2} LE  then mlen bytes from the wire
+;     out: olen bytes
+;
+; TAPE MAP  (home @0)
+;   @0x000        pad     the padding byte  which is 31
+;   @0x001:0x002  mlen    the message length  little endian
+;   @0x003:0x004  olen    the output length  little endian
+;   @0x000:0x421  keccak/sponge168 pasted at this file's own zero; it reads
+;                         those five cells and owns every cell above them
+;
+; SHAKE128 IS THE ONE ML_KEM ACTUALLY CALLS; Its matrix sampling is a SHAKE128
+; squeeze of a few hundred bytes for every entry  which is why this rate was
+; worth a sponge of its own even though only one standard function uses it
+; today; cSHAKE128 and KMAC128 are the same rate with a padding byte of 4;
+;
+; AND A RATE OF 168 IS THE CHEAPER SPONGE PER BYTE: a permutation costs what it
+; costs regardless of the rate  so this one absorbs 168 bytes and squeezes 168
+; bytes per permutation where SHAKE256 does 136  which makes it about a quarter
+; cheaper per byte for no other reason than the number;
+;
+; AN OUTPUT LONGER THAN A RATE IS THE WHOLE REASON SHAKE NEEDS A SQUEEZE LOOP and
+; the loop is in the sponge  not here; This file only says how many bytes are
+; wanted and the sponge stirs the state again between one rate and the next;
+;
+; The four bytes of the head are read into the bottom of the tape and moved up
+; one  because the padding byte belongs below them and a read prologue may hold
+; nothing but commas and steps;
+
+; read the message length and then the output length  both little endian
+  ,>,>,>,
+; ASSERT ptr=3
+; ASSERT zero 4:1025
+; all four move up one cell  highest first  to leave room for the padding byte
+  [-R1+L1]
+L1
+  [-R1+L1]
+L1
+  [-R1+L1]
+L1
+  [-R1+L1]
+; ASSERT ptr=0
+; FIPS 202's padding byte for the SHAKE functions
+  +++++++++++++++++++++++++++++++
+; ASSERT ptr=0
+; emit  every byte of the answer leaves inside the sponge below  as the state is
+; turned over  so the paste stands exactly where this file's own output section
+; would be; Nothing pastes a whole program  so the one hazard in writing it this
+; way  that a paste would stop at this line and drop the sponge  cannot bite
+@@SPONGE168@@ 0
+; ASSERT ptr=0

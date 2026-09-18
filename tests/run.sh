@@ -819,6 +819,27 @@ dk keccak/shake256.bf 00008800 46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b
 dk keccak/shake256.bf 00008900 46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762fd75dc4ddd8c0f200cb05019d67b592f6fc821c49479ab48640292eacb3b7c4be141e96616fb13957692cc7edd0b45ae3dc07223c8e92937bef84bc0eab862853349ec75546f58fb7c2775c38462c5010d846c185c15111e595522a6bcd16cf86f3d122109e3b1fdd94 shake256Run_0_137 "shake256 of nothing  137 bytes  one byte past a rate"
 dk keccak/shake256.bf 88002000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384858687 b7ff4073b3f5a8eabd6e17705ca7f6761a31058f9df781a6a47e3a3063b9d67a shake256Run_136_32 "shake256 of 136 bytes  two blocks in and one rate out"
 
+# SPONGE168 is the same sponge at SHAKE128's rate, and a rate is the one thing
+# that cannot be shared: it sets how many lanes the absorb touches and how far
+# every one of its twenty one journeys runs, so every distance in the file was
+# worked out again. Two vectors, because the whole of the reasoning is already
+# under sponge136's -- one inside the first rate and one past it.
+
+dk keccak/sponge168.bf 1f00002000 7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26 sponge168Run_0_32 "sponge168 handed a 31  which is SHAKE128 of nothing"
+dk keccak/sponge168.bf 1f0000a900 7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef263cb1eea988004b93103cfb0aeefd2a686e01fa4a58e8a3639ca8a1e3f9ae57e235b8cc873c23dc62b8d260169afa2f75ab916a58d974918835d25e6a435085b2badfd6dfaac359a5efbb7bcc4b59d538df9a04302e10c8bc1cbf1a0b3a5120ea17cda7cfad765f5623474d368ccca8af0007cd9f5e4c849f167a580b14aabdefaee7eef47cb0fca976 sponge168Run_0_169 "sponge168 squeezed 169 bytes  one byte into a second rate"
+
+# SHAKE128 is sponge168 handed FIPS 202's 31. It is the function ML-KEM
+# actually calls -- its matrix sampling is a SHAKE128 squeeze of a few hundred
+# bytes per entry -- so its boundaries get the same treatment SHAKE256's did:
+# exactly a rate, one byte past it, and a message of exactly a rate so that the
+# absorb needs two blocks while the squeeze needs one.
+
+dk keccak/shake128.bf 00002000 7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26 shake128Run_0_32 "shake128 of nothing  32 bytes"
+dk keccak/shake128.bf 03002000616263 5881092dd818bf5cf8a3ddb793fbcba74097d5c526a6d35f97b83351940f2cc8 shake128Run_3_32 "shake128 of abc  32 bytes"
+dk keccak/shake128.bf 0000a800 7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef263cb1eea988004b93103cfb0aeefd2a686e01fa4a58e8a3639ca8a1e3f9ae57e235b8cc873c23dc62b8d260169afa2f75ab916a58d974918835d25e6a435085b2badfd6dfaac359a5efbb7bcc4b59d538df9a04302e10c8bc1cbf1a0b3a5120ea17cda7cfad765f5623474d368ccca8af0007cd9f5e4c849f167a580b14aabdefaee7eef47cb0fca9 shake128Run_0_168 "shake128 of nothing  168 bytes  exactly one rate"
+dk keccak/shake128.bf 0000a900 7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef263cb1eea988004b93103cfb0aeefd2a686e01fa4a58e8a3639ca8a1e3f9ae57e235b8cc873c23dc62b8d260169afa2f75ab916a58d974918835d25e6a435085b2badfd6dfaac359a5efbb7bcc4b59d538df9a04302e10c8bc1cbf1a0b3a5120ea17cda7cfad765f5623474d368ccca8af0007cd9f5e4c849f167a580b14aabdefaee7eef47cb0fca976 shake128Run_0_169 "shake128 of nothing  169 bytes  one byte past a rate"
+dk keccak/shake128.bf a8002000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7 f15277eb61c4908d44a2853f3cde071ae2ed7a23461fbe162a1a98cf6875059c shake128Run_168_32 "shake128 of 168 bytes  two blocks in and one rate out"
+
 
 echo
 # TIER 5
@@ -867,6 +888,8 @@ run "sha3_256 honours its declared contracts" sh -c "printf 0300616263 | ./tools
 run "rotstate honours its declared contracts" sh -c "printf %0400d 0 | tr 0 f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/rotstate.bf >/dev/null"
 run "sponge136 honours its declared contracts" sh -c "printf 1f00008900 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sponge136.bf >/dev/null"
 run "shake256 honours its declared contracts" sh -c "printf 03008900616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/shake256.bf >/dev/null"
+run "sponge168 honours its declared contracts" sh -c "printf 1f0000a900 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sponge168.bf >/dev/null"
+run "shake128 honours its declared contracts" sh -c "printf 0300a900616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/shake128.bf >/dev/null"
 run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "xor64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/xor64.bf >/dev/null"
 run "and64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and64.bf >/dev/null"

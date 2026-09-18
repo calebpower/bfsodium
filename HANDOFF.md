@@ -145,6 +145,8 @@ routine, the suite fails until it has a row here.
 | `keccak/sponge136` | 136716 | 717 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
 | `keccak/sha3_256` | 136690 | 57 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
 | `keccak/shake256` | 136692 | 55 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 140254 | 776 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 140226 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -188,9 +190,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 291 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 291 | golden vectors, dual oracle |
-| 5 | yes | 42 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 298 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 298 | golden vectors, dual oracle |
+| 5 | yes | 44 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -338,15 +340,36 @@ must have no marker in the suite at all.
    under that flag. **A vector at a multiple of the rate is not optional for
    any sponge.**
 
-   What is left of the family: **SHAKE128**, which is rate 168 and therefore
-   a sponge file of its own — `sponge168`, with a head over it exactly as
-   here — and SHA3-224/384/512, which are one rate and one output length
-   each. Every
-   rate in the family divides by eight — 168 is twenty one lanes, 144 eighteen,
-   136 seventeen, 104 thirteen, 72 nine — so the lane-wise absorb carries over
-   unchanged, and only the numbers in it change. **SHAKE128 is the one ML-KEM
+   **AND SHAKE128 IS IN, AS `keccak/sponge168` AND `keccak/shake128`.** Rate
+   168 is twenty one lanes, so it is a sponge file of its own, and the map is
+   `sponge136`'s shifted by exactly 32 above the block — which is not a
+   coincidence but the thing that made the file cheap. The block starts at cell
+   824 in both, so it ENDS 32 cells higher at rate 168, and the flag cluster
+   was put 32 cells higher to match. **Every walk between the TOP of the block
+   and a flag cell therefore has the same distance in both files**: `R57`,
+   `L57`, `R49`, `L61`, `R61` and the `L64` that carries the padding byte are
+   all unchanged. Only two walks touch the BOTTOM of the block and had to
+   move, plus the twenty one lane journeys, the slide, the count and the
+   asserts. The five formulas the lane journeys come from were checked by
+   generating `sponge136`'s seventeen from them and diffing against the
+   committed skeleton: 222 lines, no differences. That is why `sponge168`
+   answered `7f9c2ba4…` the first time it was run.
+
+   **A RATE OF 168 IS THE CHEAPER SPONGE PER BYTE**, and it is worth knowing
+   before anyone reaches for SHAKE256 by default: a permutation costs what it
+   costs regardless of the rate, so SHAKE128 absorbs 168 bytes and squeezes
+   168 bytes per permutation where SHAKE256 does 136. About a quarter cheaper
+   per byte, for no reason but the number. **And SHAKE128 is the one ML-KEM
    actually calls**, since its matrix sampling is a SHAKE128 squeeze of a few
    hundred bytes per entry.
+
+   What is left of the family: SHA3-224/384/512, which are one rate and one
+   output length each — 144, 104 and 72, so eighteen, thirteen and nine lanes.
+   Every rate in the family divides by eight, so the lane-wise absorb carries
+   over unchanged and only the numbers in it change. Each wants a sponge file
+   of its own by the rule above, and each has exactly one consumer, so a fixed
+   output length could reasonably be written straight into it rather than read
+   from the wire.
 
    **THIS ITEM USED TO SAY "IT NEEDS NO NEW IDIOM" AND THAT WAS WRONG**, which
    is worth keeping rather than quietly fixing, because the way it was wrong is
