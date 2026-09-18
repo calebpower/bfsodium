@@ -840,6 +840,30 @@ dk keccak/shake128.bf 0000a800 7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88e
 dk keccak/shake128.bf 0000a900 7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef263cb1eea988004b93103cfb0aeefd2a686e01fa4a58e8a3639ca8a1e3f9ae57e235b8cc873c23dc62b8d260169afa2f75ab916a58d974918835d25e6a435085b2badfd6dfaac359a5efbb7bcc4b59d538df9a04302e10c8bc1cbf1a0b3a5120ea17cda7cfad765f5623474d368ccca8af0007cd9f5e4c849f167a580b14aabdefaee7eef47cb0fca976 shake128Run_0_169 "shake128 of nothing  169 bytes  one byte past a rate"
 dk keccak/shake128.bf a8002000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7 f15277eb61c4908d44a2853f3cde071ae2ed7a23461fbe162a1a98cf6875059c shake128Run_168_32 "shake128 of 168 bytes  two blocks in and one rate out"
 
+# SHA3-224, SHA3-384 and SHA3-512 are one shape at three more rates: pad 6, a
+# digest shorter than the rate, and so no squeeze loop at all. Four vectors
+# each and the same four every time -- nothing, FIPS 202's own "abc", the
+# length where the pad byte and the top bit are the SAME byte, and the length
+# where the padding needs a whole block to itself. That last one is the case
+# the rate 136 sponge got wrong first time, and no single-block vector can see
+# it, so it is not optional at any rate.
+
+
+dk keccak/sha3_224.bf 0000 6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7 sha3_224Run_0 "sha3_224 of nothing"
+dk keccak/sha3_224.bf 0300616263 e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf sha3_224Run_3 "sha3_224 of abc  FIPS 202's own vector"
+dk keccak/sha3_224.bf 8f00000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e 64d0e8a1be3cf30ef6727b30a6e428f7f068d44634c943d277ad8e7f sha3_224Run_143 "sha3_224 of 143 bytes  the pad byte and the top bit are one byte"
+dk keccak/sha3_224.bf 9000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f 5be75e6a08f19913a1d8036c056cc4556b98dc90aeca3f2a0664dedc sha3_224Run_144 "sha3_224 of 144 bytes  the padding takes a block of its own"
+
+dk keccak/sha3_384.bf 0000 0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004 sha3_384Run_0 "sha3_384 of nothing"
+dk keccak/sha3_384.bf 0300616263 ec01498288516fc926459f58e2c6ad8df9b473cb0fc08c2596da7cf0e49be4b298d88cea927ac7f539f1edf228376d25 sha3_384Run_3 "sha3_384 of abc  FIPS 202's own vector"
+dk keccak/sha3_384.bf 6700000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60616263646566 1f91ee551ad18f268876d1fc262f137fe196580216c5193819a95ec5222537d2a658dd129c3d8080e65ec7460f1f4704 sha3_384Run_103 "sha3_384 of 103 bytes  the pad byte and the top bit are one byte"
+dk keccak/sha3_384.bf 6800000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f6061626364656667 5b8d0d5cf8b41be507be8fcbfcbdbac3a28eb368d430fed6780aaa78a93a8da4a6c50485949ca344f228be91a96005a3 sha3_384Run_104 "sha3_384 of 104 bytes  the padding takes a block of its own"
+
+dk keccak/sha3_512.bf 0000 a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26 sha3_512Run_0 "sha3_512 of nothing"
+dk keccak/sha3_512.bf 0300616263 b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0 sha3_512Run_3 "sha3_512 of abc  FIPS 202's own vector"
+dk keccak/sha3_512.bf 4700000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40414243444546 3ccc850d53a1287af7b4560b2ef0d43eb5d9a80d62a0e9cf1dbc040135921104d4395168e90bfc871773ebb34bca1bd67056e1cc7dc7a48ff7c3167d389f117c sha3_512Run_71 "sha3_512 of 71 bytes  the pad byte and the top bit are one byte"
+dk keccak/sha3_512.bf 4800000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4041424344454647 5d63f2bbe971a983ac6847480106e4e1264ee3a0befd79954914e1d86e795b2e18238f12fc5e46cb9cc78efdec610a93647cc04e1c23d8caaa6a58c21dd26c07 sha3_512Run_72 "sha3_512 of 72 bytes  the padding takes a block of its own"
+
 
 echo
 # TIER 5
@@ -890,6 +914,9 @@ run "sponge136 honours its declared contracts" sh -c "printf 1f00008900 | ./tool
 run "shake256 honours its declared contracts" sh -c "printf 03008900616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/shake256.bf >/dev/null"
 run "sponge168 honours its declared contracts" sh -c "printf 1f0000a900 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sponge168.bf >/dev/null"
 run "shake128 honours its declared contracts" sh -c "printf 0300a900616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/shake128.bf >/dev/null"
+run "sha3_224 honours its declared contracts" sh -c "printf 0300616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sha3_224.bf >/dev/null"
+run "sha3_384 honours its declared contracts" sh -c "printf 0300616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sha3_384.bf >/dev/null"
+run "sha3_512 honours its declared contracts" sh -c "printf 0300616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sha3_512.bf >/dev/null"
 run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "xor64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/xor64.bf >/dev/null"
 run "and64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and64.bf >/dev/null"

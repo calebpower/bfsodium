@@ -75,7 +75,8 @@ constant-time story and cannot be one, and nothing is zeroized. See
 
 That is everything CONVENTIONS.md lists as v1. Since then the 64-bit idiom set,
 SHA-512 with HMAC and HKDF over it, and the whole of Keccak — the permutation,
-the sponge, SHA3-256, SHAKE128 and SHAKE256 — have been built on top of it.
+the sponge, all four SHA-3 digests and both SHAKEs — have been built on top
+of it.
 The ML-KEM /
 ML-DSA lattice math is the mountain still ahead.
 
@@ -130,7 +131,8 @@ at all, just a 64-bit idiom set — which `idiom/add64`, `rotr64`, `rotl64`,
 `shr64`, `xor64` and `and64` now are, and **SHA-512, HMAC-SHA-512 and
 HKDF-SHA-512 are built on them**. **AES** and **Keccak** are the two keystones,
 each unlocking a family of about ten. **Keccak is built** — the permutation,
-the sponge, SHA3-256 and both SHAKEs — so what sat behind it is now reachable:
+the sponge, SHA3-224/256/384/512 and both SHAKEs — so what sat behind it is
+now reachable:
 post-quantum sat behind Keccak because its sampling is SHAKE128, and that now
 exists. AES is what
 `index/fetch8` was written for and nothing has used yet. **RSA and elliptic

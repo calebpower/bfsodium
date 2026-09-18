@@ -147,6 +147,9 @@ routine, the suite fails until it has a row here.
 | `keccak/shake256` | 116868 | 55 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sponge168` | 120430 | 776 | one inside the first rate and one past it + Cryptol |
 | `keccak/shake128` | 120402 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
+| `keccak/sha3_384` | 61875 | 458 | rate 104  the same four + Cryptol |
+| `keccak/sha3_512` | 58572 | 406 | rate 72  the same four + Cryptol |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -190,9 +193,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 298 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 298 | golden vectors, dual oracle |
-| 5 | yes | 44 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 310 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 310 | golden vectors, dual oracle |
+| 5 | yes | 47 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -365,13 +368,31 @@ must have no marker in the suite at all.
    actually calls**, since its matrix sampling is a SHAKE128 squeeze of a few
    hundred bytes per entry.
 
-   What is left of the family: SHA3-224/384/512, which are one rate and one
-   output length each — 144, 104 and 72, so eighteen, thirteen and nine lanes.
-   Every rate in the family divides by eight, so the lane-wise absorb carries
-   over unchanged and only the numbers in it change. Each wants a sponge file
-   of its own by the rule above, and each has exactly one consumer, so a fixed
-   output length could reasonably be written straight into it rather than read
-   from the wire.
+   **AND SHA3-224, SHA3-384 AND SHA3-512 CLOSE THE FAMILY** — rates 144, 104
+   and 72, so eighteen, thirteen and nine lanes. Each is ONE FILE rather than
+   a sponge and a head, and the rule that decides which is the one already
+   stated: a rate gets a sponge of its own, and a rate shared by more than one
+   function gets heads over it as well. Rate 136 carries SHA3-256 and SHAKE256
+   (and cSHAKE256 and KMAC256 later) so it has a sponge and heads; rate 168
+   carries SHAKE128 and the same pair at 128, so it has one too. **These three
+   rates have exactly one function each in the whole of FIPS 202**, so the
+   sponge and the head are the same file and both constants are written into
+   it.
+
+   **And none of them has a squeeze loop**, because 28, 48 and 64 bytes are
+   each under their own rate: the digest is the front of the state and is
+   emitted where it lies. `sponge136` pays one whole turn of the state to
+   serve a length it does not know in advance; these do not have to. That is
+   the same 0.87 per cent SHA3-256 pays for sharing, looked at from the other
+   side.
+
+   All three were right the first time they were run, which is worth
+   attributing rather than enjoying: `scratchpad/sha3gen.py` emits the body
+   from a rate and a digest length, and it was first run at rate 136 with a
+   digest of 32 and diffed against the SHA3-256 that had been hand-written
+   before the sponge was split out — identical, 435 lines. Only then were the
+   other three rates asked for. Twenty one lengths against a third party
+   across every block boundary, no failures.
 
    **THIS ITEM USED TO SAY "IT NEEDS NO NEW IDIOM" AND THAT WAS WRONG**, which
    is worth keeping rather than quietly fixing, because the way it was wrong is

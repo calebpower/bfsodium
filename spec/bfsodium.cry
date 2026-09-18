@@ -772,6 +772,74 @@ shake128Run_168_32 : [172][8] -> [32][8]
 shake128Run_168_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{168} 0x1f (drop`{4} inb)))
 
+// ==== SHA3-224, SHA3-384 and SHA3-512: one shape at three more rates ====
+//
+// These three are the same file three times over with a different rate and a
+// different digest length, so here they are the same definition over the rate.
+// The 136 and 168 forms above are written out long-hand on purpose -- each was
+// a fresh reading of FIPS 202 while the brainfuck it checks was being written,
+// and two readings that agree are worth more than one reused. By the time the
+// third rate arrived there was nothing left to read afresh.
+keccakAbsorbRate : {r, b} (fin r, fin b, b >= 1, r <= 200) => [b][r][8] -> [25][64]
+keccakAbsorbRate blocks = ss ! 0
+  where ss = [zero] # [ keccakPermute [ l ^ x
+                                      | l <- s
+                                      | x <- keccakLanes (blk # (zero : [200 - r][8])) ]
+                      | s <- ss | blk <- blocks ]
+
+keccakPadRate1 : {r, n} (fin r, fin n, r >= 2, n <= r - 2) => [n][8] -> [1][r][8]
+keccakPadRate1 m = [m # [0x06] # (zero : [r - 2 - n][8]) # [0x80]]
+
+keccakPadRate1Full : {r} (fin r, r >= 1) => [r - 1][8] -> [1][r][8]
+keccakPadRate1Full m = [m # [0x86]]
+
+keccakPadRate2 : {r, n} (fin r, fin n, r >= 1, n >= r, n <= 2 * r - 2) =>
+                 [n][8] -> [2][r][8]
+keccakPadRate2 m = split (m # [0x06] # (zero : [2 * r - 2 - n][8]) # [0x80])
+
+sha3OutRate : {d} (fin d, d <= 200) => [25][64] -> [d][8]
+sha3OutRate s = take`{d} (keccakBytes s)
+
+// SHA3-224 over the wire, as keccak/sha3_224.bf reads it: len(2 LE) then the
+// message. Rate 144, digest 28.
+sha3_224Run_0 : [2][8] -> [28][8]
+sha3_224Run_0 inb = sha3OutRate`{28} (keccakAbsorbRate (keccakPadRate1`{144,0} (drop`{2} inb)))
+
+sha3_224Run_3 : [5][8] -> [28][8]
+sha3_224Run_3 inb = sha3OutRate`{28} (keccakAbsorbRate (keccakPadRate1`{144,3} (drop`{2} inb)))
+
+sha3_224Run_143 : [145][8] -> [28][8]
+sha3_224Run_143 inb = sha3OutRate`{28} (keccakAbsorbRate (keccakPadRate1Full`{144} (drop`{2} inb)))
+
+sha3_224Run_144 : [146][8] -> [28][8]
+sha3_224Run_144 inb = sha3OutRate`{28} (keccakAbsorbRate (keccakPadRate2`{144,144} (drop`{2} inb)))
+
+// SHA3-384: rate 104, digest 48.
+sha3_384Run_0 : [2][8] -> [48][8]
+sha3_384Run_0 inb = sha3OutRate`{48} (keccakAbsorbRate (keccakPadRate1`{104,0} (drop`{2} inb)))
+
+sha3_384Run_3 : [5][8] -> [48][8]
+sha3_384Run_3 inb = sha3OutRate`{48} (keccakAbsorbRate (keccakPadRate1`{104,3} (drop`{2} inb)))
+
+sha3_384Run_103 : [105][8] -> [48][8]
+sha3_384Run_103 inb = sha3OutRate`{48} (keccakAbsorbRate (keccakPadRate1Full`{104} (drop`{2} inb)))
+
+sha3_384Run_104 : [106][8] -> [48][8]
+sha3_384Run_104 inb = sha3OutRate`{48} (keccakAbsorbRate (keccakPadRate2`{104,104} (drop`{2} inb)))
+
+// SHA3-512: rate 72, digest 64.
+sha3_512Run_0 : [2][8] -> [64][8]
+sha3_512Run_0 inb = sha3OutRate`{64} (keccakAbsorbRate (keccakPadRate1`{72,0} (drop`{2} inb)))
+
+sha3_512Run_3 : [5][8] -> [64][8]
+sha3_512Run_3 inb = sha3OutRate`{64} (keccakAbsorbRate (keccakPadRate1`{72,3} (drop`{2} inb)))
+
+sha3_512Run_71 : [73][8] -> [64][8]
+sha3_512Run_71 inb = sha3OutRate`{64} (keccakAbsorbRate (keccakPadRate1Full`{72} (drop`{2} inb)))
+
+sha3_512Run_72 : [74][8] -> [64][8]
+sha3_512Run_72 inb = sha3OutRate`{64} (keccakAbsorbRate (keccakPadRate2`{72,72} (drop`{2} inb)))
+
 // XOR64: the 64-bit widening of chacha20/xor32.
 // in = x(8 LE) # y(8 LE); out = (x xor y)(8 LE). Stated on its own rather
 // than parameterised over the width, for the same reason leWord64 sits

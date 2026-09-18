@@ -1,0 +1,406 @@
+; bfsodium SHA3_512 : FIPS 202's SHA3_512  the sponge at rate 72 with pad 6
+;
+; HAND WRITTEN; The sponge over keccak/permute1600 at this function's own rate;
+; The permutation is PASTED and entered once per block of the padded message
+; and never again  because sixty four bytes of digest fit inside one rate;
+;
+; INTERFACE entry=1 exit=0 footprint=0:956
+; IO  in:  mlen{2} LE  then mlen bytes from the wire
+;     out: digest{64}
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x0c7  S{200}  the sponge state; it starts at NOUGHT  which is why
+;                         the two length bytes are moved up out of it below
+;   @0x0c8:0x330  keccak/permute1600's frame  pasted at this file's own zero
+;   @0x338:0x37f  BB{72} the block being filled; one RATE of the sponge
+;   @0x388:0x3ad  the exclusive or frame; xor64 pasted at @0x388
+;   @0x3b0        mlo     message bytes still to come  low byte
+;   @0x3b1        mhi     and high byte
+;   @0x3b2        msgleft one while either of those is not nought
+;   @0x3b3        pad     one until the padding byte has been placed
+;   @0x3b4        more    one while another block is wanted
+;   @0x3b5        ic      the seventy two bytes of a block
+;   @0x3b6:0x3bb  t0 t1 e0 t2 t3 e1  the cells the four tests are made through
+;   @0x3bc        last    one if the padding byte was placed in THIS block
+;
+; WHY THIS ONE IS A FILE OF ITS OWN AND SHA3_256 IS A HEAD OVER keccak/sponge136:
+; a rate cannot be a parameter in brainfuck  because every journey the absorb
+; makes would then be of a computed length and there is no index to compute one
+; from; So there is one sponge per RATE; A padding byte can be a parameter
+; because it is one cell of data  so where two functions share a rate they share
+; one file and hand it their own byte; The rate 136 is shared by SHA3_256 and
+; SHAKE256 and so has a sponge and two heads; THIS rate has exactly one function
+; in the whole of FIPS 202  so the sponge and the head are the same file and its
+; two constants are written straight into it;
+;
+; AND THERE IS NO SQUEEZE LOOP HERE for the same reason: sixty four bytes is
+; under one rate  so the digest is the front of the state and is emitted where
+; it lies; keccak/sponge136 pays one whole turn of the state to serve a length
+; it does not know in advance  and this file does not have to;
+;
+; THE RATE IS SEVENTY TWO and that is exactly NINE LANES  so absorbing a
+; block is nine entries of xor64 rather than seventy two byte
+; exclusive ors; Every rate in the family divides by eight  which is the one
+; thing that carries over from one of these files to the next;
+;
+; AND EVERY OPERAND IS MOVED  never copied: the state lane is replaced by the
+; answer and the block is spent  so nothing needs handing back;
+;
+; THE BLOCK IS FILLED BY A CONVEYOR  because there is no index: a byte always
+; enters at the TOP of the block and the block slides down one before the next
+; one arrives; So the byte that enters first has slid 71 times when the
+; block is full and comes to rest at the bottom  which is where it belongs;
+;
+; THE PADDING IS FIPS 202's  and the conveyor makes it almost free: when the
+; message runs out the next byte to enter is 6  and after that nothing enters at
+; all  which leaves noughts behind the conveyor exactly as the rule wants; The
+; last byte of the LAST block then gains 128; That byte is either nought or the
+; 6 itself  so the addition cannot carry  and the case where the message is a
+; whole number of blocks needs no special arm: the padding simply gets a block
+; of its own;
+;
+; ON THE LAST BLOCK AND NOT ON EVERY BLOCK; The block in which the padding byte
+; was placed is the last block by definition  so placing it sets a flag and the
+; 128 is added under that flag; The rate 136 sponge got this wrong first time
+; and only failed once a message was long enough to need two blocks;
+;
+; A BLOCK IS ABOUT TWO AND A HALF BILLION INSTRUCTIONS  nearly all of it the
+; permutation at two thousand four hundred and eighty four million  so nothing
+; else in this file is worth optimising until that is;
+;
+; The length is read into the bottom two cells of the STATE and moved up out of
+; it  because a read prologue may hold nothing but commas and steps and the
+; state must start at nought; Every distance below was worked out from the map;
+
+; read the message length little endian
+  ,>,
+; ASSERT ptr=1
+; ASSERT zero 2:956
+; to the bottom of the state
+L1
+; ASSERT ptr=0
+; the length moves up out of the state  which leaves the state at nought
+  [-R944+L944]>[-R944+L944]
+R943
+; ASSERT ptr=944
+
+; ==== is there a message at all ====
+; both length bytes are looked at through t2  and either one sets msgleft
+  [-R9+R1+L10]
+R10
+; ASSERT ptr=954
+  [-L10+R10]
+L1
+; ASSERT ptr=953
+  [[-]L7[-]+R7]
+L8
+; ASSERT ptr=945
+  [-R8+R1+L9]
+R9
+; ASSERT ptr=954
+  [-L9+R9]
+L1
+; ASSERT ptr=953
+  [[-]L7[-]+R7]
+
+; ==== the padding is still to come  and so is the first block ====
+L6
+; ASSERT ptr=947
+  +
+R1
+; ASSERT ptr=948
+  +
+
+; ==== one turn of this loop is one block of the padded message ====
+[
+; the block is wanted again only if something is still to come
+  [-]
+; to the count of bytes in a block
+R1
+; ASSERT ptr=949
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+[
+  -
+; the block slides down one  which empties its top cell for what comes next
+L124
+; ASSERT ptr=825
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+; ASSERT ptr=895
+; to the else arm  which is set until the message is found to have more
+R57
+; ASSERT ptr=952
+  [-]+
+L6
+; ASSERT ptr=946
+  [-R4+R1+L5]
+R5
+; ASSERT ptr=951
+  [-L5+R5]
+L1
+; ASSERT ptr=950
+[
+; ____ the message has another byte  so it enters the block ____
+  [-]
+R2
+; ASSERT ptr=952
+  [-]
+L57
+; ASSERT ptr=895
+  ,
+R49
+; ASSERT ptr=944
+; the count comes down by one  borrowing into the high byte when the low is out
+R11
+; ASSERT ptr=955
+  [-]+
+L11
+; ASSERT ptr=944
+  [-R9+R1+L10]
+R10
+; ASSERT ptr=954
+  [-L10+R10]
+L1
+; ASSERT ptr=953
+  [[-]R2[-]L11-R9]
+R2
+; ASSERT ptr=955
+  [[-]L11+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++R1-R10]
+; and msgleft is worked out afresh from what is left of the count
+L9
+; ASSERT ptr=946
+  [-]
+L2
+; ASSERT ptr=944
+  [-R9+R1+L10]
+R10
+; ASSERT ptr=954
+  [-L10+R10]
+L1
+; ASSERT ptr=953
+  [[-]L7[-]+R7]
+L8
+; ASSERT ptr=945
+  [-R8+R1+L9]
+R9
+; ASSERT ptr=954
+  [-L9+R9]
+L1
+; ASSERT ptr=953
+  [[-]L7[-]+R7]
+L3
+; ASSERT ptr=950
+]
+; ASSERT ptr=950
+R2
+; ASSERT ptr=952
+[
+; ____ the message is out  so the padding byte enters  once ____
+  [-]
+L5
+; ASSERT ptr=947
+  [-R3+R1+L4]
+R4
+; ASSERT ptr=951
+  [-L4+R4]
+L1
+; ASSERT ptr=950
+[
+  [-]
+L3
+; ASSERT ptr=947
+  [-]
+R9
+; ASSERT ptr=956
+  [-]+
+L61
+; ASSERT ptr=895
+  ++++++
+R55
+; ASSERT ptr=950
+]
+; ASSERT ptr=950
+R2
+; ASSERT ptr=952
+]
+; ASSERT ptr=952
+; back to the count of bytes in a block
+L3
+; ASSERT ptr=949
+]
+; ASSERT ptr=949
+
+; ==== if this was the LAST block  its last byte gains 128 ====
+; FIPS 202 puts that bit on the last byte of the last block and nowhere else;
+; the block in which the padding byte was placed is the last one by definition
+R7
+; ASSERT ptr=956
+[
+  [-]
+L61
+; ASSERT ptr=895
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+R61
+; ASSERT ptr=956
+]
+; ASSERT ptr=956
+; to the bottom of the state
+L956
+; ASSERT ptr=0
+
+; ==== the block is absorbed  nine lanes of it  and then stirred ====
+; ____ lane 0 ____
+  [-R904+L904]>[-R904+L904]>[-R904+L904]>[-R904+L904]>[-R904+L904]>[-R904+L904]>[-R904+L904]>[-R904+L904]
+R817
+; ASSERT ptr=824
+  [-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]
+R73
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L920+R920]>[-L920+R920]>[-L920+R920]>[-L920+R920]>[-L920+R920]>[-L920+R920]>[-L920+R920]>[-L920+R920]
+L919
+; ASSERT ptr=8
+; ____ lane 1 ____
+  [-R896+L896]>[-R896+L896]>[-R896+L896]>[-R896+L896]>[-R896+L896]>[-R896+L896]>[-R896+L896]>[-R896+L896]
+R817
+; ASSERT ptr=832
+  [-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]
+R65
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L912+R912]>[-L912+R912]>[-L912+R912]>[-L912+R912]>[-L912+R912]>[-L912+R912]>[-L912+R912]>[-L912+R912]
+L911
+; ASSERT ptr=16
+; ____ lane 2 ____
+  [-R888+L888]>[-R888+L888]>[-R888+L888]>[-R888+L888]>[-R888+L888]>[-R888+L888]>[-R888+L888]>[-R888+L888]
+R817
+; ASSERT ptr=840
+  [-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]
+R57
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L904+R904]>[-L904+R904]>[-L904+R904]>[-L904+R904]>[-L904+R904]>[-L904+R904]>[-L904+R904]>[-L904+R904]
+L903
+; ASSERT ptr=24
+; ____ lane 3 ____
+  [-R880+L880]>[-R880+L880]>[-R880+L880]>[-R880+L880]>[-R880+L880]>[-R880+L880]>[-R880+L880]>[-R880+L880]
+R817
+; ASSERT ptr=848
+  [-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]
+R49
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L896+R896]>[-L896+R896]>[-L896+R896]>[-L896+R896]>[-L896+R896]>[-L896+R896]>[-L896+R896]>[-L896+R896]
+L895
+; ASSERT ptr=32
+; ____ lane 4 ____
+  [-R872+L872]>[-R872+L872]>[-R872+L872]>[-R872+L872]>[-R872+L872]>[-R872+L872]>[-R872+L872]>[-R872+L872]
+R817
+; ASSERT ptr=856
+  [-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]
+R41
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L888+R888]>[-L888+R888]>[-L888+R888]>[-L888+R888]>[-L888+R888]>[-L888+R888]>[-L888+R888]>[-L888+R888]
+L887
+; ASSERT ptr=40
+; ____ lane 5 ____
+  [-R864+L864]>[-R864+L864]>[-R864+L864]>[-R864+L864]>[-R864+L864]>[-R864+L864]>[-R864+L864]>[-R864+L864]
+R817
+; ASSERT ptr=864
+  [-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]
+R33
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L880+R880]>[-L880+R880]>[-L880+R880]>[-L880+R880]>[-L880+R880]>[-L880+R880]>[-L880+R880]>[-L880+R880]
+L879
+; ASSERT ptr=48
+; ____ lane 6 ____
+  [-R856+L856]>[-R856+L856]>[-R856+L856]>[-R856+L856]>[-R856+L856]>[-R856+L856]>[-R856+L856]>[-R856+L856]
+R817
+; ASSERT ptr=872
+  [-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]
+R25
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L872+R872]>[-L872+R872]>[-L872+R872]>[-L872+R872]>[-L872+R872]>[-L872+R872]>[-L872+R872]>[-L872+R872]
+L871
+; ASSERT ptr=56
+; ____ lane 7 ____
+  [-R848+L848]>[-R848+L848]>[-R848+L848]>[-R848+L848]>[-R848+L848]>[-R848+L848]>[-R848+L848]>[-R848+L848]
+R817
+; ASSERT ptr=880
+  [-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]
+R17
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L864+R864]>[-L864+R864]>[-L864+R864]>[-L864+R864]>[-L864+R864]>[-L864+R864]>[-L864+R864]>[-L864+R864]
+L863
+; ASSERT ptr=64
+; ____ lane 8 ____
+  [-R840+L840]>[-R840+L840]>[-R840+L840]>[-R840+L840]>[-R840+L840]>[-R840+L840]>[-R840+L840]>[-R840+L840]
+R817
+; ASSERT ptr=888
+  [-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]
+R9
+; ASSERT ptr=904
+@@XOR64@@ 904
+R16
+; ASSERT ptr=920
+  [-L856+R856]>[-L856+R856]>[-L856+R856]>[-L856+R856]>[-L856+R856]>[-L856+R856]>[-L856+R856]>[-L856+R856]
+L927
+; ASSERT ptr=0
+; ASSERT zero 824:943
+@@PERMUTE1600@@ 0
+; ASSERT ptr=0
+
+; ==== another block is wanted if either the message or the padding is left ====
+R948
+; ASSERT ptr=948
+  [-]
+L2
+; ASSERT ptr=946
+  [-R4+R1+L5]
+R5
+; ASSERT ptr=951
+  [-L5+R5]
+L1
+; ASSERT ptr=950
+  [[-]L2[-]+R2]
+L3
+; ASSERT ptr=947
+  [-R3+R1+L4]
+R4
+; ASSERT ptr=951
+  [-L4+R4]
+L1
+; ASSERT ptr=950
+  [[-]L2[-]+R2]
+L2
+; ASSERT ptr=948
+]
+; ASSERT ptr=948
+; ASSERT zero 200:956
+
+; ==== the answer is the first thirty two bytes of the state ====
+; thirty two is under one rate  so the sponge is never squeezed twice
+L948
+; ASSERT ptr=0
+; emit the digest
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+

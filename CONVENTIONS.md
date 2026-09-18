@@ -732,10 +732,22 @@ absorbs and squeezes 168 bytes per permutation where SHAKE256 does 136, about a
 quarter cheaper for no reason but the number. It is the function ML-KEM calls,
 since its matrix sampling is a SHAKE128 squeeze.
 
-What is left of the tier is SHA3-224/384/512, which are one rate and one output
-length each. Every rate divides by eight — 168 is twenty-one lanes, 144
-eighteen, 136 seventeen, 104 thirteen, 72 nine — so the lane-wise absorb
-carries over unchanged and only the numbers in it change.
+**And SHA3-224, SHA3-384 and SHA3-512 close the tier** — rates 144, 104 and 72.
+Each is *one file* rather than a sponge and a head, and the rule that decides
+which is the one above: a rate gets a sponge of its own, and a rate shared by
+more than one function gets heads over it as well. These three rates have
+exactly one function each in the whole of FIPS 202, so the sponge and the head
+are the same file. None of them has a squeeze loop either, because 28, 48 and
+64 bytes are each under their own rate — the digest is the front of the state,
+emitted where it lies.
+
+Every rate divides by eight — 168 is twenty-one lanes, 144 eighteen, 136
+seventeen, 104 thirteen, 72 nine — which is the one thing that carries from one
+of these files to the next; everything else in them is the rate's own numbers.
+
+**What is left of tier B is cSHAKE, KMAC, TupleHash and ParallelHash**, which
+are FIPS 202's rates with different padding bytes and a length-encoded prefix,
+and the post-quantum tier behind SHAKE128.
 
 **The rotation was the piece that decided whether any of it was affordable.**
 ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its
