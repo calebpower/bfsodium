@@ -645,6 +645,71 @@ sha3_256Run_135 inb = sha3_256Out (keccakAbsorb (keccakPad1Full (drop`{2} inb)))
 sha3_256Run_136 : [138][8] -> [32][8]
 sha3_256Run_136 inb = sha3_256Out (keccakAbsorb (keccakPad2`{136} (drop`{2} inb)))
 
+// ==== the squeeze, and the padding byte as a parameter ====
+//
+// ROTSTATE: keccak/rotstate.bf turns the state over by one cell, so the byte
+// about to go out is always the bottom one and the squeeze needs no index. A
+// sequence rotated left by one is exactly that, so this is the whole of it.
+keccakRotStateRun : [200][8] -> [200][8]
+keccakRotStateRun s = s <<< 1
+
+// The padding rule with the byte itself given, which is what
+// keccak/sponge136.bf reads from the wire. keccakPad1 above is this form with
+// 0x06 written in, and both stay: the SHA3-256 vectors were pinned against
+// that one and a vector's expression should not move under it.
+keccakPadB1 : {n} (fin n, n <= 134) => [8] -> [n][8] -> [1][136][8]
+keccakPadB1 p m = [m # [p] # (zero : [134 - n][8]) # [0x80]]
+
+keccakPadB1Full : [8] -> [135][8] -> [1][136][8]
+keccakPadB1Full p m = [m # [p || 0x80]]
+
+keccakPadB2 : {n} (fin n, n >= 136, n <= 270) => [8] -> [n][8] -> [2][136][8]
+keccakPadB2 p m = split (m # [p] # (zero : [270 - n][8]) # [0x80])
+
+// The squeeze at rate 136: the first 136 bytes of the state, then the first
+// 136 of the permuted state, and so on for as long as the caller wants. SHA3
+// takes 32 bytes and stops inside the first rate, so keccak/sha3_256.bf never
+// needed this; SHAKE may ask for more than a rate, and this is the loop
+// keccak/sponge136.bf runs to serve it.
+keccakSqueeze136 : {n} (fin n) => [25][64] -> [n][8]
+keccakSqueeze136 s = take`{n} (join [ take`{136} (keccakBytes t) | t <- ts ])
+  where ts : [inf][25][64]
+        ts = [s] # [ keccakPermute u | u <- ts ]
+
+// SPONGE136 over the wire, as keccak/sponge136.bf reads it: pad(1),
+// mlen(2 LE), olen(2 LE), then the message. The padding byte comes off the
+// wire, so one program answers for both functions at this rate.
+sponge136Run_0_32 : [5][8] -> [32][8]
+sponge136Run_0_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{0} (inb@0) (drop`{5} inb)))
+
+sponge136Run_0_137 : [5][8] -> [137][8]
+sponge136Run_0_137 inb =
+    keccakSqueeze136`{137} (keccakAbsorb (keccakPadB1`{0} (inb@0) (drop`{5} inb)))
+
+// SHAKE256 over the wire, as keccak/shake256.bf reads it: mlen(2 LE),
+// olen(2 LE), then the message. 0x1f is FIPS 202's padding byte for the SHAKE
+// functions and it is written in here, because that file writes it in too.
+shake256Run_0_32 : [4][8] -> [32][8]
+shake256Run_0_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{0} 0x1f (drop`{4} inb)))
+
+shake256Run_3_32 : [7][8] -> [32][8]
+shake256Run_3_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{3} 0x1f (drop`{4} inb)))
+
+shake256Run_0_136 : [4][8] -> [136][8]
+shake256Run_0_136 inb =
+    keccakSqueeze136`{136} (keccakAbsorb (keccakPadB1`{0} 0x1f (drop`{4} inb)))
+
+shake256Run_0_137 : [4][8] -> [137][8]
+shake256Run_0_137 inb =
+    keccakSqueeze136`{137} (keccakAbsorb (keccakPadB1`{0} 0x1f (drop`{4} inb)))
+
+shake256Run_136_32 : [140][8] -> [32][8]
+shake256Run_136_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{136} 0x1f (drop`{4} inb)))
+
 // XOR64: the 64-bit widening of chacha20/xor32.
 // in = x(8 LE) # y(8 LE); out = (x xor y)(8 LE). Stated on its own rather
 // than parameterised over the width, for the same reason leWord64 sits

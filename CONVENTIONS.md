@@ -200,6 +200,12 @@ four cells. `mulmod136` carries its operands to a fixed work frame at cell
 zero. `poly1305` lands each message byte on the top of the block and slides the
 block down one, so a byte taken in round `k` comes to rest at `blk[k]` with no
 index anywhere -- and a short block comes out right for free.
+`keccak/permute1600` slides its round-constant table down eight cells when a
+constant is spent, so the one in hand is always the lowest eight. And
+`keccak/rotstate` is the idea at its purest: the squeeze turns the whole sponge
+state over one cell at a time so the byte about to go out is always the bottom
+one, and two hundred turns put the state back exactly as the permutation left
+it -- a conveyor that is also a rotation, and therefore costs nothing to undo.
 
 This is not an aesthetic preference. Indexed addressing on a tape costs pointer
 travel proportional to distance, and the conveyor is usually both cheaper and
@@ -688,13 +694,31 @@ them: the constants have bits only at positions one less than a power of two,
 so only bytes 0, 1, 3 and 7 of a lane are ever anything but zero, and most of
 those are 128. The whole table is twenty-four blocks of at most four numbers.
 
-**And SHA3-256 is built** — `keccak/sha3_256`, the sponge at rate 136 with pad
-byte 0x06, checked against a third party's implementation on ten lengths across
-three block boundaries. What is left of the tier is the rest of the family:
-SHAKE128 and SHAKE256, which need a squeeze *loop* because their output may
-exceed a rate, and SHA3-224/384/512, which are the same file with a different
-rate and squeeze length. Every rate divides by eight — 168 is twenty-one lanes,
-136 is seventeen, 72 is nine — so the lane-wise absorb carries over unchanged.
+**And the sponge is built, as SHA3-256 and SHAKE256** — `keccak/sponge136`,
+with `keccak/sha3_256` and `keccak/shake256` as two small heads that hand it a
+padding byte and a length. **A rate cannot be a parameter in brainfuck and a
+padding byte can**, and that one fact decides how this whole family is split: a
+rate sets how many lanes the absorb touches and how far every one of its
+journeys runs, and a journey of a computed length needs an index (§5). So there
+is one sponge file per rate and one head per function, and the two functions
+that share rate 136 share their absorb by paste (§5) rather than by having it
+transcribed twice.
+
+**The squeeze is a loop, and it needs no index either.** SHAKE's output may be
+longer than a rate, so the state is stirred again between one rate and the
+next; and within a rate the byte about to go out is always the *bottom* cell of
+the state, because `keccak/rotstate` turns the state over one cell at a time.
+Two hundred turns put the state back exactly as the permutation left it, so a
+rate is squeezed by turning the state over all two hundred of its cells and
+sending a byte out on as many of the first hundred and thirty-six as are still
+owed. One whole turn is thirty-six million instructions — under one percent of
+the permutation that produced the rate being squeezed.
+
+What is left of the tier is SHAKE128, which is rate 168 and therefore a sponge
+file of its own, and SHA3-224/384/512, which are one rate and one output length
+each. Every rate divides by eight — 168 is twenty-one lanes, 144 eighteen, 136
+seventeen, 104 thirteen, 72 nine — so the lane-wise absorb carries over
+unchanged.
 
 **The rotation was the piece that decided whether any of it was affordable.**
 ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its

@@ -1,48 +1,50 @@
-; bfsodium SHA3_256 : FIPS 202's SHA3_256  the sponge at rate 136 with pad 6
+; bfsodium SHAKE256 : FIPS 202's SHAKE256  the sponge at rate 136 with pad 31
 ;
 ; HAND WRITTEN; All of the work is keccak/sponge136  PASTED; What this file adds
 ; is the head of the frame that sponge wants: the padding byte FIPS 202 gives the
-; SHA3 functions  which is 6  and an output length of thirty two bytes  which is
-; the digest size and is under one rate  so the sponge is squeezed once;
+; SHAKE functions  which is 31  and the caller's own output length  which may be
+; anything up to 65535 and may be longer than a rate;
 ;
-; INTERFACE entry=1 exit=0 footprint=0:1025
-; IO  in:  mlen{2} LE  then mlen bytes from the wire
-;     out: digest{32}
+; INTERFACE entry=3 exit=0 footprint=0:1025
+; IO  in:  mlen{2} LE  olen{2} LE  then mlen bytes from the wire
+;     out: olen bytes
 ;
 ; TAPE MAP  (home @0)
-;   @0x000        pad     the padding byte  which is 6
+;   @0x000        pad     the padding byte  which is 31
 ;   @0x001:0x002  mlen    the message length  little endian
-;   @0x003:0x004  olen    the output length  which is thirty two
+;   @0x003:0x004  olen    the output length  little endian
 ;   @0x000:0x401  keccak/sponge136 pasted at this file's own zero; it reads
 ;                         those five cells and owns every cell above them
 ;
-; WHY THIS FILE IS A HEAD AND NOT A SPONGE OF ITS OWN: SHAKE256 has the same rate
-; and therefore the same absorb  and differs only in the padding byte and in
-; being asked for a length rather than for a digest; A RATE CANNOT BE A PARAMETER
-; in brainfuck  because every journey the absorb makes would then be of a
-; computed length and there is no index to compute one from; A PADDING BYTE CAN
-; be  because it is one cell of data; So the rate 136 has one sponge and this
-; file hands it a 6;
+; THE ONLY DIFFERENCE FROM SHA3_256 IS THIS FILE  which is the point of splitting
+; the sponge out: the rate is the same  the absorb is the same  the padding rule
+; is the same  and the byte that goes into it is not; A rate cannot be a
+; parameter in brainfuck because every journey the absorb makes would then be of
+; a computed length and there is no index to compute one from; A padding byte can
+; be  because it is one cell of data;
 ;
-; The message length is read into the bottom two cells and moved up one  because
-; the padding byte belongs below it and a read prologue may hold nothing but
-; commas and steps;
+; AN OUTPUT LONGER THAN A RATE IS THE WHOLE REASON SHAKE NEEDS A SQUEEZE LOOP and
+; the loop is in the sponge  not here; This file only says how many bytes are
+; wanted and the sponge stirs the state again between one rate and the next;
+;
+; The four bytes of the head are read into the bottom of the tape and moved up
+; one  because the padding byte belongs below them and a read prologue may hold
+; nothing but commas and steps;
 
-  ,>,                                                          ; read the message length little endian
-                                                               ; ASSERT ptr=1
-                                                               ; ASSERT zero 2:1025
-  [->+<]                                                       ; the high byte moves up one cell  to leave room for
-                                                               ; the padding byte below it
-<
-                                                               ; ASSERT ptr=0
-  [->+<]                                                       ; and the low byte follows it
-                                                               ; ASSERT ptr=0
-  ++++++                                                       ; FIPS 202's padding byte for the SHA3 functions
->>>                                                            ; to the output length
+  ,>,>,>,                                                      ; read the message length and then the output length
+                                                               ; both little endian
                                                                ; ASSERT ptr=3
-  ++++++++++++++++++++++++++++++++                             ; thirty two bytes of digest  which is under one rate
-<<<                                                            ; and back to the bottom  where the sponge reads its
-                                                               ; frame from
+                                                               ; ASSERT zero 4:1025
+  [->+<]                                                       ; all four move up one cell  highest first  to leave
+                                                               ; room for the padding byte
+<
+  [->+<]
+<
+  [->+<]
+<
+  [->+<]
+                                                               ; ASSERT ptr=0
+  +++++++++++++++++++++++++++++++                              ; FIPS 202's padding byte for the SHAKE functions
                                                                ; ASSERT ptr=0
 ; emit  every byte of the answer leaves inside the sponge below  as the state is
                                                                ; turned over  so the paste stands exactly where this

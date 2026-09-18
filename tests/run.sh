@@ -781,6 +781,44 @@ dk keccak/sha3_256.bf 0300616263 3a985da74fe225b2045c172d6bd390bd855f086e3e9d525
 dk keccak/sha3_256.bf 8700000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80818283848586 fded8fd9d6551c601eeb3b7c6bc5e5cfd8aad1d015b7e9aaa9c9b9475231d5e2 sha3_256Run_135 "sha3_256 of 135 bytes  the pad byte and the top bit are one byte"
 dk keccak/sha3_256.bf 8800000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384858687 cf3ccff92480a29160c2d38317c430e14749bfee1788106957dfe73f8c4930e5 sha3_256Run_136 "sha3_256 of 136 bytes  the padding takes a block of its own"
 
+# ROTSTATE is the conveyor the squeeze runs on: the byte about to go out is
+# always the BOTTOM cell of the state, so the state turns over one cell at a
+# time and two hundred turns put it back. The all-zero state proves nothing
+# about the wrap, so the other two have a byte at the bottom to watch travel to
+# the top -- and the ladder makes a single cell out of place visible by eye.
+
+dk keccak/rotstate.bf 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 keccakRotStateRun "rotstate all zero"
+dk keccak/rotstate.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c700 keccakRotStateRun "rotstate the byte ladder  where one cell out of place shows"
+dk keccak/rotstate.bf e7eee7615ef35f30e49b482e15cae75007201e12617b0feda7e1647796ff022bea8ed02a82a175930f2337cd3794c52208006d6b1af0c0cbd625658aac2c9faa07d13c447e33051eeef95a60e56143d6c43bcad76c008a9b0a6b5fc933154a6de28404a897c525262e6a7c07bcbee841f745c55d4e9f747f615164c6f728d718353713827ac883d7fb9659234074f5258f6c68082389d2e47f1e175a90bc432fb946e6a9471109f3b79f110a26f6229fa3452526e7bc1642aeb42bf227d50fff07c3c20624292e3b eee7615ef35f30e49b482e15cae75007201e12617b0feda7e1647796ff022bea8ed02a82a175930f2337cd3794c52208006d6b1af0c0cbd625658aac2c9faa07d13c447e33051eeef95a60e56143d6c43bcad76c008a9b0a6b5fc933154a6de28404a897c525262e6a7c07bcbee841f745c55d4e9f747f615164c6f728d718353713827ac883d7fb9659234074f5258f6c68082389d2e47f1e175a90bc432fb946e6a9471109f3b79f110a26f6229fa3452526e7bc1642aeb42bf227d50fff07c3c20624292e3be7 keccakRotStateRun "rotstate a random state  whose bottom byte travels to the top"
+
+# SPONGE136 is the sponge itself, with the padding byte read off the wire. A
+# rate cannot be a parameter in brainfuck -- every journey the absorb makes
+# would be of a computed length, and there is no index to compute one from --
+# but a padding byte can be, and that is the whole reason this file exists. So
+# the first two vectors are the SAME program handed 6 and handed 31, and their
+# answers are SHA3-256 of nothing and SHAKE256 of nothing: the parameter is
+# proved to be real by two functions coming out of one .bf. The third crosses a
+# rate, which is the thing SHA3-256's own vectors could never reach.
+
+dk keccak/sponge136.bf 0600002000 a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a sponge136Run_0_32 "sponge136 handed a 6  which is SHA3 256 of nothing"
+dk keccak/sponge136.bf 1f00002000 46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762f sponge136Run_0_32 "sponge136 handed a 31  which is SHAKE256 of nothing"
+dk keccak/sponge136.bf 1f00008900 46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762fd75dc4ddd8c0f200cb05019d67b592f6fc821c49479ab48640292eacb3b7c4be141e96616fb13957692cc7edd0b45ae3dc07223c8e92937bef84bc0eab862853349ec75546f58fb7c2775c38462c5010d846c185c15111e595522a6bcd16cf86f3d122109e3b1fdd94 sponge136Run_0_137 "sponge136 squeezed 137 bytes  one byte into a second rate"
+
+# SHAKE256 is sponge136 handed FIPS 202's 31 and the caller's own length. The
+# squeeze LOOP is the one thing here that SHA3 never exercises, so these cover
+# its boundary from both sides: one short of a rate, exactly a rate, and one
+# byte past it -- the last of which is the only vector in the file that stirs
+# the state a second time for OUTPUT rather than for input. The 136 byte
+# message is there because an absorb of two blocks and a squeeze of one rate
+# are independent, and a file that got the flags crossed would pass every
+# single-block vector.
+
+dk keccak/shake256.bf 00002000 46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762f shake256Run_0_32 "shake256 of nothing  32 bytes"
+dk keccak/shake256.bf 03002000616263 483366601360a8771c6863080cc4114d8db44530f8f1e1ee4f94ea37e78b5739 shake256Run_3_32 "shake256 of abc  32 bytes"
+dk keccak/shake256.bf 00008800 46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762fd75dc4ddd8c0f200cb05019d67b592f6fc821c49479ab48640292eacb3b7c4be141e96616fb13957692cc7edd0b45ae3dc07223c8e92937bef84bc0eab862853349ec75546f58fb7c2775c38462c5010d846c185c15111e595522a6bcd16cf86f3d122109e3b1fdd shake256Run_0_136 "shake256 of nothing  136 bytes  exactly one rate"
+dk keccak/shake256.bf 00008900 46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762fd75dc4ddd8c0f200cb05019d67b592f6fc821c49479ab48640292eacb3b7c4be141e96616fb13957692cc7edd0b45ae3dc07223c8e92937bef84bc0eab862853349ec75546f58fb7c2775c38462c5010d846c185c15111e595522a6bcd16cf86f3d122109e3b1fdd94 shake256Run_0_137 "shake256 of nothing  137 bytes  one byte past a rate"
+dk keccak/shake256.bf 88002000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384858687 b7ff4073b3f5a8eabd6e17705ca7f6761a31058f9df781a6a47e3a3063b9d67a shake256Run_136_32 "shake256 of 136 bytes  two blocks in and one rate out"
+
 
 echo
 # TIER 5
@@ -826,6 +864,9 @@ run "keccak rho and pi honour their declared contracts" sh -c "printf %0400d 0 |
 run "keccak rho pi and chi honour their declared contracts" sh -c "printf %0400d 0 | tr 0 f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/rhopichi.bf >/dev/null"
 run "keccak permute honours its declared contracts" sh -c "printf %0400d 0 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/permute1600.bf >/dev/null"
 run "sha3_256 honours its declared contracts" sh -c "printf 0300616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sha3_256.bf >/dev/null"
+run "rotstate honours its declared contracts" sh -c "printf %0400d 0 | tr 0 f | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/rotstate.bf >/dev/null"
+run "sponge136 honours its declared contracts" sh -c "printf 1f00008900 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/sponge136.bf >/dev/null"
+run "shake256 honours its declared contracts" sh -c "printf 03008900616263 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi keccak/shake256.bf >/dev/null"
 run "shr64 honours its declared contracts" sh -c "printf efcdab896745230107 | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/shr64.bf >/dev/null"
 run "xor64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/xor64.bf >/dev/null"
 run "and64 honours its declared contracts" sh -c "printf efcdab89674523011032547698badcfe | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi idiom/and64.bf >/dev/null"

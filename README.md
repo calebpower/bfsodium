@@ -73,8 +73,10 @@ constant-time story and cannot be one, and nothing is zeroized. See
 | [`sha256/hmac.bf`](sha256/hmac.bf) | HMAC-SHA-256 (RFC 2104) |
 | [`sha256/hkdf.bf`](sha256/hkdf.bf) | **HKDF-SHA-256 (RFC 5869)** |
 
-That is everything CONVENTIONS.md lists as v1. Keccak and the ML-KEM / ML-DSA
-lattice math are the later mountain.
+That is everything CONVENTIONS.md lists as v1. Since then the 64-bit idiom set,
+SHA-512 with HMAC and HKDF over it, and the whole of Keccak — the permutation,
+the sponge, SHA3-256 and SHAKE256 — have been built on top of it. The ML-KEM /
+ML-DSA lattice math is the mountain still ahead.
 
 Run the suite with `sh tests/run.sh` (needs a C compiler and
 [Cryptol](https://cryptol.net); `reaper test` provisions both). Where the
@@ -113,9 +115,10 @@ modern x86-64 at roughly 750 million instructions a second.
 | AEAD, 32-byte AAD and 14-byte plaintext | 5.2 billion | 6 s |
 | HKDF, 64-byte output | ≈22 billion | ≈29 s |
 | AEAD, the full RFC 8439 §2.8.2 vector | 11.6 billion | — |
+| SHA3-256 or SHAKE256, one block in and one rate out | 4.0 billion | 6 s |
 
 **Not present at all:** any public-key primitive — no X25519, no signatures, no
-key exchange. No post-quantum anything. No AES, SHA-3 or BLAKE. No encoding
+key exchange. No post-quantum anything. No AES and no BLAKE. No encoding
 helpers — no hex, base64 or JSON canonicalization.
 
 **The ambition is every NIST-approved algorithm**, and `CONVENTIONS.md` §9.1 is
@@ -124,11 +127,13 @@ as one pile. The short version: about fifteen of them need no new mathematics
 at all, just a 64-bit idiom set — which `idiom/add64`, `rotr64`, `rotl64`,
 `shr64`, `xor64` and `and64` now are, and **SHA-512, HMAC-SHA-512 and
 HKDF-SHA-512 are built on them**. **AES** and **Keccak** are the two keystones,
-each unlocking a family of about ten, and AES is what `index/fetch8` was
-written for and nothing has used yet. Post-quantum sits behind Keccak because
-its sampling is SHAKE. **RSA and elliptic curve are out of scope with a
-reason** rather than merely absent: `mulmod136` is cheap because 2¹³⁰−5 has a
-special form, and that does not transfer to a general modulus.
+each unlocking a family of about ten. **Keccak is built** — the permutation,
+the sponge, SHA3-256 and SHAKE256 — so what sat behind it is now reachable, and
+post-quantum sat behind it because its sampling is SHAKE. AES is what
+`index/fetch8` was written for and nothing has used yet. **RSA and elliptic
+curve are out of scope with a reason** rather than merely absent: `mulmod136`
+is cheap because 2¹³⁰−5 has a special form, and that does not transfer to a
+general modulus.
 
 **Not proven**, and named here rather than left to be discovered:
 

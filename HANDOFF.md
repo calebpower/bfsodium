@@ -141,7 +141,10 @@ routine, the suite fails until it has a row here.
 | `keccak/rhopi` | 9666 | 326 | the same six states + Cryptol |
 | `keccak/rhopichi` | 39312 | 954 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
 | `keccak/permute1600` | 61028 | 268 | the published all zero vector and a random state + Cryptol |
-| `keccak/sha3_256` | 75197 | 500 | FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
+| `keccak/sponge136` | 136716 | 717 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 136690 | 57 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 136692 | 55 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -185,9 +188,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 280 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 280 | golden vectors, dual oracle |
-| 5 | yes | 39 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 291 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 291 | golden vectors, dual oracle |
+| 5 | yes | 42 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -272,15 +275,59 @@ must have no marker in the suite at all.
    index, so the constant in hand is always the lowest eight cells of the
    table and the rest slides down when it is spent.
 
-   **AND THE SPONGE IS IN, AS SHA3-256.** `keccak/sha3_256` absorbs at rate
-   136 — which is exactly seventeen lanes, so a block is seventeen entries of
-   `xor64` rather than a hundred and thirty six byte exclusive ors — pads by
-   FIPS 202's rule, and squeezes once, because thirty two bytes fit inside one
-   rate. It agrees with a third party's SHA3-256 on ten lengths across three
-   block boundaries, and with Cryptol on the four the suite keeps. A block is
-   about four billion instructions, essentially all of it the permutation: the
-   conveyor that fills the block costs about five million and the absorb
-   twenty five, together under one percent.
+   **AND THE SPONGE IS IN, AS SHA3-256 AND SHAKE256.** `keccak/sponge136`
+   absorbs at rate 136 — which is exactly seventeen lanes, so a block is
+   seventeen entries of `xor64` rather than a hundred and thirty six byte
+   exclusive ors — pads by FIPS 202's rule, and squeezes as many bytes as it is
+   asked for. `keccak/sha3_256` and `keccak/shake256` are two heads over it,
+   each about fifty five skeleton lines, that hand it a padding byte and a
+   length. SHA3-256 agrees with a third party on ten lengths across three block
+   boundaries and with Cryptol on the four the suite keeps; SHAKE256 agrees with
+   a third party on a sweep of eight message lengths against eight output
+   lengths, and with Cryptol on the five the suite keeps. A block is about four
+   billion instructions, essentially all of it the permutation: the conveyor
+   that fills the block costs about five million, the absorb twenty five, and
+   one whole turn of the state to squeeze a rate thirty six — together about
+   one percent.
+
+   **THE RATE CANNOT BE A PARAMETER AND THE PADDING BYTE CAN**, and that is the
+   whole reason `sponge136` exists as a file of its own rather than SHAKE256
+   being a second copy of SHA3-256. A rate sets how many lanes the absorb
+   touches and how far every one of its twenty one journeys runs; a journey of a
+   computed length needs an index, and there is none. A padding byte is one cell
+   of data, so it comes in on the wire and the head writes it. **So the shape of
+   this family is one sponge per rate and one head per function**: rate 136
+   carries SHA3-256 and SHAKE256 today and cSHAKE256 and KMAC256 later, all of
+   them the same `.bf` handed 6, 31 or 4.
+
+   **AND THE PROOF THAT THE PARAMETER IS REAL IS TWO VECTORS ON ONE FILE.**
+   `keccak/sponge136.bf` handed a 6 answers `a7ffc6f8…`, which is SHA3-256 of
+   nothing, and handed a 31 answers `46b9dd2b…`, which is SHAKE256 of nothing.
+   One program, two standard functions, no branch between them.
+
+   **SHA3-256 WAS RELAID ONTO THE SPONGE RATHER THAN LEFT ALONE**, and its four
+   existing vectors passing unchanged is what proves the relay. The alternative
+   was writing SHAKE256 as a copy of it, which would have put the block loop,
+   the conveyor, the padding rule and seventeen hand-derived lane journeys in
+   two files that nothing would keep in step — the same divergence `rhopichi`
+   nearly shipped, and one no tier can see, because tier 9c only proves a
+   `.bf` matches its own skeleton. **It cost 0.87 per cent**: SHA3-256 of
+   `abc` was 4,265,326,951 instructions and is now 4,302,466,302, the
+   difference being one full turn of the state that a fixed thirty two byte
+   emit did not need.
+
+   **THE SQUEEZE NEEDS NO INDEX EITHER, AND THAT IS `keccak/rotstate`.** The
+   byte about to go out is always the BOTTOM cell of the state, and the state
+   turns over one cell at a time to bring the next one down. Two hundred turns
+   put it back exactly as the permutation left it, so a rate is squeezed by
+   turning the state over all two hundred of its cells and sending a byte out on
+   as many of the first hundred and thirty six as are still owed. A turn is about
+   a hundred and eighty thousand instructions on average bytes and three hundred
+   and sixty thousand on a state of all ones; two hundred of them is thirty six
+   million, which is why the conveyor is the cheap half of a squeeze and the
+   permutation is the dear one. **And the stir comes after a rate rather than
+   before it**, under a test of whether anything is still owed, so a caller who
+   asks for a rate or less pays for no permutation beyond the absorb's.
 
    **ONE DEFECT WORTH THE SPACE, because no single-block vector can see it.**
    The first version added the padding's top bit to the last byte of EVERY
@@ -291,13 +338,15 @@ must have no marker in the suite at all.
    under that flag. **A vector at a multiple of the rate is not optional for
    any sponge.**
 
-   What is left of the family: **SHAKE128 and SHAKE256**, which are the same
-   file with the rate at 168 or 136, the pad byte 0x1f, and a squeeze LOOP
-   rather than a single squeeze, since their output may exceed a rate; and
-   SHA3-224/384/512, which are this file with a different rate and squeeze
-   length and nothing else. Every rate in the family divides by eight — 168 is
-   twenty one lanes, 136 seventeen, 72 nine — so the lane-wise absorb carries
-   over unchanged.
+   What is left of the family: **SHAKE128**, which is rate 168 and therefore
+   a sponge file of its own — `sponge168`, with a head over it exactly as
+   here — and SHA3-224/384/512, which are one rate and one output length
+   each. Every
+   rate in the family divides by eight — 168 is twenty one lanes, 144 eighteen,
+   136 seventeen, 104 thirteen, 72 nine — so the lane-wise absorb carries over
+   unchanged, and only the numbers in it change. **SHAKE128 is the one ML-KEM
+   actually calls**, since its matrix sampling is a SHAKE128 squeeze of a few
+   hundred bytes per entry.
 
    **THIS ITEM USED TO SAY "IT NEEDS NO NEW IDIOM" AND THAT WAS WRONG**, which
    is worth keeping rather than quietly fixing, because the way it was wrong is
