@@ -4,20 +4,22 @@
 ; that mixes the columns; Every lane of the state takes the exclusive or of two
 ; whole columns  one to its left and one to its right turned by a single bit;
 ;
-; INTERFACE entry=200 exit=0 footprint=0:355
+; INTERFACE entry=200 exit=0 footprint=0:361
 ; IO  in:  A{200}  twenty five 64 bit lanes  each little endian
 ;     out: A{200}  the same  with theta applied
 ;
 ; TAPE MAP  (home @0)
 ;   @0x000:0x0c7  A{200}   the state; lane k is at cell 8k  and lane k is the
 ;                          lane FIPS 202 calls A{x  y} where k is 5y plus x
-;   @0x0c8:0x0ef  C{40}    five lanes; C{x} is the exclusive or of column x
-;   @0x0f0:0x117  D{40}    five lanes; D{x} is what column x contributes
-;   @0x118:0x11f  T{8}     hands a lane back after it has been copied
-;   @0x120:0x145  the exclusive or frame; xor64 footprint 0:37 pasted at @0x120
-;                          so its x is @0x120  its y is @0x128 and its r @0x130
-;   @0x148:0x163  the rotation frame; rotl64 footprint 0:27 pasted at @0x148
-;                          so its w is @0x148 and its n is @0x150
+;   @0x0c8:0x0cf  T{8}     the LOWER holding lane; a lane of the state is copied
+;                          through it and handed straight back
+;   @0x0d0:0x0f5  the exclusive or frame; xor64 footprint 0:37 pasted at @0x0d0
+;                          so its x is @0x0d0  its y is @0x0d8 and its r @0x0e0
+;   @0x0f6:0x11d  D{40}    five lanes; D{x} is what column x contributes
+;   @0x11e:0x125  T1{8}    the UPPER holding lane  for C and for D
+;   @0x126:0x14d  C{40}    five lanes; C{x} is the exclusive or of column x
+;   @0x14e:0x169  the rotation frame; rotl64 footprint 0:27 pasted at @0x14e
+;                          so its w is @0x14e and its n is @0x156
 ;
 ; THE STEP  in FIPS 202's own letters:
 ;
@@ -35,818 +37,842 @@
 ; operands  which is what poly1305/mulmod136 was relaid to do: idiom/xor64
 ; CONSUMES both of its operands and writes its answer to a third place eight
 ; cells further on; So a paste over two lanes would destroy both and land its
-; answer on a third lane; A lane that is still needed is copied  through T  and
-; a lane that is finished is moved;
+; answer on a third lane; A lane that is still needed is copied  through a
+; holding lane  and a lane that is finished is moved;
 ;
-; THAT CARRYING IS THE COST OF THIS FILE and it is not yet measured; The lesson
-; HANDOFF records twice is to build it right and then profile it  so the
-; distances here are simply the shortest the map allows  with the frames placed
-; immediately above the state rather than beyond D;
+; THAT CARRYING IS THE COST OF THIS FILE  and it has now been MEASURED: on a
+; random state theta ran sixty one million instructions  of which the fifty
+; xor64s and the five rotl64s account for fourteen and a half million; The
+; other SEVENTY SIX PER CENT was lanes travelling  and this map is what came of
+; that measurement;
 ;
-; A COPY THROUGH T IS TWO RUNS  the first taking the lane to its destination
-; and to T at once  the second bringing T back; A lane is eight cells and every
-; byte of it travels the same distance  so each run is one repeated token  the
-; way sha512/hashcore writes its long runs; Every distance below was worked out
-; from the map above and written down;
+; THE MAP IS THE OPTIMISATION  because the arithmetic never changed; A move of
+; one byte over d cells costs two instructions per cell per unit of the byte
+; being moved  so a lane's journey costs twice its distance eight times over
+; and NOTHING ELSE IN THIS FILE IS WORTH A THOUGHT UNTIL THE DISTANCES ARE
+; SHORT; The state occupies cells nought to 199 and cannot move  so every frame
+; is packed as close above it as it will go: the exclusive or frame sits at
+; @0x0d0 where it used to sit at @0x120  and C and D  which are five lanes each
+; and are read far less often than the state  were pushed above it instead;
+;
+; AND THERE ARE TWO HOLDING LANES rather than one  which is the part that is
+; not obvious; A copy from s to e keeping s must visit e AND the holding lane
+; and come back  so it costs twice the SPAN of those three cells; A lane coming
+; UP out of the state wants its holding lane BELOW the frame  or the span
+; reaches past the frame for nothing; C and D coming DOWN to the frame want one
+; ABOVE it  for the same reason mirrored; One holding lane cannot be both  and
+; a second costs eight cells;
+;
+; THE SUM OF EVERY DISTANCE IN THIS FILE  counted as instructions per unit of
+; byte value  came to 47600 on the old map and comes to 32700 on this one;
+; Measured end to end on the same random state that is 60962481 instructions
+; before and 46787857 after  very nearly a quarter off a step that is entered
+; twenty four times in every permutation;
+;
+; A COPY THROUGH A HOLDING LANE IS TWO RUNS  the first taking the lane to its
+; destination and to the holding lane at once  the second bringing it back; A
+; lane is eight cells and every byte of it travels the same distance  so each
+; run is one repeated token  the way sha512/hashcore writes its long runs;
+; Every distance below was worked out from the map above and written down;
 
 ; read the state little endian  leaving the pointer past it
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
 ; ASSERT ptr=200
-; ASSERT zero 200:355
+; ASSERT zero 200:361
 ; to the bottom lane
 L200
 ; ASSERT ptr=0
 
 ; ==== the five column sums ====
 
-; ____ column nought  into C{0} @200 ____
-  [-R280+R8+L288]>[-R280+R8+L288]>[-R280+R8+L288]>[-R280+R8+L288]>[-R280+R8+L288]>[-R280+R8+L288]>[-R280+R8+L288]>[-R280+R8+L288]
-R273
-; ASSERT ptr=280
-  [-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]
-L247
-; ASSERT ptr=40
-  [-R240+R16+L256]>[-R240+R16+L256]>[-R240+R16+L256]>[-R240+R16+L256]>[-R240+R16+L256]>[-R240+R16+L256]>[-R240+R16+L256]>[-R240+R16+L256]
-R233
-; ASSERT ptr=280
-  [-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L231
-; ASSERT ptr=80
-  [-R200+R16+L216]>[-R200+R16+L216]>[-R200+R16+L216]>[-R200+R16+L216]>[-R200+R16+L216]>[-R200+R16+L216]>[-R200+R16+L216]>[-R200+R16+L216]
+; ____ column nought  into C{0} @294 ____
+  [-R200+R8+L208]>[-R200+R8+L208]>[-R200+R8+L208]>[-R200+R8+L208]>[-R200+R8+L208]>[-R200+R8+L208]>[-R200+R8+L208]>[-R200+R8+L208]
 R193
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L191
-; ASSERT ptr=120
+L167
+; ASSERT ptr=40
   [-R160+R16+L176]>[-R160+R16+L176]>[-R160+R16+L176]>[-R160+R16+L176]>[-R160+R16+L176]>[-R160+R16+L176]>[-R160+R16+L176]>[-R160+R16+L176]
 R153
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
+; ASSERT ptr=224
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
 L151
-; ASSERT ptr=160
+; ASSERT ptr=80
   [-R120+R16+L136]>[-R120+R16+L136]>[-R120+R16+L136]>[-R120+R16+L136]>[-R120+R16+L136]>[-R120+R16+L136]>[-R120+R16+L136]>[-R120+R16+L136]
 R113
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]
-L303
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L111
+; ASSERT ptr=120
+  [-R80+R16+L96]>[-R80+R16+L96]>[-R80+R16+L96]>[-R80+R16+L96]>[-R80+R16+L96]>[-R80+R16+L96]>[-R80+R16+L96]>[-R80+R16+L96]
+R73
+; ASSERT ptr=200
+  [-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L71
+; ASSERT ptr=160
+  [-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]
+R33
+; ASSERT ptr=200
+  [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R70+L70]>[-R70+L70]>[-R70+L70]>[-R70+L70]>[-R70+L70]>[-R70+L70]>[-R70+L70]>[-R70+L70]
+L223
 ; ASSERT ptr=8
 
-; ____ column one  into C{1} @208 ____
-  [-R272+R8+L280]>[-R272+R8+L280]>[-R272+R8+L280]>[-R272+R8+L280]>[-R272+R8+L280]>[-R272+R8+L280]>[-R272+R8+L280]>[-R272+R8+L280]
-R265
-; ASSERT ptr=280
-  [-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]
-L239
-; ASSERT ptr=48
-  [-R232+R16+L248]>[-R232+R16+L248]>[-R232+R16+L248]>[-R232+R16+L248]>[-R232+R16+L248]>[-R232+R16+L248]>[-R232+R16+L248]>[-R232+R16+L248]
-R225
-; ASSERT ptr=280
-  [-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L223
-; ASSERT ptr=88
-  [-R192+R16+L208]>[-R192+R16+L208]>[-R192+R16+L208]>[-R192+R16+L208]>[-R192+R16+L208]>[-R192+R16+L208]>[-R192+R16+L208]>[-R192+R16+L208]
+; ____ column one  into C{1} @302 ____
+  [-R192+R8+L200]>[-R192+R8+L200]>[-R192+R8+L200]>[-R192+R8+L200]>[-R192+R8+L200]>[-R192+R8+L200]>[-R192+R8+L200]>[-R192+R8+L200]
 R185
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L183
-; ASSERT ptr=128
+L159
+; ASSERT ptr=48
   [-R152+R16+L168]>[-R152+R16+L168]>[-R152+R16+L168]>[-R152+R16+L168]>[-R152+R16+L168]>[-R152+R16+L168]>[-R152+R16+L168]>[-R152+R16+L168]
 R145
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
+; ASSERT ptr=224
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
 L143
-; ASSERT ptr=168
+; ASSERT ptr=88
   [-R112+R16+L128]>[-R112+R16+L128]>[-R112+R16+L128]>[-R112+R16+L128]>[-R112+R16+L128]>[-R112+R16+L128]>[-R112+R16+L128]>[-R112+R16+L128]
 R105
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]
-L295
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L103
+; ASSERT ptr=128
+  [-R72+R16+L88]>[-R72+R16+L88]>[-R72+R16+L88]>[-R72+R16+L88]>[-R72+R16+L88]>[-R72+R16+L88]>[-R72+R16+L88]>[-R72+R16+L88]
+R65
+; ASSERT ptr=200
+  [-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L63
+; ASSERT ptr=168
+  [-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]
+R25
+; ASSERT ptr=200
+  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R78+L78]>[-R78+L78]>[-R78+L78]>[-R78+L78]>[-R78+L78]>[-R78+L78]>[-R78+L78]>[-R78+L78]
+L215
 ; ASSERT ptr=16
 
-; ____ column two  into C{2} @216 ____
-  [-R264+R8+L272]>[-R264+R8+L272]>[-R264+R8+L272]>[-R264+R8+L272]>[-R264+R8+L272]>[-R264+R8+L272]>[-R264+R8+L272]>[-R264+R8+L272]
-R257
-; ASSERT ptr=280
-  [-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]
-L231
-; ASSERT ptr=56
-  [-R224+R16+L240]>[-R224+R16+L240]>[-R224+R16+L240]>[-R224+R16+L240]>[-R224+R16+L240]>[-R224+R16+L240]>[-R224+R16+L240]>[-R224+R16+L240]
-R217
-; ASSERT ptr=280
-  [-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L215
-; ASSERT ptr=96
-  [-R184+R16+L200]>[-R184+R16+L200]>[-R184+R16+L200]>[-R184+R16+L200]>[-R184+R16+L200]>[-R184+R16+L200]>[-R184+R16+L200]>[-R184+R16+L200]
+; ____ column two  into C{2} @310 ____
+  [-R184+R8+L192]>[-R184+R8+L192]>[-R184+R8+L192]>[-R184+R8+L192]>[-R184+R8+L192]>[-R184+R8+L192]>[-R184+R8+L192]>[-R184+R8+L192]
 R177
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L175
-; ASSERT ptr=136
+L151
+; ASSERT ptr=56
   [-R144+R16+L160]>[-R144+R16+L160]>[-R144+R16+L160]>[-R144+R16+L160]>[-R144+R16+L160]>[-R144+R16+L160]>[-R144+R16+L160]>[-R144+R16+L160]
 R137
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
+; ASSERT ptr=224
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
 L135
-; ASSERT ptr=176
+; ASSERT ptr=96
   [-R104+R16+L120]>[-R104+R16+L120]>[-R104+R16+L120]>[-R104+R16+L120]>[-R104+R16+L120]>[-R104+R16+L120]>[-R104+R16+L120]>[-R104+R16+L120]
 R97
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]
-L287
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L95
+; ASSERT ptr=136
+  [-R64+R16+L80]>[-R64+R16+L80]>[-R64+R16+L80]>[-R64+R16+L80]>[-R64+R16+L80]>[-R64+R16+L80]>[-R64+R16+L80]>[-R64+R16+L80]
+R57
+; ASSERT ptr=200
+  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L55
+; ASSERT ptr=176
+  [-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]
+R17
+; ASSERT ptr=200
+  [-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R86+L86]>[-R86+L86]>[-R86+L86]>[-R86+L86]>[-R86+L86]>[-R86+L86]>[-R86+L86]>[-R86+L86]
+L207
 ; ASSERT ptr=24
 
-; ____ column three  into C{3} @224 ____
-  [-R256+R8+L264]>[-R256+R8+L264]>[-R256+R8+L264]>[-R256+R8+L264]>[-R256+R8+L264]>[-R256+R8+L264]>[-R256+R8+L264]>[-R256+R8+L264]
-R249
-; ASSERT ptr=280
-  [-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]
-L223
-; ASSERT ptr=64
-  [-R216+R16+L232]>[-R216+R16+L232]>[-R216+R16+L232]>[-R216+R16+L232]>[-R216+R16+L232]>[-R216+R16+L232]>[-R216+R16+L232]>[-R216+R16+L232]
-R209
-; ASSERT ptr=280
-  [-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L207
-; ASSERT ptr=104
-  [-R176+R16+L192]>[-R176+R16+L192]>[-R176+R16+L192]>[-R176+R16+L192]>[-R176+R16+L192]>[-R176+R16+L192]>[-R176+R16+L192]>[-R176+R16+L192]
+; ____ column three  into C{3} @318 ____
+  [-R176+R8+L184]>[-R176+R8+L184]>[-R176+R8+L184]>[-R176+R8+L184]>[-R176+R8+L184]>[-R176+R8+L184]>[-R176+R8+L184]>[-R176+R8+L184]
 R169
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L167
-; ASSERT ptr=144
+L143
+; ASSERT ptr=64
   [-R136+R16+L152]>[-R136+R16+L152]>[-R136+R16+L152]>[-R136+R16+L152]>[-R136+R16+L152]>[-R136+R16+L152]>[-R136+R16+L152]>[-R136+R16+L152]
 R129
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
+; ASSERT ptr=224
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
 L127
-; ASSERT ptr=184
+; ASSERT ptr=104
   [-R96+R16+L112]>[-R96+R16+L112]>[-R96+R16+L112]>[-R96+R16+L112]>[-R96+R16+L112]>[-R96+R16+L112]>[-R96+R16+L112]>[-R96+R16+L112]
 R89
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]
-L279
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L87
+; ASSERT ptr=144
+  [-R56+R16+L72]>[-R56+R16+L72]>[-R56+R16+L72]>[-R56+R16+L72]>[-R56+R16+L72]>[-R56+R16+L72]>[-R56+R16+L72]>[-R56+R16+L72]
+R49
+; ASSERT ptr=200
+  [-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L47
+; ASSERT ptr=184
+  [-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]
+R9
+; ASSERT ptr=200
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R94+L94]>[-R94+L94]>[-R94+L94]>[-R94+L94]>[-R94+L94]>[-R94+L94]>[-R94+L94]>[-R94+L94]
+L199
 ; ASSERT ptr=32
 
-; ____ column four  into C{4} @232 ____
-  [-R248+R8+L256]>[-R248+R8+L256]>[-R248+R8+L256]>[-R248+R8+L256]>[-R248+R8+L256]>[-R248+R8+L256]>[-R248+R8+L256]>[-R248+R8+L256]
-R241
-; ASSERT ptr=280
-  [-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]
-L215
-; ASSERT ptr=72
-  [-R208+R16+L224]>[-R208+R16+L224]>[-R208+R16+L224]>[-R208+R16+L224]>[-R208+R16+L224]>[-R208+R16+L224]>[-R208+R16+L224]>[-R208+R16+L224]
-R201
-; ASSERT ptr=280
-  [-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L199
-; ASSERT ptr=112
-  [-R168+R16+L184]>[-R168+R16+L184]>[-R168+R16+L184]>[-R168+R16+L184]>[-R168+R16+L184]>[-R168+R16+L184]>[-R168+R16+L184]>[-R168+R16+L184]
+; ____ column four  into C{4} @326 ____
+  [-R168+R8+L176]>[-R168+R8+L176]>[-R168+R8+L176]>[-R168+R8+L176]>[-R168+R8+L176]>[-R168+R8+L176]>[-R168+R8+L176]>[-R168+R8+L176]
 R161
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-L159
-; ASSERT ptr=152
+L135
+; ASSERT ptr=72
   [-R128+R16+L144]>[-R128+R16+L144]>[-R128+R16+L144]>[-R128+R16+L144]>[-R128+R16+L144]>[-R128+R16+L144]>[-R128+R16+L144]>[-R128+R16+L144]
 R121
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
+; ASSERT ptr=224
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
 L119
-; ASSERT ptr=192
+; ASSERT ptr=112
   [-R88+R16+L104]>[-R88+R16+L104]>[-R88+R16+L104]>[-R88+R16+L104]>[-R88+R16+L104]>[-R88+R16+L104]>[-R88+R16+L104]>[-R88+R16+L104]
 R81
-; ASSERT ptr=280
+; ASSERT ptr=200
   [-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]
 R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]
-L103
 ; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L79
+; ASSERT ptr=152
+  [-R48+R16+L64]>[-R48+R16+L64]>[-R48+R16+L64]>[-R48+R16+L64]>[-R48+R16+L64]>[-R48+R16+L64]>[-R48+R16+L64]>[-R48+R16+L64]
+R41
+; ASSERT ptr=200
+  [-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
+L39
+; ASSERT ptr=192
+  [-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]
+R1
+; ASSERT ptr=200
+  [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
+R1
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R102+L102]>[-R102+L102]>[-R102+L102]>[-R102+L102]>[-R102+L102]>[-R102+L102]>[-R102+L102]>[-R102+L102]
+R71
+; ASSERT ptr=302
 
 ; ==== what each column contributes  one left and one right turned a bit ====
 
-; ____ D{0} @240  is C{4} exclusive or C{1} turned left one ____
-  [-R72+R48+L120]>[-R72+R48+L120]>[-R72+R48+L120]>[-R72+R48+L120]>[-R72+R48+L120]>[-R72+R48+L120]>[-R72+R48+L120]>[-R72+R48+L120]
-R65
-; ASSERT ptr=280
-  [-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]
+; ____ D{0} @246  is C{4} exclusive or C{1} turned left one ____
+  [-R32+L48+R16]>[-R32+L48+R16]>[-R32+L48+R16]>[-R32+L48+R16]>[-R32+L48+R16]>[-R32+L48+R16]>[-R32+L48+R16]>[-R32+L48+R16]
+L23
+; ASSERT ptr=286
+  [-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]
 R49
-; ASSERT ptr=336
+; ASSERT ptr=342
 ; one single bit of turn  which is the only rotation theta ever asks for
   +
 L8
-; ASSERT ptr=328
-@@ROTL64@@ 328
-  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-L103
-; ASSERT ptr=232
-  [-R48+R8+L56]>[-R48+R8+L56]>[-R48+R8+L56]>[-R48+R8+L56]>[-R48+R8+L56]>[-R48+R8+L56]>[-R48+R8+L56]>[-R48+R8+L56]
-R41
-; ASSERT ptr=280
-  [-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
-L95
-; ASSERT ptr=216
-
-; ____ D{1} @248  is C{0} exclusive or C{2} turned left one ____
-  [-R64+R48+L112]>[-R64+R48+L112]>[-R64+R48+L112]>[-R64+R48+L112]>[-R64+R48+L112]>[-R64+R48+L112]>[-R64+R48+L112]>[-R64+R48+L112]
-R57
-; ASSERT ptr=280
-  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
-R49
-; ASSERT ptr=336
-  +
-L8
-; ASSERT ptr=328
-@@ROTL64@@ 328
-  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-L135
-; ASSERT ptr=200
-  [-R80+R8+L88]>[-R80+R8+L88]>[-R80+R8+L88]>[-R80+R8+L88]>[-R80+R8+L88]>[-R80+R8+L88]>[-R80+R8+L88]>[-R80+R8+L88]
-R73
-; ASSERT ptr=280
-  [-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]
-L87
-; ASSERT ptr=224
-
-; ____ D{2} @256  is C{1} exclusive or C{3} turned left one ____
-  [-R56+R48+L104]>[-R56+R48+L104]>[-R56+R48+L104]>[-R56+R48+L104]>[-R56+R48+L104]>[-R56+R48+L104]>[-R56+R48+L104]>[-R56+R48+L104]
-R49
-; ASSERT ptr=280
-  [-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]
-R49
-; ASSERT ptr=336
-  +
-L8
-; ASSERT ptr=328
-@@ROTL64@@ 328
-  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-L127
+; ASSERT ptr=334
+@@ROTL64@@ 334
+  [-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]
+L15
+; ASSERT ptr=326
+  [-L40+L78+R118]>[-L40+L78+R118]>[-L40+L78+R118]>[-L40+L78+R118]>[-L40+L78+R118]>[-L40+L78+R118]>[-L40+L78+R118]>[-L40+L78+R118]
+L47
+; ASSERT ptr=286
+  [-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]
+L85
 ; ASSERT ptr=208
-  [-R72+R8+L80]>[-R72+R8+L80]>[-R72+R8+L80]>[-R72+R8+L80]>[-R72+R8+L80]>[-R72+R8+L80]>[-R72+R8+L80]>[-R72+R8+L80]
-R65
-; ASSERT ptr=280
-  [-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]
-L79
-; ASSERT ptr=232
-
-; ____ D{3} @264  is C{2} exclusive or C{4} turned left one ____
-  [-R48+R48+L96]>[-R48+R48+L96]>[-R48+R48+L96]>[-R48+R48+L96]>[-R48+R48+L96]>[-R48+R48+L96]>[-R48+R48+L96]>[-R48+R48+L96]
-R41
-; ASSERT ptr=280
-  [-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]
-R49
-; ASSERT ptr=336
-  +
-L8
-; ASSERT ptr=328
-@@ROTL64@@ 328
-  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-L119
-; ASSERT ptr=216
-  [-R64+R8+L72]>[-R64+R8+L72]>[-R64+R8+L72]>[-R64+R8+L72]>[-R64+R8+L72]>[-R64+R8+L72]>[-R64+R8+L72]>[-R64+R8+L72]
-R57
-; ASSERT ptr=280
-  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
-R16
-; ASSERT ptr=304
-  [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
-L111
-; ASSERT ptr=200
-
-; ____ D{4} @272  is C{3} exclusive or C{0} turned left one ____
-  [-R80+R48+L128]>[-R80+R48+L128]>[-R80+R48+L128]>[-R80+R48+L128]>[-R80+R48+L128]>[-R80+R48+L128]>[-R80+R48+L128]>[-R80+R48+L128]
-R73
-; ASSERT ptr=280
-  [-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]
-R49
-; ASSERT ptr=336
-  +
-L8
-; ASSERT ptr=328
-@@ROTL64@@ 328
-  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-L111
 ; ASSERT ptr=224
-  [-R56+R8+L64]>[-R56+R8+L64]>[-R56+R8+L64]>[-R56+R8+L64]>[-R56+R8+L64]>[-R56+R8+L64]>[-R56+R8+L64]>[-R56+R8+L64]
+  [-R22+L22]>[-R22+L22]>[-R22+L22]>[-R22+L22]>[-R22+L22]>[-R22+L22]>[-R22+L22]>[-R22+L22]
+R79
+; ASSERT ptr=310
+
+; ____ D{1} @254  is C{0} exclusive or C{2} turned left one ____
+  [-R24+L48+R24]>[-R24+L48+R24]>[-R24+L48+R24]>[-R24+L48+R24]>[-R24+L48+R24]>[-R24+L48+R24]>[-R24+L48+R24]>[-R24+L48+R24]
+L31
+; ASSERT ptr=286
+  [-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]
 R49
-; ASSERT ptr=280
-  [-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]
-R1
-; ASSERT ptr=288
-@@XOR64@@ 288
+; ASSERT ptr=342
+  +
+L8
+; ASSERT ptr=334
+@@ROTL64@@ 334
+  [-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]
+L47
+; ASSERT ptr=294
+  [-L8+L78+R86]>[-L8+L78+R86]>[-L8+L78+R86]>[-L8+L78+R86]>[-L8+L78+R86]>[-L8+L78+R86]>[-L8+L78+R86]>[-L8+L78+R86]
+L15
+; ASSERT ptr=286
+  [-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]
+L85
+; ASSERT ptr=208
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-L311
+; ASSERT ptr=224
+  [-R30+L30]>[-R30+L30]>[-R30+L30]>[-R30+L30]>[-R30+L30]>[-R30+L30]>[-R30+L30]>[-R30+L30]
+R87
+; ASSERT ptr=318
+
+; ____ D{2} @262  is C{1} exclusive or C{3} turned left one ____
+  [-R16+L48+R32]>[-R16+L48+R32]>[-R16+L48+R32]>[-R16+L48+R32]>[-R16+L48+R32]>[-R16+L48+R32]>[-R16+L48+R32]>[-R16+L48+R32]
+L39
+; ASSERT ptr=286
+  [-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]
+R49
+; ASSERT ptr=342
+  +
+L8
+; ASSERT ptr=334
+@@ROTL64@@ 334
+  [-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]
+L39
+; ASSERT ptr=302
+  [-L16+L78+R94]>[-L16+L78+R94]>[-L16+L78+R94]>[-L16+L78+R94]>[-L16+L78+R94]>[-L16+L78+R94]>[-L16+L78+R94]>[-L16+L78+R94]
+L23
+; ASSERT ptr=286
+  [-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]
+L85
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R38+L38]>[-R38+L38]>[-R38+L38]>[-R38+L38]>[-R38+L38]>[-R38+L38]>[-R38+L38]>[-R38+L38]
+R95
+; ASSERT ptr=326
+
+; ____ D{3} @270  is C{2} exclusive or C{4} turned left one ____
+  [-R8+L48+R40]>[-R8+L48+R40]>[-R8+L48+R40]>[-R8+L48+R40]>[-R8+L48+R40]>[-R8+L48+R40]>[-R8+L48+R40]>[-R8+L48+R40]
+L47
+; ASSERT ptr=286
+  [-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]
+R49
+; ASSERT ptr=342
+  +
+L8
+; ASSERT ptr=334
+@@ROTL64@@ 334
+  [-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]
+L31
+; ASSERT ptr=310
+  [-L24+L78+R102]>[-L24+L78+R102]>[-L24+L78+R102]>[-L24+L78+R102]>[-L24+L78+R102]>[-L24+L78+R102]>[-L24+L78+R102]>[-L24+L78+R102]
+L31
+; ASSERT ptr=286
+  [-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]
+L85
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R46+L46]>[-R46+L46]>[-R46+L46]>[-R46+L46]>[-R46+L46]>[-R46+L46]>[-R46+L46]>[-R46+L46]
+R63
+; ASSERT ptr=294
+
+; ____ D{4} @278  is C{3} exclusive or C{0} turned left one ____
+  [-R40+L48+R8]>[-R40+L48+R8]>[-R40+L48+R8]>[-R40+L48+R8]>[-R40+L48+R8]>[-R40+L48+R8]>[-R40+L48+R8]>[-R40+L48+R8]
+L15
+; ASSERT ptr=286
+  [-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]>[-R8+L8]
+R49
+; ASSERT ptr=342
+  +
+L8
+; ASSERT ptr=334
+@@ROTL64@@ 334
+  [-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]>[-L118+R118]
+L23
+; ASSERT ptr=318
+  [-L32+L78+R110]>[-L32+L78+R110]>[-L32+L78+R110]>[-L32+L78+R110]>[-L32+L78+R110]>[-L32+L78+R110]>[-L32+L78+R110]>[-L32+L78+R110]
+L39
+; ASSERT ptr=286
+  [-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]
+L85
+; ASSERT ptr=208
+@@XOR64@@ 208
+R16
+; ASSERT ptr=224
+  [-R54+L54]>[-R54+L54]>[-R54+L54]>[-R54+L54]>[-R54+L54]>[-R54+L54]>[-R54+L54]>[-R54+L54]
+L231
 ; ASSERT ptr=0
 
 ; ==== every lane takes its own column's contribution ====
 ; A lane is finished once it has been read  so it is MOVED to the frame rather
 ; than copied; D is not finished  because five lanes of the row above and below
-; it want the same one  so D is copied through T every time
+; it want the same one  so D is copied through the upper holding lane every time
 
 ; ____ row nought  lanes 0 to 4 ____
-  [-R288+L288]>[-R288+L288]>[-R288+L288]>[-R288+L288]>[-R288+L288]>[-R288+L288]>[-R288+L288]>[-R288+L288]
-R233
-; ASSERT ptr=240
-  [-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]
+  [-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]
+R239
+; ASSERT ptr=246
+  [-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]
 R33
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L304+R304]>[-L304+R304]>[-L304+R304]>[-L304+R304]>[-L304+R304]>[-L304+R304]>[-L304+R304]>[-L304+R304]
-L303
+; ASSERT ptr=224
+  [-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]
+L223
 ; ASSERT ptr=8
-  [-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]>[-R280+L280]
-R233
-; ASSERT ptr=248
-  [-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]
+  [-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]
+R239
+; ASSERT ptr=254
+  [-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]
 R25
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L296+R296]>[-L296+R296]>[-L296+R296]>[-L296+R296]>[-L296+R296]>[-L296+R296]>[-L296+R296]>[-L296+R296]
-L295
+; ASSERT ptr=224
+  [-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]
+L215
 ; ASSERT ptr=16
-  [-R272+L272]>[-R272+L272]>[-R272+L272]>[-R272+L272]>[-R272+L272]>[-R272+L272]>[-R272+L272]>[-R272+L272]
-R233
-; ASSERT ptr=256
-  [-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]
+  [-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]
+R239
+; ASSERT ptr=262
+  [-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]
 R17
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L288+R288]>[-L288+R288]>[-L288+R288]>[-L288+R288]>[-L288+R288]>[-L288+R288]>[-L288+R288]>[-L288+R288]
-L287
+; ASSERT ptr=224
+  [-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]
+L207
 ; ASSERT ptr=24
-  [-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]
-R233
-; ASSERT ptr=264
-  [-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]
+  [-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]
+R239
+; ASSERT ptr=270
+  [-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]
 R9
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]>[-L280+R280]
-L279
+; ASSERT ptr=224
+  [-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]
+L199
 ; ASSERT ptr=32
-  [-R256+L256]>[-R256+L256]>[-R256+L256]>[-R256+L256]>[-R256+L256]>[-R256+L256]>[-R256+L256]>[-R256+L256]
-R233
-; ASSERT ptr=272
-  [-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]
+  [-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]
+R239
+; ASSERT ptr=278
+  [-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]
 R1
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]>[-L272+R272]
-L271
+; ASSERT ptr=224
+  [-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]
+L191
 ; ASSERT ptr=40
 
 ; ____ row one  lanes 5 to 9 ____
-  [-R248+L248]>[-R248+L248]>[-R248+L248]>[-R248+L248]>[-R248+L248]>[-R248+L248]>[-R248+L248]>[-R248+L248]
-R193
-; ASSERT ptr=240
-  [-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]
+  [-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]
+R199
+; ASSERT ptr=246
+  [-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]
 R33
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]>[-L264+R264]
-L263
+; ASSERT ptr=224
+  [-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]
+L183
 ; ASSERT ptr=48
-  [-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]>[-R240+L240]
-R193
-; ASSERT ptr=248
-  [-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]
+  [-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]
+R199
+; ASSERT ptr=254
+  [-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]
 R25
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]>[-L256+R256]
-L255
+; ASSERT ptr=224
+  [-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]
+L175
 ; ASSERT ptr=56
-  [-R232+L232]>[-R232+L232]>[-R232+L232]>[-R232+L232]>[-R232+L232]>[-R232+L232]>[-R232+L232]>[-R232+L232]
-R193
-; ASSERT ptr=256
-  [-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]
+  [-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]
+R199
+; ASSERT ptr=262
+  [-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]
 R17
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]>[-L248+R248]
-L247
+; ASSERT ptr=224
+  [-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]
+L167
 ; ASSERT ptr=64
-  [-R224+L224]>[-R224+L224]>[-R224+L224]>[-R224+L224]>[-R224+L224]>[-R224+L224]>[-R224+L224]>[-R224+L224]
-R193
-; ASSERT ptr=264
-  [-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]
+  [-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]
+R199
+; ASSERT ptr=270
+  [-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]
 R9
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]>[-L240+R240]
-L239
+; ASSERT ptr=224
+  [-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]
+L159
 ; ASSERT ptr=72
-  [-R216+L216]>[-R216+L216]>[-R216+L216]>[-R216+L216]>[-R216+L216]>[-R216+L216]>[-R216+L216]>[-R216+L216]
-R193
-; ASSERT ptr=272
-  [-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]
+  [-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]
+R199
+; ASSERT ptr=278
+  [-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]
 R1
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]>[-L232+R232]
-L231
+; ASSERT ptr=224
+  [-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]
+L151
 ; ASSERT ptr=80
 
 ; ____ row two  lanes 10 to 14 ____
-  [-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]>[-R208+L208]
-R153
-; ASSERT ptr=240
-  [-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]
+  [-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]
+R159
+; ASSERT ptr=246
+  [-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]
 R33
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]>[-L224+R224]
-L223
+; ASSERT ptr=224
+  [-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]
+L143
 ; ASSERT ptr=88
-  [-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]
-R153
-; ASSERT ptr=248
-  [-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]
+  [-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]
+R159
+; ASSERT ptr=254
+  [-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]
 R25
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]>[-L216+R216]
-L215
+; ASSERT ptr=224
+  [-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]
+L135
 ; ASSERT ptr=96
-  [-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]>[-R192+L192]
-R153
-; ASSERT ptr=256
-  [-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]
+  [-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]
+R159
+; ASSERT ptr=262
+  [-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]
 R17
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]>[-L208+R208]
-L207
+; ASSERT ptr=224
+  [-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]
+L127
 ; ASSERT ptr=104
-  [-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]>[-R184+L184]
-R153
-; ASSERT ptr=264
-  [-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]
+  [-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]
+R159
+; ASSERT ptr=270
+  [-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]
 R9
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]>[-L200+R200]
-L199
+; ASSERT ptr=224
+  [-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]
+L119
 ; ASSERT ptr=112
-  [-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]>[-R176+L176]
-R153
-; ASSERT ptr=272
-  [-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]
+  [-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]
+R159
+; ASSERT ptr=278
+  [-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]
 R1
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]>[-L192+R192]
-L191
+; ASSERT ptr=224
+  [-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]
+L111
 ; ASSERT ptr=120
 
 ; ____ row three  lanes 15 to 19 ____
-  [-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]>[-R168+L168]
-R113
-; ASSERT ptr=240
-  [-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]
+  [-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]>[-R88+L88]
+R119
+; ASSERT ptr=246
+  [-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]
 R33
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]>[-L184+R184]
-L183
+; ASSERT ptr=224
+  [-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]>[-L104+R104]
+L103
 ; ASSERT ptr=128
-  [-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]>[-R160+L160]
-R113
-; ASSERT ptr=248
-  [-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]
+  [-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]>[-R80+L80]
+R119
+; ASSERT ptr=254
+  [-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]
 R25
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]>[-L176+R176]
-L175
+; ASSERT ptr=224
+  [-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]
+L95
 ; ASSERT ptr=136
-  [-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]>[-R152+L152]
-R113
-; ASSERT ptr=256
-  [-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]
+  [-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]
+R119
+; ASSERT ptr=262
+  [-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]
 R17
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]>[-L168+R168]
-L167
+; ASSERT ptr=224
+  [-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]>[-L88+R88]
+L87
 ; ASSERT ptr=144
-  [-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]>[-R144+L144]
-R113
-; ASSERT ptr=264
-  [-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]
+  [-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]>[-R64+L64]
+R119
+; ASSERT ptr=270
+  [-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]
 R9
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]>[-L160+R160]
-L159
+; ASSERT ptr=224
+  [-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]>[-L80+R80]
+L79
 ; ASSERT ptr=152
-  [-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]
-R113
-; ASSERT ptr=272
-  [-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]
+  [-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]>[-R56+L56]
+R119
+; ASSERT ptr=278
+  [-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]
 R1
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]>[-L152+R152]
-L151
+; ASSERT ptr=224
+  [-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]>[-L72+R72]
+L71
 ; ASSERT ptr=160
 
 ; ____ row four  lanes 20 to 24 ____
-  [-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]>[-R128+L128]
-R73
-; ASSERT ptr=240
-  [-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]>[-R40+R16+L56]
+  [-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]>[-R48+L48]
+R79
+; ASSERT ptr=246
+  [-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]>[-R40+L70+R30]
 R33
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]>[-L144+R144]
-L143
+; ASSERT ptr=224
+  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
+L63
 ; ASSERT ptr=168
-  [-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]>[-R120+L120]
-R73
-; ASSERT ptr=248
-  [-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]>[-R32+R16+L48]
+  [-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]>[-R40+L40]
+R79
+; ASSERT ptr=254
+  [-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]>[-R32+L70+R38]
 R25
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]>[-L136+R136]
-L135
+; ASSERT ptr=224
+  [-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]>[-L56+R56]
+L55
 ; ASSERT ptr=176
-  [-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]>[-R112+L112]
-R73
-; ASSERT ptr=256
-  [-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]>[-R24+R16+L40]
+  [-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]>[-R32+L32]
+R79
+; ASSERT ptr=262
+  [-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]>[-R24+L70+R46]
 R17
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]>[-L24+R24]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]
-L127
+; ASSERT ptr=224
+  [-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]>[-L48+R48]
+L47
 ; ASSERT ptr=184
-  [-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]>[-R104+L104]
-R73
-; ASSERT ptr=264
-  [-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]>[-R16+R16+L32]
+  [-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]>[-R24+L24]
+R79
+; ASSERT ptr=270
+  [-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]>[-R16+L70+R54]
 R9
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]>[-L16+R16]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]>[-L120+R120]
-L119
+; ASSERT ptr=224
+  [-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]>[-L40+R40]
+L39
 ; ASSERT ptr=192
-  [-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]>[-R96+L96]
-R73
-; ASSERT ptr=272
-  [-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]>[-R8+R16+L24]
+  [-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]>[-R16+L16]
+R79
+; ASSERT ptr=278
+  [-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]>[-R8+L70+R62]
 R1
-; ASSERT ptr=280
+; ASSERT ptr=286
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
-R1
-@@XOR64@@ 288
+L85
+@@XOR64@@ 208
 R16
-; ASSERT ptr=304
-  [-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]>[-L112+R112]
+; ASSERT ptr=224
+  [-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]>[-L32+R32]
 
 ; ==== the column sums and their contributions are spent ====
 ; ten lanes of scratch  cleared so that a caller may enter this step again
-L111
-; ASSERT ptr=200
-  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
-L279
+R15
+; ASSERT ptr=246
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+L333
 ; ASSERT ptr=0
-; ASSERT zero 200:355
+; ASSERT zero 200:361
 ; emit the state little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

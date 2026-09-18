@@ -84,12 +84,12 @@
 ; anything is still owed  so a caller that asks for a rate or less pays for the
 ; permutation the absorb already did and not one more;
 ;
-; A BLOCK IS ABOUT FOUR BILLION INSTRUCTIONS  nearly all of it the permutation
-; at three thousand nine hundred and thirty nine million  so nothing else in
-; this file is worth optimising until that is; The conveyor that fills a block
-; costs about five million and the absorb twenty five  and one whole turn of the
-; state to squeeze a rate is thirty six million  which together are about one
-; percent of it;
+; A BLOCK IS ABOUT TWO AND A HALF BILLION INSTRUCTIONS  nearly all of it the
+; permutation at two thousand four hundred and eighty four million  so nothing
+; else in this file is worth optimising until that is; The conveyor that fills a
+; block costs about five million and the absorb twenty five  and one whole turn
+; of the state to squeeze a rate is thirty six million  which together are under
+; three per cent of it;
 ;
 ; The five bytes of the head are read into the bottom of the STATE and moved up
 ; out of it  because a read prologue may hold nothing but commas and steps and

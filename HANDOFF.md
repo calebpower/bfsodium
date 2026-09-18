@@ -137,16 +137,16 @@ routine, the suite fails until it has a row here.
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `aead/chacha20poly1305` | 75556 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
-| `keccak/theta` | 20860 | 852 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
-| `keccak/rhopi` | 9666 | 326 | the same six states + Cryptol |
-| `keccak/rhopichi` | 39312 | 954 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
-| `keccak/permute1600` | 61028 | 268 | the published all zero vector and a random state + Cryptol |
+| `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
+| `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
+| `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
+| `keccak/permute1600` | 51119 | 271 | the published all zero vector and a random state + Cryptol |
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
-| `keccak/sponge136` | 136716 | 717 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
-| `keccak/sha3_256` | 136690 | 57 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
-| `keccak/shake256` | 136692 | 55 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 140254 | 776 | one inside the first rate and one past it + Cryptol |
-| `keccak/shake128` | 140226 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge136` | 116892 | 717 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 116866 | 57 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 116868 | 55 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 120430 | 776 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 120402 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -244,12 +244,14 @@ must have no marker in the suite at all.
    and then against Cryptol, so every step has three independent witnesses
    rather than two. A round is θ then ρπχ, both **in place on cells 0 to 199**,
    and `permute1600` computes the published permutation of the all-zero state,
-   `e7dde140798f25f18a47c033f9ccd584...`, in **3,939,144,956 instructions** —
-   about eight seconds, a third of the AEAD, three times SHA-256 of one block.
+   `e7dde140798f25f18a47c033f9ccd584...`, in **2,483,822,414 instructions** —
+   about four seconds, a fifth of the AEAD, twice SHA-256 of one block. It was
+   3,939,144,956 when it was first built and the Cost section below is where
+   the difference went.
 
    **WHY ρπ AND χ ARE ONE FILE**, since the rest of this library splits as far
-   as it can: χ's input is the array π writes, which lives at cell 400, so a χ
-   of its own would have to read two hundred bytes into cells four hundred
+   as it can: χ's input is the array π writes, which lives high on the tape, so
+   a χ of its own would have to read two hundred bytes into cells three hundred
    upward. A read prologue may contain nothing but commas and steps, and
    `bffoot` refuses a routine whose prologue is preceded by any other command
    byte — because a paste begins at the prologue and would silently drop what
@@ -855,6 +857,71 @@ to rediscover it.
 `dbl136` still exists for the same reason as before: doubling a 17-byte value
 is a shift and costs about half a million, where an `add136` asked to do a
 shift's job costs 1.35 million. If something is unexpectedly slow, look for that.
+
+**AND THE SAME LESSON A THIRD TIME, ON KECCAK — where the glue was not 37 per
+cent of the cost but eighty.** A line profile of `theta` on a random state put
+**76%** of its 61 million instructions in lanes travelling to a frame and back,
+and of `rhopichi`'s 118 million, **86%**. The arithmetic — fifty `xor64`s,
+twenty-five `and64`s and thirty `rotl64`s a round — is about a fifth of a round
+and was never worth touching.
+
+**So the optimisation was the MAP, and not one instruction of arithmetic
+changed.** A byte moved over `d` cells costs two instructions per cell per unit
+of the byte, so a lane's journey costs twice its distance, eight times over.
+The state occupies cells 0..199 and cannot move, so every frame was packed as
+close above it as it would go.
+
+| | before | after | |
+|---|---|---|---|
+| `theta` transport, per unit of byte value | 47,600 | 32,700 | 1.46× |
+| `theta`, a random state | 60,962,481 | 46,787,857 | 1.30× |
+| `rhopi` + `chi` transport | 99,200 | 45,300 | 2.19× |
+| `rhopi`, a random state | 28,054,192 | 24,687,832 | 1.14× |
+| `rhopichi`, a random state | 118,020,255 | 64,755,239 | 1.82× |
+| **`permute1600`, the all-zero vector** | 3,939,144,956 | 2,483,822,414 | **1.59×** |
+| SHA3-256 of "abc" | 4,302,466,302 | 2,733,053,886 | 1.57× |
+
+**Two changes did it, and the second is the one worth remembering.**
+
+**θ got two holding lanes instead of one.** A copy from `s` to `e` keeping `s`
+must visit `e` AND the holding lane and come back, so it costs twice the *span*
+of those three cells. A lane coming UP out of the state wants its holding lane
+BELOW the frame; C and D coming DOWN to the frame want one ABOVE it. One cell
+cannot be both, and a second costs eight cells.
+
+**χ stopped fetching from B and fetches from a row instead.** Each lane of B is
+wanted three times — once in its own place and once by each of the two outputs
+below it in the row — so a flat χ made seventy-five journeys the length of the
+tape and seventy-five more handing the lanes back. A row of B is five lanes at
+one stride, which is forty CONSECUTIVE cells, so the whole row moves down to a
+work buffer beside the frames in **a single run of forty tokens**, and B is
+emptied as it goes rather than cleared afterwards. Ten long journeys a row
+where there were thirty. B dropped from cell 400 to cell 328 at the same time,
+which is worth 3,600 of the 53,900.
+
+**The layout was chosen by arithmetic, not by eye.** Every journey in both
+files is a formula in the map, so the total was written as a function of the
+map and every packing of the blocks enumerated. θ's best packing is 0.69 of the
+committed one and χ's 0.46 — and between the best ordering and the worst there
+is a factor of two, which is more than any amount of staring would have found.
+
+**THE GENERATORS WERE PROVED BEFORE THEY WERE USED, and that is the part to
+copy.** `thetagen.py`, `rhopigen.py` and `chigen.py` in the scratchpad each
+emit a file's body from its map. Each was first run with the **committed** map
+and diffed against the committed skeleton: identical, line for line, all three
+— 801, 286 and 893 lines. Only then was the map changed. That is what makes a
+hundred and fifty re-derived distances a safe afternoon rather than a hunt for
+one wrong number among them, and it is the same trick as the normalised
+code-stream diff that found the HMAC defects, used forwards instead of
+backwards. `rhopigen` goes one further: it derives π's destinations and ρ's
+offsets from FIPS 202's rules rather than transcribing the table, and the
+proof that the rules were read right is that it reproduces the file that was
+transcribed by hand.
+
+**What is left in Keccak, measured and not taken.** The glue is now about 65%
+of a round rather than 80%, and the floor — every lane reaching a frame at cell
+200 and coming back, four legs — is about 20,800 per unit against θ's 32,700.
+Closing that gap needs the state itself to move, which no map can do.
 
 The per-vector timeout in `tests/run.sh` is 900 s.
 

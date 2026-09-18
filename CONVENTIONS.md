@@ -684,9 +684,19 @@ theta/rho/pi/chi/iota. Large but extremely regular.
 both working in place on the same two hundred cells, and `keccak/permute1600`
 is the twenty-four-round loop with ι inline and FIPS 202's round constants
 written out as plusses. It computes the published permutation of the all-zero
-state in **3.94 billion instructions** — a third of the AEAD, about three times
-SHA-256 of one block. Affordable, and not yet optimised: the profile will say
-where, and the lesson from `mulmod136` is that it will say *the glue*.
+state in **2.48 billion instructions** — a fifth of the AEAD, about twice
+SHA-256 of one block.
+
+**It was 3.94 billion when it was built, and the profile said exactly what
+`mulmod136` had taught it would say: the glue.** 76% of θ and 86% of χ was
+lanes travelling to a frame and back; the fifty `xor64`s, twenty-five `and64`s
+and thirty `rotl64`s of a round came to about a fifth of it. So the
+optimisation was the *map* and the arithmetic did not change at all — every
+frame packed as close above the state as it would go, θ given a second holding
+lane, and χ given a work buffer so that a row of B comes down to the frames
+once instead of each of its lanes making three journeys. See HANDOFF's Cost
+section; the lesson is now on its third primitive and has never once been the
+arithmetic.
 
 **A Keccak round constant is unusually cheap to write down**, which is worth
 knowing before anyone reaches for the linear feedback register that generates

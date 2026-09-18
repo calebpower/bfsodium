@@ -11,9 +11,12 @@
 ;
 ; TAPE MAP  (home @0)
 ;   @0x000:0x0c7  A{200}   the state  in AND out; lane k at cell 8k
-;   @0x0c8:0x26b  the frames theta and rho pi chi use; both are pasted at this
+;   @0x0c8:0x223  the frames theta and rho pi chi use; both are pasted at this
 ;                          file's own zero and both work IN PLACE on the state
-;                          above  so a round carries nothing between them
+;                          above  so a round carries nothing between them; The
+;                          cells from @0x224 to @0x26f are spare  and they are
+;                          what the two steps gave back when their maps were
+;                          packed down against the state
 ;   @0x270:0x32f  KT{192}  the twenty four round constants  eight bytes each;
 ;                          the one in hand is ALWAYS the lowest  and the rest
 ;                          slide down eight cells when it has been spent

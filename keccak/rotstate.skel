@@ -25,7 +25,7 @@
 ; average bytes and three hundred and sixty thousand if every byte is 255;
 ; Nearly all of that is the hundred and ninety nine moves of one cell each  at
 ; four instructions per unit of the byte being moved; Two hundred turns is thirty
-; six million  which is under one percent of the permutation that made the rate
+; six million  which is under two per cent of the permutation that made the rate
 ; being squeezed  so the conveyor is the cheap half of a squeeze;
 
 ; read the state little endian  leaving the pointer past it

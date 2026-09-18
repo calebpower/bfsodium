@@ -87,10 +87,10 @@
 ; anything is still owed  so a caller that asks for a rate or less pays for the
 ; permutation the absorb already did and not one more;
 ;
-; A BLOCK IS ABOUT FOUR BILLION INSTRUCTIONS  nearly all of it the permutation
-; at three thousand nine hundred and thirty nine million; The conveyor that
-; fills a block costs about seven million and the absorb thirty  and one whole
-; turn of the state to squeeze a rate is thirty six million;
+; A BLOCK IS ABOUT TWO AND A HALF BILLION INSTRUCTIONS  nearly all of it the
+; permutation at two thousand four hundred and eighty four million; The conveyor
+; that fills a block costs about seven million and the absorb thirty  and one
+; whole turn of the state to squeeze a rate is thirty six million;
 ;
 ; A RATE OF 168 IS THE CHEAPER SPONGE PER BYTE and that is worth knowing: a
 ; block and a rate cost what they cost here regardless of the rate  so absorbing
