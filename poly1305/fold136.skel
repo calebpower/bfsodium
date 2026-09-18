@@ -5,103 +5,584 @@
 ; the part below it is that byte with all but its bottom two bits removed; No
 ; shifting of the whole seventeen bytes is needed anywhere;
 ;
-; INTERFACE entry=16 exit=0 footprint=0:50
+; INTERFACE entry=16 exit=0 footprint=0:34
 ; IO  in:  x{17} LE                     (17 bytes)
 ;     out: (L plus 5H){17} LE           (17 bytes)  where x = L plus H times 2^130
 ;
 ; TAPE MAP  (home @0)
-;   @0x00:0x10  x{17}   u8   the value  and the result; also add136's accumulator
-;   @0x11:0x21  b{17}   u8   add136's addend: five times H  as a TWO byte number
-;                            at @0x11 and @0x12  the other fifteen bytes nought
-;   @0x13:0x1d  the eight bit adder's frame  pasted INSIDE the addend's unused
-;               tail; nothing else needs those cells while five times H is being
-;               worked out  and add8 leaves them as it found them
-;   @0x22:0x2d  add136's carry and adder frame; its footprint is 0:45 pasted
-;               here  which is what fixes everything below it
-;   @0x2e       H       u8   the part of the value at or above bit 130; at most 63
-;   @0x2f       h       u8   HALVE frame: the byte being halved
-;   @0x30       q       u8   HALVE frame: that byte shifted right one
-;   @0x31       bit     u8   HALVE frame: that byte low bit
-;   @0x32       f       u8   HALVE frame scratch  restored to nought
+;   @0x00:0x10  x{17}   u8   the value  and the result
+;   @0x11:0x1b  the eight bit adder's frame; add8 pasted at @0x11  so its
+;               accumulator is @0x11  its addend @0x12 and its carry @0x13
+;   @0x1c       Alo     u8   five times H  low byte;  LATER the ripple's else arm
+;   @0x1d       Ahi     u8   five times H  high byte; LATER the ripple's copy
+;   @0x1e       H       u8   the part at or above bit 130  at most 63; LATER the
+;                            cell that hands that copy back
+;   @0x1f       h       u8   HALVE frame: the byte being halved
+;   @0x20       q       u8   HALVE frame: that byte shifted right one
+;   @0x21       bit     u8   HALVE frame: that byte low bit
+;   @0x22       f       u8   HALVE frame scratch  restored to nought
+;
+; THREE CELLS ARE USED TWICE and that is deliberate rather than clever: Alo  Ahi
+; and H are all SPENT before the carry ripple begins  so the ripple borrows them
+; for its else arm and its copy rather than asking for three more; Every one of
+; them is nought when the ripple starts and nought when it ends;
 ;
 ; H is at most 63  so five times H is at most 315 and the value below the split
-; is under 2^130; their sum cannot reach 2^136  so the adder's dropped top carry
-; is never reached and folding never loses anything;
+; is under 2^130; their sum cannot reach 2^136  so the top carry is never
+; reached and folding never loses anything;
 ;
-; FIVE TIMES H IS ONE ADDEND  not five turns of the adder  and that is the whole
-; cost of this file; Five times sixty three is three hundred and fifteen  which
-; is two bytes  so the old version spent five whole seventeen byte adds to place
-; a number that never exceeds two bytes; This one builds four times H and one
-; copy of H side by side  adds those two bytes with add8  and enters add136 ONCE
-; with the sum as the low byte of the addend and the carry as the high byte;
+; FIVE TIMES H IS ONE ADDEND  not five turns of the adder; Five times sixty
+; three is three hundred and fifteen  which is TWO BYTES  so this file builds
+; four times H and one copy of H side by side  adds those two bytes with add8
+; and has the low byte and the high byte of the addend in hand;
 ;
-; MEASURED  on mulmod136's large vector  which enters this file two hundred and
-; seventy two times: the five turn version cost about two million instructions a
-; call and 387 of mulmod136's 996 million; four times H can never wrap  because
-; four times sixty three is two hundred and fifty two  so the only carry in the
-; whole arrangement is the one add8 computes;
+; AND THAT IS WHY THIS FILE NO LONGER ENTERS add136; A seventeen byte add is
+; seventeen entries of add8  and add8 costs about fourteen thousand instructions
+; whatever its addend is  because nearly all of that is the seven halvings that
+; find bit 7 of the ACCUMULATOR; So fifteen of those seventeen entries were
+; spending fourteen thousand instructions to add NOUGHT; This file adds the two
+; bytes it actually has with two entries of add8 and lets the carry out of the
+; second one RIPPLE  and a ripple through a byte that is not 255 costs one
+; instruction;
+;
+; MEASURED at both ends of its own vector set: on the all ones value this file
+; cost 635880 instructions and now costs 116020  and on a value with no short
+; bytes 436942 and now 125114; Inside mulmod136's large vector  which enters
+; this file two hundred and seventy two times  the add136 it no longer enters
+; was thirty one and a half million of that file's hundred and forty five;
+;
+; THE RIPPLE IS FIFTEEN BLOCKS AND FOURTEEN OF THEM ARE UNROLLED THE SAME WAY:
+; if the carry is set it is spent  the byte takes the one  and the byte is
+; copied out and looked at; a byte that came to nought had 255 in it and the
+; carry lives on; The sixteenth byte does not look  because the sum cannot reach
+; 2^136 and so the carry out of the top byte is a carry that cannot happen;
 
 ; read the value little endian
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 
 ; ==== split the top byte at bit 130 ====
 ; ASSERT ptr=16
-; ASSERT zero 17:50
+; ASSERT zero 17:34
 ; the top byte steps into the halving frame
-  [-R31+L31]
-R31
-; ASSERT ptr=47
+  [-R15+L15]
+R15
+; ASSERT ptr=31
 ; the first halving; the bit it drops is bit 128
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; which is worth one in what is left below the split
 R2
-; ASSERT ptr=49
-  [-L33+R33]
+; ASSERT ptr=33
+  [-L17+R17]
 ; the half steps back into the frame to be halved again
 L1
-; ASSERT ptr=48
+; ASSERT ptr=32
   [-L1+R1]
 L1
-; ASSERT ptr=47
+; ASSERT ptr=31
 ; the second halving; the bit it drops is bit 129
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; which is worth two
 R2
-; ASSERT ptr=49
-  [-L33++R33]
+; ASSERT ptr=33
+  [-L17++R17]
 ; and what is left in the quotient is everything at bit 130 and above
 L1
-; ASSERT ptr=48
+; ASSERT ptr=32
   [-L2+R2]
 
-; ==== two to the hundred and thirtieth is five  so add five times that part ====
+; ==== two to the hundred and thirtieth is five  so five times that part ====
 ; to the part above the split
 L2
-; ASSERT ptr=46
+; ASSERT ptr=30
 ; it is spent ONCE  into four copies of itself and one copy of itself  which is
 ; where the five comes from; neither cell can wrap  because four times sixty
 ; three is two hundred and fifty two
-  [-L27++++R1+R26]
-; ASSERT ptr=46
+  [-L13++++R1+R12]
+; ASSERT ptr=30
 ; to the byte pair the eight bit adder works on
-L27
-; ASSERT ptr=19
-; ASSERT zero 21:29
-@@ADD8@@ 19
-; ASSERT ptr=19
+L13
+; ASSERT ptr=17
+; ASSERT zero 19:27
+@@ADD8@@ 17
+; ASSERT ptr=17
 ; the sum is five times H modulo 256  and it is the addend's low byte
-  [-L2+R2]
+  [-R11+L11]
 ; to the carry add8 computed
 R2
-; ASSERT ptr=21
+; ASSERT ptr=19
 ; which is the addend's high byte  worth two hundred and fifty six
-  [-L3+R3]
-; to the head of the value
+  [-R10+L10]
+
+; ==== the bottom byte of the value takes the low byte of five times H ====
+L19
+; ASSERT ptr=0
+  [-R17+L17]
+R28
+; ASSERT ptr=28
+  [-L10+R10]
+L11
+; ASSERT ptr=17
+; ASSERT zero 19:27
+@@ADD8@@ 17
+; ASSERT ptr=17
+; the sum goes home and the carry stays where add8 left it
+  [-L17+R17]
+
+; ==== the second byte takes the high byte  and that carry with it ====
+L16
+; ASSERT ptr=1
+  [-R16+L16]
+R28
+; ASSERT ptr=29
+  [-L11+R11]
+L10
+; ASSERT ptr=19
+  [-L1+R1]
+L2
+; ASSERT ptr=17
+; ASSERT zero 19:27
+@@ADD8@@ 17
+; ASSERT ptr=17
+  [-L16+R16]
+R2
+; ASSERT ptr=19
+
+; ==== and the carry out of that ripples up through the rest ====
+
+; ____ byte 2 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L26
+; ASSERT ptr=2
+  +
+  [-R27+R1+L28]
+R28
+; ASSERT ptr=30
+  [-L28+R28]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 3 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L25
+; ASSERT ptr=3
+  +
+  [-R26+R1+L27]
+R27
+; ASSERT ptr=30
+  [-L27+R27]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 4 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L24
+; ASSERT ptr=4
+  +
+  [-R25+R1+L26]
+R26
+; ASSERT ptr=30
+  [-L26+R26]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 5 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L23
+; ASSERT ptr=5
+  +
+  [-R24+R1+L25]
+R25
+; ASSERT ptr=30
+  [-L25+R25]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 6 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L22
+; ASSERT ptr=6
+  +
+  [-R23+R1+L24]
+R24
+; ASSERT ptr=30
+  [-L24+R24]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 7 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
 L21
+; ASSERT ptr=7
+  +
+  [-R22+R1+L23]
+R23
+; ASSERT ptr=30
+  [-L23+R23]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 8 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L20
+; ASSERT ptr=8
+  +
+  [-R21+R1+L22]
+R22
+; ASSERT ptr=30
+  [-L22+R22]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 9 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L19
+; ASSERT ptr=9
+  +
+  [-R20+R1+L21]
+R21
+; ASSERT ptr=30
+  [-L21+R21]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 10 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L18
+; ASSERT ptr=10
+  +
+  [-R19+R1+L20]
+R20
+; ASSERT ptr=30
+  [-L20+R20]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 11 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L17
+; ASSERT ptr=11
+  +
+  [-R18+R1+L19]
+R19
+; ASSERT ptr=30
+  [-L19+R19]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 12 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L16
+; ASSERT ptr=12
+  +
+  [-R17+R1+L18]
+R18
+; ASSERT ptr=30
+  [-L18+R18]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 13 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L15
+; ASSERT ptr=13
+  +
+  [-R16+R1+L17]
+R17
+; ASSERT ptr=30
+  [-L17+R17]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 14 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L14
+; ASSERT ptr=14
+  +
+  [-R15+R1+L16]
+R16
+; ASSERT ptr=30
+  [-L16+R16]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 15 ____
+[
+  [-]
+R9
+; ASSERT ptr=28
+  [-]+
+L13
+; ASSERT ptr=15
+  +
+  [-R14+R1+L15]
+R15
+; ASSERT ptr=30
+  [-L15+R15]
+L1
+; ASSERT ptr=29
+  [[-]L1[-]R1]
+L10
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+; whatever is left of the else arm is the carry into the byte above; it is set
+; INSIDE the loop above and moved out AFTER it  because a loop that sets its own
+; condition runs again  and the first draft of this file did exactly that and
+; carried into the same byte twice
+R9
+; ASSERT ptr=28
+  [-L9+R9]
+L9
+; ASSERT ptr=19
+
+; ____ byte 16  which does not look  because its carry cannot happen ____
+[
+  [-]
+L3
+; ASSERT ptr=16
+  +
+R3
+; ASSERT ptr=19
+]
+; ASSERT ptr=19
+
+; ==== the value is folded ====
+L19
 ; ASSERT ptr=0
-; ASSERT zero 34:45
-@@ADD136@@ 0
-; ASSERT ptr=0
-; ASSERT zero 17:50
+; ASSERT zero 17:34
 ; emit the folded value little endian
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

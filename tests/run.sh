@@ -496,6 +496,14 @@ dk poly1305/fold136.bf ffffffffffffffffffffffffffffffffff 3a01000000000000000000
 dk poly1305/fold136.bf ffffffffffffffffffffffffffffffffcf fe00000000000000000000000000000004 fold136Run "fold the largest part that does not carry"
 dk poly1305/fold136.bf ffffffffffffffffffffffffffffffffd0 0301000000000000000000000000000001 fold136Run "fold the smallest part that carries"
 
+# The ripple the fold now uses instead of a seventeen byte add: the first draft
+# of it was a loop that set its own condition, so it carried into the same byte
+# twice and then stopped. These two walk a carry a known distance and stop it
+# at a known byte, which is what that draft could not do; the all-ones vector
+# above catches it too, but only by accident of every byte being 255.
+dk poly1305/fold136.bf fbff000000000000000000000000000004 0000010000000000000000000000000000 fold136Run "fold a carry that stops in the third byte"
+dk poly1305/fold136.bf fbffffffffffffffff0000000000000008 0500000000000000000100000000000000 fold136Run "fold a carry that walks nine bytes and stops"
+
 dk poly1305/reducep136.bf faffffffffffffffffffffffffffffff03 faffffffffffffffffffffffffffffff03 reducep136Run "reducep p minus one unchanged"
 dk poly1305/reducep136.bf fbffffffffffffffffffffffffffffff03 0000000000000000000000000000000000 reducep136Run "reducep p becomes zero"
 dk poly1305/reducep136.bf fcffffffffffffffffffffffffffffff03 0100000000000000000000000000000000 reducep136Run "reducep p plus one becomes one"

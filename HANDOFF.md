@@ -116,13 +116,13 @@ routine, the suite fails until it has a row here.
 | `chacha20/stream` | 6552 | 711 | RFC 8439 §2.4.2 + block edges |
 | `poly1305/add136` | 2563 | 542 | boundary vectors + Cryptol |
 | `poly1305/halve136` | 470 | 539 | boundary vectors + Cryptol |
-| `poly1305/fold136` | 2714 | 107 | boundary vectors + Cryptol |
+| `poly1305/fold136` | 962 | 588 | boundary vectors + Cryptol |
 | `poly1305/dbl136` | 610 | 763 | boundary vectors + Cryptol |
-| `poly1305/reducep136` | 5615 | 375 | boundary vectors + Cryptol + a proof |
-| `poly1305/mulmod136` | 17200 | 472 | boundary vectors + Cryptol |
+| `poly1305/reducep136` | 3810 | 375 | boundary vectors + Cryptol + a proof |
+| `poly1305/mulmod136` | 10004 | 472 | boundary vectors + Cryptol |
 | `poly1305/clamp` | 248 | 299 | boundary vectors + Cryptol  the mask pinned both ways |
-| `poly1305/absorb` | 19725 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
-| `poly1305/poly1305` | 24264 | 935 | RFC 8439 §2.5.2 + block edges |
+| `poly1305/absorb` | 12583 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
+| `poly1305/poly1305` | 17070 | 935 | RFC 8439 §2.5.2 + block edges |
 | `aead/keygen` | 4584 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
 | `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
 | `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
@@ -136,7 +136,7 @@ routine, the suite fails until it has a row here.
 | `sha512/hkdf` | 538206 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
-| `aead/chacha20poly1305` | 75556 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `aead/chacha20poly1305` | 53974 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
@@ -193,8 +193,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 310 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 310 | golden vectors, dual oracle |
+| 2 | yes | 312 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 312 | golden vectors, dual oracle |
 | 5 | yes | 47 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -565,14 +565,26 @@ must have no marker in the suite at all.
    one by commit -- see `BRAINSTEM_COMMIT` there, and the note beside it about
    what the pin turning into a TAG will mean.
 
-2. **A cheaper fold after the double, if Poly1305's speed still matters.**
-   `mulmod136` is 145 million instructions now, 6.8× the original, and the
-   work frame and the per-turn shift of `b` are both gone; see *Cost*. What is
-   left is 37% in the fold that follows the doubling, and that fold is doing
-   general work on a value that can only ever have 0, 1 or 2 above bit 130.
-   A routine that adds at most ten to the low byte and lets the carry die would
-   take most of it. It needs its own vectors and its own Cryptol entry, which
-   is why it was left out of the re-laying.
+2. **Done, and struck: the fold no longer enters the seventeen byte adder.**
+   This item asked for a *second* fold, specialised to the value a doubling
+   leaves behind, with its own vectors and its own Cryptol entry. It was not
+   needed. The profile said the cost was `fold136` entering `add136`, and
+   `add136` is seventeen entries of `add8` — and `add8` costs about fourteen
+   thousand instructions *whatever its addend is*, because nearly all of it is
+   the seven halvings that find bit 7 of the **accumulator**. Fifteen of those
+   seventeen entries were spending fourteen thousand instructions to add
+   **nothing**: five times H is at most 315, which is two bytes.
+
+   So `fold136` now adds its two bytes with two entries of `add8` and lets the
+   carry out of the second one ripple, and a ripple through a byte that is not
+   255 costs one instruction. Same function, same vectors, same Cryptol entry,
+   **no new file at all** — and it is faster for every caller rather than only
+   after a doubling. `mulmod136` went from 145,361,714 to 89,473,525.
+
+   **The lesson for the list itself:** the item named the *caller* as the thing
+   to specialise when the cost was in a *callee* being entered with an empty
+   operand. The measurement that settled it took one line profile. Read the
+   profile before believing the item, including the ones written here.
 
 3. **`qrloop` could paste `rotr32`** with the counts 16, 20, 24, 25 instead of
    `rotl32` with 16, 12, 8, 7, for about 2.4× on ChaCha's rotations. Four
@@ -827,6 +839,43 @@ carry frame, which is why the putting back happens first.
 | **`mulmod136` large, against the original** | 987,082,567 | 145,361,714 | **6.79×** |
 | `AEAD, RFC §2.8.2` | 8,587,084,818 | 3,581,010,128 | 2.40× |
 | **AEAD, against the original** | 11,584,909,050 | 3,581,010,128 | **3.24×** |
+
+**AND THE FOLD STOPPED ENTERING THE SEVENTEEN BYTE ADDER, which was the last
+big thing in Poly1305 and was not where item 2 said it was.** `fold136` adds
+five times H to the value, and five times sixty three is 315 — **two bytes**.
+It was doing that with `add136`, which is seventeen entries of `add8`, and
+`add8` costs about fourteen thousand instructions *whatever its addend is*,
+because nearly all of it is the seven halvings that find bit 7 of the
+**accumulator**. Fifteen of those seventeen entries were spending fourteen
+thousand instructions to add nothing.
+
+So it now adds the two bytes it has with two entries of `add8` and lets the
+carry out of the second one ripple through the remaining fifteen. **A ripple
+through a byte that is not 255 costs one instruction**, and the carry reaches
+byte two at all only when byte one was 255.
+
+| | before | after | |
+|---|---|---|---|
+| `fold136`, all ones | 635,880 | 116,020 | 5.5× |
+| `fold136`, a value with no short bytes | 436,942 | 125,114 | 3.5× |
+| `mulmod136`, the large vector | 145,361,714 | 89,473,525 | 1.62× |
+| `poly1305`, RFC §2.5.2 | 431,714,708 | 264,557,017 | 1.63× |
+| **AEAD, RFC §2.8.2** | 3,581,010,128 | 3,047,476,642 | **1.18×** |
+
+**The first draft of the ripple was wrong in a way worth writing down.** Each
+level was `[c ... set c ... ]` — a loop that sets its own condition, so it ran
+again on the *same* byte, carried into it twice, and then stopped. Four of the
+seven committed vectors caught it immediately. The fix is that the carry out
+is set in a *different* cell inside the loop and moved into `c` after it.
+**A brainfuck `[` used as an `if` must not touch the cell it tested.**
+
+**And the shape of Poly1305's remaining cost has changed.** `mulmod136`'s 89
+million is now roughly: `dbl136` 32 million (36%), the top-level `add136` 18
+million (20%), and the rest spread. `dbl136` is next if anyone wants more, and
+it is not the adder — it is already halving-based. Its cost is the *copy*: each
+byte is taken twice over a distance of up to 23 cells, which is 46 instructions
+per unit of the byte, and the frame cannot come closer while the value occupies
+cells 0 to 16. Measure before building, as ever.
 
 Its footprint fell from 0:286 to 0:124, which is why `absorb` is now 0:141
 rather than 0:303 and `poly1305` 0:555 rather than 0:717. The callers' own

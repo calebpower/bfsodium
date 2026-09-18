@@ -2736,56 +2736,52 @@
 
 ; ============================================================ ; ; ; split the top byte at bit 130
                                                                ; ASSERT ptr=84
-                                                               ; ASSERT zero 85:118
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; the top byte steps into the halving frame
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                                                               ; ASSERT ptr=115
+                                                               ; ASSERT zero 85:102
+  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]                           ; the top byte steps into the halving frame
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=99
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the first halving; the bit it drops is bit 128
 >>                                                             ; which is worth one in what is left below the split
-                                                               ; ASSERT ptr=117
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
+                                                               ; ASSERT ptr=101
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
 <                                                              ; the half steps back into the frame to be halved again
-                                                               ; ASSERT ptr=116
+                                                               ; ASSERT ptr=100
   [-<+>]
 <
-                                                               ; ASSERT ptr=115
+                                                               ; ASSERT ptr=99
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the second halving; the bit it drops is bit 129
 >>                                                             ; which is worth two
-                                                               ; ASSERT ptr=117
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>]                                                ; continued
+                                                               ; ASSERT ptr=101
+  [-<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>]
 <                                                              ; and what is left in the quotient is everything at bit
                                                                ; 130 and above
-                                                               ; ASSERT ptr=116
+                                                               ; ASSERT ptr=100
   [-<<+>>]
 
-; ============================================================ ; ; ; two to the hundred and thirtieth is five  so add
-                                                               ; five times that part
+; ============================================================ ; ; ; two to the hundred and thirtieth is five  so five
+                                                               ; times that part
 <<                                                             ; to the part above the split
-                                                               ; ASSERT ptr=114
+                                                               ; ASSERT ptr=98
                                                                ; it is spent ONCE  into four copies of itself and one
                                                                ; copy of itself  which is where the five comes from;
                                                                ; neither cell can wrap  because four times sixty three
                                                                ; is two hundred and fifty two
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<++++>+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
-                                                               ; ASSERT ptr=114
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; to the byte pair the eight bit adder works on
-                                                               ; ASSERT ptr=87
-                                                               ; ASSERT zero 89:97
+  [-<<<<<<<<<<<<<++++>+>>>>>>>>>>>>]
+                                                               ; ASSERT ptr=98
+<<<<<<<<<<<<<                                                  ; to the byte pair the eight bit adder works on
+                                                               ; ASSERT ptr=85
+                                                               ; ASSERT zero 87:95
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=88
-                                                               ; ASSERT zero 90:97
+                                                               ; ASSERT ptr=86
+                                                               ; ASSERT zero 88:95
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=87
+                                                               ; ASSERT ptr=85
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -2793,10 +2789,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=88
+                                                               ; ASSERT ptr=86
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -2805,13 +2801,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=94
+                                                               ; ASSERT ptr=92
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=97
+                                                               ; ASSERT ptr=95
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=95
+                                                               ; ASSERT ptr=93
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -2819,15 +2815,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=92
+                                                               ; ASSERT ptr=90
   [-[[-]>>>>+<<<<]]
 ; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
                                                                ; else
 >>>>
-                                                               ; ASSERT ptr=96
+                                                               ; ASSERT ptr=94
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -2877,359 +2873,58 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
 ; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=94
+                                                               ; ASSERT ptr=92
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=95
+                                                               ; ASSERT ptr=93
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=87
+                                                               ; ASSERT ptr=85
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 88:88
-                                                               ; ASSERT zero 90:97
+                                                               ; ASSERT zero 86:86
+                                                               ; ASSERT zero 88:95
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=87
-  [-<<+>>]                                                     ; the sum is five times H modulo 256  and it is the
+                                                               ; ASSERT ptr=85
+  [->>>>>>>>>>>+<<<<<<<<<<<]                                   ; the sum is five times H modulo 256  and it is the
                                                                ; addend's low byte
 >>                                                             ; to the carry add8 computed
-                                                               ; ASSERT ptr=89
-  [-<<<+>>>]                                                   ; which is the addend's high byte  worth two hundred
+                                                               ; ASSERT ptr=87
+  [->>>>>>>>>>+<<<<<<<<<<]                                     ; which is the addend's high byte  worth two hundred
                                                                ; and fifty six
-<<<<<<<<<<<<<<<<<<<<<                                          ; to the head of the value
+
+; ============================================================ ; ; ; the bottom byte of the value takes the low byte
+                                                               ; of
+<<<<<<<<<<<<<<<<<<<                                            ; ; five times H
                                                                ; ASSERT ptr=68
-                                                               ; ASSERT zero 102:113
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 102:113
-
-; ============================================================ ; ; ; ; byte 0
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=68
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<]                                             ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>]                                             ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 1
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                              ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=69
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<]                                               ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>]                                               ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 2
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                               ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=70
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<]                                                 ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<<+>>>>>>>>>>]
+<<<<<<<<<<<
+                                                               ; ASSERT ptr=85
+                                                               ; ASSERT zero 87:95
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT ptr=86
+                                                               ; ASSERT zero 88:95
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -3237,10 +2932,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
+                                                               ; ASSERT ptr=86
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -3249,13 +2944,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
+                                                               ; ASSERT ptr=95
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -3263,14 +2958,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=108
+                                                               ; ASSERT ptr=90
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
+; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
+                                                               ; else
+>>>>
+                                                               ; ASSERT ptr=94
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -3320,64 +3016,57 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
+; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT zero 86:86
+                                                               ; ASSERT zero 88:95
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+                                                               ; ASSERT ptr=85
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]                       ; the sum goes home and the carry stays where add8 left
+                                                               ; it
 
-; ============================================================ ; ; ; ; byte 3
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=71
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
+; ============================================================ ; ; ; the second byte takes the high byte  and that
+                                                               ; carry
+<<<<<<<<<<<<<<<<                                               ; ; with it
+                                                               ; ASSERT ptr=69
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=97
+  [-<<<<<<<<<<<+>>>>>>>>>>>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+  [-<+>]
+<<
+                                                               ; ASSERT ptr=85
+                                                               ; ASSERT zero 87:95
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT ptr=86
+                                                               ; ASSERT zero 88:95
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -3385,10 +3074,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
+                                                               ; ASSERT ptr=86
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -3397,13 +3086,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
+                                                               ; ASSERT ptr=95
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -3411,14 +3100,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=108
+                                                               ; ASSERT ptr=90
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
+; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
+                                                               ; else
+>>>>
+                                                               ; ASSERT ptr=94
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -3468,1958 +3158,487 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
+; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT zero 86:86
+                                                               ; ASSERT zero 88:95
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
+                                                               ; ASSERT ptr=85
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 >>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 4
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                 ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=72
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
+; ============================================================ ; ; ; and the carry out of that ripples up through the
+                                                               ; rest
 
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>]                                                     ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 5
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=73
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<]                                                       ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]
->>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 2 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>]                                                       ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 6
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                   ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=74
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<]                                                         ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>+<<<<<<<<<<<<<]
->>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 7
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=75
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <]                                                           ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>+<<<<<<<<<<<<]
->>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=70
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<]                                                          ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >]                                                           ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 8
-<<<<<<<<<<<<<<<<<<<<<<<<<<                                     ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=76
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>+<<<<<<<<<<<]
->>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 3 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=71
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  ]                                                            ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 9
-<<<<<<<<<<<<<<<<<<<<<<<<<                                      ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=77
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>+<<<<<<<<<<]
->>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 4 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=72
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 10
-<<<<<<<<<<<<<<<<<<<<<<<<                                       ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=78
-  [->>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>+<<<<<<<<<]
->>>>>>>>                                                       ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 5 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=73
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 11
-<<<<<<<<<<<<<<<<<<<<<<<                                        ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=79
-  [->>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>+<<<<<<<<]
->>>>>>>                                                        ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 6 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=74
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 12
-<<<<<<<<<<<<<<<<<<<<<<                                         ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=80
-  [->>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>+<<<<<<<]
->>>>>>                                                         ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 7 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=75
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 13
-<<<<<<<<<<<<<<<<<<<<<                                          ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=81
-  [->>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>+<<<<<<]
->>>>>                                                          ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 8 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=76
+  +
+  [->>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 14
-<<<<<<<<<<<<<<<<<<<<                                           ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=82
-  [->>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>+<<<<<]
->>>>                                                           ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 9 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=77
+  +
+  [->>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 15
-<<<<<<<<<<<<<<<<<<<                                            ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=83
-  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>+<<<<]
->>>                                                            ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 10 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=78
+  +
+  [->>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 16
-<<<<<<<<<<<<<<<<<<                                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=84
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>+<<<]
->>                                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 11 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=79
+  +
+  [->>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-                                                               ; the carry out of the top byte is dropped  and cleared
-                                                               ; so the frame is as empty as it was found
-                                                               ; ASSERT ptr=102
+[                                                              ; ____ byte 12 ____
   [-]
-                                                               ; ASSERT zero 85:113
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=80
+  +
+  [->>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
+[                                                              ; ____ byte 13 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=81
+  +
+  [->>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
+
+[                                                              ; ____ byte 14 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=82
+  +
+  [->>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
+
+[                                                              ; ____ byte 15 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=83
+  +
+  [->>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
+
+[                                                              ; ____ byte 16  which does not look  because its carry
+  [-]                                                          ; ; cannot happen ____
+<<<
+                                                               ; ASSERT ptr=84
+  +
+>>>
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+
+; ============================================================ ; ; ; the value is folded
+<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=68
-                                                               ; ASSERT zero 85:118
+                                                               ; ASSERT zero 85:102
                                                                ; walk back out to the routine base
 
                                                                ; ASSERT ptr=68
@@ -8680,56 +6899,52 @@
 
 ; ============================================================ ; ; ; split the top byte at bit 130
                                                                ; ASSERT ptr=84
-                                                               ; ASSERT zero 85:118
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; the top byte steps into the halving frame
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                                                               ; ASSERT ptr=115
+                                                               ; ASSERT zero 85:102
+  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]                           ; the top byte steps into the halving frame
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=99
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the first halving; the bit it drops is bit 128
 >>                                                             ; which is worth one in what is left below the split
-                                                               ; ASSERT ptr=117
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
+                                                               ; ASSERT ptr=101
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
 <                                                              ; the half steps back into the frame to be halved again
-                                                               ; ASSERT ptr=116
+                                                               ; ASSERT ptr=100
   [-<+>]
 <
-                                                               ; ASSERT ptr=115
+                                                               ; ASSERT ptr=99
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the second halving; the bit it drops is bit 129
 >>                                                             ; which is worth two
-                                                               ; ASSERT ptr=117
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>]                                                ; continued
+                                                               ; ASSERT ptr=101
+  [-<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>]
 <                                                              ; and what is left in the quotient is everything at bit
                                                                ; 130 and above
-                                                               ; ASSERT ptr=116
+                                                               ; ASSERT ptr=100
   [-<<+>>]
 
-; ============================================================ ; ; ; two to the hundred and thirtieth is five  so add
-                                                               ; five times that part
+; ============================================================ ; ; ; two to the hundred and thirtieth is five  so five
+                                                               ; times that part
 <<                                                             ; to the part above the split
-                                                               ; ASSERT ptr=114
+                                                               ; ASSERT ptr=98
                                                                ; it is spent ONCE  into four copies of itself and one
                                                                ; copy of itself  which is where the five comes from;
                                                                ; neither cell can wrap  because four times sixty three
                                                                ; is two hundred and fifty two
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<++++>+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
-                                                               ; ASSERT ptr=114
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; to the byte pair the eight bit adder works on
-                                                               ; ASSERT ptr=87
-                                                               ; ASSERT zero 89:97
+  [-<<<<<<<<<<<<<++++>+>>>>>>>>>>>>]
+                                                               ; ASSERT ptr=98
+<<<<<<<<<<<<<                                                  ; to the byte pair the eight bit adder works on
+                                                               ; ASSERT ptr=85
+                                                               ; ASSERT zero 87:95
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=88
-                                                               ; ASSERT zero 90:97
+                                                               ; ASSERT ptr=86
+                                                               ; ASSERT zero 88:95
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=87
+                                                               ; ASSERT ptr=85
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -8737,10 +6952,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=88
+                                                               ; ASSERT ptr=86
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -8749,13 +6964,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=94
+                                                               ; ASSERT ptr=92
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=97
+                                                               ; ASSERT ptr=95
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=95
+                                                               ; ASSERT ptr=93
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -8763,15 +6978,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=92
+                                                               ; ASSERT ptr=90
   [-[[-]>>>>+<<<<]]
 ; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
                                                                ; else
 >>>>
-                                                               ; ASSERT ptr=96
+                                                               ; ASSERT ptr=94
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -8821,359 +7036,58 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=90
+                                                               ; ASSERT ptr=88
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
 ; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=94
+                                                               ; ASSERT ptr=92
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=95
+                                                               ; ASSERT ptr=93
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=87
+                                                               ; ASSERT ptr=85
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 88:88
-                                                               ; ASSERT zero 90:97
+                                                               ; ASSERT zero 86:86
+                                                               ; ASSERT zero 88:95
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=87
-  [-<<+>>]                                                     ; the sum is five times H modulo 256  and it is the
+                                                               ; ASSERT ptr=85
+  [->>>>>>>>>>>+<<<<<<<<<<<]                                   ; the sum is five times H modulo 256  and it is the
                                                                ; addend's low byte
 >>                                                             ; to the carry add8 computed
-                                                               ; ASSERT ptr=89
-  [-<<<+>>>]                                                   ; which is the addend's high byte  worth two hundred
+                                                               ; ASSERT ptr=87
+  [->>>>>>>>>>+<<<<<<<<<<]                                     ; which is the addend's high byte  worth two hundred
                                                                ; and fifty six
-<<<<<<<<<<<<<<<<<<<<<                                          ; to the head of the value
+
+; ============================================================ ; ; ; the bottom byte of the value takes the low byte
+                                                               ; of
+<<<<<<<<<<<<<<<<<<<                                            ; ; five times H
                                                                ; ASSERT ptr=68
-                                                               ; ASSERT zero 102:113
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 102:113
-
-; ============================================================ ; ; ; ; byte 0
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=68
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<]                                             ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>]                                             ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 1
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                              ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=69
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<]                                               ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>]                                               ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 2
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                               ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=70
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<]                                                 ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<<+>>>>>>>>>>]
+<<<<<<<<<<<
+                                                               ; ASSERT ptr=85
+                                                               ; ASSERT zero 87:95
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT ptr=86
+                                                               ; ASSERT zero 88:95
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -9181,10 +7095,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
+                                                               ; ASSERT ptr=86
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -9193,13 +7107,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
+                                                               ; ASSERT ptr=95
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -9207,14 +7121,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=108
+                                                               ; ASSERT ptr=90
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
+; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
+                                                               ; else
+>>>>
+                                                               ; ASSERT ptr=94
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -9264,64 +7179,57 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
+; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT zero 86:86
+                                                               ; ASSERT zero 88:95
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+                                                               ; ASSERT ptr=85
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]                       ; the sum goes home and the carry stays where add8 left
+                                                               ; it
 
-; ============================================================ ; ; ; ; byte 3
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=71
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
+; ============================================================ ; ; ; the second byte takes the high byte  and that
+                                                               ; carry
+<<<<<<<<<<<<<<<<                                               ; ; with it
+                                                               ; ASSERT ptr=69
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=97
+  [-<<<<<<<<<<<+>>>>>>>>>>>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+  [-<+>]
+<<
+                                                               ; ASSERT ptr=85
+                                                               ; ASSERT zero 87:95
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT ptr=86
+                                                               ; ASSERT zero 88:95
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -9329,10 +7237,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
+                                                               ; ASSERT ptr=86
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -9341,13 +7249,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
+                                                               ; ASSERT ptr=95
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -9355,14 +7263,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=108
+                                                               ; ASSERT ptr=90
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
+; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
+                                                               ; else
+>>>>
+                                                               ; ASSERT ptr=94
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -9412,1958 +7321,487 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=106
+                                                               ; ASSERT ptr=88
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
+; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=110
+                                                               ; ASSERT ptr=92
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=111
+                                                               ; ASSERT ptr=93
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
+                                                               ; ASSERT ptr=85
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
+                                                               ; ASSERT zero 86:86
+                                                               ; ASSERT zero 88:95
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
+                                                               ; ASSERT ptr=85
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 >>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 4
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                 ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=72
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
+; ============================================================ ; ; ; and the carry out of that ripples up through the
+                                                               ; rest
 
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>]                                                     ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 5
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=73
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<]                                                       ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]
->>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 2 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>]                                                       ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 6
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                   ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=74
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<]                                                         ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>+<<<<<<<<<<<<<]
->>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
-
-; ============================================================ ; ; ; ; byte 7
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=75
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <]                                                           ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>+<<<<<<<<<<<<]
->>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=70
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<]                                                          ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >]                                                           ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 8
-<<<<<<<<<<<<<<<<<<<<<<<<<<                                     ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=76
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>+<<<<<<<<<<<]
->>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 3 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=71
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  ]                                                            ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 9
-<<<<<<<<<<<<<<<<<<<<<<<<<                                      ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=77
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>+<<<<<<<<<<]
->>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 4 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=72
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 10
-<<<<<<<<<<<<<<<<<<<<<<<<                                       ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=78
-  [->>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>+<<<<<<<<<]
->>>>>>>>                                                       ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 5 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=73
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 11
-<<<<<<<<<<<<<<<<<<<<<<<                                        ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=79
-  [->>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>+<<<<<<<<]
->>>>>>>                                                        ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 6 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=74
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 12
-<<<<<<<<<<<<<<<<<<<<<<                                         ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=80
-  [->>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>+<<<<<<<]
->>>>>>                                                         ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 7 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=75
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 13
-<<<<<<<<<<<<<<<<<<<<<                                          ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=81
-  [->>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>+<<<<<<]
->>>>>                                                          ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 8 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=76
+  +
+  [->>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 14
-<<<<<<<<<<<<<<<<<<<<                                           ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=82
-  [->>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>+<<<<<]
->>>>                                                           ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 9 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=77
+  +
+  [->>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 15
-<<<<<<<<<<<<<<<<<<<                                            ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=83
-  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>+<<<<]
->>>                                                            ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 10 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=78
+  +
+  [->>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-; ============================================================ ; ; ; ; byte 16
-<<<<<<<<<<<<<<<<<<                                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=84
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>+<<<]
->>                                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=103
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=104
-                                                               ; ASSERT zero 106:113
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=103
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=104
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=110
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=113
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=111
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=108
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=112
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=106
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 11 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=106
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=110
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=111
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=103
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 104:104
-                                                               ; ASSERT zero 106:113
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=103
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=104
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=79
+  +
+  [->>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
   [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=102
-                                                               ; ASSERT zero 103:113
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-                                                               ; the carry out of the top byte is dropped  and cleared
-                                                               ; so the frame is as empty as it was found
-                                                               ; ASSERT ptr=102
+[                                                              ; ____ byte 12 ____
   [-]
-                                                               ; ASSERT zero 85:113
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=80
+  +
+  [->>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
 
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
+[                                                              ; ____ byte 13 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=81
+  +
+  [->>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
+
+[                                                              ; ____ byte 14 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=82
+  +
+  [->>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
+
+[                                                              ; ____ byte 15 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-]+
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=83
+  +
+  [->>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=98
+  [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=97
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=96
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=87
+
+[                                                              ; ____ byte 16  which does not look  because its carry
+  [-]                                                          ; ; cannot happen ____
+<<<
+                                                               ; ASSERT ptr=84
+  +
+>>>
+                                                               ; ASSERT ptr=87
+]
+                                                               ; ASSERT ptr=87
+
+; ============================================================ ; ; ; the value is folded
+<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=68
-                                                               ; ASSERT zero 85:118
+                                                               ; ASSERT zero 85:102
                                                                ; walk back out to the routine base
 
                                                                ; ASSERT ptr=68
@@ -11380,56 +7818,52 @@
 
 ; ============================================================ ; ; ; split the top byte at bit 130
                                                                ; ASSERT ptr=33
-                                                               ; ASSERT zero 34:67
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; the top byte steps into the halving frame
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                                                               ; ASSERT ptr=64
+                                                               ; ASSERT zero 34:51
+  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]                           ; the top byte steps into the halving frame
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=48
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the first halving; the bit it drops is bit 128
 >>                                                             ; which is worth one in what is left below the split
-                                                               ; ASSERT ptr=66
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
+                                                               ; ASSERT ptr=50
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
 <                                                              ; the half steps back into the frame to be halved again
-                                                               ; ASSERT ptr=65
+                                                               ; ASSERT ptr=49
   [-<+>]
 <
-                                                               ; ASSERT ptr=64
+                                                               ; ASSERT ptr=48
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the second halving; the bit it drops is bit 129
 >>                                                             ; which is worth two
-                                                               ; ASSERT ptr=66
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>]                                                ; continued
+                                                               ; ASSERT ptr=50
+  [-<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>]
 <                                                              ; and what is left in the quotient is everything at bit
                                                                ; 130 and above
-                                                               ; ASSERT ptr=65
+                                                               ; ASSERT ptr=49
   [-<<+>>]
 
-; ============================================================ ; ; ; two to the hundred and thirtieth is five  so add
-                                                               ; five times that part
+; ============================================================ ; ; ; two to the hundred and thirtieth is five  so five
+                                                               ; times that part
 <<                                                             ; to the part above the split
-                                                               ; ASSERT ptr=63
+                                                               ; ASSERT ptr=47
                                                                ; it is spent ONCE  into four copies of itself and one
                                                                ; copy of itself  which is where the five comes from;
                                                                ; neither cell can wrap  because four times sixty three
                                                                ; is two hundred and fifty two
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<++++>+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
-                                                               ; ASSERT ptr=63
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; to the byte pair the eight bit adder works on
-                                                               ; ASSERT ptr=36
-                                                               ; ASSERT zero 38:46
+  [-<<<<<<<<<<<<<++++>+>>>>>>>>>>>>]
+                                                               ; ASSERT ptr=47
+<<<<<<<<<<<<<                                                  ; to the byte pair the eight bit adder works on
+                                                               ; ASSERT ptr=34
+                                                               ; ASSERT zero 36:44
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=37
-                                                               ; ASSERT zero 39:46
+                                                               ; ASSERT ptr=35
+                                                               ; ASSERT zero 37:44
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=36
+                                                               ; ASSERT ptr=34
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -11437,10 +7871,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=37
+                                                               ; ASSERT ptr=35
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -11449,13 +7883,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=43
+                                                               ; ASSERT ptr=41
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=46
+                                                               ; ASSERT ptr=44
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=44
+                                                               ; ASSERT ptr=42
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -11463,15 +7897,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=41
+                                                               ; ASSERT ptr=39
   [-[[-]>>>>+<<<<]]
 ; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
                                                                ; else
 >>>>
-                                                               ; ASSERT ptr=45
+                                                               ; ASSERT ptr=43
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -11521,359 +7955,58 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
 ; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=43
+                                                               ; ASSERT ptr=41
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=44
+                                                               ; ASSERT ptr=42
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=36
+                                                               ; ASSERT ptr=34
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 37:37
-                                                               ; ASSERT zero 39:46
+                                                               ; ASSERT zero 35:35
+                                                               ; ASSERT zero 37:44
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=36
-  [-<<+>>]                                                     ; the sum is five times H modulo 256  and it is the
+                                                               ; ASSERT ptr=34
+  [->>>>>>>>>>>+<<<<<<<<<<<]                                   ; the sum is five times H modulo 256  and it is the
                                                                ; addend's low byte
 >>                                                             ; to the carry add8 computed
-                                                               ; ASSERT ptr=38
-  [-<<<+>>>]                                                   ; which is the addend's high byte  worth two hundred
+                                                               ; ASSERT ptr=36
+  [->>>>>>>>>>+<<<<<<<<<<]                                     ; which is the addend's high byte  worth two hundred
                                                                ; and fifty six
-<<<<<<<<<<<<<<<<<<<<<                                          ; to the head of the value
+
+; ============================================================ ; ; ; the bottom byte of the value takes the low byte
+                                                               ; of
+<<<<<<<<<<<<<<<<<<<                                            ; ; five times H
                                                                ; ASSERT ptr=17
-                                                               ; ASSERT zero 51:62
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 51:62
-
-; ============================================================ ; ; ; ; byte 0
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=17
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<]                                             ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>]                                             ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; byte 1
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                              ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=18
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<]                                               ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>]                                               ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; byte 2
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                               ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=19
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<]                                                 ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<<+>>>>>>>>>>]
+<<<<<<<<<<<
+                                                               ; ASSERT ptr=34
+                                                               ; ASSERT zero 36:44
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT ptr=35
+                                                               ; ASSERT zero 37:44
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -11881,10 +8014,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
+                                                               ; ASSERT ptr=35
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -11893,13 +8026,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
+                                                               ; ASSERT ptr=44
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -11907,14 +8040,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=57
+                                                               ; ASSERT ptr=39
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
+; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
+                                                               ; else
+>>>>
+                                                               ; ASSERT ptr=43
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -11964,64 +8098,57 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
+; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT zero 35:35
+                                                               ; ASSERT zero 37:44
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+                                                               ; ASSERT ptr=34
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]                       ; the sum goes home and the carry stays where add8 left
+                                                               ; it
 
-; ============================================================ ; ; ; ; byte 3
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=20
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
+; ============================================================ ; ; ; the second byte takes the high byte  and that
+                                                               ; carry
+<<<<<<<<<<<<<<<<                                               ; ; with it
+                                                               ; ASSERT ptr=18
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=46
+  [-<<<<<<<<<<<+>>>>>>>>>>>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+  [-<+>]
+<<
+                                                               ; ASSERT ptr=34
+                                                               ; ASSERT zero 36:44
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT ptr=35
+                                                               ; ASSERT zero 37:44
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -12029,10 +8156,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
+                                                               ; ASSERT ptr=35
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -12041,13 +8168,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
+                                                               ; ASSERT ptr=44
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -12055,14 +8182,15 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=57
+                                                               ; ASSERT ptr=39
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
+; ============================================================ ; ; ; ; the carry out is bit 7 of that  and nothing
+                                                               ; else
+>>>>
+                                                               ; ASSERT ptr=43
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -12112,1958 +8240,487 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
+; ============================================================ ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT zero 35:35
+                                                               ; ASSERT zero 37:44
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
+                                                               ; ASSERT ptr=34
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 >>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 4
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                 ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=21
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
+; ============================================================ ; ; ; and the carry out of that ripples up through the
+                                                               ; rest
 
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>]                                                     ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; byte 5
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=22
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<]                                                       ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]
->>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 2 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>]                                                       ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; byte 6
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                   ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=23
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<]                                                         ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>+<<<<<<<<<<<<<]
->>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; byte 7
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=24
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <]                                                           ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>+<<<<<<<<<<<<]
->>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=19
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<]                                                          ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >]                                                           ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 8
-<<<<<<<<<<<<<<<<<<<<<<<<<<                                     ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=25
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>+<<<<<<<<<<<]
->>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 3 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=20
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  ]                                                            ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 9
-<<<<<<<<<<<<<<<<<<<<<<<<<                                      ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=26
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>+<<<<<<<<<<]
->>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 4 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=21
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 10
-<<<<<<<<<<<<<<<<<<<<<<<<                                       ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=27
-  [->>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>+<<<<<<<<<]
->>>>>>>>                                                       ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 5 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=22
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 11
-<<<<<<<<<<<<<<<<<<<<<<<                                        ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=28
-  [->>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>+<<<<<<<<]
->>>>>>>                                                        ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 6 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=23
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 12
-<<<<<<<<<<<<<<<<<<<<<<                                         ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=29
-  [->>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>+<<<<<<<]
->>>>>>                                                         ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 7 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=24
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 13
-<<<<<<<<<<<<<<<<<<<<<                                          ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=30
-  [->>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>+<<<<<<]
->>>>>                                                          ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 8 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=25
+  +
+  [->>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 14
-<<<<<<<<<<<<<<<<<<<<                                           ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=31
-  [->>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>+<<<<<]
->>>>                                                           ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 9 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=26
+  +
+  [->>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 15
-<<<<<<<<<<<<<<<<<<<                                            ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=32
-  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>+<<<<]
->>>                                                            ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 10 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=27
+  +
+  [->>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; byte 16
-<<<<<<<<<<<<<<<<<<                                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=33
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>+<<<]
->>                                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 11 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=28
+  +
+  [->>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-                                                               ; the carry out of the top byte is dropped  and cleared
-                                                               ; so the frame is as empty as it was found
-                                                               ; ASSERT ptr=51
+[                                                              ; ____ byte 12 ____
   [-]
-                                                               ; ASSERT zero 34:62
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=29
+  +
+  [->>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
+[                                                              ; ____ byte 13 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=30
+  +
+  [->>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
+
+[                                                              ; ____ byte 14 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=31
+  +
+  [->>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
+
+[                                                              ; ____ byte 15 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=32
+  +
+  [->>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
+
+[                                                              ; ____ byte 16  which does not look  because its carry
+  [-]                                                          ; ; cannot happen ____
+<<<
+                                                               ; ASSERT ptr=33
+  +
+>>>
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+
+; ============================================================ ; ; ; the value is folded
+<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=17
-                                                               ; ASSERT zero 34:67
+                                                               ; ASSERT zero 34:51
                                                                ; walk back out to the routine base
 
                                                                ; ASSERT ptr=17
@@ -14131,57 +8788,53 @@
 
 ; ============================================================ ; ; ; ; split the top byte at bit 130
                                                                ; ASSERT ptr=33
-                                                               ; ASSERT zero 34:67
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; the top byte steps into the halving frame
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                                                               ; ASSERT ptr=64
+                                                               ; ASSERT zero 34:51
+  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]                           ; the top byte steps into the halving frame
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=48
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the first halving; the bit it drops is bit 128
 >>                                                             ; which is worth one in what is left below the split
-                                                               ; ASSERT ptr=66
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
+                                                               ; ASSERT ptr=50
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
 <                                                              ; the half steps back into the frame to be halved again
-                                                               ; ASSERT ptr=65
+                                                               ; ASSERT ptr=49
   [-<+>]
 <
-                                                               ; ASSERT ptr=64
+                                                               ; ASSERT ptr=48
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; the second halving; the bit it drops is bit 129
 >>                                                             ; which is worth two
-                                                               ; ASSERT ptr=66
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>]                                                ; continued
+                                                               ; ASSERT ptr=50
+  [-<<<<<<<<<<<<<<<<<++>>>>>>>>>>>>>>>>>]
 <                                                              ; and what is left in the quotient is everything at bit
                                                                ; 130 and above
-                                                               ; ASSERT ptr=65
+                                                               ; ASSERT ptr=49
   [-<<+>>]
 
 ; ============================================================ ; ; ; ; two to the hundred and thirtieth is five  so
-                                                               ; add
-                                                               ; five times that part
+                                                               ; five
+                                                               ; times that part
 <<                                                             ; to the part above the split
-                                                               ; ASSERT ptr=63
+                                                               ; ASSERT ptr=47
                                                                ; it is spent ONCE  into four copies of itself and one
                                                                ; copy of itself  which is where the five comes from;
                                                                ; neither cell can wrap  because four times sixty three
                                                                ; is two hundred and fifty two
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<++++>+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
-                                                               ; ASSERT ptr=63
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; to the byte pair the eight bit adder works on
-                                                               ; ASSERT ptr=36
-                                                               ; ASSERT zero 38:46
+  [-<<<<<<<<<<<<<++++>+>>>>>>>>>>>>]
+                                                               ; ASSERT ptr=47
+<<<<<<<<<<<<<                                                  ; to the byte pair the eight bit adder works on
+                                                               ; ASSERT ptr=34
+                                                               ; ASSERT zero 36:44
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=37
-                                                               ; ASSERT zero 39:46
+                                                               ; ASSERT ptr=35
+                                                               ; ASSERT zero 37:44
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=36
+                                                               ; ASSERT ptr=34
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -14189,10 +8842,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=37
+                                                               ; ASSERT ptr=35
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -14201,13 +8854,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=43
+                                                               ; ASSERT ptr=41
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=46
+                                                               ; ASSERT ptr=44
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=44
+                                                               ; ASSERT ptr=42
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -14215,14 +8868,14 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=41
+                                                               ; ASSERT ptr=39
   [-[[-]>>>>+<<<<]]
 ; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
 >>>>                                                           ; ; else
-                                                               ; ASSERT ptr=45
+                                                               ; ASSERT ptr=43
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -14272,361 +8925,58 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=39
+                                                               ; ASSERT ptr=37
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
 ; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=43
+                                                               ; ASSERT ptr=41
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=44
+                                                               ; ASSERT ptr=42
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=36
+                                                               ; ASSERT ptr=34
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 37:37
-                                                               ; ASSERT zero 39:46
+                                                               ; ASSERT zero 35:35
+                                                               ; ASSERT zero 37:44
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=36
-  [-<<+>>]                                                     ; the sum is five times H modulo 256  and it is the
+                                                               ; ASSERT ptr=34
+  [->>>>>>>>>>>+<<<<<<<<<<<]                                   ; the sum is five times H modulo 256  and it is the
                                                                ; addend's low byte
 >>                                                             ; to the carry add8 computed
-                                                               ; ASSERT ptr=38
-  [-<<<+>>>]                                                   ; which is the addend's high byte  worth two hundred
+                                                               ; ASSERT ptr=36
+  [->>>>>>>>>>+<<<<<<<<<<]                                     ; which is the addend's high byte  worth two hundred
                                                                ; and fifty six
-<<<<<<<<<<<<<<<<<<<<<                                          ; to the head of the value
+
+; ============================================================ ; ; ; ; the bottom byte of the value takes the low byte
+                                                               ; of
+<<<<<<<<<<<<<<<<<<<                                            ; ; five times H
                                                                ; ASSERT ptr=17
-                                                               ; ASSERT zero 51:62
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                           ; walk in to this routine entry offset
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 51:62
-
-; ============================================================ ; ; ; ; ; byte 0
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=17
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<]                                             ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>>                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>]                                             ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; ; byte 1
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                              ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=18
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<]                                               ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>]                                               ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; ; byte 2
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                               ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=19
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<]                                                 ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
   [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>                                               ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<<+>>>>>>>>>>]
+<<<<<<<<<<<
+                                                               ; ASSERT ptr=34
+                                                               ; ASSERT zero 36:44
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT ptr=35
+                                                               ; ASSERT zero 37:44
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -14634,10 +8984,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
+                                                               ; ASSERT ptr=35
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -14646,13 +8996,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
+                                                               ; ASSERT ptr=44
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -14660,14 +9010,14 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=57
+                                                               ; ASSERT ptr=39
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
+; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
 >>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
+                                                               ; ASSERT ptr=43
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -14717,65 +9067,57 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
+; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT zero 35:35
+                                                               ; ASSERT zero 37:44
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>]                                                 ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+                                                               ; ASSERT ptr=34
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]                       ; the sum goes home and the carry stays where add8 left
+                                                               ; it
 
-; ============================================================ ; ; ; ; ; byte 3
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=20
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
+; ============================================================ ; ; ; ; the second byte takes the high byte  and that
+                                                               ; carry
+<<<<<<<<<<<<<<<<                                               ; ; with it
+                                                               ; ASSERT ptr=18
   [->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>                                                ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=46
+  [-<<<<<<<<<<<+>>>>>>>>>>>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+  [-<+>]
+<<
+                                                               ; ASSERT ptr=34
+                                                               ; ASSERT zero 36:44
   >                                                            ; walk in to this routine entry offset
                                                                ; the carry cell is NOT required to be clear: this
                                                                ; routine ADDS into it  and a wide adder may have put
                                                                ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT ptr=35
+                                                               ; ASSERT zero 37:44
 <                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
   [->>>+<<<]                                                   ; the accumulator steps into the halving frame
 >>>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
                                                                ; low bit
 >                                                              ; the half is kept
@@ -14783,10 +9125,10 @@
 >                                                              ; and the low bit joins the low bit sum
   [->>>+<<<]
 <<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
+                                                               ; ASSERT ptr=35
   [->>+<<]
 >>
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
                                                                ; bit
 >                                                              ; the halves are added  and cannot overflow because
@@ -14795,13 +9137,13 @@
   [->>>+<<<]
 >>                                                             ; the sum of halves is copied  because the carry test
                                                                ; consumes what it reads
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [->>+>+<<<]
 >>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
+                                                               ; ASSERT ptr=44
   [-<<<+>>>]
 <<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<+>>>>>+<<]
 >>
   [-<<+>>]
@@ -14809,14 +9151,14 @@
                                                                ; the AND  and it is what the copy is spent on: two
                                                                ; means both  one or nought means not both
 <<<<<
-                                                               ; ASSERT ptr=57
+                                                               ; ASSERT ptr=39
   [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
+; ============================================================ ; ; ; ; ; the carry out is bit 7 of that  and nothing
 >>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
+                                                               ; ASSERT ptr=43
   [-<<<<<<+>>>>>>]
 <<<<<<
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
 >>                                                             ; ; wanted
   [-]
@@ -14866,1972 +9208,488 @@
 >
   [-<+>]
 <
-                                                               ; ASSERT ptr=55
+                                                               ; ASSERT ptr=37
   [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
                                                                ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
+; ============================================================ ; ; ; ; ; the sum is twice the halves plus the two low
                                                                ; bits
 >>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
                                                                ; the sum wants;
-                                                               ; ASSERT ptr=59
+                                                               ; ASSERT ptr=41
   [-<<<<<<<++>>>>>>>]
 >
-                                                               ; ASSERT ptr=60
+                                                               ; ASSERT ptr=42
   [-<<<<<<<<+>>>>>>>>]
 <<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
+                                                               ; ASSERT ptr=34
                                                                ; the addend is spent and every scratch cell is back at
                                                                ; nought; @0x00 holds the sum and @0x02 the carry  so
                                                                ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
+                                                               ; ASSERT zero 35:35
+                                                               ; ASSERT zero 37:44
 
                                                                ; walk back out to the routine base
 
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
+                                                               ; ASSERT ptr=34
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
 >>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 4
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                 ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=21
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<]                                                     ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>                                                 ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
+; ============================================================ ; ; ; ; and the carry out of that ripples up through
+                                                               ; the
+                                                               ; rest
 
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>]                                                     ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; ; byte 5
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=22
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<]                                                       ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>>+<<<<<<<<<<<<<<]
->>>>>>>>>>>>>                                                  ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 2 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>]                                                       ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; ; byte 6
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                   ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=23
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<]                                                         ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>>+<<<<<<<<<<<<<]
->>>>>>>>>>>>                                                   ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>]                                                         ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
-
-; ============================================================ ; ; ; ; ; byte 7
-<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=24
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <]                                                           ; continued
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>>+<<<<<<<<<<<<]
->>>>>>>>>>>                                                    ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=19
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<]                                                          ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >]                                                           ; continued
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 8
-<<<<<<<<<<<<<<<<<<<<<<<<<<                                     ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=25
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>>+<<<<<<<<<<<]
->>>>>>>>>>                                                     ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 3 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=20
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  ]                                                            ; continued
+>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 9
-<<<<<<<<<<<<<<<<<<<<<<<<<                                      ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=26
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>>+<<<<<<<<<<]
->>>>>>>>>                                                      ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 4 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=21
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 10
-<<<<<<<<<<<<<<<<<<<<<<<<                                       ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=27
-  [->>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>>+<<<<<<<<<]
->>>>>>>>                                                       ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 5 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=22
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 11
-<<<<<<<<<<<<<<<<<<<<<<<                                        ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=28
-  [->>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>>+<<<<<<<<]
->>>>>>>                                                        ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 6 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=23
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 12
-<<<<<<<<<<<<<<<<<<<<<<                                         ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=29
-  [->>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>>+<<<<<<<]
->>>>>>                                                         ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 7 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=24
+  +
+  [->>>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 13
-<<<<<<<<<<<<<<<<<<<<<                                          ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=30
-  [->>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>>+<<<<<<]
->>>>>                                                          ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 8 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=25
+  +
+  [->>>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 14
-<<<<<<<<<<<<<<<<<<<<                                           ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=31
-  [->>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>>+<<<<<]
->>>>                                                           ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 9 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=26
+  +
+  [->>>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 15
-<<<<<<<<<<<<<<<<<<<                                            ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=32
-  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>>+<<<<]
->>>                                                            ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 10 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=27
+  +
+  [->>>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-; ============================================================ ; ; ; ; ; byte 16
-<<<<<<<<<<<<<<<<<<                                             ; the accumulator byte steps into the adder
-                                                               ; ASSERT ptr=33
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>                                              ; the addend byte follows it
-  [->>>+<<<]
->>                                                             ; to the kernel's base  which is where a paste site
-                                                               ; always stands
-                                                               ; ASSERT ptr=52
-  >                                                            ; walk in to this routine entry offset
-                                                               ; the carry cell is NOT required to be clear: this
-                                                               ; routine ADDS into it  and a wide adder may have put
-                                                               ; something there; only the scratch must be clean;
-                                                               ; ASSERT ptr=53
-                                                               ; ASSERT zero 55:62
-<                                                              ; to the accumulator
-                                                               ; ASSERT ptr=52
-  [->>>+<<<]                                                   ; the accumulator steps into the halving frame
->>>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the accumulator's
-                                                               ; low bit
->                                                              ; the half is kept
-  [->>>+<<<]
->                                                              ; and the low bit joins the low bit sum
-  [->>>+<<<]
-<<<<                                                           ; the addend steps into the halving frame
-                                                               ; ASSERT ptr=53
-  [->>+<<]
->>
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving; the bit that falls off is the addend's low
-                                                               ; bit
->                                                              ; the halves are added  and cannot overflow because
-  [->>>+<<<]                                                   ; ; each is at most 127
->                                                              ; and the low bits are added  giving nought one or two
-  [->>>+<<<]
->>                                                             ; the sum of halves is copied  because the carry test
-                                                               ; consumes what it reads
-                                                               ; ASSERT ptr=59
-  [->>+>+<<<]
->>>                                                            ; the spare hands it straight back
-                                                               ; ASSERT ptr=62
-  [-<<<+>>>]
-<<                                                             ; the low bit sum is copied the same way
-                                                               ; ASSERT ptr=60
-  [-<<<+>>>>>+<<]
->>
-  [-<<+>>]
-                                                               ; both low bits set is a carry into the halves; that is
-                                                               ; the AND  and it is what the copy is spent on: two
-                                                               ; means both  one or nought means not both
-<<<<<
-                                                               ; ASSERT ptr=57
-  [-[[-]>>>>+<<<<]]
-; ============================================================ ; ; ; ; ; ; the carry out is bit 7 of that  and nothing
->>>>                                                           ; ; else
-                                                               ; ASSERT ptr=61
-  [-<<<<<<+>>>>>>]
-<<<<<<
-                                                               ; ASSERT ptr=55
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 1 of seven; the bit that falls off is not
->>                                                             ; ; wanted
+[                                                              ; ____ byte 11 ____
   [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 2 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 3 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 4 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 5 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 6 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving 7 of seven; the bit that falls off is not
->>                                                             ; ; wanted
-  [-]
-<<
->
-  [-<+>]
-<
-                                                               ; ASSERT ptr=55
-  [-<+>]                                                       ; what is left is bit 7  which is the carry  and it is
-                                                               ; ADDED into the carry cell
-; ============================================================ ; ; ; ; ; ; the sum is twice the halves plus the two
-                                                               ; low
-                                                               ; bits
->>>>                                                           ; The cell wraps at 256 and that is exactly the modulo
-                                                               ; the sum wants;
-                                                               ; ASSERT ptr=59
-  [-<<<<<<<++>>>>>>>]
->
-                                                               ; ASSERT ptr=60
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<                                                       ; home
-                                                               ; ASSERT ptr=52
-                                                               ; the addend is spent and every scratch cell is back at
-                                                               ; nought; @0x00 holds the sum and @0x02 the carry  so
-                                                               ; neither is claimed to be clear;
-                                                               ; ASSERT zero 53:53
-                                                               ; ASSERT zero 55:62
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=52
-<                                                              ; the carry in is nought or one  so it takes the old
-  [->>+<<]                                                     ; ; kernel
->>
-                                                               ; ASSERT ptr=53
-  [-<+[>>>+>+<<<<-]>>>[<<<+>>>-]<+>>[<<->>[-]]<<<]
-<                                                              ; the low byte of the sum goes back where it came from
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=28
+  +
+  [->>>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
   [-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>]
->>                                                             ; and the carry out becomes the carry in for the next
-  [-<<<+>>>]                                                   ; ; byte
-<<<
-                                                               ; ASSERT ptr=51
-                                                               ; ASSERT zero 52:62
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-                                                               ; the carry out of the top byte is dropped  and cleared
-                                                               ; so the frame is as empty as it was found
-                                                               ; ASSERT ptr=51
+[                                                              ; ____ byte 12 ____
   [-]
-                                                               ; ASSERT zero 34:62
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=29
+  +
+  [->>>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
 
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; walk back out to the routine base
+[                                                              ; ____ byte 13 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=30
+  +
+  [->>>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
+
+[                                                              ; ____ byte 14 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=31
+  +
+  [->>>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
+
+[                                                              ; ____ byte 15 ____
+  [-]
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-]+
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=32
+  +
+  [->>>>>>>>>>>>>>+>+<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>
+                                                               ; ASSERT ptr=47
+  [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
+<
+                                                               ; ASSERT ptr=46
+  [[-]<[-]>]
+<<<<<<<<<<
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+                                                               ; whatever is left of the else arm is the carry into
+                                                               ; the byte above; it is set INSIDE the loop above and
+                                                               ; moved out AFTER it  because a loop that sets its own
+                                                               ; condition runs again  and the first draft of this
+                                                               ; file did exactly that and carried into the same byte
+                                                               ; twice
+>>>>>>>>>
+                                                               ; ASSERT ptr=45
+  [-<<<<<<<<<+>>>>>>>>>]
+<<<<<<<<<
+                                                               ; ASSERT ptr=36
+
+[                                                              ; ____ byte 16  which does not look  because its carry
+  [-]                                                          ; ; cannot happen ____
+<<<
+                                                               ; ASSERT ptr=33
+  +
+>>>
+                                                               ; ASSERT ptr=36
+]
+                                                               ; ASSERT ptr=36
+
+; ============================================================ ; ; ; ; the value is folded
+<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=17
-                                                               ; ASSERT zero 34:67
+                                                               ; ASSERT zero 34:51
                                                                ; walk back out to the routine base
 
                                                                ; ASSERT ptr=17
