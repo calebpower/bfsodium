@@ -677,13 +677,44 @@ a future primitive genuinely needs a run-time index — but so far nothing has."
 AES's S-box is a 256-entry runtime lookup. It is the primitive those routines
 were anticipating.
 
-**MEASURE THE LOOKUP BEFORE COMMITTING TO AES.** On paper an AES-128 block
-should cost *less* than SHA-256's two seconds — ten rounds of table lookups
-against sixty-four rounds of 32-bit arithmetic. But an indexed read in
-brainfuck is **O(index)**, which is the exact cost *"conveyors, not indices"*
-(§5) exists to avoid: one S-box lookup may be up to 256 steps of walking, and
-there are 160 of them per block. That is a day's work to measure and it
-de-risks the whole of this tier. Do not write AES first and find out.
+**THE LOOKUP HAS BEEN MEASURED AND AES IS AFFORDABLE.** This paragraph used to
+end "do not write AES first and find out", and it was right to ask: an indexed
+read in brainfuck is **O(index)**, the exact cost *"conveyors, not indices"*
+(§5) exists to avoid, so on paper one S-box read could be 256 steps of walking
+and there are 160 of them in a block.
+
+**Measured:** a 256-entry fetch costs **248,084 instructions** averaged over a
+uniform index, with the real S-box as its data — 2,368 at the cheapest index
+and 787,159 at the dearest. AES-128 makes **200** such reads per block, 160 for
+SubBytes and 40 for the key expansion, which is **50 million**. The rest of a
+block is arithmetic this library already prices: AddRoundKey's 176 byte
+exclusive ors and MixColumns' 144 `xtime`s and 432 more, at about 34,000 an
+exclusive or, bring it to **roughly 75 million**. That last figure is a
+DERIVATION from measured parts and is flagged as one; the 248,084 and the
+34,000 are measurements.
+
+SHA-256 of one block is 1,145,948,360. **So the paper intuition was right: an
+AES-128 block is about an order of magnitude CHEAPER than a SHA-256 block**,
+and the indexed read this project has avoided since its first commit is
+affordable when only two hundred of them are wanted.
+
+**Two things the measurement found that an estimate would not have.**
+
+`index/fetch8` **cannot address 256 entries.** Its walk counter is `idx + 1`
+in one cell and 255 + 1 is 0, so the last element of a full byte-indexed table
+is unreachable — and an S-box is exactly 256 entries indexed by exactly a
+byte. A `fetch256` must index from the first group with the counter as `idx`
+itself. The instrument that does, in `scratchpad/fetch256.bf`, validates on all
+256 indices and survives being entered twice against the same table, which is
+what lets one table serve all two hundred reads: the datum is copied rather
+than moved and the trail is cleared on the way home.
+
+**And the cost is driven as much by the DATUM as by the index**, because the
+walk home carries the value back one group at a time. Index 254 costs 726,763
+and index 255 only 348,112 — not because 255 is nearer, but because
+`S[254] = 0xbb` and `S[255] = 0x16`. The mean therefore sits well above the
+median, and a table read at small indices with small values is very much
+cheaper than this average suggests. That matters for anything that is not AES.
 
 **Keccak-f[1600] (FIPS 202)** unlocks SHA3-224/256/384/512, SHAKE128/256, KMAC,
 cSHAKE, TupleHash and ParallelHash — and it is a hard prerequisite for every

@@ -221,15 +221,18 @@ byte-turn identity was worth ten times more. Both were one measurement from
 the right answer. An order without its reasoning is how that happens; here is
 the reasoning.
 
-1. **THE AES MEASUREMENT, AND NOT AES.** `index/fetch8`'s real cost averaged
-   over random indices, times the 160 S-box reads in a block, plus `xtime`
-   and the key schedule, against SHA-256's 1.15 billion. Hours, not days.
+1. **DONE: the AES measurement says yes.** A 256-entry fetch is **248,084
+   instructions** averaged over a uniform index with the real S-box as its
+   data; AES-128 wants 200 of them per block, which is 50 million, and the
+   rest of a block brings it to roughly 75 million against SHA-256's 1.15
+   billion. **An AES-128 block is about an order of magnitude cheaper than a
+   SHA-256 block.** §9.1 carries the full result and the two side findings —
+   that `index/fetch8` cannot reach a 256th element, and that the cost is
+   driven as much by the datum as by the index.
 
-   It is first because it is **the only item whose outcome is unknown**;
-   everything else below is known work at a known price. If the number is bad
-   then AES, CMAC, GCM, GMAC and CTR_DRBG all leave the plan at once, which is
-   a fact worth having before two more weeks of other work and not after.
-   §9.1 has demanded this measurement in capitals since it was written.
+   It went first because it was **the only item whose outcome was unknown**,
+   and a bad number would have taken AES, CMAC, GCM, GMAC and CTR_DRBG off the
+   plan together. It did not, so step 6 stands and the tier behind it is open.
 
 2. **SHA-384 and SHA-512/t.** The cheapest real coverage on the list: the same
    core, a different IV, a truncation. `scratchpad/sha3gen.py` is the pattern —
@@ -1063,6 +1066,39 @@ to rediscover it.
 `dbl136` still exists for the same reason as before: doubling a 17-byte value
 is a shift and costs about half a million, where an `add136` asked to do a
 shift's job costs 1.35 million. If something is unexpectedly slow, look for that.
+
+**AND ONE MEASUREMENT THAT WAS TAKEN BEFORE ANYTHING WAS BUILT, which is the
+shape the other four should have had.** §9.1 had demanded, in capitals, that
+the AES S-box lookup be measured before AES was committed to. It now has been,
+with `scratchpad/fetch256.bf` — `index/fetch8`'s walk, which is a LOOP and so
+does not grow with the table, over 256 groups instead of 8.
+
+| | instructions |
+|---|---|
+| a 256-entry fetch, cheapest index | 2,368 |
+| a 256-entry fetch, mean over a uniform index | **248,084** |
+| a 256-entry fetch, dearest index | 787,159 |
+| 200 of them, which is an AES-128 block's SubBytes and key expansion | 50 million |
+| a whole AES-128 block, derived from the above plus measured byte operations | ≈75 million |
+| SHA-256 of one block, for scale | 1,145,948,360 |
+
+**The feared cost is real and small enough.** An indexed read is O(index) and
+this project has avoided one since its first commit; two hundred of them come
+to a fifteenth of a SHA-256 block.
+
+**The two findings worth more than the number.** `index/fetch8` cannot address
+a 256-entry table at all — its counter is `idx + 1` in one cell and 255 + 1
+wraps to nought, so the last element of a byte-indexed table is unreachable,
+which is exactly the table AES needs. And the cost depends on the DATUM as
+much as the index, because the walk home carries the value back a group at a
+time: index 254 costs 726,763 and index 255 costs 348,112, because
+`S[254] = 0xbb` and `S[255] = 0x16`.
+
+**The instrument was validated before it was believed** — all 256 indices
+against a known table, and then two fetches from one table to prove the trail
+is cleared and the datum restored, since one table has to serve all two
+hundred reads. A measurement from an unvalidated instrument is a number with
+no provenance.
 
 **AND THE SAME LESSON A THIRD TIME, ON KECCAK — where the glue was not 37 per
 cent of the cost but eighty.** A line profile of `theta` on a random state put
