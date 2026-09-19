@@ -211,6 +211,79 @@ must have no marker in the suite at all.
 
 ## What is next
 
+### The order, and why this one
+
+Agreed with the owner rather than inferred, and written down because **this
+list has twice named a change that was wrong** — item 2 asked to specialise a
+caller when the cost was a callee entered with an empty operand, and item 3
+asked for `rotr32` with complementary counts when rebuilding ROTL32 on the
+byte-turn identity was worth ten times more. Both were one measurement from
+the right answer. An order without its reasoning is how that happens; here is
+the reasoning.
+
+1. **THE AES MEASUREMENT, AND NOT AES.** `index/fetch8`'s real cost averaged
+   over random indices, times the 160 S-box reads in a block, plus `xtime`
+   and the key schedule, against SHA-256's 1.15 billion. Hours, not days.
+
+   It is first because it is **the only item whose outcome is unknown**;
+   everything else below is known work at a known price. If the number is bad
+   then AES, CMAC, GCM, GMAC and CTR_DRBG all leave the plan at once, which is
+   a fact worth having before two more weeks of other work and not after.
+   §9.1 has demanded this measurement in capitals since it was written.
+
+2. **SHA-384 and SHA-512/t.** The cheapest real coverage on the list: the same
+   core, a different IV, a truncation. `scratchpad/sha3gen.py` is the pattern —
+   prove the generator against a file somebody already wrote by hand, then ask
+   it for the new constants.
+
+3. **HKDF's info cap**, described under item 0 below. **This is the one hard
+   ordering constraint on the page.** Raising it widens `sha512/hashcore`'s
+   prefix buffer, which moves every cell above it in `hashcore`, `hmac` and
+   `hkdf`; anything built on those reserves their footprint, so building first
+   and widening after means re-laying the new work as well. It must come
+   before step 4.
+
+   Its position relative to step 2 is a coin flip. Doing SHA-384 first costs
+   re-laying two small heads later, which is cheap, and that is better than
+   opening the batch with a three-file re-lay that **has no consumer today** —
+   ML-KEM does not use HKDF-SHA-512 and BoneMesh passes `info = nil`.
+
+4. **HMAC_DRBG, the SP 800-108 KDFs, PBKDF2.** Loops over an HMAC whose map is
+   final by then.
+
+5. **cSHAKE, KMAC, TupleHash and ParallelHash** — SP 800-185. Last of the
+   known work, because it is the largest and the only one with a design
+   question in it, so it gets the slot where a surprise costs least.
+
+   **It is not "the same sponge with a different padding byte", which is what
+   this document said before anyone looked.** cSHAKE is
+   `KECCAK[rate](bytepad(encode_string(N) ‖ encode_string(S), rate) ‖ X ‖ 00, L)`:
+   the message is a PREFIX ON THE TAPE followed by X on the wire, and
+   `sponge136` absorbs only from the wire. KMAC adds a tape SUFFIX,
+   `right_encode(L)`, after the wire message.
+
+   The saving grace is that **`bytepad` pads to a multiple of the rate by
+   definition**, so a prefix is always a whole number of blocks and the sponge
+   never has to interleave tape and wire inside one block. It absorbs k whole
+   blocks from the tape and then enters the existing loop unchanged — a new
+   entry point rather than a rewrite. Four units: the encodings
+   (`left_encode`, `right_encode`, `encode_string`, `bytepad`), tape-prefix
+   absorption, then cSHAKE, then KMAC and the two hashes.
+
+6. **AES itself, if and only if step 1 says so.**
+
+**DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
+for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's
+`tools/bfj.c`, and two documentation contradictions — `CONVENTIONS.md` §9's
+"`v1.0.0` waits on it" against this file, both now superseded by the owner's
+own answer recorded under item 1. They are cleanup, they are agreed to come
+after step 6, and the two coverage gaps among them are the honest priorities
+of that batch rather than the doc fixes.
+
+**ONE QUESTION STILL OPEN**, and it would move step 5 up if the answer is yes:
+does BoneMesh use cSHAKE or KMAC anywhere? Nothing in this repository knows,
+correctly, and the ordering above assumes not.
+
 0. **The 64-bit set and SHA-512 are done.** `idiom/add64`, `rotr64`, `shr64`,
    `xor64` and `and64` are built and gated, and on them SHA-512, HMAC-SHA-512
    and HKDF-SHA-512. That is the whole of CONVENTIONS §9.1 tier A's SHA-512
@@ -438,8 +511,19 @@ must have no marker in the suite at all.
    applied one repository short: brainstem must not know bfsodium, and equally
    bfsodium must not know BMX.
 
-   **v1.0.0 no longer waits on anything technical.** It waited on the
-   composition story being run end to end, and it has been.
+   **v1.0.0 no longer waits on THIS.** It waited on the composition story
+   being run end to end, and it has been. When that join was finally run
+   against a CURRENT bfsodium rather than a pinned one it turned out to be
+   broken — BoneMesh resolved `hkdf.bf` by basename, and this repository had
+   grown a `sha512` family with five colliding basenames, so the consumer had
+   been handed HKDF-SHA-512 while its own transcript said SHA256. That was
+   BoneMesh's to fix and BoneMesh has fixed it, by naming routines the way
+   this repository names them. Worth knowing here for one reason only: **a
+   directory name in this tree is part of the interface**, and adding a family
+   whose basenames repeat an existing one is a change a consumer can feel.
+
+   What the tag waits on now is the owner's call and not a technical one:
+   **P3 and the post-quantum tier**. It is not held by anything here.
 
    What the machinery below bought is still real, and still lives here,
    because a runner that drives any routine by name is a general capability
