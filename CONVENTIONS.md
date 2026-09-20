@@ -657,7 +657,7 @@ this is where to start.
 | SHA-224 | nothing new | SHA-256 with a different IV and a truncation |
 | SHA-384, SHA-512, SHA-512/224, SHA-512/256 | `add64`, `rotr64`, `shr64`, `xor64`, `and64` — all five built | **SHA-512 itself is now built**; SHA-384 and both SHA-512/t are the same core with a different IV and a truncation |
 | HMAC over each of the above | nothing new | FIPS 198-1; **HMAC-SHA-512 is built** |
-| HKDF over each | nothing new | RFC 5869; **HKDF-SHA-512 is built**, with info capped at 63 bytes — see the note in its header |
+| HKDF over each | nothing new | RFC 5869; **HKDF-SHA-512 is built**, with info capped at 190 bytes — see the note in its header |
 | HMAC_DRBG | nothing new | SP 800-90A; nearly free given HMAC-SHA-256 |
 | SP 800-108 KDFs (counter, feedback) | nothing new | loops over HMAC |
 | PBKDF2 | nothing new | SP 800-132; a counted loop over HMAC |

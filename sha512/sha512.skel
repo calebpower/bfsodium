@@ -10,12 +10,12 @@
 ; primitive never relies on end of input;
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x743  sha512/hashcore's frame  pasted at this file's own zero; its
-;                 footprint 0:1859 is the whole of this file's tape
+;   @0x000:0x803  sha512/hashcore's frame  pasted at this file's own zero; its
+;                 footprint 0:2051 is the whole of this file's tape
 ;   @0x002:0x003  slen{2}  the count hashcore takes from the wire; this file
 ;                 fills it and leaves plen at nought  so the entire message
 ;                 comes off the wire and none of it from the prefix buffer
-;   @0x104:0x143  H{8}     the digest  once hashcore has run
+;   @0x1c4:0x203  H{8}     the digest  once hashcore has run
 ;
 ; hashcore takes its message from a prefix in memory and then from the wire;
 ; HMAC and HKDF use the prefix  and this uses the wire; that is the whole of the
@@ -23,13 +23,13 @@
 ;
 ; The SHA_256 file of the same name is this file with three numbers changed  and
 ; they are the only three: the digest is sixty four bytes rather than thirty two
-; the tape is 0:1859 rather than 0:1111  and a hash word is eight bytes;
+; the tape is 0:2051 rather than 0:1111  and a hash word is eight bytes;
 
 ; read the length into the count hashcore takes from the wire
 R2
   ,>,
 ; ASSERT ptr=3
-; ASSERT zero 4:1859
+; ASSERT zero 4:2051
 ; to hashcore's base  which is where a paste site always stands
 L3
 ; ASSERT ptr=0
@@ -39,7 +39,7 @@ L3
 ; emit
 ; the digest  big endian  as the standard prints it
 ; hash word 0  top byte first
-R267
+R459
   .<.<.<.<.<.<.<.
 ; hash word 1  top byte first
 R15

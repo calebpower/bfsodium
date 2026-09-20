@@ -1610,6 +1610,41 @@ hmac512Run_128_0_26 inb = sha512Out (hOut @ (2 : [8]))
 sha512Pad3 : {n} (fin n, n >= 240, n <= 367) => [n][8] -> [384][8]
 sha512Pad3 m = m # [0x80] # (zero : [367 - n][8]) # split (`(8 * n) : [128])
 
+// A fourth block of padding, which the longest info this routine allows needs
+// on the second turn of expand: sixty four bytes of T, a hundred and ninety of
+// info and the counter byte, under a block of key pad.
+sha512Pad4 : {n} (fin n, n >= 368, n <= 495) => [n][8] -> [512][8]
+sha512Pad4 m = m # [0x80] # (zero : [495 - n][8]) # split (`(8 * n) : [128])
+
+// A prefix of 129 bytes, which is one past what the prefix slide in
+// sha512/hashcore used to reach: the buffer was widened to 448 cells and the
+// slide that consumes it was still stepping 255 times, so every byte past the
+// 256th read as nought. This vector is one byte over that edge and the
+// cheapest place in the tree to see it.
+hmac512Run_20_129_0 : [518][8] -> [64][8]
+hmac512Run_20_129_0 inb = sha512Out (hOut @ (2 : [8]))
+  where
+    kpad = take`{20} (drop`{6} inb) # (zero : [108][8])
+    msg  = take`{129} (drop`{262} inb)
+    inn  = sha512Out (hIn @ (3 : [8]))
+    hIn  = [sha512H0] # [ sha512Compress h b | h <- hIn
+                        | b <- split`{3} (sha512Pad3`{257} (hmac512Ipad kpad # msg)) ]
+    hOut = [sha512H0] # [ sha512Compress h b | h <- hOut
+                        | b <- split`{2} (sha512Pad2`{192} (hmac512Opad kpad # inn)) ]
+
+// And the whole of mbuf, which is the most a caller can hand over in memory
+// and puts the inner hash at four blocks.
+hmac512Run_20_256_0 : [518][8] -> [64][8]
+hmac512Run_20_256_0 inb = sha512Out (hOut @ (2 : [8]))
+  where
+    kpad = take`{20} (drop`{6} inb) # (zero : [108][8])
+    msg  = take`{256} (drop`{262} inb)
+    inn  = sha512Out (hIn @ (4 : [8]))
+    hIn  = [sha512H0] # [ sha512Compress h b | h <- hIn
+                        | b <- split`{4} (sha512Pad4`{384} (hmac512Ipad kpad # msg)) ]
+    hOut = [sha512H0] # [ sha512Compress h b | h <- hOut
+                        | b <- split`{2} (sha512Pad2`{192} (hmac512Opad kpad # inn)) ]
+
 // HMAC-SHA-512 where both hashes come to two blocks. Polymorphic in the key
 // and message lengths, so one definition serves extract and every turn of
 // expand, exactly as hmac2 does for SHA-256.
@@ -1634,6 +1669,19 @@ hmac512three key msg = sha512Out (hOut @ (2 : [8]))
     inn  = sha512Out (hIn @ (3 : [8]))
     hIn  = [sha512H0] # [ sha512Compress h b | h <- hIn
                         | b <- split`{3} (sha512Pad3`{128 + mn} (hmac512Ipad kpad # msg)) ]
+    hOut = [sha512H0] # [ sha512Compress h b | h <- hOut
+                        | b <- split`{2} (sha512Pad2`{192} (hmac512Opad kpad # inn)) ]
+
+// And at four, which is where a hundred and ninety bytes of info puts the
+// second turn.
+hmac512four : {kn, mn} (fin kn, fin mn, kn <= 128, mn >= 240, mn <= 367) =>
+              [kn][8] -> [mn][8] -> [64][8]
+hmac512four key msg = sha512Out (hOut @ (2 : [8]))
+  where
+    kpad = key # (zero : [128 - kn][8])
+    inn  = sha512Out (hIn @ (4 : [8]))
+    hIn  = [sha512H0] # [ sha512Compress h b | h <- hIn
+                        | b <- split`{4} (sha512Pad4`{128 + mn} (hmac512Ipad kpad # msg)) ]
     hOut = [sha512H0] # [ sha512Compress h b | h <- hOut
                         | b <- split`{2} (sha512Pad2`{192} (hmac512Opad kpad # inn)) ]
 
@@ -1686,3 +1734,41 @@ hkdf512Run_140_22_63_128 inb = t1 # t2
     prk  = hmac512two skey ikm
     t1   = hmac512two prk (info # [1])
     t2   = hmac512three prk (t1 # info # [2])
+
+// Sixty four bytes of info, which is one past the limit this file had before
+// three buffers were widened; the first vector that could not have run at all
+// on the old shape.
+hkdf512Run_13_22_64_42 : [776][8] -> [42][8]
+hkdf512Run_13_22_64_42 inb = take`{42} (t1 # t2)
+  where
+    salt = take`{13} (drop`{8} inb)
+    ikm  = take`{22} (drop`{264} inb)
+    info = take`{64} (drop`{520} inb)
+    prk  = hmac512two salt ikm
+    t1   = hmac512two prk (info # [1])
+    t2   = hmac512three prk (t1 # info # [2])
+
+// A hundred and twenty eight bytes of info, which puts both turns at three
+// blocks and is the middle of the new range rather than either end of it.
+hkdf512Run_13_22_128_42 : [776][8] -> [42][8]
+hkdf512Run_13_22_128_42 inb = take`{42} (t1 # t2)
+  where
+    salt = take`{13} (drop`{8} inb)
+    ikm  = take`{22} (drop`{264} inb)
+    info = take`{128} (drop`{520} inb)
+    prk  = hmac512two salt ikm
+    t1   = hmac512three prk (info # [1])
+    t2   = hmac512three prk (t1 # info # [2])
+
+// A hundred and ninety, the most this routine allows: T and info and the
+// counter byte together are two hundred and fifty five, one short of the
+// message buffer, and the second turn's inner hash runs to four blocks.
+hkdf512Run_13_22_190_128 : [776][8] -> [128][8]
+hkdf512Run_13_22_190_128 inb = t1 # t2
+  where
+    salt = take`{13} (drop`{8} inb)
+    ikm  = take`{22} (drop`{264} inb)
+    info = take`{190} (drop`{520} inb)
+    prk  = hmac512two salt ikm
+    t1   = hmac512three prk (info # [1])
+    t2   = hmac512four prk (t1 # info # [2])

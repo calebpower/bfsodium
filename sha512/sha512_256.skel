@@ -9,18 +9,18 @@
 ;     out: digest{32}  big endian  as the standard prints it
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x743  sha512/hashcore's frame  pasted at this file's own zero; its
-;                 footprint 0:1859 is the whole of this file's tape
+;   @0x000:0x803  sha512/hashcore's frame  pasted at this file's own zero; its
+;                 footprint 0:2051 is the whole of this file's tape
 ;   @0x002:0x003  slen{2}  the count hashcore takes from the wire; this file
 ;                 fills it and leaves plen at nought  so the entire message
 ;                 comes off the wire and none of it from the prefix buffer
-;   @0x104:0x143  H{8}     THIS FILE writes the initial words here  and the
+;   @0x1c4:0x203  H{8}     THIS FILE writes the initial words here  and the
 ;                 digest is what hashcore leaves in their place
-;   @0x21a        the flag that tells hashcore the words are already written
+;   @0x2da        the flag that tells hashcore the words are already written
 ;
 ; THE INITIAL WORDS ARE THIS FILE'S AND NOT THE CORE'S  which is the whole
 ; difference between the four members of this family; hashcore writes SHA_512's
-; eight when the flag at @0x21a is nought  and leaves H alone when it is one;
+; eight when the flag at @0x2da is nought  and leaves H alone when it is one;
 ; So a variant is its own initial words  its own truncation  and nothing else;
 ;
 ; The words are written LOW BYTE FIRST  because H is little endian on the tape
@@ -31,10 +31,10 @@
 R2
   ,>,
 ; ASSERT ptr=3
-; ASSERT zero 4:1859
+; ASSERT zero 4:2051
 ; to the head of the hash  which this file fills itself
-R257
-; ASSERT ptr=260
+R449
+; ASSERT ptr=452
 ; H 0 is 0x22312194fc2bf72c
   ++++++++++++++++++++++++++++++++++++++++++++>--------->+++++++++++++++++++++++++++++++++++++++++++>---->------------------------------------------------------------------------------------------------------------>+++++++++++++++++++++++++++++++++>+++++++++++++++++++++++++++++++++++++++++++++++++>++++++++++++++++++++++++++++++++++>
 ; H 1 is 0x9f555fa3c84c64c2
@@ -51,13 +51,13 @@ R257
   -------------------------------------------------------------------------------------->------------------------------------------------------------------------>--------------------------------------------------------------------------------------------------------------------------->++++++++++++++++++++++++++++++++++++++++++++>---->------------------------------------------------------------------------------------------------------->+>+++++++++++++++++++++++++++++++++++++++++++>
 ; H 7 is 0x0eb72ddc81c52ca2
   ---------------------------------------------------------------------------------------------->++++++++++++++++++++++++++++++++++++++++++++>----------------------------------------------------------->------------------------------------------------------------------------------------------------------------------------------->------------------------------------>+++++++++++++++++++++++++++++++++++++++++++++>------------------------------------------------------------------------->++++++++++++++
-; ASSERT ptr=323
+; ASSERT ptr=515
 ; and the flag that says so
 R215
-; ASSERT ptr=538
+; ASSERT ptr=730
   +
 ; to hashcore's base  which is where a paste site always stands
-L538
+L730
 ; ASSERT ptr=0
 @@HASHCORE512@@ 0
 ; ASSERT ptr=0
@@ -65,7 +65,7 @@ L538
 ; emit
 ; the digest  big endian  as the standard prints it  cut to thirty two bytes
 ; hash word 0  top byte first
-R267
+R459
   .<.<.<.<.<.<.<.
 ; hash word 1  top byte first
 R15

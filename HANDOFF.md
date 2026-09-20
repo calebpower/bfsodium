@@ -130,13 +130,13 @@ routine, the suite fails until it has a row here.
 | `sha512/round` | 16760 | 1419 | FIPS 180-4 first abc round + six more + Cryptol |
 | `sha256/hashcore` | 26476 | 1635 | one message from memory, the wire, and both |
 | `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
-| `sha512/hashcore` | 57965 | 1857 | one message from memory, the wire, and both |
-| `sha512/sha512` | 58019 | 64 | FIPS 180-4 + both padding boundaries |
-| `sha512/hmac` | 234212 | 1700 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
-| `sha512/hkdf` | 538464 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
-| `sha512/sha384` | 58108 | 84 | rate aside  this is SHA_512 with eight other words; nothing  abc and both block boundaries + Cryptol |
-| `sha512/sha512_224` | 58116 | 78 | the same four  and the only one whose digest cuts a word in half + Cryptol |
-| `sha512/sha512_256` | 58112 | 78 | the same four; its H4 was one bit wrong until the words were DERIVED + Cryptol |
+| `sha512/hashcore` | 58423 | 1867 | one message from memory, the wire, and both |
+| `sha512/sha512` | 58473 | 64 | FIPS 180-4 + both padding boundaries |
+| `sha512/hmac` | 240868 | 1700 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
+| `sha512/hkdf` | 615493 | 583 | RFC 5869's three shapes at SHA-512 + one byte out |
+| `sha512/sha384` | 58568 | 84 | rate aside  this is SHA_512 with eight other words; nothing  abc and both block boundaries + Cryptol |
+| `sha512/sha512_224` | 58576 | 78 | the same four  and the only one whose digest cuts a word in half + Cryptol |
+| `sha512/sha512_256` | 58572 | 78 | the same four; its H4 was one bit wrong until the words were DERIVED + Cryptol |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
@@ -196,8 +196,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 327 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 327 | golden vectors, dual oracle |
+| 2 | yes | 332 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 332 | golden vectors, dual oracle |
 | 5 | yes | 50 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -260,17 +260,56 @@ the reasoning.
    all three from FIPS 180-4's own rule rather than transcribing them, and the
    derivation is self-checking: the same code reproduces SHA-512 itself.
 
-3. **HKDF's info cap**, described under item 0 below. **This is the one hard
-   ordering constraint on the page.** Raising it widens `sha512/hashcore`'s
-   prefix buffer, which moves every cell above it in `hashcore`, `hmac` and
-   `hkdf`; anything built on those reserves their footprint, so building first
-   and widening after means re-laying the new work as well. It must come
-   before step 4.
+3. **DONE: HKDF-SHA-512's info cap, sixty three bytes to 190.** And it took
+   **four** widenings rather than the one this list predicted, because each
+   buffer in the chain became the binding limit the moment the one below it
+   moved — and two of the four were **run lengths, not buffers**, which no
+   cell-insertion transformer can find for you:
 
-   Its position relative to step 2 is a coin flip. Doing SHA-384 first costs
-   re-laying two small heads later, which is cheap, and that is better than
-   opening the batch with a three-file re-lay that **has no consumer today** —
-   ML-KEM does not use HKDF-SHA-512 and BoneMesh passes `info = nil`.
+   - `sha512/hashcore`'s prefix buffer, **256 → 448** cells, by inserting 192
+     at hashcore-relative 260 — **and the slide that consumes it, 255 → 447
+     steps**, without which the new cells never reach the head and every
+     prefix over 256 silently reads noughts past that point. Inserting cells
+     is mechanical; noticing that a *run length* was a buffer length in
+     disguise is not, and this change turned up two of those. The buffer
+     widening on its own moved the cap from 63 to **64** — one byte.
+   - `sha512/hmac`'s copy of the message prefix into that buffer, a run of
+     **128 move tokens grown to 256**. No cell moved: the run simply stopped
+     at the halfway mark of an `mbuf` that was always 256 wide, and the map's
+     "at most 128" was describing the run rather than the buffer.
+   - `sha512/hkdf`'s own temp that hands `info` back after the copy, **64 →
+     192** cells, by inserting 128 at hkdf-relative 4016, with its four
+     `info` copy runs grown to 192 tokens and their following walks corrected.
+
+   190 is where it stops for a structural reason worth keeping: T is 64 bytes,
+   the counter is one, and `hmac`'s `mbuf` is 256, so 64 + 190 + 1 = 255 is
+   one short of it — which is exactly the slide count the counter placement
+   already used.
+
+   **The insertion is done by a transformer, not by hand.**
+   `scratchpad/shiftcells.py` rewrites every distance that straddles a
+   boundary and leaves every distance that does not, and it is proved by
+   identity: run it with K = 0 and the file must come back byte for byte.
+
+   **Two defects, and the second cost the afternoon.**
+
+   The first is the transformer's: it left `@@PASTE@@ base` lines alone, and a
+   paste base is an address like any other. It is silent at run time because
+   the pasted *code* is base relative — only the `ASSERT` contracts
+   `tools/bfexpand` rebases by it are wrong — so the vectors pass and the
+   contract tier is the only thing that fails. The rule it now carries is a
+   three way one, and the third case is the interesting one: if the boundary
+   falls INSIDE the callee's footprint then the callee was itself shifted at
+   `B - base`, its body already carries the extra cells, and its base must
+   stay. `@@HASHCORE512@@ 520` inside `hmac` and `@@HMAC512@@ 784` inside
+   `hkdf` are both that case, and the tool now says so on stderr.
+
+   The second was not a defect in any tool. **Six `.bf` files were never
+   regenerated after their skeletons were shifted**, so `hkdf`'s shifted code
+   was pasted onto an unshifted `hmac`. Every measurement aimed at the
+   transformer was aimed at the wrong artifact, and every distance it had
+   rewritten was correct. See the trap under "Traps that have actually
+   bitten".
 
 4. **HMAC_DRBG, the SP 800-108 KDFs, PBKDF2.** Loops over an HMAC whose map is
    final by then.
@@ -317,14 +356,13 @@ correctly, and the ordering above assumes not.
 
    Two things to know before touching them:
 
-   - **HKDF-SHA-512's info is capped at 63 bytes** and the cap is arithmetic,
-     not arbitrary: the expand message is T(64) ‖ info ‖ counter(1), and
-     `sha512/hmac` takes at most 128 bytes from memory because
-     `sha512/hashcore`'s prefix buffer is 256 and the pad block takes half.
-     Raising it means widening that buffer, which moves every cell above it in
-     hashcore, hmac and hkdf. `sha256/hkdf` has the same cap at 192 for the
-     same reason. This is the one limit in the set that a real caller might
-     hit — a TLS 1.3 `HkdfLabel` with a 48-byte context does not fit.
+   - **HKDF-SHA-512's info is capped at 190 bytes**, raised from 63, and the
+     cap is arithmetic rather than arbitrary: the expand message is
+     T(64) ‖ info ‖ counter(1) and `sha512/hmac`'s `mbuf` is 256, so
+     64 + 190 + 1 = 255 is one short of it. A TLS 1.3 `HkdfLabel` with a
+     48-byte context now fits with room to spare. `sha256/hkdf` has the same
+     limit by the same arithmetic at 192, its T being half the size, and it
+     did not need raising.
    - **An eight byte move may not be written the way sha256/* writes a four
      byte one.** Fifteen consecutive code lines with no annotation is what it
      comes to, and `bfstyle` rule 4 refuses thirteen. The step to the next byte
@@ -836,8 +874,8 @@ are `BFI_COUNT=1` under the pinned interpreter, and each was taken from a run
 whose output was checked against its KAT in the same command — see the trap
 about that below.
 
-| primitive | instructions | wall |
-|---|---|---|
+| primitive | instructions | 0 |
+| --- | --- | 0 |
 | `sha256` of the empty message | 1,145,948,360 | ~2 s |
 | `sha256` of "abc" | 1,180,129,364 | ~2 s |
 
@@ -902,10 +940,10 @@ step counter per source line and the paste sites marked, on the large vector:
 | `mulmod136`'s own glue | 527,025,347 | 52.9% |
 | `fold136` after the double, 136 calls | 269,024,405 | 27.0% |
 | `fold136` after the add, 68 calls | 118,046,136 | 11.9% |
-| `add136` | 37,217,271 | 3.7% |
-| `dbl136` | 32,051,014 | 3.2% |
-| `halve136` | 7,672,872 | 0.8% |
-| `reducep136` | 3,104,969 | 0.3% |
+| `add136` | 37,217,271 | 0 |
+| `dbl136` | 32,051,014 | 0 |
+| `halve136` | 7,672,872 | 0 |
+| `reducep136` | 3,104,969 | 0 |
 
 Two things in that table were not what anyone had written down. **The glue is
 the biggest line** — the 17-byte carries in and out of the work frame, and
@@ -974,7 +1012,7 @@ through a byte that is not 255 costs one instruction**, and the carry reaches
 byte two at all only when byte one was 255.
 
 | | before | after | |
-|---|---|---|---|
+| ---|--- | --- | 0 |
 | `fold136`, all ones | 635,880 | 116,020 | 5.5× |
 | `fold136`, a value with no short bytes | 436,942 | 125,114 | 3.5× |
 | `mulmod136`, the large vector | 145,361,714 | 89,473,525 | 1.62× |
@@ -990,7 +1028,7 @@ followed by `rotr(w, 8−s)`, which is one pasted `ROTR32`. Nothing is doubled
 anywhere in the file.
 
 | | before | after | |
-|---|---|---|---|
+| ---|--- | --- | 0 |
 | `rotl32` by 16 | 2,636,189 | 40,002 | 66× |
 | `rotl32` by 12 | 1,948,789 | 189,304 | 10× |
 | `rotl32` by 8 | 1,316,645 | 21,835 | 60× |
@@ -1049,11 +1087,11 @@ in `poly1305.skel` is where to start.
 | | instructions | share |
 | --- | --- | 0 |
 | `fold136` after the double, 136 calls | 53,903,009 | 36.9% |
-| `add136` | 37,199,789 | 25.5% |
-| `dbl136` | 32,051,014 | 22.0% |
+| `add136` | 37,199,789 | 0 |
+| `dbl136` | 32,051,014 | 0 |
 | `mulmod136`'s own glue | 13,727,482 | 9.4% |
 | `fold136` after the byte, 17 calls | 7,098,315 | 4.9% |
-| `reducep136` | 1,616,787 | 1.1% |
+| `reducep136` | 1,616,787 | 0 |
 
 The glue is 9.4% where it was 52.9%, and the next item is visible without
 guessing: **the fold after the double does not need a general fold.** `t` stays
@@ -1135,7 +1173,7 @@ The state occupies cells 0..199 and cannot move, so every frame was packed as
 close above it as it would go.
 
 | | before | after | |
-|---|---|---|---|
+| ---|--- | --- | 0 |
 | `theta` transport, per unit of byte value | 47,600 | 32,700 | 1.46× |
 | `theta`, a random state | 60,962,481 | 46,787,857 | 1.30× |
 | `rhopi` + `chi` transport | 99,200 | 45,300 | 2.19× |
@@ -1226,6 +1264,29 @@ regression guard and Cryptol is the oracle. Twice now the dual oracle has caught
 and Cryptol said so. Do not pin a value you computed in your head.
 
 ## Traps that have actually bitten
+
+- **A `.bf` THAT STILL MATCHES `HEAD` WHILE ITS `.skel` DOES NOT IS THE BUG.**
+  Raising HKDF's info cap meant inserting cells into `sha512/hashcore`,
+  `hmac`, `hkdf` and the four heads. The skeletons were transformed and the
+  transform was right. Only `hkdf.bf` was regenerated, so `hkdf`'s shifted
+  code was pasted onto an **unshifted** `hmac`, and HKDF returned garbage for
+  every info length including nought.
+
+  What made it expensive is that **every symptom pointed at the transformer**.
+  The pointer contracts all passed, because a pointer walk inside one file is
+  self consistent whether or not its callee agrees. The suspected free gap was
+  measured and found genuinely free. A second, real defect was found and fixed
+  in the transformer along the way — paste bases were not being relocated —
+  and fixing it changed nothing, which should itself have been the signal.
+
+  What settled it in one command was dumping the tape at a named contract in
+  both builds and diffing them **under the shift map**: the tapes came back
+  *identical*, not shifted, which no transformer bug can produce. The
+  regenerated program was not running the shifted code at all.
+
+  `git status` says this in one line, and `git diff --quiet HEAD -- FILE.bf`
+  per file says it more precisely. **Regenerate before measuring**, and when a
+  measurement makes no sense, ask what artifact it actually ran.
 
 - **A COST MEASUREMENT WITH UNVERIFIED INPUT IS A NUMBER ABOUT NOTHING.** The
   first attempt at SHA-256's cost came back at **198 billion instructions**,

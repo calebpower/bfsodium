@@ -14,13 +14,20 @@
 ; every section and every branch below was worked out from the map and written
 ; down;
 ;
-; INTERFACE entry=259 exit=1836 footprint=0:1859
+; INTERFACE entry=259 exit=2028 footprint=0:2051
 ; IO  in:  plen{2} LE  slen{2} LE  pbuf{256}  then slen bytes from the wire
 ;     out: digest{64}  big endian  as the standard prints it
 ;
 ; The message is plen bytes taken from pbuf  followed by slen bytes read from
 ; the wire; either count may be nought; Only the first plen bytes of pbuf are
 ; looked at  and the rest may hold anything;
+;
+; PBUF IS FOUR HUNDRED AND FORTY EIGHT CELLS BUT THE WIRE FILLS ONLY THE FIRST
+; TWO HUNDRED AND FIFTY SIX  which is what the IO line above says and is not a
+; mistake; a caller reaching the rest writes it in memory  which is what HMAC
+; does and is the only way anything above plen of two hundred and fifty six
+; arises; the slide that consumes the prefix covers all four hundred and forty
+; eight either way;
 ;
 ; TWO SOURCES  because two callers want different ones; sha512 hashes what is
 ; on the wire and leaves plen at nought; HMAC hashes a block it has built in
@@ -31,30 +38,33 @@
 ; TAPE MAP  (home @0)
 ;   @0x000:0x001  plen{2} u16 LE  prefix bytes not yet taken; SPENT
 ;   @0x002:0x003  slen{2} u16 LE  wire bytes not yet taken; SPENT
-;   @0x004:0x103  pbuf{256} u8    the prefix; consumed from its head
-;   @0x104:0x143  H{8}    u64 LE  the running hash  and then the digest
-;   @0x144:0x183  v{8}    u64 LE  a b c d e f g h
-;   @0x184:0x203  w{16}   u64 LE  the schedule window
-;   @0x204:0x213  Wt and Wc  this round's schedule word and the window's copy
-;   @0x214:0x219  pre rnd f16 nf tt uu   the round counters and their flags
-;   @0x21a        iv       u8      the CALLER'S flag: nought for SHA_512's own
+;   @0x004:0x1c3  pbuf{448} u8    the prefix; consumed from its head; it was
+;                          256 cells until 192 more were inserted above it  and
+;                          that insertion is the whole of the change that lifted
+;                          HKDF's info allowance from sixty three bytes to 190
+;   @0x1c4:0x203  H{8}    u64 LE  the running hash  and then the digest
+;   @0x204:0x243  v{8}    u64 LE  a b c d e f g h
+;   @0x244:0x2c3  w{16}   u64 LE  the schedule window
+;   @0x2c4:0x2d3  Wt and Wc  this round's schedule word and the window's copy
+;   @0x2d4:0x2d9  pre rnd f16 nf tt uu   the round counters and their flags
+;   @0x2da        iv       u8      the CALLER'S flag: nought for SHA_512's own
 ;                          initial words  one to say the caller has written H
 ;                          itself; not spent  so one setting serves all three
 ;                          of HMAC's entries
-;   @0x224:0x225  the two cells that flag is looked at and branched on through
-;   @0x21c:0x223  tmp{8}  hands a word back after it has been copied
-;   @0x228:0x243  the adder frame; add64 footprint 0:27 at @0x228
-;   @0x248:0x35c  sha512/round's frame; its footprint is 0:276 pasted there
-;   @0x360:0x424  sha512/expand's frame; its footprint is 0:196
-;   @0x428:0x6a7  K{80}   u64 LE  the constants; the table ROTATES one word per
+;   @0x2e4:0x2e5  the two cells that flag is looked at and branched on through
+;   @0x2dc:0x2e3  tmp{8}  hands a word back after it has been copied
+;   @0x2e8:0x303  the adder frame; add64 footprint 0:27 at @0x2e8
+;   @0x308:0x41c  sha512/round's frame; its footprint is 0:276 pasted there
+;   @0x420:0x4e4  sha512/expand's frame; its footprint is 0:196
+;   @0x4e8:0x767  K{80}   u64 LE  the constants; the table ROTATES one word per
 ;                          round  so K{t} is always at its head and after eighty
 ;                          rounds it is back where it started  which is what
 ;                          lets a second block use it again
-;   @0x6a8:0x727  blk{128} u8     the block being built
-;   @0x72a:0x732  the padding's flags  its byte counter and the cells the two
+;   @0x768:0x7e7  blk{128} u8     the block being built
+;   @0x7ea:0x7f2  the padding's flags  its byte counter and the cells the two
 ;                          counts are tested through
-;   @0x734:0x73b  len{8}  u64 LE  the message length  kept for the last block
-;   @0x73c:0x743  ksave{8}        holds K{t} while the table rotates past it
+;   @0x7f4:0x7fb  len{8}  u64 LE  the message length  kept for the last block
+;   @0x7fc:0x803  ksave{8}        holds K{t} while the table rotates past it
 ;
 ; THE ONE CHOICE THAT MADE THIS PORT TRACTABLE; the flags  the length and ksave
 ; sit at the SAME offsets above the top of the block as they do in
@@ -100,11 +110,11 @@
 ; bytes little endian  each byte the shorter of counting up from nought or
 ; down through the wrap;
 ; the table is emptied first  so a second entry is safe
-R805
+R997
   [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
 ; to the head of the table
 L639
-; ASSERT ptr=1064
+; ASSERT ptr=1256
 ; K 0 is 0x428a2f98d728ae22
   ++++++++++++++++++++++++++++++++++>---------------------------------------------------------------------------------->++++++++++++++++++++++++++++++++++++++++>----------------------------------------->-------------------------------------------------------------------------------------------------------->+++++++++++++++++++++++++++++++++++++++++++++++>---------------------------------------------------------------------------------------------------------------------->++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>
 ; K 1 is 0x7137449123ef65cd
@@ -269,38 +279,38 @@ L639
 ; ==== the eight initial hash words  unless the caller brought its own ====
 ; SHA_384 and both of the SHA_512/t variants are THIS CORE with a different
 ; eight  so a caller that wants one writes H itself and raises the flag at
-; @0x21a; The flag is NOT spent  because HMAC enters this routine three times
+; @0x2da; The flag is NOT spent  because HMAC enters this routine three times
 ; over and all three of them want the same answer; A caller that leaves it at
 ; nought gets SHA_512  which is every caller that existed before this line;
 ; to the flag
 L1165
-; ASSERT ptr=538
+; ASSERT ptr=730
 ; it is looked at through a scratch cell  because it has to survive the look
   [-R10+R1+L11]
 R11
-; ASSERT ptr=549
+; ASSERT ptr=741
   [-L11+R11]
 L1
-; ASSERT ptr=548
+; ASSERT ptr=740
 ; the arm is taken when the flag is NOUGHT  so the else arm is raised first
 ; and the flag knocks it down
 R1
-; ASSERT ptr=549
+; ASSERT ptr=741
   [-]+
 L1
-; ASSERT ptr=548
+; ASSERT ptr=740
   [[-]R1[-]L1]
 R1
-; ASSERT ptr=549
+; ASSERT ptr=741
 [
   [-]
 ; and so is the hash  which a previous call left full
 L289
-; ASSERT ptr=260
+; ASSERT ptr=452
   [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
 ; to the head of the hash
 L63
-; ASSERT ptr=260
+; ASSERT ptr=452
 ; H 0 is 0x6a09e667f3bcc908
   ++++++++>------------------------------------------------------->-------------------------------------------------------------------->------------->+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>-------------------------->+++++++++>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>
 ; H 1 is 0xbb67ae8584caa73b
@@ -317,44 +327,44 @@ L63
   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>------------------------------------------------------------------->+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>----->------------------------------------------------------------------------------------->--------------------------------------->----------------------------------------------------------------------------------------------------------------------------->+++++++++++++++++++++++++++++++>
 ; H 7 is 0x5be0cd19137e2179
   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>+++++++++++++++++++++++++++++++++>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>+++++++++++++++++++>+++++++++++++++++++++++++>--------------------------------------------------->-------------------------------->+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-; ASSERT ptr=323
+; ASSERT ptr=515
 ; back to the arm
 R226
-; ASSERT ptr=549
+; ASSERT ptr=741
 ]
-; ASSERT ptr=549
+; ASSERT ptr=741
 ; and both arms leave the pointer at the end of the hash
 L226
-; ASSERT ptr=323
+; ASSERT ptr=515
 
 ; ==== the message length is the prefix and the wire together ====
 ; Both counts are SPENT by the taking  so the total is worked out first
 ; and both are copied rather than moved;
 ; the prefix count into the adder
-L323
+L515
 ; ASSERT ptr=0
-  [-R552+R1288+L1840]
-R1840
-  [-L1840+R1840]
+  [-R744+R1288+L2032]
+R2032
+  [-L2032+R2032]
 ; the prefix count into the adder
-L1839
-  [-R552+R1287+L1839]
-R1839
-  [-L1839+R1839]
+L2031
+  [-R744+R1287+L2031]
+R2031
+  [-L2031+R2031]
 ; and the wire count after it
-L1838
-  [-R558+R1280+L1838]
-R1838
-  [-L1838+R1838]
+L2030
+  [-R750+R1280+L2030]
+R2030
+  [-L2030+R2030]
 ; and the wire count after it
-L1837
-  [-R558+R1279+L1837]
-R1837
-  [-L1837+R1837]
+L2029
+  [-R750+R1279+L2029]
+R2029
+  [-L2029+R2029]
 L1288
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
 ; the total is kept for the last block
   [-R1292+L1292] R1
   [-R1292+L1292] R1
@@ -366,7 +376,7 @@ L1288
   [-R1292+L1292]
 ; the ONE that ends the message still needs placing
 R1275
-; ASSERT ptr=1834
+; ASSERT ptr=2026
   [-]
   +
 ; and there is at least one block to do
@@ -396,18 +406,18 @@ R8
 L1
   [-]
 ; the low byte is copied out and handed straight back
-L1838
-  [-R1840+R1+L1841]
-R1841
-  [-L1841+R1841]
+L2030
+  [-R2032+R1+L2033]
+R2033
+  [-L2033+R2033]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
 ; the high byte is copied out and handed straight back
-L1839
-  [-R1839+R1+L1840]
-R1840
-  [-L1840+R1840]
+L2031
+  [-R2031+R1+L2032]
+R2032
+  [-L2032+R2032]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
@@ -415,29 +425,29 @@ L2
 [
   -
 ; the head of the prefix lands on the top of the block
-L1834
-  [-R1827+L1827]
+L2026
+  [-R2019+L2019]
 ; and the prefix slides down one place after it
 R1
-  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
 ; a byte was taken  so the first else does not fire
 R1580
   -
 ; the low byte survives being looked at
-L1839
-  [-R1840+R1+L1841]
-R1841
-  [-L1841+R1841]
+L2031
+  [-R2032+R1+L2033]
+R2033
+  [-L2033+R2033]
 ; the else arm is armed
 R1
   [-]
   +
 ; a low byte that is not nought simply comes down
 L2
-  [[-]L1840-R1842-L2]
+  [[-]L2032-R2034-L2]
 ; otherwise the high byte comes down and the low byte wraps
 R2
-  [-L1841-L1-R1842]
+  [-L2033-L1-R2034]
 ; back to the flag the loop is testing
 L4
 ]
@@ -453,18 +463,18 @@ R3
 L4
   [-]
 ; the low byte is copied out and handed straight back
-L1836
-  [-R1838+R1+L1839]
-R1839
-  [-L1839+R1839]
+L2028
+  [-R2030+R1+L2031]
+R2031
+  [-L2031+R2031]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
 ; the high byte is copied out and handed straight back
-L1837
-  [-R1837+R1+L1838]
-R1838
-  [-L1838+R1838]
+L2029
+  [-R2029+R1+L2030]
+R2030
+  [-L2030+R2030]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
@@ -478,20 +488,20 @@ L7
 R11
   -
 ; the low byte survives being looked at
-L1840
-  [-R1838+R1+L1839]
-R1839
-  [-L1839+R1839]
+L2032
+  [-R2030+R1+L2031]
+R2031
+  [-L2031+R2031]
 ; the else arm is armed
 R1
   [-]
   +
 ; a low byte that is not nought simply comes down
 L2
-  [[-]L1838-R1840-L2]
+  [[-]L2030-R2032-L2]
 ; otherwise the high byte comes down and the low byte wraps
 R2
-  [-L1839-L1-R1840]
+  [-L2031-L1-R2032]
 L4
 ]
 ; and the message is spent too
@@ -514,7 +524,7 @@ L3
 ; back to the byte counter
 L2
 ]
-; ASSERT ptr=1837
+; ASSERT ptr=2029
 
 ; is there room for the length in this block
 L2
@@ -544,18 +554,18 @@ R8
 L1
   [-]
 ; the low byte is copied out and handed straight back
-L1838
-  [-R1840+R1+L1841]
-R1841
-  [-L1841+R1841]
+L2030
+  [-R2032+R1+L2033]
+R2033
+  [-L2033+R2033]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
 ; the high byte is copied out and handed straight back
-L1839
-  [-R1839+R1+L1840]
-R1840
-  [-L1840+R1840]
+L2031
+  [-R2031+R1+L2032]
+R2032
+  [-L2032+R2032]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
@@ -563,29 +573,29 @@ L2
 [
   -
 ; the head of the prefix lands on the top of the block
-L1834
-  [-R1827+L1827]
+L2026
+  [-R2019+L2019]
 ; and the prefix slides down one place after it
 R1
-  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
 ; a byte was taken  so the first else does not fire
 R1580
   -
 ; the low byte survives being looked at
-L1839
-  [-R1840+R1+L1841]
-R1841
-  [-L1841+R1841]
+L2031
+  [-R2032+R1+L2033]
+R2033
+  [-L2033+R2033]
 ; the else arm is armed
 R1
   [-]
   +
 ; a low byte that is not nought simply comes down
 L2
-  [[-]L1840-R1842-L2]
+  [[-]L2032-R2034-L2]
 ; otherwise the high byte comes down and the low byte wraps
 R2
-  [-L1841-L1-R1842]
+  [-L2033-L1-R2034]
 ; back to the flag the loop is testing
 L4
 ]
@@ -601,18 +611,18 @@ R3
 L4
   [-]
 ; the low byte is copied out and handed straight back
-L1836
-  [-R1838+R1+L1839]
-R1839
-  [-L1839+R1839]
+L2028
+  [-R2030+R1+L2031]
+R2031
+  [-L2031+R2031]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
 ; the high byte is copied out and handed straight back
-L1837
-  [-R1837+R1+L1838]
-R1838
-  [-L1838+R1838]
+L2029
+  [-R2029+R1+L2030]
+R2030
+  [-L2030+R2030]
 ; and a byte that is not nought raises the flag
 L1
   [[-]L2[-]+R2]
@@ -626,20 +636,20 @@ L7
 R11
   -
 ; the low byte survives being looked at
-L1840
-  [-R1838+R1+L1839]
-R1839
-  [-L1839+R1839]
+L2032
+  [-R2030+R1+L2031]
+R2031
+  [-L2031+R2031]
 ; the else arm is armed
 R1
   [-]
   +
 ; a low byte that is not nought simply comes down
 L2
-  [[-]L1838-R1840-L2]
+  [[-]L2030-R2032-L2]
 ; otherwise the high byte comes down and the low byte wraps
 R2
-  [-L1839-L1-R1840]
+  [-L2031-L1-R2032]
 L4
 ]
 ; and the message is spent too
@@ -662,7 +672,7 @@ L3
 ; back to the byte counter
 L2
 ]
-; ASSERT ptr=1837
+; ASSERT ptr=2029
 
 ; ==== if there is room  the length goes in and this is the last block ====
 L2
@@ -673,7 +683,7 @@ L2
 ; ____ the first doubling ____
 ; the length into the adder
 R9
-; ASSERT ptr=1844
+; ASSERT ptr=2036
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292] R1
@@ -684,7 +694,7 @@ R9
   [-L1292+R1292]
 ; added to itself  so the addend is a copy and tmp hands the first back
 L1299
-; ASSERT ptr=552
+; ASSERT ptr=744
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
@@ -694,7 +704,7 @@ L1299
   [-R8+L20+R12] R1
   [-R8+L20+R12]
 L19
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-R12+L12] R1
   [-R12+L12] R1
   [-R12+L12] R1
@@ -704,9 +714,9 @@ L19
   [-R12+L12] R1
   [-R12+L12]
 R5
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
 ; and back
   [-R1292+L1292] R1
   [-R1292+L1292] R1
@@ -718,7 +728,7 @@ R5
   [-R1292+L1292]
 ; ____ the second doubling ____
 R1285
-; ASSERT ptr=1844
+; ASSERT ptr=2036
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292] R1
@@ -728,7 +738,7 @@ R1285
   [-L1292+R1292] R1
   [-L1292+R1292]
 L1299
-; ASSERT ptr=552
+; ASSERT ptr=744
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
@@ -738,7 +748,7 @@ L1299
   [-R8+L20+R12] R1
   [-R8+L20+R12]
 L19
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-R12+L12] R1
   [-R12+L12] R1
   [-R12+L12] R1
@@ -748,9 +758,9 @@ L19
   [-R12+L12] R1
   [-R12+L12]
 R5
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-R1292+L1292] R1
   [-R1292+L1292] R1
   [-R1292+L1292] R1
@@ -761,7 +771,7 @@ R5
   [-R1292+L1292]
 ; ____ the third doubling ____
 R1285
-; ASSERT ptr=1844
+; ASSERT ptr=2036
   [-L1292+R1292] R1
   [-L1292+R1292] R1
   [-L1292+R1292] R1
@@ -771,7 +781,7 @@ R1285
   [-L1292+R1292] R1
   [-L1292+R1292]
 L1299
-; ASSERT ptr=552
+; ASSERT ptr=744
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
   [-R8+L20+R12] R1
@@ -781,7 +791,7 @@ L1299
   [-R8+L20+R12] R1
   [-R8+L20+R12]
 L19
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-R12+L12] R1
   [-R12+L12] R1
   [-R12+L12] R1
@@ -791,9 +801,9 @@ L19
   [-R12+L12] R1
   [-R12+L12]
 R5
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-R1292+L1292] R1
   [-R1292+L1292] R1
   [-R1292+L1292] R1
@@ -808,7 +818,7 @@ R5
 ; the distance grows by two each step because source and destination walk
 ; in opposite directions
 R1285
-; ASSERT ptr=1844
+; ASSERT ptr=2036
   [-L13+R13] R1
   [-L15+R15] R1
   [-L17+R17] R1
@@ -829,7 +839,7 @@ L1
 ; to the head of the window
 L1447
   [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
-; ASSERT zero 388:515
+; ASSERT zero 580:707
 
 ; ==== the block is read in as words  most significant byte first ====
 ; This is the only place endianness is touched on the way in; the top byte of
@@ -837,7 +847,7 @@ L1447
 ; left while the destination walks right and the eight distances shrink by two;
 ; word 0  most significant byte first
 R1196
-; ASSERT ptr=1711
+; ASSERT ptr=1903
   [-L1323+R1323] L1
   [-L1321+R1321] L1
   [-L1319+R1319] L1
@@ -996,14 +1006,14 @@ R15
   [-L1313+R1313] L1
   [-L1311+R1311] L1
   [-L1309+R1309]
-; ASSERT zero 1704:1831
+; ASSERT zero 1896:2023
 
 ; ==== the working variables start as the hash ====
 ; H is COPIED rather than moved  because the block's sum is added back into
 ; it at the end; tmp hands each word straight back;
 ; hash word 0
 L1564
-; ASSERT ptr=260
+; ASSERT ptr=452
   [-R64+R216+L280] R1
   [-R64+R216+L280] R1
   [-R64+R216+L280] R1
@@ -1014,7 +1024,7 @@ L1564
   [-R64+R216+L280]
 ; and the temp hands the original straight back
 R273
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-L280+R280] R1
   [-L280+R280] R1
   [-L280+R280] R1
@@ -1158,7 +1168,7 @@ R217
   [-L224+R224]
 ; sixteen rounds take their word straight from the window
 L15
-; ASSERT ptr=532
+; ASSERT ptr=724
   [-]
   ++++++++++++++++
 ; and there are eighty rounds in all
@@ -1189,7 +1199,7 @@ L2
   -
 ; the head of the window IS this round's word
 L146
-; ASSERT ptr=388
+; ASSERT ptr=580
   [-R128+L128] R1
   [-R128+L128] R1
   [-R128+L128] R1
@@ -1206,7 +1216,7 @@ R1
   -
 ; W{t minus 16} is spent  the window is about to drop it
 L147
-; ASSERT ptr=388
+; ASSERT ptr=580
   [-R476+L476] R1
   [-R476+L476] R1
   [-R476+L476] R1
@@ -1227,7 +1237,7 @@ R1
   [-R476+L332+L144]
 ; and the temp hands the original straight back
 R137
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-L144+R144] R1
   [-L144+R144] R1
   [-L144+R144] R1
@@ -1238,7 +1248,7 @@ R137
   [-L144+R144]
 ; W{t minus 7}
 L87
-; ASSERT ptr=460
+; ASSERT ptr=652
   [-R420+L340+L80] R1
   [-R420+L340+L80] R1
   [-R420+L340+L80] R1
@@ -1249,7 +1259,7 @@ L87
   [-R420+L340+L80]
 ; and the temp hands the original straight back
 R73
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-L80+R80] R1
   [-L80+R80] R1
   [-L80+R80] R1
@@ -1260,7 +1270,7 @@ R73
   [-L80+R80]
 ; W{t minus 2}
 L47
-; ASSERT ptr=500
+; ASSERT ptr=692
   [-R388+L348+L40] R1
   [-R388+L348+L40] R1
   [-R388+L348+L40] R1
@@ -1271,7 +1281,7 @@ L47
   [-R388+L348+L40]
 ; and the temp hands the original straight back
 R33
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-L40+R40] R1
   [-L40+R40] R1
   [-L40+R40] R1
@@ -1281,9 +1291,9 @@ R33
   [-L40+R40] R1
   [-L40+R40]
 R317
-; ASSERT ptr=864
-@@EXPAND512@@ 864
-; ASSERT ptr=864
+; ASSERT ptr=1056
+@@EXPAND512@@ 1056
+; ASSERT ptr=1056
 ; and that is this round's word
 R32
   [-L380+R380] R1
@@ -1296,10 +1306,10 @@ R32
   [-L380+R380]
 L368
 ]
-; ASSERT zero 534:535
+; ASSERT zero 726:727
 ; the window keeps a copy of the word
 L19
-; ASSERT ptr=516
+; ASSERT ptr=708
   [-R8+R16+L24] R1
   [-R8+R16+L24] R1
   [-R8+R16+L24] R1
@@ -1310,7 +1320,7 @@ L19
   [-R8+R16+L24]
 ; and the temp hands the original straight back
 R17
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-L24+R24] R1
   [-L24+R24] R1
   [-L24+R24] R1
@@ -1325,7 +1335,7 @@ R17
 ; bytes  because v and the round's own v sit at the same spacing
 ; working variable 0 goes in
 L223
-; ASSERT ptr=324
+; ASSERT ptr=516
   [-R260+L260] R1
   [-R260+L260] R1
   [-R260+L260] R1
@@ -1406,7 +1416,7 @@ R1
   [-R260+L260]
 ; with this round's word
 R129
-; ASSERT ptr=516
+; ASSERT ptr=708
   [-R132+L132] R1
   [-R132+L132] R1
   [-R132+L132] R1
@@ -1417,7 +1427,7 @@ R129
   [-R132+L132]
 ; and a copy of this round's constant  which the table must keep
 R541
-; ASSERT ptr=1064
+; ASSERT ptr=1256
   [-L408+L116+R524] R1
   [-L408+L116+R524] R1
   [-L408+L116+R524] R1
@@ -1428,7 +1438,7 @@ R541
   [-L408+L116+R524]
 ; and the temp hands the original straight back
 L531
-; ASSERT ptr=540
+; ASSERT ptr=732
   [-R524+L524] R1
   [-R524+L524] R1
   [-R524+L524] R1
@@ -1438,9 +1448,9 @@ L531
   [-R524+L524] R1
   [-R524+L524]
 R37
-; ASSERT ptr=584
-@@ROUND512@@ 584
-; ASSERT ptr=584
+; ASSERT ptr=776
+@@ROUND512@@ 776
+; ASSERT ptr=776
 ; working variable 0 comes back changed
   [-L260+R260] R1
   [-L260+R260] R1
@@ -1527,7 +1537,7 @@ L251
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
 ; and the new word lands at the top
 R9
-; ASSERT ptr=524
+; ASSERT ptr=716
   [-L16+R16] R1
   [-L16+R16] R1
   [-L16+R16] R1
@@ -1542,7 +1552,7 @@ R9
 ; where it started  which is what lets a second block use it again;
 ; the constant just used steps aside
 R533
-; ASSERT ptr=1064
+; ASSERT ptr=1256
   [-R788+L788] R1
   [-R788+L788] R1
   [-R788+L788] R1
@@ -1556,7 +1566,7 @@ R1
   [-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]>[-L8+R8]
 ; and the one that stepped aside goes to the end
 R149
-; ASSERT ptr=1852
+; ASSERT ptr=2044
   [-L156+R156] R1
   [-L156+R156] R1
   [-L156+R156] R1
@@ -1567,14 +1577,14 @@ R149
   [-L156+R156]
 ; back to the round counter
 L1326
-; ASSERT ptr=533
+; ASSERT ptr=725
 ]
-; ASSERT ptr=533
+; ASSERT ptr=725
 
 ; ==== the hash takes this block ====
 ; hash word 0 into the adder
 L273
-; ASSERT ptr=260
+; ASSERT ptr=452
   [-R292+L292] R1
   [-R292+L292] R1
   [-R292+L292] R1
@@ -1594,9 +1604,9 @@ R57
   [-R236+L236] R1
   [-R236+L236]
 R221
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
 ; the sum comes back
   [-L292+R292] R1
   [-L292+R292] R1
@@ -1626,9 +1636,9 @@ R57
   [-R228+L228] R1
   [-R228+L228]
 R213
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-L284+R284] R1
   [-L284+R284] R1
   [-L284+R284] R1
@@ -1657,9 +1667,9 @@ R57
   [-R220+L220] R1
   [-R220+L220]
 R205
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-L276+R276] R1
   [-L276+R276] R1
   [-L276+R276] R1
@@ -1688,9 +1698,9 @@ R57
   [-R212+L212] R1
   [-R212+L212]
 R197
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-L268+R268] R1
   [-L268+R268] R1
   [-L268+R268] R1
@@ -1719,9 +1729,9 @@ R57
   [-R204+L204] R1
   [-R204+L204]
 R189
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-L260+R260] R1
   [-L260+R260] R1
   [-L260+R260] R1
@@ -1750,9 +1760,9 @@ R57
   [-R196+L196] R1
   [-R196+L196]
 R181
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-L252+R252] R1
   [-L252+R252] R1
   [-L252+R252] R1
@@ -1781,9 +1791,9 @@ R57
   [-R188+L188] R1
   [-R188+L188]
 R173
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-L244+R244] R1
   [-L244+R244] R1
   [-L244+R244] R1
@@ -1812,9 +1822,9 @@ R57
   [-R180+L180] R1
   [-R180+L180]
 R165
-; ASSERT ptr=552
-@@ADD64@@ 552
-; ASSERT ptr=552
+; ASSERT ptr=744
+@@ADD64@@ 744
+; ASSERT ptr=744
   [-L236+R236] R1
   [-L236+R236] R1
   [-L236+R236] R1
@@ -1823,11 +1833,11 @@ R165
   [-L236+R236] R1
   [-L236+R236] R1
   [-L236+R236]
-; ASSERT zero 324:387
+; ASSERT zero 516:579
 ; back to the flag that says whether another block follows
 R1277
 ]
-; ASSERT ptr=1836
+; ASSERT ptr=2028
 
 ; emit
 ; the digest  big endian  as the standard prints it
