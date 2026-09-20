@@ -130,10 +130,13 @@ routine, the suite fails until it has a row here.
 | `sha512/round` | 16760 | 1419 | FIPS 180-4 first abc round + six more + Cryptol |
 | `sha256/hashcore` | 26476 | 1635 | one message from memory, the wire, and both |
 | `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
-| `sha512/hashcore` | 57916 | 1815 | one message from memory, the wire, and both |
-| `sha512/sha512` | 57976 | 64 | FIPS 180-4 + both padding boundaries |
-| `sha512/hmac` | 234083 | 1700 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
-| `sha512/hkdf` | 538206 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
+| `sha512/hashcore` | 57965 | 1857 | one message from memory, the wire, and both |
+| `sha512/sha512` | 58019 | 64 | FIPS 180-4 + both padding boundaries |
+| `sha512/hmac` | 234212 | 1700 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
+| `sha512/hkdf` | 538464 | 574 | RFC 5869's three shapes at SHA-512 + one byte out |
+| `sha512/sha384` | 58108 | 84 | rate aside  this is SHA_512 with eight other words; nothing  abc and both block boundaries + Cryptol |
+| `sha512/sha512_224` | 58116 | 78 | the same four  and the only one whose digest cuts a word in half + Cryptol |
+| `sha512/sha512_256` | 58112 | 78 | the same four; its H4 was one bit wrong until the words were DERIVED + Cryptol |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
@@ -193,9 +196,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 315 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 315 | golden vectors, dual oracle |
-| 5 | yes | 47 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 327 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 327 | golden vectors, dual oracle |
+| 5 | yes | 50 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -234,10 +237,28 @@ the reasoning.
    and a bad number would have taken AES, CMAC, GCM, GMAC and CTR_DRBG off the
    plan together. It did not, so step 6 stands and the tier behind it is open.
 
-2. **SHA-384 and SHA-512/t.** The cheapest real coverage on the list: the same
-   core, a different IV, a truncation. `scratchpad/sha3gen.py` is the pattern —
-   prove the generator against a file somebody already wrote by hand, then ask
-   it for the new constants.
+2. **DONE: SHA-384, SHA-512/224 and SHA-512/256.** And **this step was not as
+   cheap as this list said it was**, which is the third time that has happened
+   here. "The same core, a different IV, a truncation" is true of the
+   ALGORITHM; in the code the IV lived inside `sha512/hashcore`, which HMAC
+   and HKDF both paste, so the variants needed the core parameterised.
+
+   The obvious parameterisation was rejected after it was costed: a 64-byte
+   IV-delta buffer grows `hashcore`'s footprint past `0:1859`, and `hmac512`
+   parks `kpad{128}` at `@0x950` — **four cells above where hashcore's frame
+   ends** — so it would have cascaded into re-laying `hmac512` and then
+   `hkdf512`. What landed instead is **one cell**: a flag at `@0x21a`, nought
+   meaning "write SHA-512's words" and one meaning "the caller wrote H". No
+   footprint change, `sha512`, `hmac512` and `hkdf512` untouched, and each
+   variant's initial words live in that variant's own head where they belong.
+   The flag is deliberately not spent, which is what makes HMAC-SHA-384 a
+   head-only change later.
+
+   **The defect worth keeping:** SHA-512/256's H4 was typed from memory with
+   one bit wrong — `…effe2` for `…effe3`. SHA-384 and SHA-512/224 passed, so
+   the mechanism was right and only the constant was not. The spec now DERIVES
+   all three from FIPS 180-4's own rule rather than transcribing them, and the
+   derivation is self-checking: the same code reproduces SHA-512 itself.
 
 3. **HKDF's info cap**, described under item 0 below. **This is the one hard
    ordering constraint on the page.** Raising it widens `sha512/hashcore`'s

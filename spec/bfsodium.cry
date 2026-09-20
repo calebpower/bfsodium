@@ -1362,6 +1362,112 @@ sha512Run_128 inb = sha512Out h2
     h1 = sha512Compress sha512H0 (take`{128} p)
     h2 = sha512Compress h1 (drop`{128} p)
 
+// ==== SHA-384 and both SHA-512/t: the same compression, eight other words ====
+//
+// This model was already parameterised by the initial words -- sha512Compress
+// takes them -- so a variant is a constant and a truncation and nothing else.
+// The brainfuck reached the same shape from the other end: sha512/hashcore
+// leaves H alone when the caller raises the flag at @0x21a, and each head
+// carries its own eight.
+//
+// THE SHA-512/256 WORDS WERE DERIVED, NOT TRANSCRIBED, and that is why they
+// are right: one of them was typed from memory first and had a single bit
+// wrong in H4, which the third party caught. FIPS 180-4 section 5.3.6 defines
+// them as SHA-512 of "SHA-512/t" under an IV of SHA-512's own words each
+// exclusive ored with 0xa5a5a5a5a5a5a5a5.
+
+sha384H0 : [8][64]
+sha384H0 =
+    [ 0xcbbb9d5dc1059ed8
+    , 0x629a292a367cd507
+    , 0x9159015a3070dd17
+    , 0x152fecd8f70e5939
+    , 0x67332667ffc00b31
+    , 0x8eb44a8768581511
+    , 0xdb0c2e0d64f98fa7
+    , 0x47b5481dbefa4fa4
+    ]
+
+sha512_224H0 : [8][64]
+sha512_224H0 =
+    [ 0x8c3d37c819544da2
+    , 0x73e1996689dcd4d6
+    , 0x1dfab7ae32ff9c82
+    , 0x679dd514582f9fcf
+    , 0x0f6d2b697bd44da8
+    , 0x77e36f7304c48942
+    , 0x3f9d85a86a1d36c8
+    , 0x1112e6ad91d692a1
+    ]
+
+sha512_256H0 : [8][64]
+sha512_256H0 =
+    [ 0x22312194fc2bf72c
+    , 0x9f555fa3c84c64c2
+    , 0x2393b86b6f53b151
+    , 0x963877195940eabd
+    , 0x96283ee2a88effe3
+    , 0xbe5e1e2553863992
+    , 0x2b0199fc2c85b8aa
+    , 0x0eb72ddc81c52ca2
+    ]
+
+// The digest is the front of the eight words: 48 bytes for SHA-384, 28 for
+// SHA-512/224 and 32 for SHA-512/256.
+sha512Trunc : {d} (fin d, d <= 64) => [8][64] -> [d][8]
+sha512Trunc h = take`{d} (sha512Out h)
+
+// sha384 over the wire: len(2 LE) then the message.
+sha384Run_0 : [2][8] -> [48][8]
+sha384Run_0 inb =
+    sha512Trunc`{48} (sha512Compress sha384H0 (sha512Pad1`{0} (drop`{2} inb)))
+sha384Run_3 : [5][8] -> [48][8]
+sha384Run_3 inb =
+    sha512Trunc`{48} (sha512Compress sha384H0 (sha512Pad1`{3} (drop`{2} inb)))
+sha384Run_111 : [113][8] -> [48][8]
+sha384Run_111 inb =
+    sha512Trunc`{48} (sha512Compress sha384H0 (sha512Pad1`{111} (drop`{2} inb)))
+sha384Run_112 : [114][8] -> [48][8]
+sha384Run_112 inb = sha512Trunc`{48} h2
+  where
+    p  = sha512Pad2`{112} (drop`{2} inb)
+    h1 = sha512Compress sha384H0 (take`{128} p)
+    h2 = sha512Compress h1 (drop`{128} p)
+
+// sha512_224 over the wire: len(2 LE) then the message.
+sha512_224Run_0 : [2][8] -> [28][8]
+sha512_224Run_0 inb =
+    sha512Trunc`{28} (sha512Compress sha512_224H0 (sha512Pad1`{0} (drop`{2} inb)))
+sha512_224Run_3 : [5][8] -> [28][8]
+sha512_224Run_3 inb =
+    sha512Trunc`{28} (sha512Compress sha512_224H0 (sha512Pad1`{3} (drop`{2} inb)))
+sha512_224Run_111 : [113][8] -> [28][8]
+sha512_224Run_111 inb =
+    sha512Trunc`{28} (sha512Compress sha512_224H0 (sha512Pad1`{111} (drop`{2} inb)))
+sha512_224Run_112 : [114][8] -> [28][8]
+sha512_224Run_112 inb = sha512Trunc`{28} h2
+  where
+    p  = sha512Pad2`{112} (drop`{2} inb)
+    h1 = sha512Compress sha512_224H0 (take`{128} p)
+    h2 = sha512Compress h1 (drop`{128} p)
+
+// sha512_256 over the wire: len(2 LE) then the message.
+sha512_256Run_0 : [2][8] -> [32][8]
+sha512_256Run_0 inb =
+    sha512Trunc`{32} (sha512Compress sha512_256H0 (sha512Pad1`{0} (drop`{2} inb)))
+sha512_256Run_3 : [5][8] -> [32][8]
+sha512_256Run_3 inb =
+    sha512Trunc`{32} (sha512Compress sha512_256H0 (sha512Pad1`{3} (drop`{2} inb)))
+sha512_256Run_111 : [113][8] -> [32][8]
+sha512_256Run_111 inb =
+    sha512Trunc`{32} (sha512Compress sha512_256H0 (sha512Pad1`{111} (drop`{2} inb)))
+sha512_256Run_112 : [114][8] -> [32][8]
+sha512_256Run_112 inb = sha512Trunc`{32} h2
+  where
+    p  = sha512Pad2`{112} (drop`{2} inb)
+    h1 = sha512Compress sha512_256H0 (take`{128} p)
+    h2 = sha512Compress h1 (drop`{128} p)
+
 // sha512/hashcore.bf takes a prefix from memory and then a count from the
 // wire; one Run per pair of counts, named for them.
 
