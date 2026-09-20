@@ -659,7 +659,7 @@ this is where to start.
 | HMAC over each of the above | nothing new | FIPS 198-1; **HMAC-SHA-512 is built** |
 | HKDF over each | nothing new | RFC 5869; **HKDF-SHA-512 is built**, with info capped at 190 bytes — see the note in its header |
 | HMAC_DRBG | nothing new | SP 800-90A; nearly free given HMAC-SHA-256 |
-| SP 800-108 KDFs (counter, feedback) | nothing new | loops over HMAC |
+| SP 800-108 KDFs (counter, feedback) | nothing new | **counter mode is built** over HMAC-SHA-256, with a 32-bit counter and the fixed input taken as one blob; feedback mode is not |
 | PBKDF2 | nothing new | SP 800-132; a counted loop over HMAC |
 
 About fifteen approved algorithms, no new mathematics, and the 64-bit idiom set

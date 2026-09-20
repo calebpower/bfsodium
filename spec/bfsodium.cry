@@ -1249,6 +1249,67 @@ hkdfRun_80_80_80_82 inb = take`{82} (t1 # t2 # t3)
     t3   = hmac3 prk (t2 # info # [3])
 
 // ---------------------------------------------------------------------------
+// NIST SP 800-108r1 section 4.1: the key derivation function in COUNTER MODE,
+// with HMAC-SHA-256 as the PRF.
+//
+//   K(i) = PRF(Kin, [i]_r || FixedInput)   for i = 1 .. ceil(L / h)
+//
+// The counter is thirty two bits, big endian, and sits BEFORE the fixed input
+// data, which is the arrangement CAVP tests and the one every caller in the
+// wild uses. The standard leaves FixedInput to the caller -- conventionally
+// Label || 0x00 || Context || [L]_2 -- so the routine takes it as one blob
+// rather than asserting a layout the standard does not fix.
+//
+// Each vector is written out at the counter values it actually reaches, so
+// that a wrong counter width or a counter that starts at nought is a wrong
+// answer rather than a coincidence.
+//
+// IO: klen{2} LE  fixedlen{2} LE  okmlen{2} LE  kbuf{256}  fixedbuf{256}
+
+// One turn exactly, with sixty bytes of fixed input, so the PRF message is
+// sixty four and the inner hash comes to three blocks.
+kdfCtrRun_32_60_32 : [518][8] -> [32][8]
+kdfCtrRun_32_60_32 inb = hmac3 key ([0, 0, 0, 1] # fixed)
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{60} (drop`{262} inb)
+
+// The same turn cut short. Half of K(1) is thrown away, which is the path
+// that is wrong if the routine emits a whole block and then stops counting.
+kdfCtrRun_32_60_16 : [518][8] -> [16][8]
+kdfCtrRun_32_60_16 inb = take`{16} (hmac3 key ([0, 0, 0, 1] # fixed))
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{60} (drop`{262} inb)
+
+// Two whole turns, so the counter is seen to step and the fixed input is seen
+// to survive the first turn unchanged.
+kdfCtrRun_32_60_64 : [518][8] -> [64][8]
+kdfCtrRun_32_60_64 inb = k1 # k2
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{60} (drop`{262} inb)
+    k1    = hmac3 key ([0, 0, 0, 1] # fixed)
+    k2    = hmac3 key ([0, 0, 0, 2] # fixed)
+
+// Fifty one bytes of fixed input puts the PRF message at fifty five, the last
+// length whose inner hash is two blocks; the other side of that boundary.
+kdfCtrRun_32_51_32 : [518][8] -> [32][8]
+kdfCtrRun_32_51_32 inb = hmac2 key ([0, 0, 0, 1] # fixed)
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{51} (drop`{262} inb)
+
+// No fixed input at all, so the message is the counter and nothing else, and
+// forty bytes out, so the second turn is truncated to eight.
+kdfCtrRun_16_0_40 : [518][8] -> [40][8]
+kdfCtrRun_16_0_40 inb = take`{40} (k1 # k2)
+  where
+    key = take`{16} (drop`{6} inb)
+    k1  = hmac2 key ([0, 0, 0, 1] : [4][8])
+    k2  = hmac2 key ([0, 0, 0, 2] : [4][8])
+
+// ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
 // B has to be independent of whatever the toolchain ships.

@@ -1,0 +1,324 @@
+; bfsodium KDF_CTR_SHA_256 : NIST SP 800_108r1 section 4 1  counter mode
+;
+; HAND WRITTEN skeleton; The pseudorandom function is sha256/hmac  PASTED  and
+; entered once per thirty two bytes of output; The counter is stepped by
+; chacha20/add32  PASTED  rather than by a ripple written out here  because a
+; proved adder is cheaper to trust than a fifth hand rolled carry;
+;
+; As in sha256/hashcore  a run of ONE repeated token is a repetition rather
+; than a decision and is written as such; every offset and every branch below
+; was worked out from the map and written down;
+;
+; IO  in:  klen{2} LE  fixedlen{2} LE  okmlen{2} LE  kbuf{256}  fixedbuf{256}
+;     out: okm{okmlen}
+;
+; Only the first klen bytes of the key buffer are looked at  and the same for
+; the fixed input; the rest MUST be nought;
+;
+; THE COUNTER IS THIRTY TWO BITS AND COMES FIRST  which is the arrangement
+; CAVP tests and the one callers in the wild use; SP 800_108 allows eight
+; sixteen twenty four or thirty two  and a width chosen at run time is not
+; available here: the fixed input would start at a cell whose address the
+; width decides  and this library has no index; So the width is FIXED at
+; thirty two and stated  rather than taken as an argument that would have to
+; be honoured by sliding;
+;
+; THE STANDARD LEAVES THE FIXED INPUT TO THE CALLER  conventionally Label then
+; a nought byte then Context then the wanted length in bits; this routine
+; takes it as one blob and does not assemble it  because assembling it would
+; assert a layout the standard does not fix  and because CAVP hands it over
+; as one blob too;
+;
+; FIXEDLEN IS AT MOST A HUNDRED AND EIGHTY EIGHT  and the reason is one level
+; down: sha256/hmac takes at most a hundred and ninety two bytes from memory
+; because sha256/hashcore's prefix buffer is two hundred and fifty six and the
+; key pad block takes a quarter of it; four of those hundred and ninety two
+; are the counter;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x001  klen{2}      u16 LE  the key's length
+;   @0x002:0x003  fixedlen{2}  u16 LE  the fixed input's length
+;   @0x004:0x005  okmlen{2}    u16 LE  how many bytes are wanted
+;   @0x006:0x105  kbuf{256}    u8      the key  as given
+;   @0x106:0x205  fixedbuf{256} u8     the fixed input  as given
+;   @0x206:0x305  ktemp{256}   u8      hands the key back after a copy
+;   @0x306:0x405  ftemp{256}   u8      hands the fixed input back after a copy
+;   @0x408:0x41b  the adder frame; chacha20/add32 footprint 0:19 at @0x408
+;                 its a{4} IS THE COUNTER  little endian  and its b{4} at
+;                 @0x40c is the one the counter steps by
+;   @0x41c:0x41f  ctmp{4}      hands the counter back after a copy
+;   @0x420:0x427  owedlo owedhi chances flag test back and two spare cells
+;                 the counts are tested and handed back through
+;   @0x428:0x447  K{32}        this turn's PRF output  written out and spent
+;   @0x450:0xb5b  sha256/hmac's frame  pasted at @0x450; footprint 0:1803
+;
+; THE COUNT STILL OWED IS KEPT WHERE IT IS TESTED; okmlen arrives at @0x004
+; and moves into the counts frame before the first turn  because the test runs
+; once per byte written out and a walk of a thousand cells each time would
+; cost more than the hash it is counting;
+;
+; Nothing buffers the output; each K is written as it is made and the last is
+; cut short  so the tape does not grow with the length asked for;
+;
+; A digest is a byte string and hmac leaves its answer as eight little endian
+; words  so the copy into K reverses each word; that is the same boundary
+; sha256/hmac documents and gets wrong at its peril;
+
+; read the three lengths and the two buffers
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=517
+
+; ==== the count still owed moves to where it is tested ====
+L513
+  [-R1052+L1052]
+R1
+  [-R1052+L1052]
+
+; ==== the counter starts at one  as the standard counts ====
+R1027
+  +
+; ASSERT ptr=1032
+
+; ==== one turn per thirty two bytes wanted ====
+R27
+; the flag starts clear  and a byte of the count that is not nought
+; raises it; two bytes are tested through one cell  one after the other
+  [-]
+L3
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L1[-]+R1]
+; and the high byte goes the same way through the same cell
+L3
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+L1
+  [[-]L1[-]+R1]
+L1
+[
+  -
+; ____ the two lengths hmac spends are written afresh each turn ____
+L1059
+  [-R1104+L42+L1062]
+R1062
+  [-L1062+R1062]
+L1061
+  [-R1104+L42+L1062]
+R1062
+  [-L1062+R1062]
+; the message is the counter and then the fixed input  so hmac's count
+; is four more than the fixed input's own
+L1061
+  [-R1104+L44+L1060]
+R1060
+  [-L1060+R1060]
+L1059
+  [-R1104+L44+L1060]
+R1060
+  [-L1060+R1060]
+R43
+  ++++
+; and nothing at all comes off the wire
+; ASSERT zero 1108:1109
+
+; ____ the key  kept for the turns after this one ____
+L1100
+  [-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]>[-R1104+L592+L512]
+
+; ____ the counter goes in big endian  which is the standard's order
+; and the reverse of the adder's  so the four bytes cross over ____
+R774
+  [-R331+L311+L20]
+L1
+  [-R333+L313+L20]
+L1
+  [-R335+L315+L20]
+L1
+  [-R337+L317+L20]
+R20
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+
+; ____ the fixed input  after the counter ____
+L793
+  [-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]>[-R1108+L596+L512]
+
+; ____ the pseudorandom function ____
+R655
+; ASSERT ptr=1104
+@@HMAC@@ 1104
+; ASSERT ptr=1104
+
+; ____ the mac is eight little endian words and K is a byte string  so
+; each word is read from its top byte down ____
+R783
+; word 0  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+R7
+; word 1  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+R7
+; word 2  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+R7
+; word 3  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+R7
+; word 4  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+R7
+; word 5  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+R7
+; word 6  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+R7
+; word 7  top byte first
+  [-L823+R823]
+L1
+  [-L821+R821]
+L1
+  [-L819+R819]
+L1
+  [-L817+R817]
+
+; ____ the key and the fixed input come back ____
+L1394
+  [-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]
+R1
+  [-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]>[-L512+R512]
+
+; ____ write out as much of K as is still owed ____
+; thirty two chances  one per byte
+R97
+  [-]
+  ++++++++++++++++++++++++++++++++
+[
+  -
+R1
+; the flag starts clear  and a byte of the count that is not nought
+; raises it; two bytes are tested through one cell  one after the other
+  [-]
+L3
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L1[-]+R1]
+; and the high byte goes the same way through the same cell
+L3
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+L1
+  [[-]L1[-]+R1]
+L1
+[
+  -
+; the head of the copy goes out
+R5
+  .
+; the count still owed comes down by one  low byte first
+L8
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+; the else arm is armed
+R1
+  [-]
+  +
+; a low byte that is not nought simply comes down
+L2
+  [[-]L4-R6-L2]
+; otherwise the high byte comes down and the low byte wraps
+R2
+  [-L5-L1-R6]
+; the byte just written is EMPTIED  which writing it out does not do; the
+; slide below ADDS  so a byte left standing would be added to the next one
+R2
+  [-]
+; and the copy slides down one place
+R1
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+L36
+]
+L1
+]
+
+; whatever was not owed is discarded
+R6
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+; the counter steps on by one
+L59
+  +
+L4
+; ASSERT ptr=1032
+@@ADD32@@ 1032
+; ASSERT ptr=1032
+; and the turn after this one happens only if a byte is still owed
+R27
+; the flag starts clear  and a byte of the count that is not nought
+; raises it; two bytes are tested through one cell  one after the other
+  [-]
+L3
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L1[-]+R1]
+; and the high byte goes the same way through the same cell
+L3
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+L1
+  [[-]L1[-]+R1]
+L1
+]
+
+; nothing is buffered  so when the count reaches nought the work is done
+; and the count itself is the cell the loop above emptied getting here

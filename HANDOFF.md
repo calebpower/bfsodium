@@ -139,6 +139,7 @@ routine, the suite fails until it has a row here.
 | `sha512/sha512_256` | 58572 | 78 | the same four; its H4 was one bit wrong until the words were DERIVED + Cryptol |
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
+| `sha256/kdfctr` | 132269 | 324 | SP 800-108 §4.1 counter mode at both inner-hash block counts, one turn, two turns, a turn cut short and no fixed input |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
@@ -196,8 +197,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 332 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 332 | golden vectors, dual oracle |
+| 2 | yes | 337 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 337 | golden vectors, dual oracle |
 | 5 | yes | 50 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -312,7 +313,53 @@ the reasoning.
    bitten".
 
 4. **HMAC_DRBG, the SP 800-108 KDFs, PBKDF2.** Loops over an HMAC whose map is
-   final by then.
+   final by then. **The counter-mode KDF is built**; the rest of the step is
+   not.
+
+   `sha256/kdfctr` is SP 800-108r1 §4.1 over HMAC-SHA-256. It is the simplest
+   shape in this whole list and worth saying why: the counter goes FIRST, so
+   it lands at a fixed cell and **nothing has to be placed by sliding** — the
+   thing that makes `hkdf`'s expand half hard is that its counter belongs
+   after T and info, whose combined length is only known at run time. A turn
+   here is: write the two lengths hmac spends, copy the key and the fixed
+   input in (keeping a copy of each), step in, read the mac back reversed,
+   hand the copies back, write out as much as is owed.
+
+   **The counter width is fixed at 32 bits and that is a design decision, not
+   a default.** SP 800-108 allows 8, 16, 24 or 32. A width chosen at run time
+   would put the fixed input at a cell whose address the width decides, and
+   this library has no index — it would have to be placed by sliding, which is
+   exactly the cost the arrangement avoids. Same shape as the rate rule:
+   *a counter width cannot be a parameter in brainfuck; a counter value can.*
+
+   **THE COST, AND THE COMPARISON THAT NEARLY WENT IN WRONG.** A turn is
+   **6,491,404,005** instructions, derived from two measured points — one turn
+   at 6,511,669,225 and two at 13,003,073,230, each with its output checked
+   against its vector in the same run. Against a bare HMAC-SHA-256 measured at
+   5,149,095,299 that looks like **26% carriage**, and that number is
+   meaningless: the 5.1 billion was measured with an EIGHT byte message and a
+   turn here hashes SIXTY FOUR. Measured again at the same message length the
+   bare HMAC is **6,465,441,658**, so the carriage is **25,962,347 — four
+   tenths of one per cent**. Two buffer round trips and an emit loop cost
+   almost nothing beside the hash they feed. The lesson is the one §9.1
+   already states in capitals, in a new costume: *a cost comparison between
+   two runs with different inputs is a number about nothing.*
+
+   Worth keeping from the same pair: **HMAC-SHA-256 costs 26% more for a 64
+   byte message than an 8 byte one**, which is a block boundary and not a
+   surprise, but it means any future "X costs N times an HMAC" claim has to
+   say which HMAC.
+
+   **What is left, and one decision already forced.** Feedback mode is the
+   same file with the previous K in the message, so it is a head change rather
+   than a new routine. **PBKDF2 can only ever be gated at c = 1 and c = 2**:
+   at 6.5 billion instructions an iteration, RFC 6070's c = 4096 is 21
+   trillion, which is days. The loop is the same code at any c, so the routine
+   is provable and the count is not; that has to be said in its header rather
+   than discovered by whoever runs the suite. HMAC_DRBG is about seven HMAC
+   calls for instantiate plus one generate, so roughly 45 billion, or five
+   minutes a vector — affordable but it will be the slowest thing in the
+   suite.
 
 5. **cSHAKE, KMAC, TupleHash and ParallelHash** — SP 800-185. Last of the
    known work, because it is the largest and the only one with a design
