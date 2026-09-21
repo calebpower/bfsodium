@@ -142,6 +142,7 @@ routine, the suite fails until it has a row here.
 | `sha256/kdfctr` | 132269 | 324 | SP 800-108 §4.1 counter mode at both inner-hash block counts, one turn, two turns, a turn cut short and no fixed input |
 | `sha256/kdffb` | 133227 | 332 | SP 800-108 §4.2 feedback mode: one turn, two turns so the chain feeds back, a turn cut short, no fixed input, and the longest fixed input allowed |
 | `sha256/pbkdf2` | 136571 | 716 | RFC 7914 §11's published c=1 and c=2 vectors, two output blocks, a block cut short, and the longest salt allowed |
+| `sha256/drbg` | 222028 | 608 | NIST's published CAVP vector for HMAC_DRBG SHA-256, a generate cut short, and the longest seed allowed |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
@@ -199,8 +200,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 347 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 347 | golden vectors, dual oracle |
+| 2 | yes | 350 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 350 | golden vectors, dual oracle |
 | 5 | yes | 50 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -423,8 +424,60 @@ the reasoning.
    file's earlier estimate is now a derivation from two measurements rather
    than a guess.
 
-   **What is left.** Nothing in step 4 but HMAC_DRBG. **PBKDF2 stays gated at
-   c = 1 and c = 2**:
+   **DONE, and step 4 is closed: HMAC_DRBG**, SP 800-90A §10.1.2, as
+   `sha256/drbg`, in the profile with no reseed, no prediction resistance and
+   no additional input.
+
+   **Two pastes and not ten, and that is what shaped the file.** A paste of
+   `sha256/hmac` is ~6.8 MB of committed brainfuck, and instantiate plus one
+   128-byte generate is ten calls of it — 68 MB written out. So every call had
+   to go inside a loop, and what makes that possible is that **every call is
+   one of two kinds**: a *K step* (message `V ‖ tag ‖ [seed]`, answer replaces
+   K) or a *V step* (message `V`, answer replaces V). Update is a K step and a
+   V step, twice over when it has data; a generate is a run of V steps that
+   are written out, then one more pair.
+
+   **Instantiate is the zeroth generate.** Update over the seed and the Update
+   that ends a generate are the *same* pair loop, so the instantiate runs as a
+   pass of the generate loop that makes no output. That is what gets the pair
+   loop to one copy; the alternative was two copies and therefore three
+   pastes.
+
+   **The pair loop needs no comparison anywhere.** It counts down from two, so
+   after the loop's own decrement the counter is 1 on the K step and 0 on the
+   V step, and a copy of it *is* the flag.
+
+   **THE DEFECT, AND WHY IT IS THE SECOND OF ITS FAMILY.** All three vectors
+   failed and no hypothesis about the algorithm fitted the wrong bytes, so the
+   state was read out instead. That needed a new instrument: a dumper keyed on
+   a **source line** rather than an instruction count, because `hmac` carries
+   thousands of contracts of its own and a hit count cannot reach past the
+   first call. The state at each hash said it plainly:
+
+   ```
+   pair hash 1   K 0000…0000   V 0101…0101      the correct start
+   pair hash 2   K cec81077…   V 0101…0101      k1 exactly right
+   pair hash 3   K 161ce7c6…   V 0101…0101      V never changed
+   ```
+
+   The V step had written its answer to K. The flag saying which step this is
+   was copied from the half counter by a token that **adds**, and was never
+   cleared, so the 1 the K step left standing made the V step look like
+   another K step. One clearing token fixed it — and it also fixed a
+   *contract* failure on a different vector, which had looked like a second,
+   unrelated bug: the mis-flagged V step was building a 192-byte K-step
+   message and leaving `hashcore`'s prefix buffer inconsistent. One cause, two
+   symptoms.
+
+   **This is the same family as `pbkdf2`'s leftover `mplen` one commit
+   earlier: a cell written by accumulation rather than assignment keeps what
+   was there.** There it survived a loop nesting; here it survived one turn of
+   a single loop. In this library **a copy is always an add**, so the rule is
+   the plain one — *clear the destination unless the adding is the point* —
+   and it is worth more than either bug, because neither tier looks for it and
+   both bugs were invisible to every static check the repository has.
+
+   **PBKDF2 stays gated at c = 1 and c = 2**:
    at 6.5 billion instructions an iteration, RFC 6070's c = 4096 is 21
    trillion, which is days. The loop is the same code at any c, so the routine
    is provable and the count is not; that has to be said in its header rather

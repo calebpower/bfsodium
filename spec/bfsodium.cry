@@ -1467,6 +1467,75 @@ pbkdf2Run_8_188_1_32 inb = hmac5 pw (salt # [0, 0, 0, 1])
     salt = take`{188} (drop`{266} inb)
 
 // ---------------------------------------------------------------------------
+// HMAC_DRBG over SHA-256: NIST SP 800-90A section 10.1.2, in the profile with
+// no reseed, no prediction resistance and no additional input.
+//
+//   K starts at noughts and V at ones
+//   Update(data): K = PRF(K, V||00||data); V = PRF(K,V)
+//                 and again with 01 when data is not empty
+//   Instantiate  = Update(entropy || nonce || personalisation)
+//   Generate     = a run of V = PRF(K,V) blocks, then Update(empty)
+//
+// The first vector is NIST's OWN PUBLISHED CAVP value for HMAC_DRBG SHA-256,
+// which instantiates, generates 1024 bits and throws them away, then
+// generates again and compares. The discarded generate still has to happen,
+// because it advances the state.
+//
+// IO: seedlen{2} LE  ngen{2} LE  dklen{2} LE  seedbuf{256}
+
+// NIST's published vector. Sixteen hash calls, which is the most expensive
+// single assertion in this suite and is here because it is the only value in
+// this file that a standards body printed rather than this project computed.
+drbgRun_48_2_128 : [262][8] -> [128][8]
+drbgRun_48_2_128 inb = v8 # v9 # v10 # v11
+  where
+    seed = take`{48} (drop`{6} inb)
+    k0   = zero : [32][8]
+    v0   = repeat 0x01 : [32][8]
+    k1   = hmac3 k0 (v0 # [0x00] # seed)
+    v1   = hmac2 k1 v0
+    k2   = hmac3 k1 (v1 # [0x01] # seed)
+    v2   = hmac2 k2 v1
+    v3   = hmac2 k2 v2
+    v4   = hmac2 k2 v3
+    v5   = hmac2 k2 v4
+    v6   = hmac2 k2 v5
+    k3   = hmac2 k2 (v6 # [0x00])
+    v7   = hmac2 k3 v6
+    v8   = hmac2 k3 v7
+    v9   = hmac2 k3 v8
+    v10  = hmac2 k3 v9
+    v11  = hmac2 k3 v10
+
+// One generate, cut short, so the emit throws away twelve bytes of a block.
+drbgRun_48_1_20 : [262][8] -> [20][8]
+drbgRun_48_1_20 inb = take`{20} v3
+  where
+    seed = take`{48} (drop`{6} inb)
+    k0   = zero : [32][8]
+    v0   = repeat 0x01 : [32][8]
+    k1   = hmac3 k0 (v0 # [0x00] # seed)
+    v1   = hmac2 k1 v0
+    k2   = hmac3 k1 (v1 # [0x01] # seed)
+    v2   = hmac2 k2 v1
+    v3   = hmac2 k2 v2
+
+// The longest seed the routine allows, a hundred and fifty nine, which puts
+// the K step's message at a hundred and ninety two -- the most sha256/hmac
+// takes from memory -- and its inner hash at five blocks.
+drbgRun_159_1_32 : [262][8] -> [32][8]
+drbgRun_159_1_32 inb = v3
+  where
+    seed = take`{159} (drop`{6} inb)
+    k0   = zero : [32][8]
+    v0   = repeat 0x01 : [32][8]
+    k1   = hmac5 k0 (v0 # [0x00] # seed)
+    v1   = hmac2 k1 v0
+    k2   = hmac5 k1 (v1 # [0x01] # seed)
+    v2   = hmac2 k2 v1
+    v3   = hmac2 k2 v2
+
+// ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
 // B has to be independent of whatever the toolchain ships.

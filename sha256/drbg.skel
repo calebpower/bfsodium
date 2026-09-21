@@ -1,0 +1,608 @@
+; bfsodium HMAC_DRBG_SHA_256 : NIST SP 800_90A section 10 1 2
+;
+; HAND WRITTEN skeleton; The pseudorandom function is sha256/hmac  PASTED  and
+; entered once per call of the standard's own HMAC underscore DRBG underscore
+; Update and once per block of output;
+;
+; As in sha256/hashcore  a run of ONE repeated token is a repetition rather
+; than a decision and is written as such; every offset and every branch below
+; was worked out from the map and written down;
+;
+; IO  in:  seedlen{2} LE  ngen{2} LE  dklen{2} LE  seedbuf{256}
+;     out: the LAST generate's dklen bytes
+;
+; Only the first seedlen bytes of the seed buffer are looked at; the rest MUST
+; be nought;
+;
+; THE SEED IS ONE BLOB; the standard's seed material is the entropy input then
+; the nonce then the personalisation string  and this routine takes the three
+; already run together  because the standard concatenates them and never looks
+; at the seam  and because a routine that took them apart would be asserting
+; three lengths it has no use for;
+;
+; NGEN GENERATES HAPPEN AND THE LAST ONE IS WRITTEN OUT; that is CAVP's own
+; shape  which instantiates  generates once and throws it away  then generates
+; again and compares; the ones before the last still have to HAPPEN  because
+; each advances the state  so they are made and not written;
+;
+; TWO PASTES OF HMAC AND NOT SIX  which is the whole reason this file is
+; shaped the way it is; a paste of sha256/hmac is about six and a half million
+; bytes of brainfuck  and the standard's instantiate and one generate are ten
+; calls  so writing them out would be sixty five million bytes; Instead EVERY
+; CALL IS ONE OF TWO KINDS and both kinds live in loops:
+;   a K step  whose message is V then a tag byte then perhaps the seed  and
+;             whose answer replaces K
+;   a V step  whose message is V alone  and whose answer replaces V
+; Update is a K step and a V step  twice over when it has data; a generate is
+; a run of V steps that are written out  and then one more K step and V step;
+; So there are two loops and two pastes  which is what sha256/hkdf already
+; carries;
+;
+; THE PAIR LOOP COUNTS DOWN FROM TWO AND THAT IS HOW THE HALVES TELL THEMSELVES
+; APART; after the loop's own decrement the counter is one on the K step and
+; nought on the V step  so a copy of it IS the flag  and no comparison is
+; needed anywhere;
+;
+; SEEDLEN IS AT MOST A HUNDRED AND FIFTY NINE; the K step's message is V then
+; the tag then the seed  which is thirty two plus one plus seedlen  and a
+; hundred and ninety two is the most sha256/hmac takes from memory;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x001  seedlen{2}  u16 LE
+;   @0x002:0x003  ngen{2}     u16 LE  how many generates happen
+;   @0x004:0x005  dklen{2}    u16 LE  how many bytes each one makes
+;   @0x006:0x105  seedbuf{256} u8     the seed material  as given
+;   @0x108:0x207  stemp{256}  u8      hands the seed back after a copy
+;   @0x208:0x227  K{32}       u8      the standard's K; starts at nought
+;   @0x228:0x247  V{32}       u8      the standard's V; starts at ones
+;   @0x248:0x267  ktemp{32}   u8      hands K back after a copy
+;   @0x268:0x287  vtemp{32}   u8      hands V back after a copy
+;   @0x288:0x2a7  R{32}       u8      the mac  as a byte string  before it is
+;                          routed to K or to V; ONE staging copy rather than
+;                          two readers  so the eight word reversal is written
+;                          once and not once per destination
+;   @0x2a8:0x2c7  OUT{32}     u8      the block written out and spent
+;   @0x2cc:0x2cd  dklen kept  to reset the count owed at each generate
+;   @0x2ce:0x2cf  the count still owed in THIS generate
+;   @0x2d0:0x2d5  chances flag test back and two spare cells
+;   @0x2d6        the generates still to do
+;   @0x2d7        the flag that says THIS generate is the one written out
+;   @0x2d8        the pair counter  two then one then nought
+;   @0x2d9        the half counter inside a pair
+;   @0x2da        this call is the K step
+;   @0x2db        the tag byte  nought on the first pair and one on the second
+;   @0x2dc        the message carries the seed
+;   @0x2dd        the first pass  which instantiates and makes no output
+;   @0x2e0:0x9eb  sha256/hmac's frame  pasted at @0x2e0; footprint 0:1803
+;
+; A digest is a byte string and hmac leaves its answer as eight little endian
+; words  so the copy into R reverses each word;
+
+; read the three counts and the seed
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=261
+
+; ==== dklen is kept  because each generate needs the count afresh ====
+L257
+  [-R712+R8+L720]
+R720
+  [-L720+R720]
+L719
+  [-R712+R8+L720]
+R720
+  [-L720+R720]
+
+; ==== K is nought already and V is ones  which is where 10 1 2 starts ====
+L173
+  +>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+
+
+; ==== the passes: one to instantiate and then one per generate ====
+; INSTANTIATE IS THE ZEROTH GENERATE  and that is the whole trick of this
+; file; Update over the seed and the Update that ends a generate are the
+; same pair loop  so putting the instantiate INSIDE the generate loop as a
+; pass that makes no output leaves ONE pair loop and therefore one paste;
+; the count is ngen plus one for that pass
+L581
+  [-R724+L2+L722]
+R722
+  [-L722+R722]
+R2
+  +
+R7
+  [-]
+  +
+; FIRST is the first pass flag  and it is spent at the foot of the loop
+L7
+[
+  -
+; after that decrement a nought here means THIS is the last pass  which is
+; the generate that gets written out
+R1
+  [-]
+  +
+L1
+  [-L4+R1+R3]
+L3
+  [-R3+L3]
+L1
+  [[-]R5[-]L5]
+
+; ____ the output blocks  which the first pass does not do ____
+; the else arm is armed  because the first pass clears the flag it tests
+R2
+  [-]
+  +
+; the first pass makes no output at all
+R9
+  [-L11+R1+R10]
+L10
+  [-R10+L10]
+L1
+[
+  -
+; so the else arm does not fire
+R2
+  [-]
+L2
+]
+; and every pass after it makes dklen bytes  written out or not
+R2
+[
+  -
+; the count owed comes back from the kept copy
+L8
+  [-R2+R4+L6]
+R6
+  [-L6+R6]
+L5
+  [-R2+R3+L5]
+R5
+  [-L5+R5]
+L1
+; the flag starts clear  and a byte that is not nought raises it
+  [-]
+L3
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L1[-]+R1]
+; and the next byte through the same cell
+L3
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+L1
+  [[-]L1[-]+R1]
+L1
+[
+  -
+; ____ the message is V alone ____
+; the message always begins with V  which is handed straight back
+L169
+  [-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]
+; and hmac's count of it  which hmac spends
+R155
+  [-]
+R1
+  [-]
+L1
+  ++++++++++++++++++++++++++++++++
+; the key is always K  and is handed straight back
+L2
+  [-]
+R1
+  [-]
+L1
+  ++++++++++++++++++++++++++++++++
+; ASSERT zero 740:741
+L216
+  [-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]
+R185
+; ASSERT ptr=736
+@@HMAC@@ 736
+; ASSERT ptr=736
+; both halves of the state come back  and the mac goes to the staging
+; copy  from whose top byte down each of its eight words is read
+L152
+  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
+R1
+  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
+R872
+; word 0  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 1  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 2  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 3  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 4  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 5  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 6  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 7  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+; the answer replaces V and is also the block to write out
+L992
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+R65
+  [-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]>[-L96+R128+L32]
+
+; thirty two chances  one per byte
+R41
+  [-]
+  ++++++++++++++++++++++++++++++++
+[
+  -
+R1
+; the flag starts clear  and a byte that is not nought raises it
+  [-]
+L3
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L1[-]+R1]
+; and the next byte through the same cell
+L3
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+L1
+  [[-]L1[-]+R1]
+L1
+[
+  -
+; the head goes out  but only on the pass that is kept
+R6
+  [-L5+R1+R4]
+L4
+  [-R4+L4]
+L1
+[
+  -
+L42
+  .
+R42
+]
+; the count comes down whether it was written or not  low byte first
+L4
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+; the else arm is armed
+R2
+  [-]
+  +
+; a low byte that is not nought simply comes down
+L3
+  [[-]L4-R7-L3]
+; otherwise the high byte comes down and the low byte wraps
+R3
+  [-L6-L1-R7]
+; the byte just spent is EMPTIED  because the slide below ADDS
+L45
+  [-]
+; and the copy slides down one place
+R1
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+R10
+]
+L1
+]
+; whatever was not owed is discarded
+L40
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+; and another block only if a byte is still owed
+R10
+; the flag starts clear  and a byte that is not nought raises it
+  [-]
+L3
+  [-R4+R1+L5]
+R5
+  [-L5+R5]
+L1
+  [[-]L1[-]+R1]
+; and the next byte through the same cell
+L3
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+L1
+  [[-]L1[-]+R1]
+L1
+]
+R3
+]
+
+; ____ then Update: two pairs with the seed on the first pass  one pair
+; with no data on every generate ____
+R7
+  [-]
+R1
+  [-]
+L4
+  [-]
+  +
+; the first pass carries the seed and runs twice over
+R5
+  [-L11+R1+R10]
+L10
+  [-R10+L10]
+L1
+[
+  -
+; a second pair  and the seed with it
+R6
+  +
+R4
+  +
+L10
+]
+; one pass of this loop is one call of the hash  and there are two of them
+; in a pair: the K step and then the V step
+R6
+[
+  -
+; the half counter says which step this is: after its own decrement it
+; is one on the K step and nought on the V step
+R1
+  [-]
+  ++
+[
+  -
+; a copy of it IS the flag  and it is handed straight back; the flag is
+; CLEARED first because a copy ADDS  and the K step before this one left
+; a one standing that would make the V step look like another K step
+R1
+  [-]
+L1
+  [-R1+L5+R4]
+L4
+  [-R4+L4]
+; ____ the message ____
+; the message always begins with V  which is handed straight back
+L173
+  [-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]>[-R446+L382+L64]
+; and hmac's count of it  which hmac spends
+R155
+  [-]
+R1
+  [-]
+L1
+  ++++++++++++++++++++++++++++++++
+; the K step adds the tag byte  and then the seed if this pair carries it
+L8
+  [-L8+R1+R7]
+L7
+  [-R7+L7]
+L1
+[
+  -
+; the tag  which is kept for the pair after this one
+R9
+  [-R299+L306+R7]
+L7
+  [-R7+L7]
+R14
+  +
+; and the seed  handed straight back  when this pair carries it
+L6
+  [-L10+R1+R9]
+L9
+  [-R9+L9]
+L1
+[
+  -
+L716
+  [-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]>[-R1025+L767+L258]
+R100
+  [-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]>[-L258+R258]
+; and hmac's count grows by the seed's own length
+L422
+  [-R738+L14+L724]
+R724
+  [-L724+R724]
+L723
+  [-R738+L14+L724]
+R724
+  [-L724+R724]
+L3
+]
+]
+; the key is always K  and is handed straight back
+R14
+  [-]
+R1
+  [-]
+L1
+  ++++++++++++++++++++++++++++++++
+; ASSERT zero 740:741
+L216
+  [-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]>[-R222+L158+L64]
+R185
+; ASSERT ptr=736
+@@HMAC@@ 736
+; ASSERT ptr=736
+; both halves of the state come back  and the mac goes to the staging
+; copy  from whose top byte down each of its eight words is read
+L152
+  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
+R1
+  [-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]>[-L64+R64]
+R872
+; word 0  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 1  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 2  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 3  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 4  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 5  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 6  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+R7
+; word 7  top byte first
+  [-L871+R871]
+L1
+  [-L869+R869]
+L1
+  [-L867+R867]
+L1
+  [-L865+R865]
+; the answer replaces K on the K step and V on the V step; the else
+; arm is armed first  because the K arm clears the condition it tests
+L820
+  [-]
+  +
+R6
+  [-L8+R1+R7]
+L7
+  [-R7+L7]
+L1
+[
+  -
+; the K step  and the else does not fire
+R2
+  [-]
+L204
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+R97
+  [-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]>[-L128+R128]
+R43
+]
+R2
+[
+  -
+; the V step
+L172
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+R65
+  [-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]>[-L96+R96]
+R45
+]
+R5
+]
+; the pair after this one carries the other tag
+R2
+  +
+L3
+]
+; the first pass is spent
+R5
+  [-]
+L7
+]
+
+; nothing is buffered  so when the last pass has been written the work is
+; done  and every count the loops above used is at nought

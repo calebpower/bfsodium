@@ -658,7 +658,7 @@ this is where to start.
 | SHA-384, SHA-512, SHA-512/224, SHA-512/256 | `add64`, `rotr64`, `shr64`, `xor64`, `and64` — all five built | **SHA-512 itself is now built**; SHA-384 and both SHA-512/t are the same core with a different IV and a truncation |
 | HMAC over each of the above | nothing new | FIPS 198-1; **HMAC-SHA-512 is built** |
 | HKDF over each | nothing new | RFC 5869; **HKDF-SHA-512 is built**, with info capped at 190 bytes — see the note in its header |
-| HMAC_DRBG | nothing new | SP 800-90A; nearly free given HMAC-SHA-256 |
+| HMAC_DRBG | nothing new | **built** over HMAC-SHA-256, in the profile with no reseed, no prediction resistance and no additional input; checked against NIST's own published CAVP vector |
 | SP 800-108 KDFs (counter, feedback) | nothing new | **both modes are built** over HMAC-SHA-256, with a 32-bit counter and the fixed input taken as one blob; feedback mode's IV is always present and always 32 bytes |
 | PBKDF2 | nothing new | **built** over HMAC-SHA-256; `c` is a u32 and the routine is correct for any of them, but only the smallest can be *run* — one iteration is 5,203,749,719 instructions measured, so the standard's own c = 4096 is ~2.1 × 10¹³, which is days |
 
