@@ -666,6 +666,9 @@ keccakPadB1Full p m = [m # [p || 0x80]]
 keccakPadB2 : {n} (fin n, n >= 136, n <= 270) => [8] -> [n][8] -> [2][136][8]
 keccakPadB2 p m = split (m # [p] # (zero : [270 - n][8]) # [0x80])
 
+keccakPadB3 : {n} (fin n, n >= 271, n <= 406) => [8] -> [n][8] -> [3][136][8]
+keccakPadB3 p m = split (m # [p] # (zero : [406 - n][8]) # [0x80])
+
 // The squeeze at rate 136: the first 136 bytes of the state, then the first
 // 136 of the permuted state, and so on for as long as the caller wants. SHA3
 // takes 32 bytes and stops inside the first rate, so keccak/sha3_256.bf never
@@ -1654,6 +1657,47 @@ bp168Run_0_15 inb = lencode1 168 # lencode1 (8 * 0)
 bp168Run_64_96 : [260][8] -> [168][8]
 bp168Run_64_96 inb = lencode1 168 # lencode2 (8 * 64) # take`{64} (drop`{4} inb)
                    # lencode2 (8 * 96) # take`{96} (drop`{132} inb)
+
+// ---------------------------------------------------------------------------
+// SPONGE136 WITH A TAPE PREFIX, as keccak/sponge136.bf now reads it:
+//
+//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{272}  then mlen bytes
+//
+// cSHAKE and KMAC put whole bytepad blocks in front of the message, and the
+// sponge reads its message from the wire, so the prefix comes from the tape
+// instead. The claim these vectors make is the only one worth making about
+// it: THE ANSWER IS THE SPONGE OF THE PREFIX FOLLOWED BY THE WIRE MESSAGE.
+// Each is written as exactly that, over a message built by concatenation, so
+// a prefix absorbed in the wrong order or at the wrong offset is a wrong
+// answer rather than a coincidence.
+
+// One whole block of prefix and a short wire message.
+sponge136pRun_136_3_32 : [282][8] -> [32][8]
+sponge136pRun_136_3_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{139} 0x1f
+        (take`{136} (drop`{7} inb) # drop`{279} inb)))
+
+// One whole block of prefix and nothing at all on the wire, which is the
+// shape cSHAKE takes when it is asked to hash the empty string.
+sponge136pRun_136_0_32 : [279][8] -> [32][8]
+sponge136pRun_136_0_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{136} 0x1f
+        (take`{136} (drop`{7} inb))))
+
+// Two whole blocks of prefix, which is what KMAC needs, and two rates out.
+sponge136pRun_272_5_64 : [284][8] -> [64][8]
+sponge136pRun_272_5_64 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{277} 0x1f
+        (take`{272} (drop`{7} inb) # drop`{279} inb)))
+
+// A prefix that is NOT a whole block. bytepad never produces one, so nothing
+// in SP 800-185 will ask for this; the conveyor supports it because it counts
+// bytes rather than blocks, and an untested capability is where surprises
+// come from.
+sponge136pRun_7_3_32 : [282][8] -> [32][8]
+sponge136pRun_7_3_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{10} 0x1f
+        (take`{7} (drop`{7} inb) # drop`{279} inb)))
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

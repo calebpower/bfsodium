@@ -5,7 +5,7 @@
 ; SHA3 functions  which is 6  and an output length of thirty two bytes  which is
 ; the digest size and is under one rate  so the sponge is squeezed once;
 ;
-; INTERFACE entry=1 exit=0 footprint=0:1025
+; INTERFACE entry=1 exit=0 footprint=0:1311
 ; IO  in:  mlen{2} LE  then mlen bytes from the wire
 ;     out: digest{32}
 ;
@@ -14,7 +14,9 @@
 ;   @0x001:0x002  mlen    the message length  little endian
 ;   @0x003:0x004  olen    the output length  which is thirty two
 ;   @0x000:0x401  keccak/sponge136 pasted at this file's own zero; it reads
-;                         those five cells and owns every cell above them
+;                         those five cells  leaves the prefix length and the
+;                         prefix buffer above them at nought  and owns every
+;                         cell above that
 ;
 ; WHY THIS FILE IS A HEAD AND NOT A SPONGE OF ITS OWN: SHAKE256 has the same rate
 ; and therefore the same absorb  and differs only in the padding byte and in
@@ -31,7 +33,7 @@
 ; read the message length little endian
   ,>,
 ; ASSERT ptr=1
-; ASSERT zero 2:1025
+; ASSERT zero 2:1311
 ; the high byte moves up one cell  to leave room for the padding byte below it
   [-R1+L1]
 L1

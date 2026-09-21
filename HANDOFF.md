@@ -153,9 +153,9 @@ routine, the suite fails until it has a row here.
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
 | `keccak/permute1600` | 51119 | 271 | the published all zero vector and a random state + Cryptol |
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
-| `keccak/sponge136` | 116892 | 717 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
-| `keccak/sha3_256` | 116866 | 57 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
-| `keccak/shake256` | 116868 | 55 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge136` | 126797 | 792 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 126762 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 126764 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sponge168` | 120430 | 776 | one inside the first rate and one past it + Cryptol |
 | `keccak/shake128` | 120402 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
@@ -204,8 +204,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 381 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 381 | golden vectors, dual oracle |
+| 2 | yes | 385 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 385 | golden vectors, dual oracle |
 | 5 | yes | 54 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -586,8 +586,53 @@ the reasoning.
    `rate − 8`, so 128 at 136 and 160 at 168 — and `bp168Run_64_96` is its own
    exactly-full vector.
 
-   **Still to do:** tape-prefix absorption, then cSHAKE, then KMAC and the two
-   hashes.
+   **DONE as well: tape-prefix absorption.** `keccak/sponge136` now takes a
+   prefix from the tape before it reads the wire — the two-source shape
+   `sha256/hashcore` has had all along, which is the argument for it: this is
+   the established pattern here, not a new idea.
+
+   **The cheap path was tried first and does not work.** cSHAKE could in
+   principle pre-load the state with the permuted prefix and then paste the
+   sponge unchanged. It cannot: the sponge asserts `zero 5:1025` on entry, and
+   its head cells live INSIDE the state at 0..4 before being relocated, so a
+   caller that pre-loaded S would both break the contract and have its first
+   five state bytes moved out from under it. Worth recording so nobody spends
+   an afternoon rediscovering it.
+
+   **Every new cell went above the old top at 1025**, so no existing address
+   moved and `sha3_256` and `shake256` needed only a footprint number and a
+   widened contract — no re-lay at all, which is what the change looked like
+   it would cost. The paste mechanism absorbed the `entry` change (4 → 278) by
+   itself, since `import` emits `>`×entry and the body walks back.
+
+   **No new block machinery.** The prefix is consumed by a SECOND CONVEYOR
+   feeding the first: the head of the prefix buffer enters the block and the
+   buffer slides down one, exactly as the block itself does. Only *where the
+   next byte comes from* changed.
+
+   **A BUG THAT NO CHECKER IN THIS REPOSITORY CAN SEE.** One hand-written
+   token came out `[-R2+R3+L5]`. It is POINTER BALANCED, so `ptrcheck` passes
+   it; `bflint`, `bfstyle` and `bffoot` have nothing to say about it either.
+   It simply lands on cell 1038 instead of the handback cell at 1036. Nor
+   would a vector have caught it: the cell it corrupts only matters for a
+   prefix longer than 255 bytes, and nothing asks for one. It was found by
+   reading the emitted tokens back and naming what each one targets, which is
+   now worth doing for any token written by hand rather than computed:
+
+       at PLO   [-R3+R1+L4]   -> PT PB PLO
+       at PHI   [-R2+R1+L3]   -> PT PB PHI      (corrected)
+       at PBUF  [-L81+R81]    -> BBtop PBUF
+
+   Four vectors against `hashlib` and Cryptol both: one block of prefix with
+   and without a wire message, two blocks with two rates out, and a prefix
+   that is deliberately NOT block-aligned. `bytepad` never makes one, but the
+   conveyor counts bytes rather than blocks, and untested capability is where
+   surprises come from. The nine SHA3-256 and SHAKE256 vectors were re-run at
+   `plen = 0` and are byte-identical.
+
+   **Still to do:** the 168 twin of this, cSHAKE, then KMAC and the two
+   hashes. KMAC also wants a tape SUFFIX for its `right_encode(L)`, which is
+   the same mechanism at the other end and is deferred to that unit.
 
 6. **AES itself, if and only if step 1 says so.**
 

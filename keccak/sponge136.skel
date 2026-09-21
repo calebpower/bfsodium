@@ -5,8 +5,9 @@
 ; per block of the padded message and once more for every rate of output after
 ; the first;
 ;
-; INTERFACE entry=4 exit=1024 footprint=0:1025
-; IO  in:  pad{1}  mlen{2} LE  olen{2} LE  then mlen bytes from the wire
+; INTERFACE entry=278 exit=1024 footprint=0:1311
+; IO  in:  pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{272}
+;          then mlen bytes from the wire
 ;     out: olen bytes  as they come off the state
 ;
 ; THE RATE CANNOT BE A PARAMETER BUT THE PADDING BYTE CAN  which is the whole
@@ -96,12 +97,13 @@
 ; the state must start at nought; Every distance below was worked out from the
 ; map;
 
-; read the padding byte  then the message length  then the output length
-  ,>,>,>,>,
-; ASSERT ptr=4
-; ASSERT zero 5:1025
+; read the padding byte  the message length  the output length  the prefix
+; length  and then the prefix buffer itself
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=278
+; ASSERT zero 279:1311
 ; to the bottom of the state
-L4
+L278
 ; ASSERT ptr=0
 ; the padding byte moves up out of the state  to wait for the end of the message
   [-R1023+L1023]
@@ -112,10 +114,23 @@ R1
 ; ASSERT ptr=2
 R1
 ; ASSERT ptr=3
-; and so does the output length  which leaves the state at nought
+; and so does the output length
   [-R1018+L1018]>[-R1018+L1018]
 ; ASSERT ptr=4
-R1004
+; the prefix length goes up with them
+R1
+; ASSERT ptr=5
+  [-R1027+L1027]>[-R1027+L1027]
+; ASSERT ptr=6
+; and so does the whole prefix buffer  which leaves the state at nought; a
+; PASTED caller writes none of this and the run below moves noughts  which
+; costs about a thousand instructions and is the price of one read prologue
+; serving both a standalone run and a paste
+R1
+; ASSERT ptr=7
+  [-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]
+; ASSERT ptr=278
+R730
 ; ASSERT ptr=1008
 
 ; ==== is there a message at all ====
@@ -160,6 +175,63 @@ L188
 ; ASSERT ptr=825
   [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
 ; ASSERT ptr=959
+
+; ==== a byte from the TAPE PREFIX enters before any from the wire ====
+; cSHAKE and KMAC put whole bytepad blocks in front of the message  and
+; sponge reads its message from the wire  so the prefix has to come from
+; somewhere else; It comes from a buffer above the frame  consumed by a
+; SECOND CONVEYOR feeding the first: the head of the buffer enters the
+; block and the buffer slides down one  exactly as the block itself does;
+; So no block machinery is new here  only where the next byte comes from;
+; is any of the prefix still to come
+R78
+  [-]
+L5
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+L1
+  [[-]R2[-]+L2]
+; and the high byte through the same cell
+L2
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+L1
+  [[-]R2[-]+L2]
+; the else arm is armed  because the prefix arm clears it
+L1
+  [-]
+  +
+R3
+[
+  [-]
+; the else does not fire  and the head of the prefix enters the block
+L3
+  [-]
+R6
+  [-L81+R81]
+; and the prefix slides down one place after it
+R1
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+; the count of prefix bytes comes down by one  low byte first
+L279
+  [-R3+R1+L4]
+R4
+  [-L4+R4]
+  [-]
+  +
+L1
+  [[-]L3-R4-L1]
+R1
+  [-L3-L1-R4]
+R1
+]
+; otherwise the message and the padding decide  exactly as before
+L3
+[
+  -
+L75
 ; to the else arm  which is set until the message is found to have more
 R57
 ; ASSERT ptr=1016
@@ -262,6 +334,9 @@ R2
 ; ASSERT ptr=1016
 ; back to the count of bytes in a block
 L3
+R21
+]
+L21
 ; ASSERT ptr=1013
 ]
 ; ASSERT ptr=1013
