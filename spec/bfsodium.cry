@@ -1536,6 +1536,50 @@ drbgRun_159_1_32 inb = v3
     v3   = hmac2 k2 v2
 
 // ---------------------------------------------------------------------------
+// NIST SP 800-185 section 2.3.1: left_encode and right_encode.
+//
+// The encoding is the shortest big-endian run of bytes holding x, with a count
+// of them before (left) or after (right). The count is at least one, so nought
+// encodes as two bytes.
+//
+// leftEncN is written out rather than transcribed per vector, so a vector
+// fails if the routine's four-way branch picks the wrong count -- which is the
+// only part of this that can be got wrong.
+leftEncN : [32] -> [8]
+leftEncN x = if x >= 0x01000000 then 4
+              | x >= 0x00010000 then 3
+              | x >= 0x00000100 then 2
+              else 1
+
+// The routine reads x little-endian off the wire; these put it back together.
+encVal : [4][8] -> [32]
+encVal inb = join (reverse inb)
+
+leftEncRun_1 : [4][8] -> [2][8]
+leftEncRun_1 inb = [leftEncN (encVal inb)] # drop`{3} (split`{4} (encVal inb))
+
+leftEncRun_2 : [4][8] -> [3][8]
+leftEncRun_2 inb = [leftEncN (encVal inb)] # drop`{2} (split`{4} (encVal inb))
+
+leftEncRun_3 : [4][8] -> [4][8]
+leftEncRun_3 inb = [leftEncN (encVal inb)] # drop`{1} (split`{4} (encVal inb))
+
+leftEncRun_4 : [4][8] -> [5][8]
+leftEncRun_4 inb = [leftEncN (encVal inb)] # split`{4} (encVal inb)
+
+rightEncRun_1 : [4][8] -> [2][8]
+rightEncRun_1 inb = drop`{3} (split`{4} (encVal inb)) # [leftEncN (encVal inb)]
+
+rightEncRun_2 : [4][8] -> [3][8]
+rightEncRun_2 inb = drop`{2} (split`{4} (encVal inb)) # [leftEncN (encVal inb)]
+
+rightEncRun_3 : [4][8] -> [4][8]
+rightEncRun_3 inb = drop`{1} (split`{4} (encVal inb)) # [leftEncN (encVal inb)]
+
+rightEncRun_4 : [4][8] -> [5][8]
+rightEncRun_4 inb = split`{4} (encVal inb) # [leftEncN (encVal inb)]
+
+// ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
 // B has to be independent of whatever the toolchain ships.

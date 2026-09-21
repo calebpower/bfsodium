@@ -144,6 +144,8 @@ routine, the suite fails until it has a row here.
 | `sha256/pbkdf2` | 136571 | 716 | RFC 7914 §11's published c=1 and c=2 vectors, two output blocks, a block cut short, and the longest salt allowed |
 | `sha256/drbg` | 222028 | 608 | NIST's published CAVP vector for HMAC_DRBG SHA-256, a generate cut short, and the longest seed allowed |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
+| `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
@@ -200,9 +202,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 350 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 350 | golden vectors, dual oracle |
-| 5 | yes | 50 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 370 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 370 | golden vectors, dual oracle |
+| 5 | yes | 52 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -501,9 +503,48 @@ the reasoning.
    definition**, so a prefix is always a whole number of blocks and the sponge
    never has to interleave tape and wire inside one block. It absorbs k whole
    blocks from the tape and then enters the existing loop unchanged — a new
-   entry point rather than a rewrite. Four units: the encodings
-   (`left_encode`, `right_encode`, `encode_string`, `bytepad`), tape-prefix
-   absorption, then cSHAKE, then KMAC and the two hashes.
+   entry point rather than a rewrite.
+
+   **STARTED: `keccak/leftenc` and `keccak/rightenc` are built.** This list
+   said the first unit was "the encodings (`left_encode`, `right_encode`,
+   `encode_string`, `bytepad`)", and that grouping is wrong — the fourth time
+   this page has named a unit that was not the unit. The first two are
+   primitives; `encode_string` and `bytepad` are **concatenations of
+   variable-length pieces**, which is the assembly problem and belongs with
+   the block builder, not with them.
+
+   What makes the two that landed cheap is worth stating, because it is the
+   opposite of what the rest of SP 800-185 will be: **the byte count decides
+   WHICH of x's bytes are copied, not WHERE they land**, so each of the four
+   cases is a fixed pattern and there is no sliding anywhere. x is 32 bits,
+   which is a choice — the standard allows up to 2^2040, and everything
+   SP 800-185 asks for (a rate, a length in bits, an output length) is far
+   smaller.
+
+   Twenty vectors, every case and both sides of every boundary, and they run
+   in microseconds rather than minutes — the first thing in this batch that
+   costs the gate nothing.
+
+   **A DEFECT CAUGHT BEFORE IT WAS COMMITTED, BY LOOKING RATHER THAN BY
+   TESTING.** All twenty vectors passed, and the routine was still wrong: the
+   cascade's `any` cell was left at 1 whenever a case above one byte was
+   taken. A single use never sees it. **A second paste would have seen it
+   immediately** — `any` already set means the cascade skips every case, sets
+   no flag, and encodes nothing at all, silently — and the block builder
+   pastes this routine twice. It was found by dumping the frame after a run
+   and asking whether it was clean, because the next thing to be written was
+   its second caller.
+
+   That is `chacha20/add32`'s stated convention, which this routine was
+   quietly breaking: *the frame is as clean on the way out as a caller is
+   entitled to assume on the way in.* It now clears the cell and **declares
+   `ASSERT zero +0:+11`**, so the convention is checked rather than promised,
+   and the two contract runs added to the suite are the test that would have
+   caught it.
+
+   **Still to do:** the block builder (`encode_string` and `bytepad` into one
+   rate-sized block, where the sliding lives), tape-prefix absorption, then
+   cSHAKE, then KMAC and the two hashes.
 
 6. **AES itself, if and only if step 1 says so.**
 
