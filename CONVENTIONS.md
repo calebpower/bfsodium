@@ -660,7 +660,7 @@ this is where to start.
 | HKDF over each | nothing new | RFC 5869; **HKDF-SHA-512 is built**, with info capped at 190 bytes — see the note in its header |
 | HMAC_DRBG | nothing new | SP 800-90A; nearly free given HMAC-SHA-256 |
 | SP 800-108 KDFs (counter, feedback) | nothing new | **both modes are built** over HMAC-SHA-256, with a 32-bit counter and the fixed input taken as one blob; feedback mode's IV is always present and always 32 bytes |
-| PBKDF2 | nothing new | SP 800-132; a counted loop over HMAC |
+| PBKDF2 | nothing new | **built** over HMAC-SHA-256; `c` is a u32 and the routine is correct for any of them, but only the smallest can be *run* — one iteration is 5,203,749,719 instructions measured, so the standard's own c = 4096 is ~2.1 × 10¹³, which is days |
 
 About fifteen approved algorithms, no new mathematics, and the 64-bit idiom set
 is reusable for everything after it.

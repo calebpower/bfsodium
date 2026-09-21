@@ -74,7 +74,7 @@ constant-time story and cannot be one, and nothing is zeroized. See
 | [`sha256/hkdf.bf`](sha256/hkdf.bf) | **HKDF-SHA-256 (RFC 5869)** |
 
 That is everything CONVENTIONS.md lists as v1. Since then the 64-bit idiom set,
-SHA-512 with HMAC and HKDF over it, both SP 800-108 KDF modes, and the
+SHA-512 with HMAC and HKDF over it, both SP 800-108 KDF modes, PBKDF2, and
 whole of Keccak — the permutation, the sponge, all four SHA-3 digests and both
 SHAKEs — have been built on top of it.
 The ML-KEM /
@@ -117,6 +117,7 @@ modern x86-64 at roughly 750 million instructions a second.
 | AEAD, one byte of plaintext and no AAD | 0.8 billion | 1.6 s |
 | HKDF, 64-byte output | ≈22 billion | ≈29 s |
 | SP 800-108 counter KDF, 32-byte output | 6.5 billion | 8.7 s |
+| PBKDF2, one iteration, 32-byte output | 5.1 billion | 6.8 s |
 | AEAD, the full RFC 8439 §2.8.2 vector | 1.9 billion | 3.3 s |
 | SHA3-256 or SHAKE256, one block in and one rate out | 2.7 billion | 4.1 s |
 | SHAKE128, one block in and one rate out | 2.8 billion | 4.2 s |

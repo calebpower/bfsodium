@@ -141,6 +141,7 @@ routine, the suite fails until it has a row here.
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `sha256/kdfctr` | 132269 | 324 | SP 800-108 §4.1 counter mode at both inner-hash block counts, one turn, two turns, a turn cut short and no fixed input |
 | `sha256/kdffb` | 133227 | 332 | SP 800-108 §4.2 feedback mode: one turn, two turns so the chain feeds back, a turn cut short, no fixed input, and the longest fixed input allowed |
+| `sha256/pbkdf2` | 136571 | 716 | RFC 7914 §11's published c=1 and c=2 vectors, two output blocks, a block cut short, and the longest salt allowed |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
@@ -198,8 +199,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 342 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 342 | golden vectors, dual oracle |
+| 2 | yes | 347 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 347 | golden vectors, dual oracle |
 | 5 | yes | 50 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -381,8 +382,49 @@ the reasoning.
    if no vector had ever gone near the limit. **Put a vector at every cap you
    write down.**
 
-   **What is left, and one decision already forced.** **PBKDF2 can only ever
-   be gated at c = 1 and c = 2**:
+   **DONE as well: PBKDF2**, RFC 8018 §5.2, as `sha256/pbkdf2`, and it is the
+   first of the three that is not cheap. The two SP 800-108 files were easy
+   because their counters come first; RFC 8018 fixes the order the other way,
+   so `U(1)`'s message is salt-then-counter and the four counter bytes belong
+   at an address only known at run time. **So this one uses `hkdf`'s slide**,
+   for `hkdf`'s reason. It is cheap here for a reason worth keeping: the slide
+   happens once per OUTPUT BLOCK and the hash happens `c` times per block, so
+   at any iteration count a caller would really choose it is not measurable.
+
+   **One subtraction is an addition.** The iteration count comes down by one
+   each turn, and a 32-bit borrow written out by hand would have been a fourth
+   hand-rolled carry. `chacha20/add32` drops its final carry, so **adding
+   0xffffffff is subtracting one** — two adder frames and no cascade.
+
+   **THE DEFECT WORTH KEEPING, and the vector that earned its place.**
+   `mplen` is written at the end of every iteration to set up the next one.
+   On the LAST iteration there is no next one, so a 32 was left behind that no
+   hash ever spent, and the next output block added `saltlen + 4` on top of
+   it. Block 1 was right and block 2 hashed a 40-byte message instead of an
+   8-byte one.
+
+   **Neither published vector could see it.** `c=1` and `c=2` at 32 bytes out
+   are single-block, and a single block never builds a second message. Only
+   `pbkdf2Run_8_4_1_64` — two output blocks — reaches the state, and it is the
+   one that failed. The cause was then confirmed by arithmetic rather than by
+   a plausible story: `HMAC(P, salt ‖ INT(2) ‖ 32 noughts)` reproduces the
+   wrong bytes exactly. The fix clears `mplen` at the head of each block.
+
+   The general shape is worth naming, because nothing in the tier list looks
+   for it: **a value written for the next pass of an inner loop outlives the
+   loop, and the outer loop inherits it.** Any routine with a loop inside a
+   loop can have it, and only a vector that runs the outer loop twice can see
+   it.
+
+   **The cost, measured.** c = 1 at 32 bytes out is **5,136,901,190** and
+   c = 2 is **10,340,650,909**, each with its output checked against its
+   vector in the same run, so **an iteration is 5,203,749,719**. RFC 6070's
+   c = 4096 is therefore ~2.1 × 10¹³, which is days — the "days" in this
+   file's earlier estimate is now a derivation from two measurements rather
+   than a guess.
+
+   **What is left.** Nothing in step 4 but HMAC_DRBG. **PBKDF2 stays gated at
+   c = 1 and c = 2**:
    at 6.5 billion instructions an iteration, RFC 6070's c = 4096 is 21
    trillion, which is days. The loop is the same code at any c, so the routine
    is provable and the count is not; that has to be said in its header rather
