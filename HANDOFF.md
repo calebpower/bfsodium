@@ -156,8 +156,8 @@ routine, the suite fails until it has a row here.
 | `keccak/sponge136` | 126797 | 792 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
 | `keccak/sha3_256` | 126762 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
 | `keccak/shake256` | 126764 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 120430 | 776 | one inside the first rate and one past it + Cryptol |
-| `keccak/shake128` | 120402 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 133005 | 851 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 132965 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
 | `keccak/sha3_384` | 61875 | 458 | rate 104  the same four + Cryptol |
 | `keccak/sha3_512` | 58572 | 406 | rate 72  the same four + Cryptol |
@@ -204,8 +204,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 385 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 385 | golden vectors, dual oracle |
+| 2 | yes | 389 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 389 | golden vectors, dual oracle |
 | 5 | yes | 54 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -630,9 +630,30 @@ the reasoning.
    surprises come from. The nine SHA3-256 and SHAKE256 vectors were re-run at
    `plen = 0` and are byte-identical.
 
-   **Still to do:** the 168 twin of this, cSHAKE, then KMAC and the two
-   hashes. KMAC also wants a tape SUFFIX for its `right_encode(L)`, which is
-   the same mechanism at the other end and is deferred to that unit.
+   **And the 168 twin**, for cSHAKE128 and KMAC128. `sponge168` is
+   `sponge136` shifted by exactly +32, and because every new cell sits at the
+   same offset from the TOP of the frame, **the whole prefix arm lifted across
+   byte for byte** — even `[-L81+R81]`, the token that carries the head of the
+   prefix into the block, is the same at both rates.
+
+   One thing did not transfer, and `ptrcheck` caught it as a uniform +64: the
+   walk home after the slide scales with the BUFFER, not the rate — `L279` at
+   272 cells, `L343` at 336. Worth knowing for the next twin: what scales with
+   the rate and what scales with the buffer are different sets.
+
+   **A PRE-EXISTING DEFECT FOUND ON THE WAY.** `keccak/shake128` declared
+   `ASSERT zero 4:1025`, but it runs at rate 168 with a frame of `0:1057` —
+   **1025 is the 136 rate's top**, copied from `shake256` and never updated.
+   A narrower assertion is still true, so nothing ever failed; it simply
+   under-checked 32 cells of its own frame for as long as the file existed.
+   Same family as the balanced-but-wrong token above: a number that is
+   PLAUSIBLE because it came from the twin, and that nothing questions because
+   **no checker cross-references a contract against the footprint it belongs
+   to**. That would be a real tier if anyone wants one.
+
+   **Still to do:** cSHAKE, then KMAC and the two hashes. KMAC also wants a
+   tape SUFFIX for its `right_encode(L)`, which is the same mechanism at the
+   other end and is deferred to that unit.
 
 6. **AES itself, if and only if step 1 says so.**
 

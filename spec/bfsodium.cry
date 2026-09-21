@@ -737,6 +737,9 @@ keccakPad168B1Full p m = [m # [p || 0x80]]
 keccakPad168B2 : {n} (fin n, n >= 168, n <= 334) => [8] -> [n][8] -> [2][168][8]
 keccakPad168B2 p m = split (m # [p] # (zero : [334 - n][8]) # [0x80])
 
+keccakPad168B3 : {n} (fin n, n >= 335, n <= 502) => [8] -> [n][8] -> [3][168][8]
+keccakPad168B3 p m = split (m # [p] # (zero : [502 - n][8]) # [0x80])
+
 keccakSqueeze168 : {n} (fin n) => [25][64] -> [n][8]
 keccakSqueeze168 s = take`{n} (join [ take`{168} (keccakBytes t) | t <- ts ])
   where ts : [inf][25][64]
@@ -1698,6 +1701,33 @@ sponge136pRun_7_3_32 : [282][8] -> [32][8]
 sponge136pRun_7_3_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{10} 0x1f
         (take`{7} (drop`{7} inb) # drop`{279} inb)))
+
+// ---------------------------------------------------------------------------
+// SPONGE168 WITH A TAPE PREFIX, the twin of the entries above at SHAKE128's
+// rate. Same claim: the answer is the sponge of the prefix followed by the
+// wire message.
+//
+//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{336}  then mlen bytes
+
+sponge168pRun_168_3_32 : [346][8] -> [32][8]
+sponge168pRun_168_3_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{171} 0x1f
+        (take`{168} (drop`{7} inb) # drop`{343} inb)))
+
+sponge168pRun_168_0_32 : [343][8] -> [32][8]
+sponge168pRun_168_0_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{168} 0x1f
+        (take`{168} (drop`{7} inb))))
+
+sponge168pRun_336_5_64 : [348][8] -> [64][8]
+sponge168pRun_336_5_64 inb =
+    keccakSqueeze168`{64} (keccakAbsorb168 (keccakPad168B3`{341} 0x1f
+        (take`{336} (drop`{7} inb) # drop`{343} inb)))
+
+sponge168pRun_9_3_32 : [346][8] -> [32][8]
+sponge168pRun_9_3_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{12} 0x1f
+        (take`{9} (drop`{7} inb) # drop`{343} inb)))
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

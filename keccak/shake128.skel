@@ -5,7 +5,7 @@
 ; SHAKE functions  which is 31  and the caller's own output length  which may be
 ; anything up to 65535 and may be longer than a rate;
 ;
-; INTERFACE entry=3 exit=0 footprint=0:1057
+; INTERFACE entry=3 exit=0 footprint=0:1407
 ; IO  in:  mlen{2} LE  olen{2} LE  then mlen bytes from the wire
 ;     out: olen bytes
 ;
@@ -37,7 +37,7 @@
 ; read the message length and then the output length  both little endian
   ,>,>,>,
 ; ASSERT ptr=3
-; ASSERT zero 4:1025
+; ASSERT zero 4:1407
 ; all four move up one cell  highest first  to leave room for the padding byte
   [-R1+L1]
 L1
