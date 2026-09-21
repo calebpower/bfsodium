@@ -140,6 +140,7 @@ routine, the suite fails until it has a row here.
 | `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
 | `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
 | `sha256/kdfctr` | 132269 | 324 | SP 800-108 §4.1 counter mode at both inner-hash block counts, one turn, two turns, a turn cut short and no fixed input |
+| `sha256/kdffb` | 133227 | 332 | SP 800-108 §4.2 feedback mode: one turn, two turns so the chain feeds back, a turn cut short, no fixed input, and the longest fixed input allowed |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
@@ -197,8 +198,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 337 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 337 | golden vectors, dual oracle |
+| 2 | yes | 342 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 342 | golden vectors, dual oracle |
 | 5 | yes | 50 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -350,9 +351,38 @@ the reasoning.
    surprise, but it means any future "X costs N times an HMAC" claim has to
    say which HMAC.
 
-   **What is left, and one decision already forced.** Feedback mode is the
-   same file with the previous K in the message, so it is a head change rather
-   than a new routine. **PBKDF2 can only ever be gated at c = 1 and c = 2**:
+   **DONE as well: feedback mode**, SP 800-108r1 §4.2, as `sha256/kdffb`.
+   This list said it would be "the same file with the previous K in the
+   message, so a head change rather than a new routine", and that was wrong in
+   the way this list is usually wrong — right about the algorithm, wrong about
+   the code. The message gains a 32-byte K(i−1) prefix, `mplen` changes, and
+   the mac has to land in **two** places rather than one, so a mode flag would
+   have put branches around most of the body. It is its own file.
+
+   What carried over unchanged is the thing that matters: **all three parts of
+   the message have fixed lengths** — a 32-byte block, a 4-byte counter, then
+   the fixed input — so all three land at cells the map names and nothing is
+   placed by sliding. That is why feedback mode came in at 332 skeleton lines
+   against counter mode's 324.
+
+   **The IV is always present and always 32 bytes**, declared rather than
+   defaulted. An empty IV is allowed by the standard and would make the FIRST
+   turn structurally different from every later one, with the fixed input at
+   offset 4 rather than 36 — the exact special case the arrangement exists to
+   avoid. In ACVP terms that is `supportsEmptyIv: false`, a capability you
+   decline, not a conformance failure.
+
+   **A side result worth keeping.** `kdfFbRun_32_156_32` sits at the cap, so
+   its PRF message is 192 bytes — and that is **the first thing in this tree
+   to exercise `sha256/hmac` at its documented maximum**. It passes, which
+   means the SHA-256 family's `mplen ≤ 192` is a real claim and not a
+   transcribed one. The SHA-512 twin of that claim was false until the prefix
+   slide was grown under step 3, and nothing would have caught it there either
+   if no vector had ever gone near the limit. **Put a vector at every cap you
+   write down.**
+
+   **What is left, and one decision already forced.** **PBKDF2 can only ever
+   be gated at c = 1 and c = 2**:
    at 6.5 billion instructions an iteration, RFC 6070's c = 4096 is 21
    trillion, which is days. The loop is the same code at any c, so the routine
    is provable and the count is not; that has to be said in its header rather

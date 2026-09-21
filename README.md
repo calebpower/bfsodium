@@ -74,7 +74,7 @@ constant-time story and cannot be one, and nothing is zeroized. See
 | [`sha256/hkdf.bf`](sha256/hkdf.bf) | **HKDF-SHA-256 (RFC 5869)** |
 
 That is everything CONVENTIONS.md lists as v1. Since then the 64-bit idiom set,
-SHA-512 with HMAC and HKDF over it, the SP 800-108 counter-mode KDF, and the
+SHA-512 with HMAC and HKDF over it, both SP 800-108 KDF modes, and the
 whole of Keccak — the permutation, the sponge, all four SHA-3 digests and both
 SHAKEs — have been built on top of it.
 The ML-KEM /

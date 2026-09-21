@@ -1266,6 +1266,26 @@ hkdfRun_80_80_80_82 inb = take`{82} (t1 # t2 # t3)
 //
 // IO: klen{2} LE  fixedlen{2} LE  okmlen{2} LE  kbuf{256}  fixedbuf{256}
 
+// A fifth block of padding, which feedback mode needs at its longest fixed
+// input: thirty two bytes of the previous block, four of counter and a
+// hundred and fifty six of fixed input is a message of a hundred and ninety
+// two, and under a block of key pad that is two hundred and fifty six.
+sha256Pad5 : {n} (fin n, n >= 248, n <= 311) => [n][8] -> [320][8]
+sha256Pad5 m = m # [0x80] # (zero : [311 - n][8]) # split (`(8 * n) : [64])
+
+// HMAC-SHA-256 where the inner hash comes to five blocks. The outer is two
+// whatever the message was, because its message is the key pad and a digest.
+hmac5 : {kn, mn} (fin kn, fin mn, kn <= 64, mn >= 184, mn <= 247) =>
+        [kn][8] -> [mn][8] -> [32][8]
+hmac5 key msg = sha256Out (hOut @ (2 : [8]))
+  where
+    kpad = key # (zero : [64 - kn][8])
+    inn  = sha256Out (hIn @ (5 : [8]))
+    hIn  = [sha256H0] # [ sha256Compress h b | h <- hIn
+                        | b <- split`{5} (sha256Pad5`{64 + mn} (hmacIpad kpad # msg)) ]
+    hOut = [sha256H0] # [ sha256Compress h b | h <- hOut
+                        | b <- split`{2} (sha256Pad2`{96} (hmacOpad kpad # inn)) ]
+
 // One turn exactly, with sixty bytes of fixed input, so the PRF message is
 // sixty four and the inner hash comes to three blocks.
 kdfCtrRun_32_60_32 : [518][8] -> [32][8]
@@ -1308,6 +1328,78 @@ kdfCtrRun_16_0_40 inb = take`{40} (k1 # k2)
     key = take`{16} (drop`{6} inb)
     k1  = hmac2 key ([0, 0, 0, 1] : [4][8])
     k2  = hmac2 key ([0, 0, 0, 2] : [4][8])
+
+// ---------------------------------------------------------------------------
+// NIST SP 800-108r1 section 4.2: the same key derivation function in FEEDBACK
+// MODE, with HMAC-SHA-256 as the PRF.
+//
+//   K(0) = IV
+//   K(i) = PRF(Kin, K(i-1) || [i]_r || FixedInput)
+//
+// The arrangement is the standard's own: the previous block, then the
+// counter, then the fixed input. All three have fixed lengths, so all three
+// land at cells the tape map names and nothing is placed by sliding, which is
+// what makes this the same cheap shape as counter mode.
+//
+// THE IV IS ALWAYS PRESENT AND ALWAYS THIRTY TWO BYTES. An empty IV is an
+// option in the standard and it would make the FIRST turn structurally
+// different from every later one -- fixed input at offset four rather than
+// thirty six -- which is the special case this arrangement exists to avoid.
+//
+// IO: klen{2} LE  fixedlen{2} LE  okmlen{2} LE  kbuf{256}  fixedbuf{256}
+//     iv{32}
+
+// One turn exactly. Twenty bytes of fixed input puts the PRF message at
+// fifty six, the first length whose inner hash is three blocks.
+kdfFbRun_32_20_32 : [550][8] -> [32][8]
+kdfFbRun_32_20_32 inb = hmac3 key (iv # [0, 0, 0, 1] # fixed)
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{20} (drop`{262} inb)
+    iv    = take`{32} (drop`{518} inb)
+
+// Two whole turns, which is the whole of what feedback mode adds: K(1) is the
+// head of the second message, so a routine that reused the IV or kept the
+// blocks in the wrong order is wrong here and right in the vector above.
+kdfFbRun_32_20_64 : [550][8] -> [64][8]
+kdfFbRun_32_20_64 inb = k1 # k2
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{20} (drop`{262} inb)
+    iv    = take`{32} (drop`{518} inb)
+    k1    = hmac3 key (iv # [0, 0, 0, 1] # fixed)
+    k2    = hmac3 key (k1 # [0, 0, 0, 2] # fixed)
+
+// The second turn cut short, so the chain is made and then half thrown away.
+kdfFbRun_32_20_48 : [550][8] -> [48][8]
+kdfFbRun_32_20_48 inb = take`{48} (k1 # k2)
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{20} (drop`{262} inb)
+    iv    = take`{32} (drop`{518} inb)
+    k1    = hmac3 key (iv # [0, 0, 0, 1] # fixed)
+    k2    = hmac3 key (k1 # [0, 0, 0, 2] # fixed)
+
+// No fixed input at all, so the message is the previous block and the counter
+// and nothing else, and the inner hash drops to two blocks.
+kdfFbRun_32_0_64 : [550][8] -> [64][8]
+kdfFbRun_32_0_64 inb = k1 # k2
+  where
+    key = take`{32} (drop`{6} inb)
+    iv  = take`{32} (drop`{518} inb)
+    k1  = hmac2 key (iv # [0, 0, 0, 1])
+    k2  = hmac2 key (k1 # [0, 0, 0, 2])
+
+// A hundred and fifty six bytes of fixed input, which is the most this
+// routine allows: the PRF message is a hundred and ninety two, which is the
+// most sha256/hmac takes from memory, and the inner hash runs to five blocks.
+// This vector exists to hold the copy run to the buffer it was sized for.
+kdfFbRun_32_156_32 : [550][8] -> [32][8]
+kdfFbRun_32_156_32 inb = hmac5 key (iv # [0, 0, 0, 1] # fixed)
+  where
+    key   = take`{32} (drop`{6} inb)
+    fixed = take`{156} (drop`{262} inb)
+    iv    = take`{32} (drop`{518} inb)
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
