@@ -515,9 +515,37 @@ own answer recorded under item 1. They are cleanup, they are agreed to come
 after step 6, and the two coverage gaps among them are the honest priorities
 of that batch rather than the doc fixes.
 
-**ONE QUESTION STILL OPEN**, and it would move step 5 up if the answer is yes:
-does BoneMesh use cSHAKE or KMAC anywhere? Nothing in this repository knows,
-correctly, and the ordering above assumes not.
+**THAT QUESTION IS ANSWERED, AND THE ANSWER IS NO.** It used to read "does
+BoneMesh use cSHAKE or KMAC anywhere?", with the ordering above assuming not.
+BoneMesh's own source names neither, nor TupleHash nor ParallelHash: every
+match in that tree is inside a `vendor/` directory, which is a third-party
+crate carrying its own SP 800-185 code and not a caller. **Step 5 stays where
+it is.**
+
+Worth recording from the same sweep, and worth being careful how.
+BoneMesh names `chacha20` and `poly1305` most, then `sha256`, `ed25519`,
+`hkdf`, `x25519`, `sha512`, `hmac`, `ml-kem`, and — already — `shake256`,
+`shake128` and `sha3_256`. Everything on that list is built here except
+ML-KEM and the two curves, which is step 12.
+
+**That tells you when a tenant is unblocked. It does not tell you what this
+library is for**, and the distinction is the reason this paragraph is worded
+twice. CONVENTIONS §9.1 already settles it: *the ambition is every
+NIST-approved algorithm*. **BoneMesh is a tenant, not the specification.** So
+a sweep like this may reorder work that was going to happen anyway, and it may
+never be the reason something is or is not built; the deferred cleanup batch
+does not become less important because no tenant is waiting on it, and
+SP 800-185 does not become optional because this one is not.
+
+The §9 reference to the BoneMesh corpus is consistent with that and should not
+be read against it: that corpus is a **conformance target**, a way of showing
+the symmetric set is sufficient rather than merely complete. Being tested by a
+consumer is not the same as being scoped by one.
+
+A caveat on the method, so nobody over-reads it either way: this is a grep of
+identifier and comment text, so it says what BoneMesh MENTIONS, not what its
+wire format requires. It is good enough to close a question about ordering and
+not good enough to plan step 12 from.
 
 0. **The 64-bit set and SHA-512 are done.** `idiom/add64`, `rotr64`, `shr64`,
    `xor64` and `and64` are built and gated, and on them SHA-512, HMAC-SHA-512
