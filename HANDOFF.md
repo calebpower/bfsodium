@@ -146,7 +146,8 @@ routine, the suite fails until it has a row here.
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
-| `keccak/bytepad136` | 3826 | 213 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, and the limit where the block is exactly full |
+| `keccak/bytepad136` | 3828 | 215 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, and the limit where the block is exactly full |
+| `keccak/bytepad168` | 3876 | 215 | the same at SHAKE128's rate, including its own exactly-full limit |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
@@ -203,9 +204,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 376 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 376 | golden vectors, dual oracle |
-| 5 | yes | 53 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 381 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 381 | golden vectors, dual oracle |
+| 5 | yes | 54 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -574,8 +575,19 @@ the reasoning.
    cleanliness fix above made safe — the two units were written an hour apart
    and the second is why the first was worth checking.
 
-   **Still to do:** the 168 twin, tape-prefix absorption, then cSHAKE, then
-   KMAC and the two hashes.
+   **And the 168 twin**, `keccak/bytepad168`, for cSHAKE128 and KMAC128. The
+   generator that writes both was **proved by identity first**: parameterised
+   by the rate, run against the committed 136 file, and every instruction line
+   matched before it was used with a new constant. Only the header differs
+   between that run and what was committed, because the prose now carries
+   digits the generator can compute rather than numbers spelled out by hand.
+
+   Its cap follows the rate rather than being restated — `nlen + slen` at most
+   `rate − 8`, so 128 at 136 and 160 at 168 — and `bp168Run_64_96` is its own
+   exactly-full vector.
+
+   **Still to do:** tape-prefix absorption, then cSHAKE, then KMAC and the two
+   hashes.
 
 6. **AES itself, if and only if step 1 says so.**
 

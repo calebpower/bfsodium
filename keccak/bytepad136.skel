@@ -1,25 +1,27 @@
 ; bfsodium BYTEPAD136 : NIST SP 800_185's bytepad of two encoded strings
 ;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
 ; HAND WRITTEN skeleton; keccak/leftenc is PASTED twice and chacha20/add32 is
 ; PASTED twice  once inside each of the two doubling loops;
 ;
 ; INTERFACE entry=259 exit=264 footprint=0:451
 ; IO  in:  nlen{2} LE  slen{2} LE  nbuf{128}  sbuf{128}   (260 bytes)
-;     out: one block of a hundred and thirty six bytes
+;     out: one block of 136 bytes
 ;
 ; This is  in the standard's own notation
 ;   bytepad( encode_string(N) then encode_string(S)  136 )
 ; which is what cSHAKE256 and KMAC256 put on the tape before the message;
-; the hundred and thirty six is SHAKE256's rate and it is in the file name
-; because A RATE CANNOT BE A PARAMETER HERE: it sets the size of the block
-; buffer  which is a tape map and not a number; the 168 twin is a separate
-; file for the reason sponge136 and sponge168 are separate files;
+; the 136 is SHAKE256's rate and it is in the file name because A RATE
+; CANNOT BE A PARAMETER HERE: it sets the size of the block buffer  which is a
+; tape map and not a number; the twin at the other rate is a separate file for
+; the reason sponge136 and sponge168 are separate files;
 ;
-; NLEN PLUS SLEN MUST BE AT MOST A HUNDRED AND TWENTY EIGHT; the block holds
-; two for left_encode of the rate  then each string behind its own length
-; encoding of two or three bytes  so the worst case is a hundred and thirty
-; six less two less three less three; The routine DOES NOT CHECK IT and a
-; caller that breaks it pushes bytes off the end of the block;
+; NLEN PLUS SLEN MUST BE AT MOST 128; the block holds two bytes for
+; left_encode of the rate  then each string behind its own length encoding of
+; two or three bytes  so the worst case is the rate less two less three less
+; three; The routine DOES NOT CHECK IT  and a caller that breaks it pushes
+; bytes off the end of the block;
 ;
 ; THE BLOCK IS BUILT RIGHT TO LEFT  BY PREPENDING  and that is the whole idea
 ; of this file; The standard's layout puts each piece at an offset that the
@@ -31,29 +33,29 @@
 ;
 ; Two things fall out of that and both are wanted; the tail of the block is
 ; never written  so it stays at nought  which IS bytepad's padding; and the
-; pieces beyond a string's own length are nought  so adding a whole buffer
-; over the top of the slid block cannot disturb what is already there;
+; bytes of a string's buffer beyond its own length are nought  so adding a
+; whole buffer over the top of the slid block cannot disturb what is already
+; in front of it;
 ;
 ; EIGHT TIMES A LENGTH IS THREE DOUBLINGS; encode_string takes the length in
 ; BITS  and a doubling is chacha20/add32 with the accumulator as its own
-; addend  so the multiply is a loop of three around a proved adder rather
-; than a fourth hand rolled shift;
+; addend  so the multiply is a loop of three around a proved adder rather than
+; a fourth hand rolled shift;
 ;
 ; TAPE MAP  (home @0)
 ;   @0x000:0x001  nlen{2}  u16 LE  N's length in BYTES; its high byte is nought
 ;   @0x002:0x003  slen{2}  u16 LE  S's length in bytes
 ;   @0x004:0x083  nbuf{128} u8     N  as given; SPENT into the block
 ;   @0x084:0x103  sbuf{128} u8     S  as given; SPENT into the block
-;   @0x108:0x18f  block{136} u8    the answer  built from its right hand end
+;   @0x108:@0x18f  block{136} u8  the answer  built from its right hand end
 ;   @0x194        k       u8   how many places the next prepend slides by
 ;   @0x195        t       u8   the cell a byte is copied through
 ;   @0x196        b       u8   and handed back through
 ;   @0x197        dbl     u8   the three doublings still to do
-;   @0x198:0x19b  tmp{4}  u8   hands the accumulator back to itself
-;   @0x19c:0x1ad  keccak/leftenc's frame  pasted at @0x19c; footprint 0:17
-;                 its x{4} is at @0x19c  its count at @0x1a8  its bytes
-;                 at @0x1a9
-;   @0x1b0:0x1c3  chacha20/add32's frame  pasted at @0x1b0; footprint 0:19
+;   @0x198:@0x19b  tmp{4}  u8   hands the accumulator back to itself
+;   @0x19c:@0x1ad  keccak/leftenc's frame  pasted at @0x19c; footprint 0:17
+;                 its x{4} is at @0x19c  its count at @0x1a8  its bytes at @0x1a9
+;   @0x1b0:@0x1c3  chacha20/add32's frame  pasted at @0x1b0; footprint 0:19
 ;                 its a{4} is the accumulator and its b{4} the addend
 
 ; read the two lengths and the two buffers
@@ -186,7 +188,7 @@ R21
   [-L161+R161]>[-L161+R161]>[-L161+R161]>[-L161+R161]>[-L161+R161]
 
 ; ==== and last  left_encode of the rate  which is a constant ====
-; a hundred and thirty six needs one byte  so the encoding is one then it
+; the rate needs one byte  so the encoding is one then the rate itself
 L25
   [-]
   ++

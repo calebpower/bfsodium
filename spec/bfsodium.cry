@@ -1628,6 +1628,33 @@ bp136Run_32_96 : [260][8] -> [136][8]
 bp136Run_32_96 inb = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{4} inb)
                    # lencode2 (8 * 96) # take`{96} (drop`{132} inb)
 
+// The same at SHAKE128's rate. A separate set of entries rather than one
+// parameterised by the rate, because the routine is a separate file for the
+// same reason: the rate sets the size of the block.
+bp168Run_0_0 : [260][8] -> [168][8]
+bp168Run_0_0 inb = lencode1 168 # lencode1 (8 * 0) # lencode1 (8 * 0)
+                 # (zero : [162][8])
+
+bp168Run_4_0 : [260][8] -> [168][8]
+bp168Run_4_0 inb = lencode1 168 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
+                 # lencode1 (8 * 0) # (zero : [158][8])
+
+bp168Run_4_21 : [260][8] -> [168][8]
+bp168Run_4_21 inb = lencode1 168 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
+                  # lencode1 (8 * 21) # take`{21} (drop`{132} inb)
+                  # (zero : [137][8])
+
+bp168Run_0_15 : [260][8] -> [168][8]
+bp168Run_0_15 inb = lencode1 168 # lencode1 (8 * 0)
+                  # lencode1 (8 * 15) # take`{15} (drop`{132} inb)
+                  # (zero : [147][8])
+
+// The limit at this rate: sixty four and ninety six, both lengths in bits
+// needing two bytes, and the block exactly full with no padding.
+bp168Run_64_96 : [260][8] -> [168][8]
+bp168Run_64_96 inb = lencode1 168 # lencode2 (8 * 64) # take`{64} (drop`{4} inb)
+                   # lencode2 (8 * 96) # take`{96} (drop`{132} inb)
+
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
