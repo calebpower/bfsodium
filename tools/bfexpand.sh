@@ -141,6 +141,8 @@ while IFS= read -r line; do
         '@@REDUCEP136@@'*) import "$repo/poly1305/reducep136.bf" "${line##* }"; continue ;;
         '@@FOLD136@@'*) import "$repo/poly1305/fold136.bf" "${line##* }"; continue ;;
         '@@ADD32@@'*)   import "$repo/chacha20/add32.bf"  "${line##* }"; continue ;;
+        '@@LEFTENC@@'*) import "$repo/keccak/leftenc.bf"  "${line##* }"; continue ;;
+        '@@RIGHTENC@@'*) import "$repo/keccak/rightenc.bf" "${line##* }"; continue ;;
         '@@XOR32@@'*)   import "$repo/chacha20/xor32.bf"  "${line##* }"; continue ;;
         '@@ROTL32@@'*)  import "$repo/chacha20/rotl32.bf" "${line##* }"; continue ;;
         '@@BLOCK@@'*)   import "$repo/chacha20/blockloop.bf" "${line##* }"; continue ;;

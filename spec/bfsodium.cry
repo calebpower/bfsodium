@@ -1580,6 +1580,55 @@ rightEncRun_4 : [4][8] -> [5][8]
 rightEncRun_4 inb = split`{4} (encVal inb) # [leftEncN (encVal inb)]
 
 // ---------------------------------------------------------------------------
+// NIST SP 800-185's bytepad of two encoded strings, at SHAKE256's rate:
+//
+//   bytepad( encode_string(N) || encode_string(S), 136 )
+//
+// which is what cSHAKE256 and KMAC256 put on the tape ahead of the message.
+// The answer is always exactly one block here, which is the routine's own
+// stated limit: nlen + slen at most 128.
+//
+// left_encode of a value needing one byte, and of one needing two. Which is
+// wanted per vector follows from the length in the vector's name, and the
+// VALUE is computed rather than transcribed, so a wrong length in bits fails.
+lencode1 : [8] -> [2][8]
+lencode1 x = [1, x]
+
+lencode2 : [16] -> [3][8]
+lencode2 x = [2] # split x
+
+bp136Run_0_0 : [260][8] -> [136][8]
+bp136Run_0_0 inb = lencode1 136 # lencode1 (8 * 0) # lencode1 (8 * 0)
+                 # (zero : [130][8])
+
+bp136Run_4_0 : [260][8] -> [136][8]
+bp136Run_4_0 inb = lencode1 136 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
+                 # lencode1 (8 * 0) # (zero : [126][8])
+
+bp136Run_4_21 : [260][8] -> [136][8]
+bp136Run_4_21 inb = lencode1 136 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
+                  # lencode1 (8 * 21) # take`{21} (drop`{132} inb)
+                  # (zero : [105][8])
+
+bp136Run_0_15 : [260][8] -> [136][8]
+bp136Run_0_15 inb = lencode1 136 # lencode1 (8 * 0)
+                  # lencode1 (8 * 15) # take`{15} (drop`{132} inb)
+                  # (zero : [115][8])
+
+// Both strings at thirty one bytes, so both lengths in bits are 248 and both
+// encodings are still one byte -- the last size at which that is true.
+bp136Run_31_31 : [260][8] -> [136][8]
+bp136Run_31_31 inb = lencode1 136 # lencode1 (8 * 31) # take`{31} (drop`{4} inb)
+                   # lencode1 (8 * 31) # take`{31} (drop`{132} inb)
+                   # (zero : [68][8])
+
+// The limit: thirty two and ninety six, so both lengths in bits need two
+// bytes and the block comes out EXACTLY full with no padding at all.
+bp136Run_32_96 : [260][8] -> [136][8]
+bp136Run_32_96 inb = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{4} inb)
+                   # lencode2 (8 * 96) # take`{96} (drop`{132} inb)
+
+// ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
 // B has to be independent of whatever the toolchain ships.

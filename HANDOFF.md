@@ -146,6 +146,7 @@ routine, the suite fails until it has a row here.
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
+| `keccak/bytepad136` | 3826 | 213 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, and the limit where the block is exactly full |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
@@ -202,9 +203,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 370 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 370 | golden vectors, dual oracle |
-| 5 | yes | 52 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 376 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 376 | golden vectors, dual oracle |
+| 5 | yes | 53 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -542,9 +543,39 @@ the reasoning.
    and the two contract runs added to the suite are the test that would have
    caught it.
 
-   **Still to do:** the block builder (`encode_string` and `bytepad` into one
-   rate-sized block, where the sliding lives), tape-prefix absorption, then
-   cSHAKE, then KMAC and the two hashes.
+   **DONE as well: `keccak/bytepad136`**, the block builder — `bytepad(
+   encode_string(N) ‖ encode_string(S), 136)`, which is what cSHAKE256 and
+   KMAC256 put on the tape ahead of the message. 136 is in the file name for
+   the reason `sponge136` and `sponge168` are separate files: a rate sets the
+   size of a buffer, which is a tape map and not a number.
+
+   **THE BLOCK IS BUILT RIGHT TO LEFT, BY PREPENDING, and that is the whole
+   idea.** The standard's layout puts each piece at an offset the lengths of
+   the pieces before it decide — an index, which this library does not have.
+   So the pieces go in backwards, last first, and each is put in by sliding
+   the whole block right by its own length and then ADDING it at cell nought.
+   **Cell nought is always cell nought**, so no position is ever computed, and
+   this is the third distinct way the library has now dodged an index —
+   after the conveyor and after `hkdf`'s counter slide.
+
+   Two things fall out of it and both are wanted: the tail is never written so
+   it stays at nought, which *is* `bytepad`'s padding; and a string's buffer
+   is nought beyond its own length, so adding a whole 128-byte buffer over the
+   slid block cannot disturb what is already there.
+
+   Eight times a length is three doublings of `chacha20/add32` with the
+   accumulator as its own addend — `encode_string` wants the length in bits,
+   and that is a loop of three around a proved adder rather than a fourth
+   hand-rolled shift.
+
+   Six vectors including `bp136Run_32_96`, where the block comes out **exactly
+   full with no padding at all**, which is the cap vector this batch's own
+   rule asks for. It pastes `leftenc` twice, which is precisely the case the
+   cleanliness fix above made safe — the two units were written an hour apart
+   and the second is why the first was worth checking.
+
+   **Still to do:** the 168 twin, tape-prefix absorption, then cSHAKE, then
+   KMAC and the two hashes.
 
 6. **AES itself, if and only if step 1 says so.**
 
