@@ -143,6 +143,8 @@ while IFS= read -r line; do
         '@@ADD32@@'*)   import "$repo/chacha20/add32.bf"  "${line##* }"; continue ;;
         '@@LEFTENC@@'*) import "$repo/keccak/leftenc.bf"  "${line##* }"; continue ;;
         '@@RIGHTENC@@'*) import "$repo/keccak/rightenc.bf" "${line##* }"; continue ;;
+        '@@BYTEPAD136@@'*) import "$repo/keccak/bytepad136.bf" "${line##* }"; continue ;;
+        '@@BYTEPAD168@@'*) import "$repo/keccak/bytepad168.bf" "${line##* }"; continue ;;
         '@@XOR32@@'*)   import "$repo/chacha20/xor32.bf"  "${line##* }"; continue ;;
         '@@ROTL32@@'*)  import "$repo/chacha20/rotl32.bf" "${line##* }"; continue ;;
         '@@BLOCK@@'*)   import "$repo/chacha20/blockloop.bf" "${line##* }"; continue ;;

@@ -148,6 +148,8 @@ routine, the suite fails until it has a row here.
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3828 | 215 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, and the limit where the block is exactly full |
 | `keccak/bytepad168` | 3876 | 215 | the same at SHAKE128's rate, including its own exactly-full limit |
+| `keccak/cshake256` | 151327 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
+| `keccak/cshake128` | 160830 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
@@ -204,8 +206,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 389 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 389 | golden vectors, dual oracle |
+| 2 | yes | 397 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 397 | golden vectors, dual oracle |
 | 5 | yes | 54 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -651,9 +653,45 @@ the reasoning.
    **no checker cross-references a contract against the footprint it belongs
    to**. That would be a real tier if anyone wants one.
 
-   **Still to do:** cSHAKE, then KMAC and the two hashes. KMAC also wants a
-   tape SUFFIX for its `right_encode(L)`, which is the same mechanism at the
-   other end and is deferred to that unit.
+   **DONE: cSHAKE256 and cSHAKE128.** Both are HEADS and neither adds any
+   cryptography: read the lengths and the two strings, paste `bytepad` to
+   build the block, move it into the sponge's staging area, hand over the
+   padding byte, paste the sponge. The two pasted frames do not overlap — the
+   sponge owns up to its own top and `bytepad` sits above it — so the block is
+   built high and moved down.
+
+   **The padding byte is the whole difference from SHAKE**, one cell: 6 for
+   SHA3, 31 for the SHAKEs, 4 for the customizable pair. `sponge136`'s header
+   predicted this before cSHAKE existed.
+
+   **With no name and no customization string cSHAKE IS SHAKE**, which the
+   standard states outright — it is *not* the prefix construction over two
+   empty strings, which would absorb a whole block of encodings and give a
+   different answer. That is a branch, and it has its own vector at each rate.
+
+   Both rates passed **first run**, which is what the pre-work bought: the
+   skeletons were checked with `ptrcheck` and the spec entries were evaluated
+   in Cryptol against a scratch copy of the spec *before* anything entered the
+   repository.
+
+   **A FALSE "PUBLISHED" CLAIM, CAUGHT BEFORE IT SHIPPED.** cSHAKE128's
+   200-byte vector was initially labelled as NIST sample 2 from memory. The
+   computed value diverges from that recollection at byte 10 — and the first
+   ten bytes agreeing is the tell, because that is what half-remembering looks
+   like. It is now named `cshake128Run_200` for its message length and
+   labelled DERIVED. What stands on its own: the Keccak reference reproduces
+   SHAKE128, SHAKE256 and SHA3-256 from a third party; **cSHAKE256 samples 3
+   and 4 match NIST exactly**, which confirms the construction; and
+   **cSHAKE128 sample 1 matches exactly across all thirty two bytes**, which
+   confirms the 168 path independently.
+
+   The rule this earns, and it is the SHA-512/256 H4 defect in a new costume:
+   **mark a vector published only against a value you can point to, never one
+   you recall.** A recalled constant that is mostly right is the worst kind,
+   because the part you remember correctly is what makes you trust the rest.
+
+   **Still to do:** KMAC and the two hashes. KMAC wants a tape SUFFIX for its
+   `right_encode(L)` — the same mechanism as the prefix at the other end.
 
 6. **AES itself, if and only if step 1 says so.**
 

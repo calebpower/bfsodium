@@ -1730,6 +1730,95 @@ sponge168pRun_9_3_32 inb =
         (take`{9} (drop`{7} inb) # drop`{343} inb)))
 
 // ---------------------------------------------------------------------------
+// NIST SP 800-185 section 3: cSHAKE256.
+//
+//   cSHAKE(X, L, N, S) = KECCAK[rate]( bytepad(encode_string(N) ||
+//                        encode_string(S), rate) || X || 00, L )
+//
+// which is the sponge with a tape prefix and the padding byte 0x04. The first
+// two entries are NIST'S OWN PUBLISHED SAMPLES, so the brainfuck is checked
+// against a standards body's printed answer as well as this file.
+//
+// AND WITH NO NAME AND NO CUSTOMIZATION STRING cSHAKE IS SHAKE, which the
+// standard states outright: it is NOT the prefix construction over two empty
+// strings, which would absorb a whole block of encodings and give a different
+// answer. That is a branch in the routine and an entry of its own here.
+//
+// IO: nlen{2} LE  slen{2} LE  mlen{2} LE  olen{2} LE  nbuf{128}  sbuf{128}
+//     then mlen bytes
+
+// NIST cSHAKE sample 3: no name, "Email Signature", four bytes of message.
+cshake256Run_s3 : [268][8] -> [64][8]
+cshake256Run_s3 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2`{140} 0x04 (pre # x)))
+  where
+    x   = drop`{264} inb
+    pre = lencode1 136 # lencode1 (8 * 0) # lencode1 (8 * 15)
+        # take`{15} (drop`{136} inb) # (zero : [115][8])
+
+// NIST cSHAKE sample 4: the same customization over two hundred bytes, which
+// puts the absorb at three blocks.
+cshake256Run_s4 : [464][8] -> [64][8]
+cshake256Run_s4 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{336} 0x04 (pre # x)))
+  where
+    x   = drop`{264} inb
+    pre = lencode1 136 # lencode1 (8 * 0) # lencode1 (8 * 15)
+        # take`{15} (drop`{136} inb) # (zero : [115][8])
+
+// No name and no customization string, which IS SHAKE256: no prefix at all
+// and the padding byte back to 31. A routine that took the prefix path here
+// with two empty strings would absorb a block of encodings and be wrong.
+cshake256Run_nn : [267][8] -> [32][8]
+cshake256Run_nn inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{3} 0x1f (drop`{264} inb)))
+
+// A NAME as well as a customization string, which neither published sample
+// covers -- both of them leave N empty, so the name path would otherwise ship
+// with no vector over it at all.
+cshake256Run_nS : [267][8] -> [32][8]
+cshake256Run_nS inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{139} 0x04 (pre # x)))
+  where
+    x   = drop`{264} inb
+    pre = lencode1 136 # lencode1 (8 * 11) # take`{11} (drop`{8} inb)
+        # lencode1 (8 * 6) # take`{6} (drop`{136} inb) # (zero : [113][8])
+
+// cSHAKE128, the twin of the entries above at SHAKE128's rate. Sample 1 is
+// NIST's own published value; the 200-byte entry is NOT -- it is derived from
+// the same reference and checked against Cryptol, and it is named for its
+// message length rather than for a sample number so that nothing here claims
+// a standards body printed it.
+cshake128Run_s1 : [268][8] -> [32][8]
+cshake128Run_s1 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{172} 0x04 (pre # x)))
+  where
+    x   = drop`{264} inb
+    pre = lencode1 168 # lencode1 (8 * 0) # lencode1 (8 * 15)
+        # take`{15} (drop`{136} inb) # (zero : [147][8])
+
+cshake128Run_200 : [464][8] -> [32][8]
+cshake128Run_200 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B3`{368} 0x04 (pre # x)))
+  where
+    x   = drop`{264} inb
+    pre = lencode1 168 # lencode1 (8 * 0) # lencode1 (8 * 15)
+        # take`{15} (drop`{136} inb) # (zero : [147][8])
+
+cshake128Run_nn : [267][8] -> [32][8]
+cshake128Run_nn inb =
+    keccakSqueeze168`{32} (keccakAbsorb168
+        (keccakPad168B1`{3} 0x1f (drop`{264} inb)))
+
+cshake128Run_nS : [267][8] -> [32][8]
+cshake128Run_nS inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{171} 0x04 (pre # x)))
+  where
+    x   = drop`{264} inb
+    pre = lencode1 168 # lencode1 (8 * 11) # take`{11} (drop`{8} inb)
+        # lencode1 (8 * 6) # take`{6} (drop`{136} inb) # (zero : [145][8])
+
+// ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
 // B has to be independent of whatever the toolchain ships.

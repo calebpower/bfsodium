@@ -1,0 +1,170 @@
+; bfsodium CSHAKE128 : NIST SP 800_185 section 3's cSHAKE at SHAKE128's rate
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN skeleton; keccak/bytepad168 is PASTED to build the block that
+; goes in front of the message  and keccak/sponge168 is PASTED to absorb it;
+; This file adds no cryptography of its own  which is the point of it;
+;
+; IO  in:  nlen{2} LE  slen{2} LE  mlen{2} LE  olen{2} LE  nbuf{128}
+;          sbuf{128}  then mlen bytes from the wire
+;     out: olen bytes
+;
+;   cSHAKE(X  L  N  S) = KECCAK at the rate of( bytepad( encode_string(N)
+;                        then encode_string(S)  rate ) then X then 00  L )
+;
+; which is the sponge this library already has  over a message that begins on
+; the TAPE and continues on the WIRE; keccak/sponge168 grew a tape prefix
+; for exactly this  so the whole of cSHAKE here is: build the block  stage it
+; where the sponge looks for its prefix  and hand over the padding byte;
+;
+; THE PADDING BYTE IS 4 AND NOT 31  and that one cell is the whole difference
+; between this file and SHAKE128; FIPS 202 gives the SHA3 functions 6 and the
+; SHAKEs 31  and SP 800_185 gives the customizable pair 4; keccak/sponge168's
+; header said so before this file existed;
+;
+; AND WITH NO NAME AND NO CUSTOMIZATION STRING cSHAKE IS SHAKE  which the
+; standard states outright rather than leaving to arithmetic: it is NOT the
+; prefix construction with two empty strings  which would absorb a whole block
+; of encodings and give a different answer; So both lengths being nought is a
+; BRANCH  and it clears the staged prefix and puts 31 back in the padding cell;
+; The block is built either way  because building it costs a few hundred
+; thousand instructions against the permutation's two and a half thousand
+; million  and a branch around it would cost more to read than to run;
+;
+; NLEN PLUS SLEN MUST BE AT MOST 160  which is keccak/bytepad168's limit
+; and not this file's; it is restated here because a caller reads this file
+; and not that one;
+;
+; TAPE MAP  (home @0)
+;   @0x000        pad     the padding byte the sponge is handed; 4 or 31
+;   @0x001:0x002  mlen{2} the message length  little endian
+;   @0x003:0x004  olen{2} the output length
+;   @0x005:0x006  plen{2} how much prefix the sponge takes from the tape
+;   @0x007:0x0ae  the sponge's own low staging area for that prefix; this file
+;                 puts the block there and the sponge's body moves it up
+;   @0x000:0x57f  keccak/sponge168 pasted at this file's own zero
+;   @0x588:0x76b  keccak/bytepad168's frame  pasted at @0x588; its two
+;                 lengths at @0x588 and @0x58a  its two buffers at @0x58c
+;                 and @0x60c  and its answer at @0x690
+;   @0x770:0x773  mlen and olen parked while bytepad runs  because the cells
+;                 they arrive in are inside the sponge's own frame
+;   @0x774        the flag that says both strings are empty
+;   @0x775:0x776    the cells the lengths are tested through
+;
+; THE TWO PASTED FRAMES DO NOT OVERLAP  and that is why this works: the sponge
+; owns nought to 0x57f and bytepad sits above it at @0x588  so the block can be
+; built first and moved down into the sponge's staging area afterwards;
+
+; read the four lengths and the two strings
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=263
+
+; ==== are both strings empty  which makes this SHAKE and not cSHAKE ====
+R1645
+  [-]
+  +
+; a length byte that is not nought means it is really cSHAKE
+L1908
+  [-R1909+R1+L1910]
+R1910
+  [-L1910+R1910]
+L1
+  [[-]L1[-]R1]
+; a length byte that is not nought means it is really cSHAKE
+L1908
+  [-R1908+R1+L1909]
+R1909
+  [-L1909+R1909]
+L1
+  [[-]L1[-]R1]
+; a length byte that is not nought means it is really cSHAKE
+L1907
+  [-R1907+R1+L1908]
+R1908
+  [-L1908+R1908]
+L1
+  [[-]L1[-]R1]
+; a length byte that is not nought means it is really cSHAKE
+L1906
+  [-R1906+R1+L1907]
+R1907
+  [-L1907+R1907]
+L1
+  [[-]L1[-]R1]
+
+; ==== the message and output lengths are parked ====
+; they arrive inside the sponge's own frame  so they cannot stay there
+L1905
+  [-R1900+L1900]
+R1
+  [-R1900+L1900]
+R1
+  [-R1900+L1900]
+R1
+  [-R1900+L1900]
+
+; ==== the two strings go up into bytepad's frame ====
+L7
+  [-R1416+L1416]
+R1
+  [-R1416+L1416]
+R1
+  [-R1416+L1416]
+R1
+  [-R1416+L1416]
+; and the buffers behind them
+R5
+  [-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]
+R1
+  [-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]>[-R1412+L1412]
+
+; ==== the block itself ====
+R1153
+; ASSERT ptr=1416
+@@BYTEPAD168@@ 1416
+; ASSERT ptr=1416
+
+; ==== and down into the sponge's staging area ====
+R264
+  [-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]>[-L1673+R1673]
+
+; ==== the padding byte and how much prefix there is ====
+; SP 800_185's byte for the customizable pair is 4
+L1847
+  [-]
+  ++++
+; and the prefix is exactly one rate  because bytepad makes whole blocks
+R5
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+; unless both strings were empty  in which case this is plain SHAKE128:
+; the staged block goes  the prefix length goes  and the byte becomes 31
+R1903
+[
+  -
+L1901
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+L169
+  [-]
+L5
+  +++++++++++++++++++++++++++
+R1908
+]
+
+; ==== the two parked lengths come back to where the sponge reads them ====
+L4
+  [-L1903+R1903]
+R1
+  [-L1903+R1903]
+R1
+  [-L1903+R1903]
+R1
+  [-L1903+R1903]
+
+; and the sponge does the rest; every byte of the answer leaves inside it
+L1907
+; ASSERT ptr=0
+@@SPONGE168@@ 0
+; ASSERT ptr=0
