@@ -1,0 +1,218 @@
+; bfsodium KMAC128 : NIST SP 800_185 section 4's KMAC at SHAKE128's rate
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN skeleton; keccak/bytepad168 is PASTED TWICE  keccak/rightenc
+; once  chacha20/add32 once  and keccak/sponge168 once; This file adds no
+; cryptography of its own  which is the point of it;
+;
+; IO  in:  xof{1}  klen{2} LE  slen{2} LE  mlen{2} LE  olen{2} LE
+;          kbuf{128}  sbuf{128}   (265 bytes)  then mlen bytes from the wire
+;     out: olen bytes
+;
+;   KMAC128(K  X  L  S) = cSHAKE128( bytepad( encode_string(K)  168 )
+;                       then X then right_encode(L)   L  "KMAC"  S )
+;
+; and cSHAKE in turn is the sponge with a tape prefix  so the whole of KMAC is
+; three pieces of tape and a wire: cSHAKE's own bytepad block over the name
+; KMAC and the customization string  then a SECOND bytepad block over the key
+; then the message from the wire  then right_encode of the output length;
+;
+; THE KEY GETS A BLOCK OF ITS OWN AND THAT IS WHERE KMAC's SECURITY LIVES; it
+; is bytepad and not concatenation  so the key fills a whole rate and the
+; permutation runs over it before a single byte of the message arrives; the
+; sponge's prefix buffer has always been two rates deep for this;
+;
+; XOF IS ONE CELL AND NOT A SECOND FILE; KMACXOF is KMAC with right_encode(0)
+; in place of right_encode(L)  and right_encode of nought is what this file's
+; own encoder produces when it is handed nought; so the flag does not branch
+; around the encoder  it CLEARS ITS INPUT: xof{1} nought is KMAC128 and one
+; is KMACXOF128; A rate cannot be a parameter in brainfuck  a padding byte
+; can  and so can this;
+;
+; L IS IN BITS IN THE STANDARD AND IN BYTES ON THIS WIRE; olen is a byte count
+; like every other length in this library  and right_encode is handed eight
+; times it; eight is three doublings of chacha20/add32  exactly as
+; keccak/bytepad168 multiplies a string's length;
+;
+; KLEN IS AT MOST 128 and SLEN AT MOST 156  which are keccak/bytepad168's
+; limits and the size of the buffers here; the routine DOES NOT CHECK THEM;
+;
+; THE KEY BLOCK IS BYTEPAD OF ONE STRING AND NOT TWO  which is the flag that
+; keccak/bytepad168 grew for this file; getting it wrong is not a crash and
+; not a contract failure: it appends encode_string of the empty string  which
+; is the two bytes 01 00  and every answer is silently wrong; That is how it
+; was found  by every vector failing at once while every contract passed;
+;
+; TAPE MAP  (home @0)
+;   @0x000        pad     the padding byte the sponge is handed  which is 4
+;   @0x001:0x002  mlen{2} the message length  little endian
+;   @0x003:0x004  olen{2} the output length
+;   @0x005:0x006  plen{2} how much prefix the sponge takes  which is two rates
+;   @0x007:0x156  the sponge's own prefix staging; the two blocks go here
+;   @0x157:0x158  the sponge's suffix length  and
+;   @0x159:0x160  its suffix buffer  where right_encode's answer goes
+;   @0x000:0x587  keccak/sponge168 pasted at this file's own zero
+;   @0x590:0x773  keccak/bytepad168's frame  pasted at @0x590  and used TWICE;
+;                 its answer is at @0x698 and it is moved out after each run
+;   @0x778:0x880  everything read  parked above both frames; the cells it
+;                 arrives in are inside the sponge's own
+;   @0x886:0x897  keccak/rightenc's frame  pasted at @0x886; footprint 0:17
+;   @0x89a:0x8ad  chacha20/add32's frame  pasted at @0x89a; footprint 0:19
+;   @0x8ae:0x8b1  tmp{4}  hands the accumulator back to itself
+;   @0x8b2        dbl     the three doublings still to do
+;   @0x8b3        xofc    the flag  as the clear reads it
+;
+; THE TWO PASTED FRAMES DO NOT OVERLAP and the bytepad one is REUSED: the
+; sponge owns nought to 0x587  bytepad sits above it  and bytepad leaves its
+; own frame at nought once its block is carried away  which is what lets one
+; paste serve both blocks; there is a contract after each run that says so;
+
+; read the flag  the four lengths  the key and the customization string
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=264
+; ASSERT zero 265:2227
+
+; ==== all of it is parked above both frames ====
+; the cells it arrived in are the sponge's own  and the two blocks are
+; built before any of them is wanted again
+L264
+  [-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]>[-R1912+L1912]
+; ASSERT ptr=264
+
+; ==== the second block first: bytepad of the encoded key ====
+; it goes BEHIND cSHAKE's own block in the prefix  so it is built first and
+; staged a whole rate higher  which costs nothing and saves a second move
+R1649
+  [-L489+R489]>[-L489+R489]
+R7
+  [-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]
+; AND THE KEY STANDS ALONE  which is the whole of what this flag is for:
+; the standard says bytepad of encode_string(K) and not of a pair  and the
+; two string form would put encode_string of the empty string behind the
+; key  which is the two bytes 01 00 and a wrong answer by exactly those
+L364
+  [-]
+  +
+; the block itself
+L260
+; ASSERT ptr=1424
+@@BYTEPAD168@@ 1424
+; ASSERT ptr=1424
+R264
+  [-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]>[-L1513+R1513]
+; and bytepad's frame is clean again  which is what lets it run twice
+; ASSERT zero 1424:1907
+
+; ==== the first block: bytepad of the name KMAC and the customization ====
+; the name is a constant in the standard  which is why no caller supplies it
+L431
+  [-]
+  ++++
+R4
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; K
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; M
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; A
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; C
+; and the flag stays at nought here  because cSHAKE's block IS a pair
+R484
+  [-L489+R489]>[-L489+R489]
+R133
+  [-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]>[-L493+R493]
+; the block itself
+L752
+; ASSERT ptr=1424
+@@BYTEPAD168@@ 1424
+; ASSERT ptr=1424
+R264
+  [-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]>[-L1681+R1681]
+; ASSERT zero 1424:1907
+
+; ==== the padding byte and how much prefix there is ====
+; SP 800_185's byte for the customizable pair is 4  and KMAC is one of them
+L1855
+  [-]
+  ++++
+; the prefix is two whole rates  which needs both bytes of the count
+R5
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+R1
+  [-]
+  +
+
+; ==== the suffix: right_encode of the output length IN BITS ====
+; the length is wanted twice  by the sponge and by the encoder  so it is
+; teed rather than copied and nothing is left behind to clear
+R1913
+  [-L1916+R2199+L283]
+R1
+  [-L1916+R2199+L283]
+; eight times a length is three doublings  because eight is two cubed and
+; the adder is proved; keccak/bytepad does the same to a string's length
+R306
+  [-]
+  +++
+[
+  -
+; the addend is the accumulator itself  handed back through a temp
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2202
+@@ADD32@@ 2202
+; ASSERT ptr=2202
+R24
+]
+
+; and KMACXOF encodes nought instead  which is the whole of the difference
+; between the two functions: not a branch around the encoder but a clear
+; in front of it
+L314
+  [-R315+L315]
+R315
+[
+  [-]
+L25
+  [-]>[-]>[-]>[-]
+R22
+]
+
+; the value goes to the encoder
+L25
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2182
+@@RIGHTENC@@ 2182
+; ASSERT ptr=2182
+; and the encoding to the sponge's suffix buffer  all five cells of it
+; because the ones past the count are nought and the sponge takes count
+R13
+  [-L1850+R1850]>[-L1850+R1850]>[-L1850+R1850]>[-L1850+R1850]>[-L1850+R1850]
+L5
+  [-L1851+R1851]
+
+; ==== the message length comes back to where the sponge reads it ====
+L277
+  [-L1916+R1916]>[-L1916+R1916]
+; and nothing this file used is still standing
+; ASSERT zero 1424:2227
+
+; the sponge does the rest; every byte of the answer leaves inside it
+L1918
+; ASSERT ptr=0
+@@SPONGE168@@ 0
+; ASSERT ptr=0

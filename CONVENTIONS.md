@@ -787,9 +787,11 @@ Every rate divides by eight — 168 is twenty-one lanes, 144 eighteen, 136
 seventeen, 104 thirteen, 72 nine — which is the one thing that carries from one
 of these files to the next; everything else in them is the rate's own numbers.
 
-**What is left of tier B is cSHAKE, KMAC, TupleHash and ParallelHash**, which
-are FIPS 202's rates with different padding bytes and a length-encoded prefix,
-and the post-quantum tier behind SHAKE128.
+**cSHAKE and KMAC are built at both rates**, which are FIPS 202's rates with
+the padding byte 4 and a length-encoded prefix on the tape; KMAC adds a tape
+SUFFIX for its `right_encode(L)` and carries KMACXOF behind a one-cell flag.
+**What is left of tier B is TupleHash and ParallelHash**, and the post-quantum
+tier behind SHAKE128.
 
 **The rotation was the piece that decided whether any of it was affordable.**
 ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its

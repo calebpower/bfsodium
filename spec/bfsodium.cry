@@ -669,6 +669,11 @@ keccakPadB2 p m = split (m # [p] # (zero : [270 - n][8]) # [0x80])
 keccakPadB3 : {n} (fin n, n >= 271, n <= 406) => [8] -> [n][8] -> [3][136][8]
 keccakPadB3 p m = split (m # [p] # (zero : [406 - n][8]) # [0x80])
 
+// KMAC's longest sample needs a fourth: two bytepad blocks, two hundred bytes
+// of message and a right_encode behind them come to 475.
+keccakPadB4 : {n} (fin n, n >= 407, n <= 542) => [8] -> [n][8] -> [4][136][8]
+keccakPadB4 p m = split (m # [p] # (zero : [542 - n][8]) # [0x80])
+
 // The squeeze at rate 136: the first 136 bytes of the state, then the first
 // 136 of the permuted state, and so on for as long as the caller wants. SHA3
 // takes 32 bytes and stops inside the first rate, so keccak/sha3_256.bf never
@@ -739,6 +744,9 @@ keccakPad168B2 p m = split (m # [p] # (zero : [334 - n][8]) # [0x80])
 
 keccakPad168B3 : {n} (fin n, n >= 335, n <= 502) => [8] -> [n][8] -> [3][168][8]
 keccakPad168B3 p m = split (m # [p] # (zero : [502 - n][8]) # [0x80])
+
+keccakPad168B4 : {n} (fin n, n >= 503, n <= 670) => [8] -> [n][8] -> [4][168][8]
+keccakPad168B4 p m = split (m # [p] # (zero : [670 - n][8]) # [0x80])
 
 keccakSqueeze168 : {n} (fin n) => [25][64] -> [n][8]
 keccakSqueeze168 s = take`{n} (join [ take`{168} (keccakBytes t) | t <- ts ])
@@ -1603,68 +1611,94 @@ lencode1 x = [1, x]
 lencode2 : [16] -> [3][8]
 lencode2 x = [2] # split x
 
-bp136Run_0_0 : [260][8] -> [136][8]
+// right_encode is left_encode with the count moved to the other end, which is
+// the whole of the difference and the whole reason KMAC can tell where its
+// message stops when it is read backwards.
+rencode2 : [16] -> [3][8]
+rencode2 x = split x # [2]
+
+// right_encode of nought, which is what KMACXOF puts there. The count is at
+// least one, so nought is two bytes and not one.
+rencode0 : [2][8]
+rencode0 = [0, 1]
+
+bp136Run_0_0 : [261][8] -> [136][8]
 bp136Run_0_0 inb = lencode1 136 # lencode1 (8 * 0) # lencode1 (8 * 0)
                  # (zero : [130][8])
 
-bp136Run_4_0 : [260][8] -> [136][8]
+bp136Run_4_0 : [261][8] -> [136][8]
 bp136Run_4_0 inb = lencode1 136 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
                  # lencode1 (8 * 0) # (zero : [126][8])
 
-bp136Run_4_21 : [260][8] -> [136][8]
+bp136Run_4_21 : [261][8] -> [136][8]
 bp136Run_4_21 inb = lencode1 136 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
                   # lencode1 (8 * 21) # take`{21} (drop`{132} inb)
                   # (zero : [105][8])
 
-bp136Run_0_15 : [260][8] -> [136][8]
+bp136Run_0_15 : [261][8] -> [136][8]
 bp136Run_0_15 inb = lencode1 136 # lencode1 (8 * 0)
                   # lencode1 (8 * 15) # take`{15} (drop`{132} inb)
                   # (zero : [115][8])
 
 // Both strings at thirty one bytes, so both lengths in bits are 248 and both
 // encodings are still one byte -- the last size at which that is true.
-bp136Run_31_31 : [260][8] -> [136][8]
+bp136Run_31_31 : [261][8] -> [136][8]
 bp136Run_31_31 inb = lencode1 136 # lencode1 (8 * 31) # take`{31} (drop`{4} inb)
                    # lencode1 (8 * 31) # take`{31} (drop`{132} inb)
                    # (zero : [68][8])
 
 // The limit: thirty two and ninety six, so both lengths in bits need two
 // bytes and the block comes out EXACTLY full with no padding at all.
-bp136Run_32_96 : [260][8] -> [136][8]
+bp136Run_32_96 : [261][8] -> [136][8]
 bp136Run_32_96 inb = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{4} inb)
                    # lencode2 (8 * 96) # take`{96} (drop`{132} inb)
 
 // The same at SHAKE128's rate. A separate set of entries rather than one
 // parameterised by the rate, because the routine is a separate file for the
 // same reason: the rate sets the size of the block.
-bp168Run_0_0 : [260][8] -> [168][8]
+bp168Run_0_0 : [261][8] -> [168][8]
 bp168Run_0_0 inb = lencode1 168 # lencode1 (8 * 0) # lencode1 (8 * 0)
                  # (zero : [162][8])
 
-bp168Run_4_0 : [260][8] -> [168][8]
+bp168Run_4_0 : [261][8] -> [168][8]
 bp168Run_4_0 inb = lencode1 168 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
                  # lencode1 (8 * 0) # (zero : [158][8])
 
-bp168Run_4_21 : [260][8] -> [168][8]
+bp168Run_4_21 : [261][8] -> [168][8]
 bp168Run_4_21 inb = lencode1 168 # lencode1 (8 * 4) # take`{4} (drop`{4} inb)
                   # lencode1 (8 * 21) # take`{21} (drop`{132} inb)
                   # (zero : [137][8])
 
-bp168Run_0_15 : [260][8] -> [168][8]
+bp168Run_0_15 : [261][8] -> [168][8]
 bp168Run_0_15 inb = lencode1 168 # lencode1 (8 * 0)
                   # lencode1 (8 * 15) # take`{15} (drop`{132} inb)
                   # (zero : [147][8])
 
 // The limit at this rate: sixty four and ninety six, both lengths in bits
 // needing two bytes, and the block exactly full with no padding.
-bp168Run_64_96 : [260][8] -> [168][8]
+bp168Run_64_96 : [261][8] -> [168][8]
 bp168Run_64_96 inb = lencode1 168 # lencode2 (8 * 64) # take`{64} (drop`{4} inb)
                    # lencode2 (8 * 96) # take`{96} (drop`{132} inb)
+
+// THE ONE-STRING FORM, which is the whole reason the flag exists. KMAC's key
+// block is bytepad(encode_string(K), rate) over ONE string, and the two-string
+// form appends encode_string of the empty string -- the two bytes 01 00 --
+// behind it. Every KMAC answer is silently wrong by exactly those two, which
+// is how this was found: every vector failed at once while every contract
+// passed.
+bp136Run_32_one : [261][8] -> [136][8]
+bp136Run_32_one inb = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{4} inb)
+                    # (zero : [99][8])
+
+bp168Run_32_one : [261][8] -> [168][8]
+bp168Run_32_one inb = lencode1 168 # lencode2 (8 * 32) # take`{32} (drop`{4} inb)
+                    # (zero : [131][8])
 
 // ---------------------------------------------------------------------------
 // SPONGE136 WITH A TAPE PREFIX, as keccak/sponge136.bf now reads it:
 //
-//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{272}  then mlen bytes
+//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{272}
+//   slen{2} LE  sbuf{8}  then mlen bytes
 //
 // cSHAKE and KMAC put whole bytepad blocks in front of the message, and the
 // sponge reads its message from the wire, so the prefix comes from the tape
@@ -1675,59 +1709,128 @@ bp168Run_64_96 inb = lencode1 168 # lencode2 (8 * 64) # take`{64} (drop`{4} inb)
 // answer rather than a coincidence.
 
 // One whole block of prefix and a short wire message.
-sponge136pRun_136_3_32 : [282][8] -> [32][8]
+sponge136pRun_136_3_32 : [292][8] -> [32][8]
 sponge136pRun_136_3_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{139} 0x1f
-        (take`{136} (drop`{7} inb) # drop`{279} inb)))
+        (take`{136} (drop`{7} inb) # drop`{289} inb)))
 
 // One whole block of prefix and nothing at all on the wire, which is the
 // shape cSHAKE takes when it is asked to hash the empty string.
-sponge136pRun_136_0_32 : [279][8] -> [32][8]
+sponge136pRun_136_0_32 : [289][8] -> [32][8]
 sponge136pRun_136_0_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{136} 0x1f
         (take`{136} (drop`{7} inb))))
 
 // Two whole blocks of prefix, which is what KMAC needs, and two rates out.
-sponge136pRun_272_5_64 : [284][8] -> [64][8]
+sponge136pRun_272_5_64 : [294][8] -> [64][8]
 sponge136pRun_272_5_64 inb =
     keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{277} 0x1f
-        (take`{272} (drop`{7} inb) # drop`{279} inb)))
+        (take`{272} (drop`{7} inb) # drop`{289} inb)))
 
 // A prefix that is NOT a whole block. bytepad never produces one, so nothing
 // in SP 800-185 will ask for this; the conveyor supports it because it counts
 // bytes rather than blocks, and an untested capability is where surprises
 // come from.
-sponge136pRun_7_3_32 : [282][8] -> [32][8]
+sponge136pRun_7_3_32 : [292][8] -> [32][8]
 sponge136pRun_7_3_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{10} 0x1f
-        (take`{7} (drop`{7} inb) # drop`{279} inb)))
+        (take`{7} (drop`{7} inb) # drop`{289} inb)))
 
 // ---------------------------------------------------------------------------
 // SPONGE168 WITH A TAPE PREFIX, the twin of the entries above at SHAKE128's
 // rate. Same claim: the answer is the sponge of the prefix followed by the
 // wire message.
 //
-//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{336}  then mlen bytes
+//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{336}
+//   slen{2} LE  sbuf{8}  then mlen bytes
 
-sponge168pRun_168_3_32 : [346][8] -> [32][8]
+sponge168pRun_168_3_32 : [356][8] -> [32][8]
 sponge168pRun_168_3_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{171} 0x1f
-        (take`{168} (drop`{7} inb) # drop`{343} inb)))
+        (take`{168} (drop`{7} inb) # drop`{353} inb)))
 
-sponge168pRun_168_0_32 : [343][8] -> [32][8]
+sponge168pRun_168_0_32 : [353][8] -> [32][8]
 sponge168pRun_168_0_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{168} 0x1f
         (take`{168} (drop`{7} inb))))
 
-sponge168pRun_336_5_64 : [348][8] -> [64][8]
+sponge168pRun_336_5_64 : [358][8] -> [64][8]
 sponge168pRun_336_5_64 inb =
     keccakSqueeze168`{64} (keccakAbsorb168 (keccakPad168B3`{341} 0x1f
-        (take`{336} (drop`{7} inb) # drop`{343} inb)))
+        (take`{336} (drop`{7} inb) # drop`{353} inb)))
 
-sponge168pRun_9_3_32 : [346][8] -> [32][8]
+sponge168pRun_9_3_32 : [356][8] -> [32][8]
 sponge168pRun_9_3_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{12} 0x1f
-        (take`{9} (drop`{7} inb) # drop`{343} inb)))
+        (take`{9} (drop`{7} inb) # drop`{353} inb)))
+
+// ---------------------------------------------------------------------------
+// SPONGE136 WITH A TAPE SUFFIX. KMAC and the two hashes of SP 800-185 end the
+// message with right_encode of the output length, which sits on the tape and
+// not on the wire, so the byte source has a third arm behind the wire one.
+// The claim is the same shape as the prefix's: the answer is the sponge of
+// prefix ++ wire ++ suffix.
+//
+// The head is  pad{1} mlen{2} olen{2} plen{2} pbuf{272} slen{2} sbuf{8},
+// so the suffix buffer starts at byte 281 and the wire message at byte 289.
+
+// No prefix, three bytes on the wire and four of suffix, all in one block.
+sponge136sRun_0_3_4_32 : [292][8] -> [32][8]
+sponge136sRun_0_3_4_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{7} 0x1f
+        (drop`{289} inb # take`{4} (drop`{281} inb))))
+
+// The suffix ALONE: nothing in front of it and nothing on the wire, so the
+// whole message is the two bytes the tape holds.
+sponge136sRun_0_0_2_32 : [289][8] -> [32][8]
+sponge136sRun_0_0_2_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{2} 0x1f
+        (take`{2} (drop`{281} inb))))
+
+// Two whole prefix blocks, a wire message and a suffix, which is KMAC's own
+// shape, and two rates of output.
+sponge136sRun_272_5_4_64 : [294][8] -> [64][8]
+sponge136sRun_272_5_4_64 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{281} 0x1f
+        (take`{272} (drop`{7} inb) # drop`{289} inb
+            # take`{4} (drop`{281} inb))))
+
+// A suffix that STRADDLES A BLOCK: the wire runs to 134 bytes, so two suffix
+// bytes fall in the first block and two in the second. The arm sits inside the
+// block loop and nothing in it knows where a block ends; this is the vector
+// that would notice if something did.
+sponge136sRun_0_134_4_32 : [423][8] -> [32][8]
+sponge136sRun_0_134_4_32 inb =
+    keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{138} 0x1f
+        (drop`{289} inb # take`{4} (drop`{281} inb))))
+
+// ---------------------------------------------------------------------------
+// SPONGE168 WITH A TAPE SUFFIX, the twin of the four above. The head is
+// pad{1} mlen{2} olen{2} plen{2} pbuf{336} slen{2} sbuf{8}, so the suffix
+// buffer starts at byte 345 and the wire message at byte 353.
+
+sponge168sRun_0_3_4_32 : [356][8] -> [32][8]
+sponge168sRun_0_3_4_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{7} 0x1f
+        (drop`{353} inb # take`{4} (drop`{345} inb))))
+
+sponge168sRun_0_0_2_32 : [353][8] -> [32][8]
+sponge168sRun_0_0_2_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{2} 0x1f
+        (take`{2} (drop`{345} inb))))
+
+sponge168sRun_336_5_4_64 : [358][8] -> [64][8]
+sponge168sRun_336_5_4_64 inb =
+    keccakSqueeze168`{64} (keccakAbsorb168 (keccakPad168B3`{345} 0x1f
+        (take`{336} (drop`{7} inb) # drop`{353} inb
+            # take`{4} (drop`{345} inb))))
+
+// The straddle at this rate falls at 166 rather than 134, which is the one
+// number in the pair of files that a copied vector would get wrong.
+sponge168sRun_0_166_4_32 : [519][8] -> [32][8]
+sponge168sRun_0_166_4_32 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{170} 0x1f
+        (drop`{353} inb # take`{4} (drop`{345} inb))))
 
 // ---------------------------------------------------------------------------
 // NIST SP 800-185 section 3: cSHAKE256.
@@ -1817,6 +1920,123 @@ cshake128Run_nS inb =
     x   = drop`{264} inb
     pre = lencode1 168 # lencode1 (8 * 11) # take`{11} (drop`{8} inb)
         # lencode1 (8 * 6) # take`{6} (drop`{136} inb) # (zero : [145][8])
+
+// ---------------------------------------------------------------------------
+// NIST SP 800-185 section 4: KMAC, at both rates.
+//
+//   KMAC(K, X, L, S) = cSHAKE( bytepad(encode_string(K), rate) || X ||
+//                              right_encode(L),  L, "KMAC", S )
+//
+// which unfolds to the sponge over THREE pieces of tape and one of wire:
+// cSHAKE's own bytepad block over the name "KMAC" and the customization
+// string, then a second bytepad block over the key, then the wire message,
+// then right_encode of the output length in bits. The padding byte is 4.
+//
+// Written out rather than layered, so that an entry here and the brainfuck
+// agree only if both got the ORDER right. The key's block is the one that
+// carries KMAC's security: it is bytepad and not concatenation, so a whole
+// rate is absorbed before a byte of message arrives.
+//
+// IO: xof{1} klen{2} slen{2} mlen{2} olen{2} kbuf{128} sbuf{128}, then mlen
+//     bytes; the key starts at byte 9 and the customization at byte 137.
+
+// The four bytes the standard fixes. No caller supplies them, which is why
+// they are a constant here and a run of plusses in the brainfuck.
+kmacName : [4][8]
+kmacName = [0x4b, 0x4d, 0x41, 0x43]
+
+// NIST KMAC sample 1: no customization string, four bytes of message.
+kmac128Run_s1 : [269][8] -> [32][8]
+kmac128Run_s1 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B3`{343} 0x04
+        (t # k # drop`{265} inb # rencode2 256)))
+  where
+    t = lencode1 168 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 0) # (zero : [158][8])
+    k = lencode1 168 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [131][8])
+
+// NIST KMAC sample 2: the same with a customization string.
+kmac128Run_s2 : [269][8] -> [32][8]
+kmac128Run_s2 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B3`{343} 0x04
+        (t # k # drop`{265} inb # rencode2 256)))
+  where
+    t = lencode1 168 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 21) # take`{21} (drop`{137} inb) # (zero : [137][8])
+    k = lencode1 168 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [131][8])
+
+// NIST KMAC sample 3: two hundred bytes of message, which puts the absorb at
+// four blocks and the message across three of them.
+kmac128Run_s3 : [465][8] -> [32][8]
+kmac128Run_s3 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B4`{539} 0x04
+        (t # k # drop`{265} inb # rencode2 256)))
+  where
+    t = lencode1 168 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 21) # take`{21} (drop`{137} inb) # (zero : [137][8])
+    k = lencode1 168 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [131][8])
+
+// NIST KMAC sample 4: KMAC256, four bytes of message, sixty four out.
+kmac256Run_s4 : [269][8] -> [64][8]
+kmac256Run_s4 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{279} 0x04
+        (t # k # drop`{265} inb # rencode2 512)))
+  where
+    t = lencode1 136 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 21) # take`{21} (drop`{137} inb) # (zero : [105][8])
+    k = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [99][8])
+
+// NIST KMAC sample 5: KMAC256 with no customization string over two hundred
+// bytes, which is four blocks at this rate too.
+kmac256Run_s5 : [465][8] -> [64][8]
+kmac256Run_s5 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB4`{475} 0x04
+        (t # k # drop`{265} inb # rencode2 512)))
+  where
+    t = lencode1 136 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 0) # (zero : [126][8])
+    k = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [99][8])
+
+// NIST KMAC sample 6: the same with the customization string.
+kmac256Run_s6 : [465][8] -> [64][8]
+kmac256Run_s6 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB4`{475} 0x04
+        (t # k # drop`{265} inb # rencode2 512)))
+  where
+    t = lencode1 136 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 21) # take`{21} (drop`{137} inb) # (zero : [105][8])
+    k = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [99][8])
+
+// KMACXOF, which is the same function with right_encode(0) behind the message
+// so that the answer does not depend on how much of it is asked for. The flag
+// in the brainfuck does not branch around the encoder, it clears its input,
+// and these two entries are what says the clear lands in the right place.
+// DERIVED from the reference in this file, not from a published sample.
+kmacxof128Run_nS : [269][8] -> [32][8]
+kmacxof128Run_nS inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B3`{342} 0x04
+        (t # k # drop`{265} inb # rencode0)))
+  where
+    t = lencode1 168 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 21) # take`{21} (drop`{137} inb) # (zero : [137][8])
+    k = lencode1 168 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [131][8])
+
+kmacxof256Run_nS : [269][8] -> [64][8]
+kmacxof256Run_nS inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{278} 0x04
+        (t # k # drop`{265} inb # rencode0)))
+  where
+    t = lencode1 136 # lencode1 (8 * 4) # kmacName
+      # lencode1 (8 * 21) # take`{21} (drop`{137} inb) # (zero : [105][8])
+    k = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
+      # (zero : [99][8])
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

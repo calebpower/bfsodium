@@ -5,8 +5,8 @@
 ; per block of the padded message and once more for every rate of output after
 ; the first;
 ;
-; INTERFACE entry=278 exit=1024 footprint=0:1311
-; IO  in:  pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{272}
+; INTERFACE entry=288 exit=1024 footprint=0:1319
+; IO  in:  pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{272}  slen{2} LE  sbuf{8}
 ;          then mlen bytes from the wire
 ;     out: olen bytes  as they come off the state
 ;
@@ -41,6 +41,17 @@
 ;   @0x3ff        padb    the padding byte  as it came in on the wire
 ;   @0x400        oleft   one while either olo or ohi is not nought
 ;   @0x401        kc      bytes still allowed out of the rate in hand
+;   @0x402        sleft   one while the suffix still has a byte to give
+;   @0x403        selse   one until the suffix arm has fired  so the
+;                         padding does not fire on the same byte
+;   @0x404:0x405  st0 st1 the cells the suffix tests are made through
+;   @0x406:0x407  slen{2} how much suffix the sponge takes from the tape
+;   @0x408:0x409  plen{2} and how much prefix; both counts are SPENT
+;   @0x40a:0x40d  the prefix's own else arm  test cells and flag
+;   @0x410:0x51f  pbuf{272} the prefix buffer  two whole rates of it
+;   @0x520:0x527  sbuf{8} the suffix buffer; right_encode of a length is
+;                         at most five bytes  and eight is the round
+;                         number above it
 ;
 ; THE RATE IS A HUNDRED AND THIRTY SIX and that is exactly SEVENTEEN LANES  so
 ; absorbing a block is seventeen entries of xor64 rather than a hundred and
@@ -57,6 +68,19 @@
 ; one arrives; So the byte that enters first has slid a hundred and thirty five
 ; times when the block is full and comes to rest at the bottom  which is where
 ; it belongs; poly1305/absorb fills its sixteen byte block the same way;
+;
+; AND THE BLOCK'S BYTES COME FROM FOUR PLACES IN ORDER  which is the one
+; thing to know before reading the byte source below: the TAPE PREFIX  then
+; the WIRE  then the TAPE SUFFIX  then the padding; cSHAKE and KMAC put whole
+; bytepad blocks in front of the message and KMAC puts right_encode of the
+; output length behind it  and neither is on the wire; Each tape arm is a
+; SECOND CONVEYOR feeding the first  so the block machinery below is the same
+; in all four cases and only the source of the next byte differs;
+;
+; NOTHING IN THE BLOCK ACCOUNTING KNOWS ABOUT ANY OF THEM  and that is why a
+; suffix may spill into a block of its own: whether another block is wanted is
+; decided by pad  which stays set until the padding byte is placed  and the
+; padding waits behind the suffix;
 ;
 ; THE PADDING IS FIPS 202's  and the conveyor makes it almost free: when the
 ; message runs out the next byte to enter is the padding byte  and after that
@@ -98,12 +122,12 @@
 ; map;
 
 ; read the padding byte  the message length  the output length  the prefix
-; length  and then the prefix buffer itself
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; ASSERT ptr=278
-; ASSERT zero 279:1311
+; length  the prefix buffer  the suffix length and the suffix buffer
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=288
+; ASSERT zero 289:1319
 ; to the bottom of the state
-L278
+L288
 ; ASSERT ptr=0
 ; the padding byte moves up out of the state  to wait for the end of the message
   [-R1023+L1023]
@@ -130,7 +154,17 @@ R1
 ; ASSERT ptr=7
   [-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]>[-R1033+L1033]
 ; ASSERT ptr=278
-R730
+R1
+; ASSERT ptr=279
+; the suffix length goes up with them
+  [-R751+L751]>[-R751+L751]
+; ASSERT ptr=280
+R1
+; ASSERT ptr=281
+; and so does the suffix buffer  which lives above the prefix buffer
+  [-R1031+L1031]>[-R1031+L1031]>[-R1031+L1031]>[-R1031+L1031]>[-R1031+L1031]>[-R1031+L1031]>[-R1031+L1031]>[-R1031+L1031]
+; ASSERT ptr=288
+R720
 ; ASSERT ptr=1008
 
 ; ==== is there a message at all ====
@@ -300,13 +334,64 @@ L3
 R2
 ; ASSERT ptr=1016
 [
-; ____ the message is out  so the padding byte enters  once ____
+; ____ the message is out  so the SUFFIX comes next  and the padding
+;      waits behind it ____
   [-]
-L5
+; ==== is any of the suffix still to come ====
+; the low byte is looked at through st0 and handed back through st1
+R14
+  [-L2+R1+R1]
+L1
+  [-R1+L1]
+L1
+  [[-]L2[-]+R2]
+; and the high byte through the same two cells
+R3
+  [-L3+R1+R2]
+L2
+  [-R2+L2]
+L1
+  [[-]L2[-]+R2]
+; the else arm is armed  because the suffix arm clears it
+L1
+  [-]
+  +
+L1
+; ASSERT ptr=1026
+[
+  [-]
+; the else does not fire  and the head of the suffix enters the block
+R1
+  [-]
+R285
+  [-L353+R353]
+; and the suffix slides down one place after it
+R1
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+; the count of suffix bytes comes down by one  low byte first
+L289
+  [-L2+R1+R1]
+L1
+  [-R1+L1]
+  [-]
+  +
+L1
+  [[-]R2-L1-L1]
+R1
+  [-R2-L1-L1]
+L3
+; ASSERT ptr=1026
+]
+; otherwise the padding decides  exactly as it did before the suffix
+R1
+; ASSERT ptr=1027
+[
+  -
+; ____ the padding byte enters  once ____
+L16
 ; ASSERT ptr=1011
   [-R3+R1+L4]
 R4
-; ASSERT ptr=1015
   [-L4+R4]
 L1
 ; ASSERT ptr=1014
@@ -315,20 +400,21 @@ L1
 L3
 ; ASSERT ptr=1011
   [-]
+; this block is the last one by definition  so its last byte gains 128
 R9
-; ASSERT ptr=1020
-  [-]+
-; the padding byte itself  which came in on the wire  goes to the top cell
+  [-]
+  +
+; the padding byte itself  which came in on the wire  goes to the top
 R3
-; ASSERT ptr=1023
   [-L64+R64]
-; ASSERT ptr=1023
 ; and back to the cell the tests are made through
 L9
 ; ASSERT ptr=1014
 ]
-; ASSERT ptr=1014
-R2
+R13
+; ASSERT ptr=1027
+]
+L11
 ; ASSERT ptr=1016
 ]
 ; ASSERT ptr=1016
@@ -612,6 +698,8 @@ L2
 ]
 ; ASSERT ptr=1012
 ; ASSERT zero 200:1020
+; and both tape conveyors are spent  which is the suffix's contract
+; ASSERT zero 1026:1319
 
 ; ==== is any output owed at all ====
 ; both output length bytes are looked at through t2  and either one sets oleft

@@ -5,9 +5,17 @@
 ; HAND WRITTEN skeleton; keccak/leftenc is PASTED twice and chacha20/add32 is
 ; PASTED twice  once inside each of the two doubling loops;
 ;
-; INTERFACE entry=259 exit=264 footprint=0:451
-; IO  in:  nlen{2} LE  slen{2} LE  nbuf{128}  sbuf{128}   (260 bytes)
+; INTERFACE entry=260 exit=264 footprint=0:451
+; IO  in:  nlen{2} LE  slen{2} LE  nbuf{128}  sbuf{128}  one{1}  (261 bytes)
 ;     out: one block of 136 bytes
+;
+; ONE IS A FLAG AND NOUGHT IS THE ORDINARY CASE: nought encodes BOTH strings
+; and one encodes only N  which is what KMAC's key block wants and what
+;   bytepad( encode_string(K)  136 )
+; means; The two string form appends encode_string of the empty string  which
+; is the two bytes 01 00  and KMAC's answer is wrong by exactly those two;
+; The flag is read LAST so that the cell is at nought for a caller that sends
+; 260 bytes  which is why cSHAKE needed no change at all;
 ;
 ; This is  in the standard's own notation
 ;   bytepad( encode_string(N) then encode_string(S)  136 )
@@ -43,6 +51,8 @@
 ; a fourth hand rolled shift;
 ;
 ; TAPE MAP  (home @0)
+;   @0x104        one     u8   one to encode N alone; nought for both
+;   @0x105        dos     u8   the else arm of that flag
 ;   @0x000:0x001  nlen{2}  u16 LE  N's length in BYTES; its high byte is nought
 ;   @0x002:0x003  slen{2}  u16 LE  S's length in bytes
 ;   @0x004:0x083  nbuf{128} u8     N  as given; SPENT into the block
@@ -58,23 +68,46 @@
 ;   @0x1b0:@0x1c3  chacha20/add32's frame  pasted at @0x1b0; footprint 0:19
 ;                 its a{4} is the accumulator and its b{4} the addend
 
-,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; read the two lengths and the two buffers
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; read the two lengths  the two buffers  and the one
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; string flag
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>   ; continued
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,        ; continued
-                                                               ; ASSERT ptr=259
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,      ; continued
+                                                               ; ASSERT ptr=260
+
+; ============================================================ ; is there a second string at all
+                                                               ; KMAC's key block is bytepad of ONE encoded string and
+                                                               ; every other caller wants two  so the S half below is
+                                                               ; skipped under a flag; the flag is read LAST  which is
+                                                               ; what lets a caller that predates it and sends 260
+                                                               ; bytes get the two string form from a cell that is
+                                                               ; still at nought
+>
+  [-]
+  +
+<
+                                                               ; ASSERT ptr=260
+[
+  [-]
+>
+  [-]
+<
+]
+>
+                                                               ; ASSERT ptr=261
+[
+  -
 
 ; ============================================================ ; S goes in first  because it is last in the answer
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; its length says how far the block slides  and is
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; handed straight back
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<                                      ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<                                    ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -1638,17 +1671,21 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>]                                                   ; continued
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<           ; continued
+                                                               ; ASSERT ptr=261
+]
 
 ; ============================================================ ; then N  and then N's length in bits  by the same two
                                                                ; steps
+                                                               ; this half is not under the flag  because bytepad of
+                                                               ; nothing at all is not a thing the standard asks for
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<                                        ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<                                  ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued

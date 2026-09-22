@@ -13,6 +13,16 @@ at `BRAINSTEM_COMMIT` before the suite starts, so every gate here needs the
 network. The previous gates were 347 at `cc974dc` and 345 at `7436078`, both
 on one guest.
 
+**THE SUITE HAS GROWN TO 810 SINCE THAT GATE AND THE GATE OF RECORD HAS NOT
+RUN AGAIN.** Everything committed since `7ffd67f` -- SP 800-108, PBKDF2,
+HMAC_DRBG, the encodings, `bytepad`, the sponge's tape prefix and suffix,
+cSHAKE and KMAC -- was gated on `tools/container-test.sh`, which is **the
+Linux half only**. That is the weaker of the two lanes and it is named here
+rather than left to be inferred: the FreeBSD half has not seen any of it, and
+the one defect the second guest has ever found was a compiler difference that
+nothing on this side could reach. Run `reaper test` before believing the
+number above covers the tree it sits in.
+
 **THE FIRST RUN ON A SECOND PLATFORM, AND IT FOUND NOTHING.** That is worth
 recording rather than passing over. The guest exists because five C programs
 here had only ever seen gcc and `bfi` is the interpreter every correctness
@@ -146,20 +156,22 @@ routine, the suite fails until it has a row here.
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
-| `keccak/bytepad136` | 3828 | 215 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, and the limit where the block is exactly full |
-| `keccak/bytepad168` | 3876 | 215 | the same at SHAKE128's rate, including its own exactly-full limit |
-| `keccak/cshake256` | 151327 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
-| `keccak/cshake128` | 160830 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
+| `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
+| `keccak/bytepad168` | 3914 | 251 | the same at SHAKE128's rate, including its own exactly-full limit and the one-string form |
+| `keccak/cshake256` | 151873 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
+| `keccak/cshake128` | 161413 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
+| `keccak/kmac128` | 183357 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/kmac256` | 171267 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
 | `keccak/permute1600` | 51119 | 271 | the published all zero vector and a random state + Cryptol |
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
-| `keccak/sponge136` | 126797 | 792 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
-| `keccak/sha3_256` | 126762 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
-| `keccak/shake256` | 126764 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 133005 | 851 | one inside the first rate and one past it + Cryptol |
-| `keccak/shake128` | 132965 | 58 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge136` | 127236 | 880 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 127173 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 127175 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 133457 | 939 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 133390 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
 | `keccak/sha3_384` | 61875 | 458 | rate 104  the same four + Cryptol |
 | `keccak/sha3_512` | 58572 | 406 | rate 72  the same four + Cryptol |
@@ -206,9 +218,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 397 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 397 | golden vectors, dual oracle |
-| 5 | yes | 54 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 415 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 415 | golden vectors, dual oracle |
+| 5 | yes | 60 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -690,8 +702,108 @@ the reasoning.
    you recall.** A recalled constant that is mostly right is the worst kind,
    because the part you remember correctly is what makes you trust the rest.
 
-   **Still to do:** KMAC and the two hashes. KMAC wants a tape SUFFIX for its
-   `right_encode(L)` — the same mechanism as the prefix at the other end.
+   **DONE: THE TAPE SUFFIX, at both rates.** The sponge's byte source now has
+   four arms in order — tape prefix, wire, tape suffix, padding — and the
+   third is new. It is the prefix's mechanism at the other end: a buffer above
+   the frame, a count, and a conveyor that feeds the block conveyor.
+
+   Two things made it cheap, and both were decisions taken earlier for other
+   reasons. **The new cells went at the TOP of the frame and into the six
+   cells that were already free between `kc` and `plen`**, so not one existing
+   cell moved and `shiftcells` was not needed at all — an insertion, not a
+   shift, which is the difference between an afternoon and the HKDF widening.
+   And **the head grew at its END** (`slen{2} sbuf{8}` after `pbuf`), so
+   cSHAKE's staging still starts at cell 7 and both cSHAKE files needed
+   nothing but a regenerated footprint.
+
+   **Nothing in the block accounting had to change**, which is worth saying
+   because it looks like it should have: whether another block is wanted is
+   decided by `pad`, the flag that stays set until the padding byte is placed,
+   and the padding waits behind the suffix. A suffix that spills into a new
+   block therefore keeps the loop going without anything knowing why. There is
+   a vector for exactly that — the wire runs to 134 bytes at one rate and 166
+   at the other, so two of the four suffix bytes land in each block.
+
+   **And the drain is now a contract.** `ASSERT zero 1026:1319` at the end of
+   the absorb says both tape buffers are spent. The old contract stopped at
+   `last` and never looked above it, so a conveyor that quietly failed to
+   consume its buffer would have passed every vector whose answer did not
+   depend on it.
+
+   **DONE: KMAC128 and KMAC256, with KMACXOF in the same files.** Another
+   head: `bytepad` is PASTED TWICE — once over `encode_string(K)` and once
+   over cSHAKE's own name-and-customization pair — the two blocks are staged
+   as the sponge's two-rate prefix, `right_encode(8 × olen)` goes in the
+   suffix, and the padding byte is 4. The sponge's prefix buffer has been two
+   rates deep since the day it was written, for this.
+
+   **One paste serves both blocks**, because `bytepad` leaves its own frame at
+   nought once the block is carried out of it. That was true before and
+   nothing relied on it; there is now a contract after each of the two runs
+   that says so, and if it ever stops being true the second block is the
+   thing that breaks.
+
+   **KMACXOF is one cell and not a second pair of files.** It is KMAC with
+   `right_encode(0)` in place of `right_encode(L)`, and `right_encode` of
+   nought is what the encoder already produces when handed nought — so the
+   flag does not branch around the encoder, **it clears its input**. `xof{1}`
+   nought is KMAC and one is KMACXOF. Same family as the padding byte: a rate
+   cannot be a parameter here, and this can.
+
+   **Five of the six samples are NIST's own printed answers and the sixth is
+   not**, and the rule from cSHAKE128 is why it is labelled that way. KMAC256
+   sample 4's published value could not be quoted from a source — a recalled
+   tail disagreed with the computed one and was the wrong length besides — so
+   it ships as DERIVED. What it rests on is not recollection: the same
+   reference reproduces KMAC128 samples 1, 2 and 3 and KMAC256 samples 5 and
+   6 byte for byte at full length, and reproduces SHAKE128, SHAKE256 and
+   SHA3-256 from a third party underneath that.
+
+   **All sixteen new spec entries were evaluated in Cryptol and agreed with
+   the Python reference before a single byte of brainfuck ran** — two
+   independent oracles settled first, so the only open question left for the
+   suite was whether the brainfuck agreed with both.
+
+   **THE DEFECT KMAC SHIPPED WITH, AND WHAT FOUND IT.** The first build of
+   both files failed **every one of its eight vectors and passed every one of
+   its contracts.** That combination is the diagnosis, not a puzzle: the
+   frames were clean, the two pastes ran, the block counts were right, the
+   suffix drained — and the answer was wrong. So the machinery was fine and
+   the *composition* was wrong.
+
+   It was `keccak/bytepad`, which **always encodes TWO strings**. KMAC's key
+   block is `bytepad(encode_string(K), rate)` over **one**, and the two-string
+   form appends `encode_string("")` — the two bytes `01 00` — behind the key.
+   Confirmed before touching anything, by computing the wrong construction in
+   the reference and matching the observed output **byte for byte at all
+   sixty-four bytes of sample 4**. A hypothesis that reproduces the exact
+   wrong answer is not a guess.
+
+   The fix is a flag: `keccak/bytepad` reads `one{1}` and skips the S half
+   under it. Three things made it nearly free, and all three were luck the
+   layout had already provided — **the cells between `sbuf` and the block
+   were a four-cell gutter**, so the flag and its else arm cost no footprint;
+   **the flag is read LAST**, so a caller that sends 260 bytes still gets the
+   two-string form from a cell at nought, and every existing vector passes
+   unchanged; and the block is built by prepending, so "skip the second
+   string" is literally a branch around the first two prepends. `cSHAKE`
+   needed no edit of any kind.
+
+   **The one lesson worth carrying.** Nothing in the suite could have caught
+   this before KMAC existed, because `bytepad` was *correct* — it was doing
+   what its header said, and its header was what SP 800-185 §2.3.3 says of the
+   two-string case. The gap was that **the one-string case had never been
+   asked for, so it had never been named**; `bytepad`'s IO simply did not
+   admit that it was a choice. A routine whose interface hides a case is a
+   routine that will be composed wrongly, and the only checker that finds it
+   is the first caller who needs the other case. Both rates now carry a
+   one-string vector of their own and a contract run that enters the arm.
+
+   **Still to do in step 5:** TupleHash and ParallelHash. Both need the
+   suffix, which now exists; TupleHash is `encode_string` per element and
+   ParallelHash hashes fixed-size chunks and hashes the concatenation, which
+   is the only one of the four that needs a loop over the message rather than
+   a frame around it.
 
 6. **AES itself, if and only if step 1 says so.**
 
