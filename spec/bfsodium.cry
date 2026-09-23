@@ -1697,7 +1697,7 @@ bp168Run_32_one inb = lencode1 168 # lencode2 (8 * 32) # take`{32} (drop`{4} inb
 // ---------------------------------------------------------------------------
 // SPONGE136 WITH A TAPE PREFIX, as keccak/sponge136.bf now reads it:
 //
-//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{272}
+//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{544}
 //   slen{2} LE  sbuf{8}  then mlen bytes
 //
 // cSHAKE and KMAC put whole bytepad blocks in front of the message, and the
@@ -1709,60 +1709,60 @@ bp168Run_32_one inb = lencode1 168 # lencode2 (8 * 32) # take`{32} (drop`{4} inb
 // answer rather than a coincidence.
 
 // One whole block of prefix and a short wire message.
-sponge136pRun_136_3_32 : [292][8] -> [32][8]
+sponge136pRun_136_3_32 : [564][8] -> [32][8]
 sponge136pRun_136_3_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{139} 0x1f
-        (take`{136} (drop`{7} inb) # drop`{289} inb)))
+        (take`{136} (drop`{7} inb) # drop`{561} inb)))
 
 // One whole block of prefix and nothing at all on the wire, which is the
 // shape cSHAKE takes when it is asked to hash the empty string.
-sponge136pRun_136_0_32 : [289][8] -> [32][8]
+sponge136pRun_136_0_32 : [561][8] -> [32][8]
 sponge136pRun_136_0_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{136} 0x1f
         (take`{136} (drop`{7} inb))))
 
 // Two whole blocks of prefix, which is what KMAC needs, and two rates out.
-sponge136pRun_272_5_64 : [294][8] -> [64][8]
+sponge136pRun_272_5_64 : [566][8] -> [64][8]
 sponge136pRun_272_5_64 inb =
     keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{277} 0x1f
-        (take`{272} (drop`{7} inb) # drop`{289} inb)))
+        (take`{272} (drop`{7} inb) # drop`{561} inb)))
 
 // A prefix that is NOT a whole block. bytepad never produces one, so nothing
 // in SP 800-185 will ask for this; the conveyor supports it because it counts
 // bytes rather than blocks, and an untested capability is where surprises
 // come from.
-sponge136pRun_7_3_32 : [292][8] -> [32][8]
+sponge136pRun_7_3_32 : [564][8] -> [32][8]
 sponge136pRun_7_3_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{10} 0x1f
-        (take`{7} (drop`{7} inb) # drop`{289} inb)))
+        (take`{7} (drop`{7} inb) # drop`{561} inb)))
 
 // ---------------------------------------------------------------------------
 // SPONGE168 WITH A TAPE PREFIX, the twin of the entries above at SHAKE128's
 // rate. Same claim: the answer is the sponge of the prefix followed by the
 // wire message.
 //
-//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{336}
+//   pad{1}  mlen{2} LE  olen{2} LE  plen{2} LE  pbuf{672}
 //   slen{2} LE  sbuf{8}  then mlen bytes
 
-sponge168pRun_168_3_32 : [356][8] -> [32][8]
+sponge168pRun_168_3_32 : [692][8] -> [32][8]
 sponge168pRun_168_3_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{171} 0x1f
-        (take`{168} (drop`{7} inb) # drop`{353} inb)))
+        (take`{168} (drop`{7} inb) # drop`{689} inb)))
 
-sponge168pRun_168_0_32 : [353][8] -> [32][8]
+sponge168pRun_168_0_32 : [689][8] -> [32][8]
 sponge168pRun_168_0_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{168} 0x1f
         (take`{168} (drop`{7} inb))))
 
-sponge168pRun_336_5_64 : [358][8] -> [64][8]
+sponge168pRun_336_5_64 : [694][8] -> [64][8]
 sponge168pRun_336_5_64 inb =
     keccakSqueeze168`{64} (keccakAbsorb168 (keccakPad168B3`{341} 0x1f
-        (take`{336} (drop`{7} inb) # drop`{353} inb)))
+        (take`{336} (drop`{7} inb) # drop`{689} inb)))
 
-sponge168pRun_9_3_32 : [356][8] -> [32][8]
+sponge168pRun_9_3_32 : [692][8] -> [32][8]
 sponge168pRun_9_3_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{12} 0x1f
-        (take`{9} (drop`{7} inb) # drop`{353} inb)))
+        (take`{9} (drop`{7} inb) # drop`{689} inb)))
 
 // ---------------------------------------------------------------------------
 // SPONGE136 WITH A TAPE SUFFIX. KMAC and the two hashes of SP 800-185 end the
@@ -1771,66 +1771,66 @@ sponge168pRun_9_3_32 inb =
 // The claim is the same shape as the prefix's: the answer is the sponge of
 // prefix ++ wire ++ suffix.
 //
-// The head is  pad{1} mlen{2} olen{2} plen{2} pbuf{272} slen{2} sbuf{8},
-// so the suffix buffer starts at byte 281 and the wire message at byte 289.
+// The head is  pad{1} mlen{2} olen{2} plen{2} pbuf{544} slen{2} sbuf{8},
+// so the suffix buffer starts at byte 553 and the wire message at byte 561.
 
 // No prefix, three bytes on the wire and four of suffix, all in one block.
-sponge136sRun_0_3_4_32 : [292][8] -> [32][8]
+sponge136sRun_0_3_4_32 : [564][8] -> [32][8]
 sponge136sRun_0_3_4_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{7} 0x1f
-        (drop`{289} inb # take`{4} (drop`{281} inb))))
+        (drop`{561} inb # take`{4} (drop`{553} inb))))
 
 // The suffix ALONE: nothing in front of it and nothing on the wire, so the
 // whole message is the two bytes the tape holds.
-sponge136sRun_0_0_2_32 : [289][8] -> [32][8]
+sponge136sRun_0_0_2_32 : [561][8] -> [32][8]
 sponge136sRun_0_0_2_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB1`{2} 0x1f
-        (take`{2} (drop`{281} inb))))
+        (take`{2} (drop`{553} inb))))
 
 // Two whole prefix blocks, a wire message and a suffix, which is KMAC's own
 // shape, and two rates of output.
-sponge136sRun_272_5_4_64 : [294][8] -> [64][8]
+sponge136sRun_272_5_4_64 : [566][8] -> [64][8]
 sponge136sRun_272_5_4_64 inb =
     keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{281} 0x1f
-        (take`{272} (drop`{7} inb) # drop`{289} inb
-            # take`{4} (drop`{281} inb))))
+        (take`{272} (drop`{7} inb) # drop`{561} inb
+            # take`{4} (drop`{553} inb))))
 
 // A suffix that STRADDLES A BLOCK: the wire runs to 134 bytes, so two suffix
 // bytes fall in the first block and two in the second. The arm sits inside the
 // block loop and nothing in it knows where a block ends; this is the vector
 // that would notice if something did.
-sponge136sRun_0_134_4_32 : [423][8] -> [32][8]
+sponge136sRun_0_134_4_32 : [695][8] -> [32][8]
 sponge136sRun_0_134_4_32 inb =
     keccakSqueeze136`{32} (keccakAbsorb (keccakPadB2`{138} 0x1f
-        (drop`{289} inb # take`{4} (drop`{281} inb))))
+        (drop`{561} inb # take`{4} (drop`{553} inb))))
 
 // ---------------------------------------------------------------------------
 // SPONGE168 WITH A TAPE SUFFIX, the twin of the four above. The head is
-// pad{1} mlen{2} olen{2} plen{2} pbuf{336} slen{2} sbuf{8}, so the suffix
-// buffer starts at byte 345 and the wire message at byte 353.
+// pad{1} mlen{2} olen{2} plen{2} pbuf{672} slen{2} sbuf{8}, so the suffix
+// buffer starts at byte 681 and the wire message at byte 689.
 
-sponge168sRun_0_3_4_32 : [356][8] -> [32][8]
+sponge168sRun_0_3_4_32 : [692][8] -> [32][8]
 sponge168sRun_0_3_4_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{7} 0x1f
-        (drop`{353} inb # take`{4} (drop`{345} inb))))
+        (drop`{689} inb # take`{4} (drop`{681} inb))))
 
-sponge168sRun_0_0_2_32 : [353][8] -> [32][8]
+sponge168sRun_0_0_2_32 : [689][8] -> [32][8]
 sponge168sRun_0_0_2_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{2} 0x1f
-        (take`{2} (drop`{345} inb))))
+        (take`{2} (drop`{681} inb))))
 
-sponge168sRun_336_5_4_64 : [358][8] -> [64][8]
+sponge168sRun_336_5_4_64 : [694][8] -> [64][8]
 sponge168sRun_336_5_4_64 inb =
     keccakSqueeze168`{64} (keccakAbsorb168 (keccakPad168B3`{345} 0x1f
-        (take`{336} (drop`{7} inb) # drop`{353} inb
-            # take`{4} (drop`{345} inb))))
+        (take`{336} (drop`{7} inb) # drop`{689} inb
+            # take`{4} (drop`{681} inb))))
 
 // The straddle at this rate falls at 166 rather than 134, which is the one
 // number in the pair of files that a copied vector would get wrong.
-sponge168sRun_0_166_4_32 : [519][8] -> [32][8]
+sponge168sRun_0_166_4_32 : [855][8] -> [32][8]
 sponge168sRun_0_166_4_32 inb =
     keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{170} 0x1f
-        (drop`{353} inb # take`{4} (drop`{345} inb))))
+        (drop`{689} inb # take`{4} (drop`{681} inb))))
 
 // ---------------------------------------------------------------------------
 // NIST SP 800-185 section 3: cSHAKE256.
@@ -2037,6 +2037,119 @@ kmacxof256Run_nS inb =
       # lencode1 (8 * 21) # take`{21} (drop`{137} inb) # (zero : [105][8])
     k = lencode1 136 # lencode2 (8 * 32) # take`{32} (drop`{9} inb)
       # (zero : [99][8])
+
+// ---------------------------------------------------------------------------
+// NIST SP 800-185 section 5: TupleHash, at both rates.
+//
+//   TupleHash(X, L, S) = cSHAKE( encode_string(X1) || ... || encode_string(Xn)
+//                                || right_encode(L),  L, "TupleHash", S )
+//
+// Written out rather than layered, and the point of writing it out is that
+// the brainfuck builds the same bytes BACKWARDS. It has no index, so it
+// prepends: right_encode's length first, then the last slot, then that slot's
+// length encoding, and so on down to the first. An entry here and the
+// brainfuck agree only if the two opposite orders meet in the middle.
+//
+// The brainfuck puts the tuple's LAST element on the wire and the earlier
+// ones in four tape slots of 64 bytes, so these read the slots out of the
+// head and the last element out of the tail.
+//
+// IO: xof{1} u{4} olen{2} slen{2} mlen{2} elen{4} sbuf{128} ebuf{256}, then
+//     mlen bytes; S is at byte 15, slot i at byte 143 + 64i, the wire at 399.
+
+// The nine bytes the standard fixes.
+tupleName : [9][8]
+tupleName = [0x54, 0x75, 0x70, 0x6c, 0x65, 0x48, 0x61, 0x73, 0x68]
+
+// NIST TupleHash sample 1: a two-tuple and no customization string.
+tuplehash128Run_s1 : [405][8] -> [32][8]
+tuplehash128Run_s1 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{184} 0x04
+        (t # z # drop`{399} inb # rencode2 256)))
+  where
+    t = lencode1 168 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 0) # (zero : [153][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb) # lencode1 (8 * 6)
+
+// NIST TupleHash sample 2: the same tuple with one.
+tuplehash128Run_s2 : [405][8] -> [32][8]
+tuplehash128Run_s2 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{184} 0x04
+        (t # z # drop`{399} inb # rencode2 256)))
+  where
+    t = lencode1 168 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 12) # take`{12} (drop`{15} inb) # (zero : [141][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb) # lencode1 (8 * 6)
+
+// NIST TupleHash sample 3: a three-tuple, which is two tape slots and the
+// wire, and the case where a second slot's encoding has to land in front of
+// the first slot's element rather than behind it.
+tuplehash128Run_s3 : [408][8] -> [32][8]
+tuplehash128Run_s3 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{195} 0x04
+        (t # z # drop`{399} inb # rencode2 256)))
+  where
+    t = lencode1 168 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 12) # take`{12} (drop`{15} inb) # (zero : [141][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb)
+      # lencode1 (8 * 6) # take`{6} (drop`{207} inb)
+      # lencode1 (8 * 9)
+
+// NIST TupleHash sample 4: the same at SHAKE256's rate, sixty four out.
+tuplehash256Run_s4 : [405][8] -> [64][8]
+tuplehash256Run_s4 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2`{152} 0x04
+        (t # z # drop`{399} inb # rencode2 512)))
+  where
+    t = lencode1 136 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 0) # (zero : [121][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb) # lencode1 (8 * 6)
+
+// NIST TupleHash sample 5.
+tuplehash256Run_s5 : [405][8] -> [64][8]
+tuplehash256Run_s5 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2`{152} 0x04
+        (t # z # drop`{399} inb # rencode2 512)))
+  where
+    t = lencode1 136 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 12) # take`{12} (drop`{15} inb) # (zero : [109][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb) # lencode1 (8 * 6)
+
+// NIST TupleHash sample 6.
+tuplehash256Run_s6 : [408][8] -> [64][8]
+tuplehash256Run_s6 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2`{163} 0x04
+        (t # z # drop`{399} inb # rencode2 512)))
+  where
+    t = lencode1 136 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 12) # take`{12} (drop`{15} inb) # (zero : [109][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb)
+      # lencode1 (8 * 6) # take`{6} (drop`{207} inb)
+      # lencode1 (8 * 9)
+
+// TupleHashXOF at each rate, which is the same function with right_encode(0)
+// behind the tuple. DERIVED from the reference in this file, not published.
+tuplehashxof128Run_nS : [408][8] -> [32][8]
+tuplehashxof128Run_nS inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{194} 0x04
+        (t # z # drop`{399} inb # rencode0)))
+  where
+    t = lencode1 168 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 12) # take`{12} (drop`{15} inb) # (zero : [141][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb)
+      # lencode1 (8 * 6) # take`{6} (drop`{207} inb)
+      # lencode1 (8 * 9)
+
+tuplehashxof256Run_nS : [408][8] -> [64][8]
+tuplehashxof256Run_nS inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2`{162} 0x04
+        (t # z # drop`{399} inb # rencode0)))
+  where
+    t = lencode1 136 # lencode1 (8 * 9) # tupleName
+      # lencode1 (8 * 12) # take`{12} (drop`{15} inb) # (zero : [109][8])
+    z = lencode1 (8 * 3) # take`{3} (drop`{143} inb)
+      # lencode1 (8 * 6) # take`{6} (drop`{207} inb)
+      # lencode1 (8 * 9)
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

@@ -1,0 +1,748 @@
+; bfsodium TUPLEHASH128 : NIST SP 800_185 section 5's TupleHash
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN skeleton; keccak/bytepad168 is PASTED once  keccak/leftenc
+; 5 times  chacha20/add32 5 times  keccak/rightenc once  and
+; keccak/sponge168 once; This file adds no cryptography of its own;
+;
+; IO  in:  xof{1}  u{4}  olen{2} LE  slen{2} LE  mlen{2} LE
+;          elen{4}  sbuf{128}  ebuf{256}    (399 bytes)
+;          then mlen bytes from the wire
+;     out: olen bytes
+;
+;   TupleHash128(X  L  S) = cSHAKE128( encode_string of every element of
+;                          X in turn  then right_encode(L)
+;                          L  "TupleHash"  S )
+;
+; THE TUPLE IS THE HARD PART AND PREPENDING IS THE ANSWER; the encoding puts
+; every element behind a length that the elements BEFORE it decide  which is
+; an offset  which is an index  and this library has none; keccak/bytepad met
+; the same wall and went through it the same way: BUILD THE ANSWER RIGHT TO
+; LEFT; each piece is put in by sliding the whole encoding right by its own
+; length and ADDING it at the encoding's first cell  and CELL NOUGHT IS ALWAYS
+; CELL NOUGHT;
+;
+; WHICH IS WHY THE ELEMENTS ARE VISITED BACKWARDS  and why there are exactly
+; 4 of them: a backwards walk over a list needs an index to find its end  so
+; the 4 tape slots are UNROLLED  each behind a flag of its own; u{4} says
+; which slots carry an element  and a slot's length may be nought because an
+; EMPTY ELEMENT IS A REAL ELEMENT in this standard and encodes to two bytes;
+;
+; THE LAST ELEMENT COMES FROM THE WIRE AND HAS NO LIMIT; only its LENGTH is on
+; the tape  encoded and prepended before any slot  because it is the last
+; thing in the answer and so the first thing prepended; So the tuple is the 4
+; slots and then the wire  which is up to 5 elements  and only the first 4
+; of them are bounded; A caller with one long element puts it on the wire;
+;
+; EACH SLOT IS AT MOST 64 BYTES and SLEN AT MOST 151  and the routine DOES
+; NOT CHECK EITHER; the encoding buffer is 272 cells  which is exactly the
+; worst the 4 slots and the wire length can come to  so a slot over its
+; limit pushes bytes off the end rather than growing it;
+;
+; XOF IS ONE CELL AND NOT A SECOND FILE  exactly as in keccak/kmac128:
+; TupleHashXOF is TupleHash with right_encode(0) behind the message  and
+; right_encode of nought is what the encoder produces when handed nought  so
+; the flag CLEARS THE ENCODER'S INPUT rather than branching around it;
+;
+; TAPE MAP  (home @0)
+;   @0x000        pad     the padding byte the sponge is handed  which is 4
+;   @0x001:0x002  mlen{2} the message length  little endian
+;   @0x003:0x004  olen{2} the output length
+;   @0x005:0x006  plen{2} one rate for cSHAKE's block plus the encoding
+;   @0x007:0x2a6  the sponge's own prefix staging
+;   @0x2a7:0x2a8  the sponge's suffix length  and
+;   @0x2a9:0x2b0  its suffix buffer
+;   @0x000:0x6d7  keccak/sponge168 pasted at this file's own zero
+;   @0x6e0:0x8c3  keccak/bytepad168's frame  pasted at @0x6e0
+;   @0x8c8:0xa56  everything read  parked above both frames
+;   @0xa5f:0xb6e  the tuple encoding  built from its right hand end
+;   @0xb6f        k       how far the next prepend slides
+;   @0xb70:0xb71  the same count  kept to slide by and to total
+;   @0xb72:0xb73  zlen{2} how long the encoding has become
+;   @0xb74:0xb76  the cells the tests are made through
+;   @0xb77        flag    the slot's own flag  as it is tested
+;   @0xb7b:0xb8c  keccak/leftenc's frame; footprint 0:17
+;   @0xb8f:0xba2  chacha20/add32's frame; footprint 0:19
+;   @0xba3:0xba6  tmp{4}  hands the accumulator back to itself
+;   @0xba7        dbl     the three doublings still to do
+;   @0xba8        xofc    the flag  as the clear reads it
+;   @0xbab:0xbbc  keccak/rightenc's frame; footprint 0:17
+
+; read the flags  the lengths  the customization string and the slots
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=398
+; ASSERT zero 399:3004
+
+; ==== all of it is parked above both frames ====
+L398
+  [-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]>[-R2248+L2248]
+; ASSERT ptr=398
+
+; ==== cSHAKE's own block  over the name TupleHash and the caller's S ====
+; the name is a constant in the standard  which is why no caller sends it
+R1362
+  [-]
+  +++++++++
+R4
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; T
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; u
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; p
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; l
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; e
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; H
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; a
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; s
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; h
+R483
+  [-L493+R493]>[-L493+R493]
+R7
+  [-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]>[-L371+R371]
+; and bytepad encodes BOTH strings here  so its one string flag stays down
+L630
+; ASSERT ptr=1760
+@@BYTEPAD168@@ 1760
+; ASSERT ptr=1760
+R264
+  [-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]>[-L2017+R2017]
+; ASSERT zero 1760:2243
+
+; ==== the wire element's LENGTH goes in first  being last in the answer ====
+; the message length is wanted twice  by the sponge and by the encoder
+R66
+  [-L2256+R2958+L702]
+R1
+  [-L2256+R2958+L702]
+; and the encoder wants it in BITS  which is three doublings
+R725
+  [-]
+  +++
+[
+  -
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2959
+@@ADD32@@ 2959
+; ASSERT ptr=2959
+R24
+]
+; which left_encode turns into its own short byte string
+L24
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2939
+@@LEFTENC@@ 2939
+; ASSERT ptr=2939
+R12
+  [-L24+R2+R22]
+; the encoding makes room for its own length
+L24
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the length goes in front of it
+R25
+  [-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+L27
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+
+; ==== slot 4  which is element 4 of the tuple ====
+; the slots go in BACKWARDS  because prepending puts the last one first
+L677
+  [-R683+L683]
+R683
+; ASSERT ptr=2935
+[
+  [-]
+; the element's own bytes  its length saying how far the buffer slides
+L673
+  [-R665+R1+R1+L667]
+; the encoding makes room for the element
+R665
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the element is ADDED at the front  its tail being nought
+L344
+  [-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]>[-R72+L72]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+R283
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+; then the element's length in bits  which is eight times it
+L1
+  [-R31+L31]
+R55
+  [-]
+  +++
+[
+  -
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2959
+@@ADD32@@ 2959
+; ASSERT ptr=2959
+R24
+]
+; which left_encode turns into its own short byte string
+L24
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2939
+@@LEFTENC@@ 2939
+; ASSERT ptr=2939
+R12
+  [-L24+R2+R22]
+; the encoding makes room for its own length
+L24
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the length goes in front of it
+R25
+  [-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+L27
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+R6
+; ASSERT ptr=2935
+]
+
+; ==== slot 3  which is element 3 of the tuple ====
+; the slots go in BACKWARDS  because prepending puts the last one first
+L684
+  [-R684+L684]
+R684
+; ASSERT ptr=2935
+[
+  [-]
+; the element's own bytes  its length saying how far the buffer slides
+L674
+  [-R666+R1+R1+L668]
+; the encoding makes room for the element
+R666
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the element is ADDED at the front  its tail being nought
+L408
+  [-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]>[-R136+L136]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+R347
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+; then the element's length in bits  which is eight times it
+L1
+  [-R31+L31]
+R55
+  [-]
+  +++
+[
+  -
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2959
+@@ADD32@@ 2959
+; ASSERT ptr=2959
+R24
+]
+; which left_encode turns into its own short byte string
+L24
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2939
+@@LEFTENC@@ 2939
+; ASSERT ptr=2939
+R12
+  [-L24+R2+R22]
+; the encoding makes room for its own length
+L24
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the length goes in front of it
+R25
+  [-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+L27
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+R6
+; ASSERT ptr=2935
+]
+
+; ==== slot 2  which is element 2 of the tuple ====
+; the slots go in BACKWARDS  because prepending puts the last one first
+L685
+  [-R685+L685]
+R685
+; ASSERT ptr=2935
+[
+  [-]
+; the element's own bytes  its length saying how far the buffer slides
+L675
+  [-R667+R1+R1+L669]
+; the encoding makes room for the element
+R667
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the element is ADDED at the front  its tail being nought
+L472
+  [-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]>[-R200+L200]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+R411
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+; then the element's length in bits  which is eight times it
+L1
+  [-R31+L31]
+R55
+  [-]
+  +++
+[
+  -
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2959
+@@ADD32@@ 2959
+; ASSERT ptr=2959
+R24
+]
+; which left_encode turns into its own short byte string
+L24
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2939
+@@LEFTENC@@ 2939
+; ASSERT ptr=2939
+R12
+  [-L24+R2+R22]
+; the encoding makes room for its own length
+L24
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the length goes in front of it
+R25
+  [-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+L27
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+R6
+; ASSERT ptr=2935
+]
+
+; ==== slot 1  which is element 1 of the tuple ====
+; the slots go in BACKWARDS  because prepending puts the last one first
+L686
+  [-R686+L686]
+R686
+; ASSERT ptr=2935
+[
+  [-]
+; the element's own bytes  its length saying how far the buffer slides
+L676
+  [-R668+R1+R1+L670]
+; the encoding makes room for the element
+R668
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the element is ADDED at the front  its tail being nought
+L536
+  [-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]>[-R264+L264]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+R475
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+; then the element's length in bits  which is eight times it
+L1
+  [-R31+L31]
+R55
+  [-]
+  +++
+[
+  -
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2959
+@@ADD32@@ 2959
+; ASSERT ptr=2959
+R24
+]
+; which left_encode turns into its own short byte string
+L24
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2939
+@@LEFTENC@@ 2939
+; ASSERT ptr=2939
+R12
+  [-L24+R2+R22]
+; the encoding makes room for its own length
+L24
+[
+  -
+L2
+  [-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]<[-R1+L1]
+R272
+]
+; and the length goes in front of it
+R25
+  [-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]>[-L297+R297]
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+L27
+[
+  -
+R1
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L5
+]
+R6
+; ASSERT ptr=2935
+]
+
+; ==== the encoding goes behind cSHAKE's block in the sponge's staging ====
+; all 272 cells of it  because the tail past zlen is nought and the sponge
+; is told how many bytes of prefix to take rather than looking for an end
+L280
+  [-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]>[-L2480+R2480]
+
+; ==== the padding byte and how much prefix there is ====
+; SP 800_185's byte for the customizable pair is 4
+L2926
+  [-]
+  ++++
+; and the prefix is cSHAKE's whole block plus however long the encoding is
+; the rate is ADDED THROUGH THE SAME CARRY as everything else here; a
+; rate plus an encoding passes 255 whenever the tuple is of any size  and
+; a byte add would have dropped that carry in silence
+R2928
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; and the encoding is that much longer  counted one at a time because
+; a carry into the high byte is the only thing that can go wrong here
+[
+  -
+R2
+  +
+; the carry is ASSUMED and then argued away  because a byte that came
+; back to nought is the only thing a byte add can get wrong
+R4
+  [-]
+  +
+; the low byte is looked at through t0 and handed back through t1
+L4
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+; and anything but nought there means there was no carry after all
+L1
+  [[-]R2[-]L2]
+R2
+  [-L3+R3]
+L6
+]
+R2
+  [-L2925+R2925]
+R1
+  [-L2925+R2925]
+
+; ==== the suffix: right_encode of the output length IN BITS ====
+L678
+  [-L2250+R2956+L706]
+R1
+  [-L2250+R2956+L706]
+; eight times it  by the same three doublings
+R729
+  [-]
+  +++
+[
+  -
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2959
+@@ADD32@@ 2959
+; ASSERT ptr=2959
+R24
+]
+; and TupleHashXOF encodes nought instead  which is a CLEAR and not a
+; branch  because right_encode of nought is what the encoder already does
+L735
+  [-R736+L736]
+R736
+[
+  [-]
+L25
+  [-]>[-]>[-]>[-]
+R22
+]
+L25
+  [-R28+L28]>[-R28+L28]>[-R28+L28]>[-R28+L28]
+R25
+; ASSERT ptr=2987
+@@RIGHTENC@@ 2987
+; ASSERT ptr=2987
+; the encoding to the sponge's suffix buffer and its count to the length
+R13
+  [-L2319+R2319]>[-L2319+R2319]>[-L2319+R2319]>[-L2319+R2319]>[-L2319+R2319]
+L5
+  [-L2320+R2320]
+
+; and nothing this file used is still standing
+; ASSERT zero 1760:3004
+
+; the sponge does the rest; every byte of the answer leaves inside it
+L2999
+; ASSERT ptr=0
+@@SPONGE168@@ 0
+; ASSERT ptr=0

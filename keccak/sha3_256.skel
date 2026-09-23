@@ -5,7 +5,7 @@
 ; SHA3 functions  which is 6  and an output length of thirty two bytes  which is
 ; the digest size and is under one rate  so the sponge is squeezed once;
 ;
-; INTERFACE entry=1 exit=0 footprint=0:1319
+; INTERFACE entry=1 exit=0 footprint=0:1591
 ; IO  in:  mlen{2} LE  then mlen bytes from the wire
 ;     out: digest{32}
 ;
@@ -13,7 +13,7 @@
 ;   @0x000        pad     the padding byte  which is 6
 ;   @0x001:0x002  mlen    the message length  little endian
 ;   @0x003:0x004  olen    the output length  which is thirty two
-;   @0x000:0x527  keccak/sponge136 pasted at this file's own zero; it reads
+;   @0x000:0x637  keccak/sponge136 pasted at this file's own zero; it reads
 ;                         those five cells  leaves the prefix and suffix counts and
 ;                         their buffers above them at nought  and owns every
 ;                         cell above that
@@ -33,7 +33,7 @@
 ; read the message length little endian
   ,>,
 ; ASSERT ptr=1
-; ASSERT zero 2:1319
+; ASSERT zero 2:1591
 ; the high byte moves up one cell  to leave room for the padding byte below it
   [-R1+L1]
 L1

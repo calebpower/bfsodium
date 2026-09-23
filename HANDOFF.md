@@ -13,6 +13,16 @@ at `BRAINSTEM_COMMIT` before the suite starts, so every gate here needs the
 network. The previous gates were 347 at `cc974dc` and 345 at `7436078`, both
 on one guest.
 
+**KILLING `container-test.sh` DOES NOT STOP ITS CONTAINER**, and the second
+one writes into the same `out/suite.log` through the `out/` bind mount. Two
+suites then interleave into one file and the summary line counts one run's
+checks against the other's log: a run that reported `passed 824, failed 4`
+had exactly **two** FAIL lines in the file, and the missing two were never
+missing -- they belonged to the other process. Stop a gate with
+`podman kill $(podman ps -q)`, not by killing the shell, and delete
+`out/suite.log` before re-running so an interleaved file cannot be mistaken
+for a clean one.
+
 **THE SUITE HAS GROWN TO 810 SINCE THAT GATE AND THE GATE OF RECORD HAS NOT
 RUN AGAIN.** Everything committed since `7ffd67f` -- SP 800-108, PBKDF2,
 HMAC_DRBG, the encodings, `bytepad`, the sponge's tape prefix and suffix,
@@ -158,20 +168,22 @@ routine, the suite fails until it has a row here.
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
 | `keccak/bytepad168` | 3914 | 251 | the same at SHAKE128's rate, including its own exactly-full limit and the one-string form |
-| `keccak/cshake256` | 151873 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
-| `keccak/cshake128` | 161413 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
-| `keccak/kmac128` | 183357 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
-| `keccak/kmac256` | 171267 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
+| `keccak/cshake256` | 165578 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
+| `keccak/cshake128` | 179067 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
+| `keccak/kmac128` | 202809 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/kmac256` | 186116 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
+| `keccak/tuplehash128` | 226499 | 748 | SP 800-185 §5 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/tuplehash256` | 210243 | 748 | the same at SHAKE256's rate: NIST samples 4, 5 and 6, and the XOF flag |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
 | `keccak/permute1600` | 51119 | 271 | the published all zero vector and a random state + Cryptol |
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
-| `keccak/sponge136` | 127236 | 880 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
-| `keccak/sha3_256` | 127173 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
-| `keccak/shake256` | 127175 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 133457 | 939 | one inside the first rate and one past it + Cryptol |
-| `keccak/shake128` | 133390 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge136` | 137000 | 883 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 136929 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 136931 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 145885 | 942 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 145809 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
 | `keccak/sha3_384` | 61875 | 458 | rate 104  the same four + Cryptol |
 | `keccak/sha3_512` | 58572 | 406 | rate 72  the same four + Cryptol |
@@ -218,9 +230,9 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 415 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 415 | golden vectors, dual oracle |
-| 5 | yes | 60 | declared contracts under BFI_CONTRACTS |
+| 2 | yes | 423 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 423 | golden vectors, dual oracle |
+| 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
@@ -799,11 +811,52 @@ the reasoning.
    is the first caller who needs the other case. Both rates now carry a
    one-string vector of their own and a contract run that enters the arm.
 
-   **Still to do in step 5:** TupleHash and ParallelHash. Both need the
-   suffix, which now exists; TupleHash is `encode_string` per element and
-   ParallelHash hashes fixed-size chunks and hashes the concatenation, which
-   is the only one of the four that needs a loop over the message rather than
-   a frame around it.
+   **DONE: TUPLEHASH AND TUPLEHASHXOF, at both rates — and the prefix buffer
+   is four rates now.** Two rates held cSHAKE's block and KMAC's key block and
+   nothing else; TupleHash needs room for an encoded tuple behind cSHAKE's
+   block, so `pbuf` doubled. That is a real shift and not an insertion, but a
+   bounded one: `pbuf` sits at the top of the frame, so the only things that
+   moved were the suffix buffer above it and the distances that reach across
+   it. Runtime cost is nil — the prefix conveyor's slide is now 543 tokens
+   instead of 271, which is about 300,000 instructions against the
+   permutation's 2,484,000,000.
+
+   **THE ANSWER IS BUILT BACKWARDS, AND THAT IS THE WHOLE FILE.** TupleHash's
+   encoding puts every element behind a length that the elements *before* it
+   decide — an offset, an index, the thing this library does not have.
+   `keccak/bytepad` met the same wall and went through it by building right to
+   left, and `tuplehash` does the same: each piece goes in by sliding the
+   whole encoding right by its own length and ADDING it at the encoding's
+   first cell. **Cell nought is always cell nought.**
+
+   **Which is why the elements are visited backwards, and why there are
+   exactly four of them.** A backwards walk over a list needs an index to find
+   its end, so the four tape slots are UNROLLED, each behind a flag of its
+   own. `u{4}` says which slots carry an element, and a slot's length may be
+   nought, because **an empty element is a real element** in this standard and
+   encodes to two bytes. The flags need not be contiguous: whichever slots are
+   flagged are the tuple, in slot order.
+
+   **The last element comes from the wire and has no limit.** Only its length
+   is on the tape — encoded and prepended *first*, because it is the last
+   thing in the answer. So the tuple is four bounded elements and one
+   unbounded one, and a caller with one long field puts it on the wire.
+
+   **TWO DEFECTS CAUGHT BY READING THE GENERATOR, BEFORE ANY BRAINFUCK RAN**,
+   and both are the same species — a byte where a number was meant.
+   `plen` is a rate PLUS the encoding's length, and the first draft added the
+   rate to the low byte with no carry. It passes every short tuple and fails
+   the moment `zlen + rate` crosses 255, which the three-element samples do
+   not quite reach. And `times_eight` moved TWO bytes out of a slot's length,
+   which after the lengths were narrowed to one byte each meant it read the
+   NEXT slot's length as a high byte. Neither would have shown up as a crash.
+
+   **Still to do in step 5: ParallelHash, and it is the big one.** It hashes
+   each B-byte chunk of the message with cSHAKE and then hashes the
+   concatenation of those digests, so it needs a sponge that writes its answer
+   **to the tape instead of stdout** — a `spongekeep` to `sponge` as
+   `chacha20/blockkeep` is to `blockloop` — plus a loop over invocations.
+   Nothing else in step 5 needed a new primitive; this does.
 
 6. **AES itself, if and only if step 1 says so.**
 

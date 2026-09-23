@@ -790,8 +790,10 @@ of these files to the next; everything else in them is the rate's own numbers.
 **cSHAKE and KMAC are built at both rates**, which are FIPS 202's rates with
 the padding byte 4 and a length-encoded prefix on the tape; KMAC adds a tape
 SUFFIX for its `right_encode(L)` and carries KMACXOF behind a one-cell flag.
-**What is left of tier B is TupleHash and ParallelHash**, and the post-quantum
-tier behind SHAKE128.
+**TupleHash is built too**, over a tuple of four bounded tape elements and one
+unbounded one from the wire; **what is left of tier B is ParallelHash**, which
+needs a sponge that writes its digest to the tape rather than to stdout, and
+the post-quantum tier behind SHAKE128.
 
 **The rotation was the piece that decided whether any of it was affordable.**
 ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its
