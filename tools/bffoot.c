@@ -82,7 +82,8 @@ static int is_read_line(const char *s, size_t n) {
 /* Read a file, keeping command bytes outside ';' comments, tagging each with
  * bfexpand's section, and picking up the INTERFACE line if there is one. */
 static struct Ins *load(const char *path, size_t *n,
-                        long *entry, long *xit, long *lo, long *hi, int *have) {
+                        long *entry, long *xit, long *lo, long *hi, int *have,
+                        int *emit) {
     FILE *f = fopen(path, "rb");
     if (!f) { fprintf(stderr, "bffoot: %s: cannot open\n", path); return NULL; }
     size_t cap = 1u << 12, k = 0;
@@ -117,7 +118,9 @@ static struct Ins *load(const char *path, size_t *n,
             if (is_read_line(line, upto) || is_comment_only) { /* still reading */ }
             else { sec = SEC_BODY; pre = 0; }
         }
-        if (sec == SEC_BODY && strncmp(line, "; emit", 6) == 0) sec = SEC_EMIT;
+        if (sec == SEC_BODY && strncmp(line, "; emit", 6) == 0) {
+            sec = SEC_EMIT; *emit = 1;
+        }
 
         for (size_t i = 0; i < upto; i++) {
             if (!is_cmd((unsigned char)line[i])) continue;
@@ -133,8 +136,10 @@ static struct Ins *load(const char *path, size_t *n,
 
 /* Returns 0 clean, 1 failed, and prints every finding. */
 static int check(const char *path, int quiet) {
-    size_t n; long d_entry = 0, d_exit = 0, d_lo = 0, d_hi = 0; int have = 0;
-    struct Ins *ins = load(path, &n, &d_entry, &d_exit, &d_lo, &d_hi, &have);
+    size_t n; long d_entry = 0, d_exit = 0, d_lo = 0, d_hi = 0;
+    int have = 0, emit = 0;
+    struct Ins *ins = load(path, &n, &d_entry, &d_exit, &d_lo, &d_hi,
+                           &have, &emit);
     if (!ins) return 1;
     if (!have) {
         if (!quiet) printf("bffoot: %s: no INTERFACE line, not a pasteable routine\n", path);
@@ -176,6 +181,14 @@ static int check(const char *path, int quiet) {
                 break;
         }
     }
+    /* AN EMIT SECTION MAY BE EMPTY, and keccak/sponge<rate> is why: it
+     * pastes keccak/squeeze<rate>, which is what writes the answer, and a
+     * paste strips everything from "; emit" -- so the routine that makes
+     * the output cannot sit there. The body simply ends, where the pointer
+     * finished. Without this the file reads as having no "; emit" line,
+     * which is a confusing way to say "your emit section is empty". */
+    if (xit < 0 && emit) xit = p;
+
     if (sp != 0) { printf("%s: unmatched [\n", path); fail = 1; }
 
     if (seen_hi > d_hi) {
@@ -267,6 +280,19 @@ static int selftest(void) {
           "<<\n"
           "; emit\n"
           ".\n", 1 },
+        { "an emit section may be empty",
+          "; INTERFACE entry=2 exit=3 footprint=0:5\n"
+          "  ,>,>\n"
+          "<<\n"
+          "[->>>>>+<<<<<]\n"
+          ">>>\n"                        /* the body ends at cell 3 */
+          "; emit\n", 0 },
+        { "an empty emit section still has its exit checked",
+          "; INTERFACE entry=2 exit=0 footprint=0:5\n"
+          "  ,>,>\n"
+          "<<\n"
+          ">>>\n"                        /* ends at 3, not the 0 declared */
+          "; emit\n", 1 },
         { "comment prose is not code",
           "; INTERFACE entry=2 exit=0 footprint=0:5\n"
           "; this line has a comma, a period. and >>>>>>>> arrows\n"

@@ -128,6 +128,12 @@ while IFS= read -r line; do
         '@@ROTSTATE@@'*) import "$repo/keccak/rotstate.bf" "${line##* }"; continue ;;
         '@@SPONGE136@@'*) import "$repo/keccak/sponge136.bf" "${line##* }"; continue ;;
         '@@SPONGE168@@'*) import "$repo/keccak/sponge168.bf" "${line##* }"; continue ;;
+        # the rate-suffixed ABSORB is Keccak's one block; the bare @@ABSORB@@
+        # further down is Poly1305's and they are different routines
+        '@@ABSORB136@@'*) import "$repo/keccak/absorb136.bf" "${line##* }"; continue ;;
+        '@@ABSORB168@@'*) import "$repo/keccak/absorb168.bf" "${line##* }"; continue ;;
+        '@@SQUEEZE136@@'*) import "$repo/keccak/squeeze136.bf" "${line##* }"; continue ;;
+        '@@SQUEEZE168@@'*) import "$repo/keccak/squeeze168.bf" "${line##* }"; continue ;;
         '@@SHR64@@'*)   import "$repo/idiom/shr64.bf" "${line##* }"; continue ;;
         '@@XOR64@@'*)   import "$repo/idiom/xor64.bf" "${line##* }"; continue ;;
         '@@AND64@@'*)   import "$repo/idiom/and64.bf" "${line##* }"; continue ;;

@@ -1,0 +1,231 @@
+; bfsodium KECCAK SQUEEZE 136 : as many bytes off the state as are asked for
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; keccak/rotstate is PASTED once and keccak/permute1600 once;
+; This was the end of keccak/sponge136 until ParallelHash needed to drive an
+; absorb itself and then squeeze what it had built  and it is the same code in
+; the same cells;
+;
+; INTERFACE entry=201 exit=1024 footprint=0:1025
+; IO  in:  S{200}  olen{2} LE            (202 bytes  contiguous)
+;     out: olen bytes  as they come off the state
+;
+; WITHIN A RATE THE BYTE TO GO OUT IS ALWAYS THE BOTTOM CELL of the state
+; because keccak/rotstate turns the state over one cell at a time; Two hundred
+; turns put it back exactly as it was  so a rate is squeezed by turning the
+; state over all two hundred of its cells and sending a byte out on the first
+; 136 of those turns  or on as many of them as are still owed;
+;
+; AND THE STIR COMES AFTER THE RATE AND NOT BEFORE IT  under a test of whether
+; anything is still owed  so a caller that asks for a rate or less pays for the
+; permutation its absorb already did and not one more;
+;
+; THE STATE IS SPENT; this routine turns it over and hands nothing back  which
+; is what a caller wants at the end of a hash and is why there is no keeping
+; variant here; ParallelHash's inner hash wants d bytes onto the TAPE rather
+; than the wire and drives keccak/rotstate itself for them;
+;
+; THE LENGTH IS READ LOW AND STAGED HIGH for the reason keccak/absorb136's
+; block is  and the prologue is contiguous for the reason that one is;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x0c7  S{200}  the sponge state; SPENT
+;   @0x0c8:0x330  keccak/permute1600's frame  pasted at this file's own zero
+;   @0x3f6:0x3fb  the cells the tests are made through
+;   @0x3fd:0x3fe  olen{2} output bytes still owed  little endian
+;   @0x400        oleft   one while either of those is not nought
+;   @0x401        kc      bytes still allowed out of the rate in hand
+
+; read the state and then the output length  the two contiguous
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=201
+; the length is STAGED high for the reason the block is in
+; keccak/absorb136  and a PASTED caller moves noughts here
+L1
+; ASSERT ptr=200
+  [-R821+L821]>[-R821+L821]
+; ASSERT ptr=201
+; to where the block loop used to leave off
+R811
+; ASSERT ptr=1012
+
+; ==== is any output owed at all ====
+; both output length bytes are looked at through t2  and either one sets oleft
+R9
+; ASSERT ptr=1021
+  [-L4+R1+R3]
+L3
+; ASSERT ptr=1018
+  [-R3+L3]
+L1
+; ASSERT ptr=1017
+  [[-]R7[-]+L7]
+R5
+; ASSERT ptr=1022
+  [-L5+R1+R4]
+L4
+; ASSERT ptr=1018
+  [-R4+L4]
+L1
+; ASSERT ptr=1017
+  [[-]R7[-]+L7]
+R7
+; ASSERT ptr=1024
+
+; ==== one turn of this loop is one rate of the answer ====
+[
+; oleft is worked out again at the end of the round
+  [-]
+; a rate  and not one byte more  may leave in this round
+R1
+; ASSERT ptr=1025
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; and the state turns over once for each of its two hundred cells
+L12
+; ASSERT ptr=1013
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+[
+  -
+; ____ one byte goes out if one is still allowed and one is still owed ____
+; the count still allowed is looked at through t0  and has to survive the look
+R12
+; ASSERT ptr=1025
+  [-L11+R1+R10]
+L10
+; ASSERT ptr=1015
+  [-R10+L10]
+L1
+; ASSERT ptr=1014
+[
+; ____ a byte is still allowed out of this rate  so is one still owed ____
+  [-]
+R2
+; ASSERT ptr=1016
+  [-]
+R5
+; ASSERT ptr=1021
+  [-L4+R1+R3]
+L3
+; ASSERT ptr=1018
+  [-R3+L3]
+L1
+; ASSERT ptr=1017
+  [[-]L1[-]+R1]
+R5
+; ASSERT ptr=1022
+  [-L5+R1+R4]
+L4
+; ASSERT ptr=1018
+  [-R4+L4]
+L1
+; ASSERT ptr=1017
+  [[-]L1[-]+R1]
+L1
+; ASSERT ptr=1016
+[
+; ______ it is both allowed and owed  so out it goes ______
+  [-]
+; one fewer byte is allowed out of this rate
+R9
+; ASSERT ptr=1025
+  -
+; and one fewer is owed  borrowing into the high byte when the low one is out
+L6
+; ASSERT ptr=1019
+  [-]+
+R2
+; ASSERT ptr=1021
+  [-L4+R1+R3]
+L3
+; ASSERT ptr=1018
+  [-R3+L3]
+L1
+; ASSERT ptr=1017
+  [[-]R2[-]R2-L4]
+R2
+; ASSERT ptr=1019
+  [[-]R2+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++R1-L3]
+; and the byte itself leaves the bottom of the state
+L1019
+; ASSERT ptr=0
+  .
+R1016
+; ASSERT ptr=1016
+]
+; ASSERT ptr=1016
+; back to the cell the count still allowed was looked at through
+L2
+; ASSERT ptr=1014
+]
+; ASSERT ptr=1014
+; ____ and the state turns over by one cell  whether a byte went out or not ____
+L1014
+; ASSERT ptr=0
+@@ROTSTATE@@ 0
+; ASSERT ptr=0
+; back to the count of cells in one turn of the state
+R1013
+; ASSERT ptr=1013
+]
+; ASSERT ptr=1013
+
+; ==== is another rate owed  and if it is  the state is stirred for it ====
+R11
+; ASSERT ptr=1024
+  [-]
+L3
+; ASSERT ptr=1021
+  [-L4+R1+R3]
+L3
+; ASSERT ptr=1018
+  [-R3+L3]
+L1
+; ASSERT ptr=1017
+  [[-]R7[-]+L7]
+R5
+; ASSERT ptr=1022
+  [-L5+R1+R4]
+L4
+; ASSERT ptr=1018
+  [-R4+L4]
+L1
+; ASSERT ptr=1017
+  [[-]R7[-]+L7]
+; oleft is looked at through t0  because the loop below still needs it
+L3
+; ASSERT ptr=1014
+  [-]
+R10
+; ASSERT ptr=1024
+  [-L10+R1+R9]
+L9
+; ASSERT ptr=1015
+  [-R9+L9]
+L1
+; ASSERT ptr=1014
+[
+  [-]
+L1014
+; ASSERT ptr=0
+; ASSERT zero 200:1020
+@@PERMUTE1600@@ 0
+; ASSERT ptr=0
+R1014
+; ASSERT ptr=1014
+]
+; ASSERT ptr=1014
+R10
+; ASSERT ptr=1024
+]
+; ASSERT ptr=1024
+; ASSERT zero 200:1024
+
+; emit  there is nothing left to emit: the answer went out one byte
+; at a time as the state was turned over  above; What follows is only
+; the walk home  and a paste of this routine replaces it with the
+; caller's own
+L1024
+; ASSERT ptr=0

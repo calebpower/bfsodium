@@ -168,22 +168,26 @@ routine, the suite fails until it has a row here.
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
 | `keccak/bytepad168` | 3914 | 251 | the same at SHAKE128's rate, including its own exactly-full limit and the one-string form |
-| `keccak/cshake256` | 165578 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
-| `keccak/cshake128` | 179067 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
-| `keccak/kmac128` | 202809 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
-| `keccak/kmac256` | 186116 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
-| `keccak/tuplehash128` | 226499 | 748 | SP 800-185 §5 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
-| `keccak/tuplehash256` | 210243 | 748 | the same at SHAKE256's rate: NIST samples 4, 5 and 6, and the XOF flag |
+| `keccak/cshake256` | 168785 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
+| `keccak/cshake128` | 182971 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
+| `keccak/kmac128` | 206713 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/kmac256` | 189323 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
+| `keccak/tuplehash128` | 230403 | 748 | SP 800-185 §5 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/tuplehash256` | 213450 | 748 | the same at SHAKE256's rate: NIST samples 4, 5 and 6, and the XOF flag |
 | `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
 | `keccak/permute1600` | 51119 | 271 | the published all zero vector and a random state + Cryptol |
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
-| `keccak/sponge136` | 137000 | 883 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
-| `keccak/sha3_256` | 136929 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
-| `keccak/shake256` | 136931 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 145885 | 942 | one inside the first rate and one past it + Cryptol |
-| `keccak/shake128` | 145809 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/absorb136` | 67866 | 284 | the published all-zero permutation, and a ladder state with every lane taking a block |
+| `keccak/absorb168` | 72077 | 336 | the same two at SHAKE128's rate: twenty-one lanes, not seventeen |
+| `keccak/squeeze136` | 51607 | 231 | inside the first rate, and one byte past it, which is the only path that stirs |
+| `keccak/squeeze168` | 51613 | 231 | the same two at SHAKE128's rate |
+| `keccak/sponge136` | 140108 | 497 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 140136 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 140138 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 149689 | 504 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 149713 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
 | `keccak/sha3_384` | 61875 | 458 | rate 104  the same four + Cryptol |
 | `keccak/sha3_512` | 58572 | 406 | rate 72  the same four + Cryptol |
@@ -230,8 +234,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 423 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 423 | golden vectors, dual oracle |
+| 2 | yes | 435 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 435 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -851,12 +855,69 @@ the reasoning.
    which after the lengths were narrowed to one byte each meant it read the
    NEXT slot's length as a high byte. Neither would have shown up as a crash.
 
-   **Still to do in step 5: ParallelHash, and it is the big one.** It hashes
-   each B-byte chunk of the message with cSHAKE and then hashes the
-   concatenation of those digests, so it needs a sponge that writes its answer
-   **to the tape instead of stdout** — a `spongekeep` to `sponge` as
-   `chacha20/blockkeep` is to `blockloop` — plus a loop over invocations.
-   Nothing else in step 5 needed a new primitive; this does.
+   **PARALLELHASH, AND THE SPONGE SPLIT THAT HAD TO COME FIRST.**
+
+   **WHY A CAP WAS NOT AN OPTION.** ParallelHash hashes each B-byte chunk with
+   cSHAKE and then hashes the CONCATENATION of those digests, so the thing it
+   must hold is `(d/B) × |X|` bytes — at the standard's own sample `B = 8` and
+   `d = 64`, **eight times the message**. A fixed accumulator therefore caps
+   the message, and the arithmetic is brutal: the four-rate prefix buffer
+   holds 6 chunks at ParallelHash256 and 15 at ParallelHash128, which at
+   `B = 8` is a **48-byte** message limit. Every published NIST sample is a
+   24-byte message, so a capped routine **would have passed all six vectors
+   and been useless** — a vector-passer wearing an implementation's clothes,
+   and invisible to the tests meant to police it.
+
+   That is the difference from every other cap here. `klen ≤ 128`,
+   `slen ≤ 124`, TupleHash's four slots, HKDF's `info ≤ 190` — all bound
+   AUXILIARY inputs and leave the message free to the sponge's `mlen{2}`. A
+   chunk cap bounds the MESSAGE, and the caller cannot trade `B` against `n`
+   to get under it, because `B` is an input: ParallelHash(X, 8192, …) is a
+   different function from ParallelHash(X, 8, …).
+
+   **DONE: the sponge is two routines now.** `keccak/absorb<rate>` is
+   `S := PERMUTE(S xor block)` and `keccak/squeeze<rate>` is the rate loop
+   that reads bytes off the state; `keccak/sponge<rate>` keeps its block
+   conveyor and its padding and PASTES both. The extraction is verbatim —
+   both halves kept the cells they always used, so the sponge pastes them at
+   its own zero and not one cell moved. All twenty-one sponge vectors passed
+   with contracts on, first run after the fix below.
+
+   **The point of the split** is that a caller with a message it cannot hand
+   over all at once can now drive the absorb itself. ParallelHash feeds each
+   inner digest straight into the outer block conveyor a byte at a time, so
+   **no accumulator exists and there is no cap** — `n` is bounded only by
+   `mlen{2}`, which is the bound every routine in this tree already has.
+
+   **AND EACH HALF CARRIES ITS OWN VECTORS.** "The sponge still passes" proves
+   the pair works TOGETHER; it says nothing about either alone, which is what
+   a caller pasting only one of them relies on. `absorb` of a zero state and a
+   zero block is the published all-zero Keccak-f[1600] vector, and it is the
+   same at both rates — the rate decides how many lanes take a block, not what
+   the permutation does.
+
+   **THE DEFECT, AND IT IS A TRAP IN BFEXPAND WORTH KNOWING.** The first cut
+   gave `absorb` a read prologue with a GAP in it: read 200 state bytes, step
+   over the permutation's frame, read the block at 824 where the sponge keeps
+   it. `bfexpand`'s `body()` strips the prologue by skipping lines that hold
+   only `,` and `>` **and contain a comma** — and a 625-step gap wraps onto
+   continuation lines that are pure `>`. Those lines have no comma, so they
+   were not skipped: **every pasted copy of absorb carried a stray 625-cell
+   walk.** The sponge's first block still worked and the second landed at cell
+   1712.
+
+   This is the same function that once dropped all but the first line of a
+   multi-line prologue. The rule to carry: **a read prologue must be
+   contiguous.** A gap in one is not a layout detail, it is a run of `>` long
+   enough to wrap, and what wraps gets pasted. Both routines now read
+   contiguously and STAGE what has to live high — a move that walks noughts
+   for a pasted caller, which costs one test per cell.
+
+   What caught it was `; ASSERT ptr=335` on the line after the prologue. That
+   contract exists for no other reason and it earned its place in one
+   afternoon.
+
+   **Still to do: ParallelHash itself**, on the two halves this unit exposes.
 
 6. **AES itself, if and only if step 1 says so.**
 

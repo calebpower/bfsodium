@@ -791,9 +791,16 @@ of these files to the next; everything else in them is the rate's own numbers.
 the padding byte 4 and a length-encoded prefix on the tape; KMAC adds a tape
 SUFFIX for its `right_encode(L)` and carries KMACXOF behind a one-cell flag.
 **TupleHash is built too**, over a tuple of four bounded tape elements and one
-unbounded one from the wire; **what is left of tier B is ParallelHash**, which
-needs a sponge that writes its digest to the tape rather than to stdout, and
+unbounded one from the wire; **what is left of tier B is ParallelHash**, and
 the post-quantum tier behind SHAKE128.
+
+**The sponge is two routines now** -- `keccak/absorb<rate>` and
+`keccak/squeeze<rate>`, with `keccak/sponge<rate>` pasting both. ParallelHash
+holds the concatenated digests of every chunk, which is `(d/B)` times the
+length of the message and so cannot be a fixed buffer; a caller that can drive
+the absorb itself needs no buffer at all. **A capped ParallelHash would have
+passed all six published vectors at a forty-eight byte message limit**, which
+is the shape of implementation this project exists not to ship.
 
 **The rotation was the piece that decided whether any of it was affordable.**
 ρ is twenty-five 64-bit rotations a round, six hundred per permutation, and its

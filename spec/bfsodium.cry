@@ -1550,6 +1550,42 @@ drbgRun_159_1_32 inb = v3
     v3   = hmac2 k2 v2
 
 // ---------------------------------------------------------------------------
+// THE SPONGE'S TWO HALVES, once they became routines of their own.
+//
+// keccak/sponge<rate> was one program until ParallelHash needed to absorb a
+// message it could not hand over all at once. Its middle and its end are now
+// keccak/absorb<rate> and keccak/squeeze<rate>, and the sponge pastes them.
+// These entries exist because a routine in this tree carries its own vectors,
+// and because "the sponge still passes" proves the pair works TOGETHER but
+// not that either is right on its own.
+
+// S := PERMUTE(S xor block). One turn of the absorb, with the state given
+// rather than accumulated, which is the whole point of lifting it out.
+absorb136Run : [336][8] -> [200][8]
+absorb136Run inb =
+    keccakBytes (keccakPermute
+        (keccakXorBlock (keccakLanes (take`{200} inb)) (drop`{200} inb)))
+
+absorb168Run : [368][8] -> [200][8]
+absorb168Run inb =
+    keccakBytes (keccakPermute
+        (keccakXorBlock168 (keccakLanes (take`{200} inb)) (drop`{200} inb)))
+
+// And the squeeze, from a state the caller supplies. The longer of each pair
+// crosses a rate, which is the only thing here that stirs the state again.
+squeeze136Run_32 : [202][8] -> [32][8]
+squeeze136Run_32 inb = keccakSqueeze136`{32} (keccakLanes (take`{200} inb))
+
+squeeze136Run_137 : [202][8] -> [137][8]
+squeeze136Run_137 inb = keccakSqueeze136`{137} (keccakLanes (take`{200} inb))
+
+squeeze168Run_32 : [202][8] -> [32][8]
+squeeze168Run_32 inb = keccakSqueeze168`{32} (keccakLanes (take`{200} inb))
+
+squeeze168Run_169 : [202][8] -> [169][8]
+squeeze168Run_169 inb = keccakSqueeze168`{169} (keccakLanes (take`{200} inb))
+
+// ---------------------------------------------------------------------------
 // NIST SP 800-185 section 2.3.1: left_encode and right_encode.
 //
 // The encoding is the shortest big-endian run of bytes holding x, with a count
