@@ -181,6 +181,8 @@ routine, the suite fails until it has a row here.
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
 | `keccak/absorb136` | 67866 | 284 | the published all-zero permutation, and a ladder state with every lane taking a block |
 | `keccak/absorb168` | 72077 | 336 | the same two at SHAKE128's rate: twenty-one lanes, not seventeen |
+| `keccak/parallelhash128` | 273787 | 773 | SP 800-185 §6 at SHAKE128's rate: NIST sample 1, a short last chunk, and the XOF flag |
+| `keccak/parallelhash256` | 262184 | 773 | the same at SHAKE256's rate: NIST samples 4 and 5, a short last chunk, and a chunk bigger than a rate |
 | `keccak/squeeze136` | 51607 | 231 | inside the first rate, and one byte past it, which is the only path that stirs |
 | `keccak/squeeze168` | 51613 | 231 | the same two at SHAKE128's rate |
 | `keccak/sponge136` | 140108 | 497 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
@@ -234,8 +236,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 435 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 435 | golden vectors, dual oracle |
+| 2 | yes | 446 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 446 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -917,7 +919,64 @@ the reasoning.
    contract exists for no other reason and it earned its place in one
    afternoon.
 
-   **Still to do: ParallelHash itself**, on the two halves this unit exposes.
+   **DONE: PARALLELHASH AND PARALLELHASHXOF, at both rates, WITH NO CAP.**
+   `n` is bounded only by `mlen{2}`, which is the bound every routine in this
+   library already has. It is the first file here that DRIVES the sponge
+   instead of pasting one whole: each chunk's digest is pushed into the outer
+   block one byte at a time as it comes off the inner state, and the outer
+   block absorbs itself whenever it fills. Nothing ever holds the run of
+   digests, so there is nothing to size.
+
+   **One outer loop and one push.** The loop's byte comes from a staging
+   buffer, and when the staging runs dry a PHASE decides what refills it:
+   `left_encode(B)`, then one chunk's digest at a time, then
+   `right_encode(n)`, then `right_encode(L)`, then the padding. cSHAKE's own
+   bytepad block is staged before the loop starts. The phases are six flags
+   **tested in reverse order**, so an arm that sets the next flag cannot fire
+   it again in the same pass.
+
+   **THREE DEFECTS, AND THE LAST ONE IS THE ONE TO REMEMBER.**
+
+   *Phase two clears its own flag but has to STAY in phase two* for the next
+   chunk. The first cut consumed the flag and set nothing, so after one chunk
+   no phase was set, `sn` stayed at nought and the loop spun forever. It is
+   guarded by a COPY of its flag now: the arm runs once per pass and the flag
+   survives. An arm that simply re-set the flag would have fired twice in the
+   one pass.
+
+   *`bs` was MOVED into `left_encode` and not copied.* Every chunk after the
+   first got a length of nought, the message never ran out, and phase two
+   looped for ever. The same species as `keccak/bytepad`'s: a value wanted
+   twice, spent once.
+
+   ***AND THE SLIDE STARTED AT THE WRONG END.*** A conveyor token at cell `p`
+   moves `p` into `p-1`, so a slide over `buf{n}` must start at `buf+1` and
+   run `n-1` tokens. Mine started at `buf`, which **wrote one cell BELOW the
+   buffer and never emptied the top** — every buffer quietly corrupting its
+   neighbour, and the outer state's top byte corrupted by the outer block's
+   slide. `keccak/sponge` has always written it the right way; I wrote the
+   helper from the idea rather than from the file. Every vector was wrong and
+   no contract fired, because the corruption stayed inside the declared
+   footprint.
+
+   What localized it in one run was two diagnostic inputs rather than a
+   guess: an **empty message**, which runs the whole outer path and no inner
+   hash at all, and a **single chunk**. The empty case failing said the fault
+   was not in the chunk loop, and that is half the file eliminated.
+
+   **AND A LATENT DEFECT IN THE ORACLE, found by a vector that reached it.**
+   A message leaving exactly one byte of its last block free needs exactly
+   ONE byte of padding, because the domain byte and the `0x80` merge — and
+   that is true at `2*rate-1` and `3*rate-1` just as it is at `rate-1`.
+   `keccakPadB1` had a `Full` form and the others did not, so `n = 2*rate-1`
+   fell through to the THREE-block padder and was padded a block too many. No
+   committed vector had ever landed there; ParallelHash's digests land where
+   they land. `keccakPadB2Full` and `B3Full` exist now at both rates and the
+   lower bounds of `B3` and `B4` moved up by one.
+
+   **Step 5 is complete.** SP 800-185 §3, §4, §5 and §6 are all built at both
+   rates, with their XOF forms, and every one of them is bounded only by the
+   library's own `mlen{2}`.
 
 6. **AES itself, if and only if step 1 says so.**
 

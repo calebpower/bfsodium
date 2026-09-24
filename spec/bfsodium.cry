@@ -666,12 +666,25 @@ keccakPadB1Full p m = [m # [p || 0x80]]
 keccakPadB2 : {n} (fin n, n >= 136, n <= 270) => [8] -> [n][8] -> [2][136][8]
 keccakPadB2 p m = split (m # [p] # (zero : [270 - n][8]) # [0x80])
 
-keccakPadB3 : {n} (fin n, n >= 271, n <= 406) => [8] -> [n][8] -> [3][136][8]
+// AND THE SAME MERGE HAPPENS AT EVERY BLOCK COUNT, not just at one. A message
+// that leaves exactly one byte of its last block free needs exactly one byte
+// of padding, because the domain byte and the 0x80 become one byte -- and
+// that is true at 2*rate-1 and 3*rate-1 just as it is at rate-1. keccakPadB1
+// had a Full form and the others did not, so n = 2*rate-1 fell through to the
+// THREE block padder and was padded to a block too many. No vector reached it
+// until ParallelHash, whose chunk digests land wherever they land.
+keccakPadB2Full : [8] -> [271][8] -> [2][136][8]
+keccakPadB2Full p m = split (m # [p || 0x80])
+
+keccakPadB3 : {n} (fin n, n >= 272, n <= 406) => [8] -> [n][8] -> [3][136][8]
 keccakPadB3 p m = split (m # [p] # (zero : [406 - n][8]) # [0x80])
+
+keccakPadB3Full : [8] -> [407][8] -> [3][136][8]
+keccakPadB3Full p m = split (m # [p || 0x80])
 
 // KMAC's longest sample needs a fourth: two bytepad blocks, two hundred bytes
 // of message and a right_encode behind them come to 475.
-keccakPadB4 : {n} (fin n, n >= 407, n <= 542) => [8] -> [n][8] -> [4][136][8]
+keccakPadB4 : {n} (fin n, n >= 408, n <= 542) => [8] -> [n][8] -> [4][136][8]
 keccakPadB4 p m = split (m # [p] # (zero : [542 - n][8]) # [0x80])
 
 // The squeeze at rate 136: the first 136 bytes of the state, then the first
@@ -742,10 +755,16 @@ keccakPad168B1Full p m = [m # [p || 0x80]]
 keccakPad168B2 : {n} (fin n, n >= 168, n <= 334) => [8] -> [n][8] -> [2][168][8]
 keccakPad168B2 p m = split (m # [p] # (zero : [334 - n][8]) # [0x80])
 
-keccakPad168B3 : {n} (fin n, n >= 335, n <= 502) => [8] -> [n][8] -> [3][168][8]
+keccakPad168B2Full : [8] -> [335][8] -> [2][168][8]
+keccakPad168B2Full p m = split (m # [p || 0x80])
+
+keccakPad168B3 : {n} (fin n, n >= 336, n <= 502) => [8] -> [n][8] -> [3][168][8]
 keccakPad168B3 p m = split (m # [p] # (zero : [502 - n][8]) # [0x80])
 
-keccakPad168B4 : {n} (fin n, n >= 503, n <= 670) => [8] -> [n][8] -> [4][168][8]
+keccakPad168B3Full : [8] -> [503][8] -> [3][168][8]
+keccakPad168B3Full p m = split (m # [p || 0x80])
+
+keccakPad168B4 : {n} (fin n, n >= 504, n <= 670) => [8] -> [n][8] -> [4][168][8]
 keccakPad168B4 p m = split (m # [p] # (zero : [670 - n][8]) # [0x80])
 
 keccakSqueeze168 : {n} (fin n) => [25][64] -> [n][8]
@@ -2186,6 +2205,190 @@ tuplehashxof256Run_nS inb =
     z = lencode1 (8 * 3) # take`{3} (drop`{143} inb)
       # lencode1 (8 * 6) # take`{6} (drop`{207} inb)
       # lencode1 (8 * 9)
+
+// ---------------------------------------------------------------------------
+// NIST SP 800-185 section 6: ParallelHash, at both rates.
+//
+//   ParallelHash(X, B, L, S) = cSHAKE( left_encode(B) ||
+//        cSHAKE(X_0, d, "", "") || ... || cSHAKE(X_{n-1}, d, "", "") ||
+//        right_encode(n) || right_encode(L),  L, "ParallelHash", S )
+//
+// where the X_i are B-byte chunks of X and d is the rate's own capacity --
+// 256 bits at ParallelHash128, 512 at ParallelHash256. The inner cSHAKE has
+// neither a name nor a customization string, so by the standard's own words
+// it IS SHAKE, and every inner hash below is written as one: pad byte 0x1f.
+//
+// WRITTEN OUT, chunk by chunk, and that is the point. The brainfuck never
+// holds the run of digests -- it pushes each byte into the outer block as it
+// comes off the inner state -- so this entry and the routine agree only if
+// the streaming and the concatenation come to the same bytes.
+//
+// IO: xof{1} bs{2} slen{2} mlen{2} olen{2} sbuf{128}, then mlen bytes;
+//     S is at byte 9 and the message at byte 137.
+
+// The twelve bytes the standard fixes.
+phName : [12][8]
+phName = [0x50, 0x61, 0x72, 0x61, 0x6c, 0x6c, 0x65, 0x6c, 0x48, 0x61, 0x73,
+          0x68]
+
+parallelhash128Run_s1 : [161][8] -> [32][8]
+parallelhash128Run_s1 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{271} 0x04 (t # z)))
+  where
+    t = lencode1 168 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 0)
+      # (zero : [150][8])
+    z = [0x01, 0x08]
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{137} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{145} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{153} inb))))
+      # [0x03, 0x01]
+      # [0x01, 0x00, 0x02]
+
+parallelhash128Run_s2 : [161][8] -> [32][8]
+parallelhash128Run_s2 inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{271} 0x04 (t # z)))
+  where
+    t = lencode1 168 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 13) # take`{13} (drop`{9} inb)
+      # (zero : [137][8])
+    z = [0x01, 0x08]
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{137} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{145} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{153} inb))))
+      # [0x03, 0x01]
+      # [0x01, 0x00, 0x02]
+
+parallelhash128Run_short : [160][8] -> [32][8]
+parallelhash128Run_short inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2Full 0x04 (t # z)))
+  where
+    t = lencode1 168 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 13) # take`{13} (drop`{9} inb)
+      # (zero : [137][8])
+    z = [0x01, 0x05]
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{5} 0x1f
+            (take`{5} (drop`{137} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{5} 0x1f
+            (take`{5} (drop`{142} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{5} 0x1f
+            (take`{5} (drop`{147} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{5} 0x1f
+            (take`{5} (drop`{152} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{3} 0x1f
+            (take`{3} (drop`{157} inb))))
+      # [0x05, 0x01]
+      # [0x01, 0x00, 0x02]
+
+parallelhash256Run_s4 : [161][8] -> [64][8]
+parallelhash256Run_s4 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{335} 0x04 (t # z)))
+  where
+    t = lencode1 136 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 0)
+      # (zero : [118][8])
+    z = [0x01, 0x08]
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{137} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{145} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{153} inb))))
+      # [0x03, 0x01]
+      # [0x02, 0x00, 0x02]
+
+parallelhash256Run_s5 : [161][8] -> [64][8]
+parallelhash256Run_s5 inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{335} 0x04 (t # z)))
+  where
+    t = lencode1 136 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 13) # take`{13} (drop`{9} inb)
+      # (zero : [105][8])
+    z = [0x01, 0x08]
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{137} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{145} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{153} inb))))
+      # [0x03, 0x01]
+      # [0x02, 0x00, 0x02]
+
+parallelhash256Run_short : [167][8] -> [64][8]
+parallelhash256Run_short inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB4`{463} 0x04 (t # z)))
+  where
+    t = lencode1 136 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 13) # take`{13} (drop`{9} inb)
+      # (zero : [105][8])
+    z = [0x01, 0x07]
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{7} 0x1f
+            (take`{7} (drop`{137} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{7} 0x1f
+            (take`{7} (drop`{144} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{7} 0x1f
+            (take`{7} (drop`{151} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{7} 0x1f
+            (take`{7} (drop`{158} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{2} 0x1f
+            (take`{2} (drop`{165} inb))))
+      # [0x05, 0x01]
+      # [0x02, 0x00, 0x02]
+
+parallelhash256Run_bigB : [537][8] -> [64][8]
+parallelhash256Run_bigB inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2Full 0x04 (t # z)))
+  where
+    t = lencode1 136 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 13) # take`{13} (drop`{9} inb)
+      # (zero : [105][8])
+    z = [0x01, 0xc8]
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2`{200} 0x1f
+            (take`{200} (drop`{137} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB2`{200} 0x1f
+            (take`{200} (drop`{337} inb))))
+      # [0x02, 0x01]
+      # [0x02, 0x00, 0x02]
+
+parallelhashxof128Run_nS : [161][8] -> [32][8]
+parallelhashxof128Run_nS inb =
+    keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B2`{270} 0x04 (t # z)))
+  where
+    t = lencode1 168 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 13) # take`{13} (drop`{9} inb)
+      # (zero : [137][8])
+    z = [0x01, 0x08]
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{137} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{145} inb))))
+      # keccakSqueeze168`{32} (keccakAbsorb168 (keccakPad168B1`{8} 0x1f
+            (take`{8} (drop`{153} inb))))
+      # [0x03, 0x01]
+      # [0x00, 0x01]
+
+parallelhashxof256Run_nS : [161][8] -> [64][8]
+parallelhashxof256Run_nS inb =
+    keccakSqueeze136`{64} (keccakAbsorb (keccakPadB3`{334} 0x04 (t # z)))
+  where
+    t = lencode1 136 # lencode1 (8 * 12) # phName
+      # lencode1 (8 * 13) # take`{13} (drop`{9} inb)
+      # (zero : [105][8])
+    z = [0x01, 0x08]
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{137} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{145} inb))))
+      # keccakSqueeze136`{64} (keccakAbsorb (keccakPadB1`{8} 0x1f
+            (take`{8} (drop`{153} inb))))
+      # [0x03, 0x01]
+      # [0x00, 0x01]
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

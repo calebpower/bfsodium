@@ -791,8 +791,10 @@ of these files to the next; everything else in them is the rate's own numbers.
 the padding byte 4 and a length-encoded prefix on the tape; KMAC adds a tape
 SUFFIX for its `right_encode(L)` and carries KMACXOF behind a one-cell flag.
 **TupleHash is built too**, over a tuple of four bounded tape elements and one
-unbounded one from the wire; **what is left of tier B is ParallelHash**, and
-the post-quantum tier behind SHAKE128.
+unbounded one from the wire, and so is **ParallelHash**, which drives the
+absorb itself and therefore needs no accumulator and carries no cap of its
+own. **SP 800-185 is complete at both rates**, XOF forms included; what is
+left of tier B is the post-quantum tier behind SHAKE128.
 
 **The sponge is two routines now** -- `keccak/absorb<rate>` and
 `keccak/squeeze<rate>`, with `keccak/sponge<rate>` pasting both. ParallelHash

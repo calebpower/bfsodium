@@ -1,0 +1,773 @@
+; bfsodium PARALLELHASH256 : NIST SP 800_185 section 6's ParallelHash
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN skeleton; keccak/absorb136 is PASTED TWICE  keccak/rightenc
+; twice  and keccak/squeeze136 keccak/rotstate keccak/bytepad136
+; keccak/leftenc and chacha20/add32 once each;
+;
+; IO  in:  xof{1}  bs{2} LE  slen{2} LE  mlen{2} LE  olen{2} LE
+;          sbuf{128}   (137 bytes)  then mlen bytes from the wire
+;     out: olen bytes
+;
+;   ParallelHash256(X  B  L  S) = cSHAKE256( left_encode(B) then the
+;        SHAKE256 of every B byte chunk of X in turn  512 bits each  then
+;        right_encode(n) then right_encode(L)   L  "ParallelHash"  S )
+;
+; THIS FILE DRIVES THE SPONGE RATHER THAN PASTING ONE  and it is the first
+; here that does; keccak/sponge136 takes a message it can see the end of and
+; ParallelHash cannot hand it one: the outer hash's message is the run of
+; digests of every chunk  which is d over B times the length of X  and at the
+; standard's own B of eight that is EIGHT TIMES THE MESSAGE;
+;
+; SO THERE IS NO BUFFER FOR IT; each digest byte is PUSHED into the outer
+; block as it comes off the inner state  and the outer block absorbs itself
+; whenever it fills; The only bound on the number of chunks is mlen{2}  which
+; is the bound every routine in this library already has; THERE IS NO CAP OF
+; THIS ROUTINE'S OWN;
+;
+; A BUFFER WOULD HAVE PASSED EVERY PUBLISHED VECTOR  and that is why it was
+; refused: NIST's samples are all twenty four byte messages with B equal to
+; eight  so a six chunk buffer would have answered every one of them and
+; refused a forty nine byte message; An implementation the tests cannot see
+; through is the one thing this library will not ship;
+;
+; ONE OUTER LOOP AND ONE PUSH; the loop's byte comes from a staging buffer  and
+; when the staging runs dry a PHASE decides what refills it: left_encode(B)
+; then one chunk's digest at a time  then right_encode(n)  then
+; right_encode(L)  then the padding; cSHAKE's own bytepad block is staged
+; before the loop starts; The phases are six flags TESTED IN REVERSE ORDER  so
+; that an arm which sets the next flag cannot fire it again in the same pass;
+;
+; AND THE INNER HASH IS A SPONGE WRITTEN OUT  because the one in the tree
+; sends its answer to the wire and this one sends it into the outer block; It
+; is cSHAKE with no name and no customization string  WHICH THE STANDARD SAYS
+; IS SHAKE  so its padding byte is 31 and not 4;
+;
+; TWO STATES AND ONE PAIR OF ABSORB FRAMES; keccak/absorb136 wants its state
+; at nought and both states cannot be there  so each is PARKED and moved down
+; for its own absorb; Two hundred cells each way is eight hundred instructions
+; against the permutation's two thousand four hundred and eighty four million;
+;
+; THE DIGEST COMES OFF THE INNER STATE IN ORDER because it is produced by a
+; conveyor: each byte is placed at the staging buffer's 64th cell and the
+; buffer slides down  so after 64 of them the first is at the buffer's nought;
+; That works only because 64 IS A CONSTANT  which it is: the inner hash's
+; output length is fixed by the standard at the rate's own capacity;
+;
+; SLEN IS AT MOST 116 and B AT LEAST ONE; the routine DOES NOT CHECK EITHER;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x0c7  S{200}  the state absorb squeeze and rotstate work on
+;   @0x0c8:0x330  keccak/permute1600's frame  inside those pastes
+;   @0x338:0x3bf  the block keccak/absorb136 takes
+;   @0x000:0x401  keccak/squeeze136's frame  pasted at this file's zero
+;   @0x428:0x4ef  the OUTER state  parked
+;   @0x4f0:0x5b7  the INNER state  parked
+;   @0x5b8:0x63f  the outer block being filled
+;   @0x640:0x6c7  the inner block being filled
+;   @0x6c8:0x74f  the staging buffer the outer loop draws its byte from
+;   @0x750        oc      slots left in the outer block
+;   @0x751        ic      slots left in the inner block
+;   @0x752        sn      bytes still staged
+;   @0x753:0x754  rem{2}  message bytes still to come
+;   @0x755:0x756  cb{2}   this chunk's bytes still to come
+;   @0x757:0x758  n{2}    how many chunks there have been
+;   @0x759        dc      digest bytes still to take off the inner state
+;   @0x75a        ipad    one until the inner padding byte has been placed
+;   @0x75b        ilast   one if it landed in THIS inner block
+;   @0x75c        imore   one while another inner block is wanted
+;   @0x75d        padding one while the outer block is being padded
+;   @0x75e        go      one while the outer loop is running
+;   @0x75f        need    one when the staging has run dry
+;   @0x760:0x761  bs{2}   the block size  kept because every chunk wants it
+;   @0x762        pushf   one when there is a byte to push
+;   @0x763        full    one when the outer block has filled
+;   @0x764        xofc    the flag  as the clear reads it
+;   @0x765:0x76a  the six phase flags
+;   @0x76b:0x771  the cells the tests are made through
+;   @0x775:0x7fd  everything read  parked above the frames it arrived in
+;   @0x805:0x9c8  keccak/bytepad136's frame
+;   @0x9cc:0x9dd  keccak/leftenc's frame
+;   @0x9e0:0x9f1  keccak/rightenc's frame  for the chunk count
+;   @0x9f4:0xa05  and another for the output length
+;   @0xa08:0xa1b  chacha20/add32's frame
+;   @0xa1c:0xa1f  tmp{4}  hands the accumulator back to itself
+;   @0xa20        dbl     the three doublings still to do
+
+; read the flag  the four lengths and the customization string
+,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=136
+; ASSERT zero 137:2592
+
+; ==== all of it is parked  because it arrived inside the state ====
+L136
+  [-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]>[-R1909+L1909]
+; ASSERT ptr=136
+
+; ==== cSHAKE's own block  over the name and the caller's string ====
+; the name is a constant in the standard  so no caller sends it
+R1917
+  [-]
+  ++++++++++++
+R4
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; P
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; a
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; r
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; a
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; l
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; l
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; e
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; l
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; H
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; a
+R1
+  [-]
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; s
+R1
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; h
+L156
+  [-R143+L143]>[-R143+L143]
+R5
+  [-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]>[-R267+L267]
+; bytepad encodes BOTH strings here  so its one string flag stays down
+R8
+; ASSERT ptr=2053
+@@BYTEPAD136@@ 2053
+; ASSERT ptr=2053
+; and the block is the first thing the outer hash takes  so it is staged
+R264
+  [-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]>[-L581+R581]
+; ASSERT zero 2053:2504
+L578
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+; ==== the counts the loop runs on ====
+L2
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+R42
+  [-L39+R39]>[-L39+R39]
+L5
+  [-L22+R22]>[-L22+R22]
+; the output length is wanted twice: by the squeeze at the end and by
+; right_encode in the fourth phase  so it is teed and not moved
+R5
+  [-L895+R1547+L652]
+R1
+  [-L895+R1547+L652]
+; the first phase is left_encode of the block size
+L24
+  [-]
+  +
+L7
+  [-]
+  +
+
+; ==== ONE TURN OF THIS LOOP IS ONE BYTE OF THE OUTER MESSAGE ====
+[
+
+; ____ if the staging has run dry  a phase refills it ____
+; needed until the staging says otherwise
+R1
+  [-]
+  +
+R14
+  [-]
+; the cell is looked at through a copy and handed straight back
+L27
+  [-R25+R1+L26]
+R26
+  [-L26+R26]
+L1
+  [[-]R2[-]+L2]
+R2
+  [[-]L14[-]R14]
+L14
+; ASSERT ptr=1887
+[
+  [-]
+
+; the phases are tested BACKWARDS so an arm that sets the next flag
+; cannot fire it again on the same pass
+
+; ____ phase six: there is nothing left to feed ____
+R11
+[
+  [-]
+L12
+  [-]
+R12
+]
+
+; ____ phase five: the padding  which is oc bytes long ____
+; the first is the customizable pair's 4 and the rest are nought; the
+; 128 goes on at the push that fills the block  not here
+L1
+[
+  [-]
+L161
+  [-]
+  ++++
+R136
+  [-R2+R27+L29]
+R29
+  [-L29+R29]
+L16
+  [-]
+  +
+R13
+  [-]
+  +
+L1
+]
+
+; ____ phase four: right_encode of the output length in BITS ____
+L1
+[
+  [-]
+; eight times it  by three doublings of the proved adder
+R696
+  [-]
+  +++
+[
+  -
+L24
+  [-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]>[-R4+R16+L20]
+R17
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2568
+@@ADD32@@ 2568
+; ASSERT ptr=2568
+R24
+]
+; and the XOF form encodes nought instead  which is a CLEAR in front of
+; the encoder and not a branch around it
+L683
+  [-L17+R17]
+L17
+[
+  [-]
+R676
+  [-]>[-]>[-]>[-]
+L679
+]
+R676
+  [-L20+R20]>[-L20+R20]>[-L20+R20]>[-L20+R20]
+L23
+; ASSERT ptr=2548
+@@RIGHTENC@@ 2548
+; ASSERT ptr=2548
+; its answer is already in order  so it only has to move
+R13
+  [-L825+R825]>[-L825+R825]>[-L825+R825]>[-L825+R825]>[-L825+R825]
+L5
+  [-L686+R686]
+L663
+  [-]
+  +
+L1
+]
+
+; ____ phase three: right_encode of how many chunks there were ____
+L1
+[
+  [-]
+L16
+  [-R649+L649]>[-R649+L649]
+R648
+; ASSERT ptr=2528
+@@RIGHTENC@@ 2528
+; ASSERT ptr=2528
+; its answer is already in order  so it only has to move
+R13
+  [-L805+R805]>[-L805+R805]>[-L805+R805]>[-L805+R805]>[-L805+R805]
+L5
+  [-L666+R666]
+L644
+  [-]
+  +
+L1
+]
+
+; ____ phase two: one chunk  hashed on its own ____
+; this is the one phase that REPEATS  so it is guarded by a COPY of its
+; flag and not by the flag: an arm that cleared its own flag could not
+; come back for the next chunk  and an arm that set it again would fire
+; twice in the one pass
+R12
+  [-]
+; a copy  which is a tee and a hand back
+L13
+  [-R13+L6+L7]
+R7
+  [-L7+R7]
+R6
+[
+  [-]
+; unless the message is out  in which case the phase moves on and the
+; next pass refills from the one after it
+; either byte of the count being set is enough
+L1
+  [-]
+; the cell is looked at through a copy and handed straight back
+L31
+  [-R24+R1+L25]
+R25
+  [-L25+R25]
+L1
+  [[-]R7[-]+L7]
+; and the high byte through the same two cells
+; the cell is looked at through a copy and handed straight back
+L23
+  [-R23+R1+L24]
+R24
+  [-L24+R24]
+L1
+  [[-]R7[-]+L7]
+R5
+  [-]
+  +
+R2
+; ASSERT ptr=1906
+[
+  [-]
+L2
+  [-]
+
+; ______ the chunk's own length  which a last chunk may cut short
+; a copy  which is a tee and a hand back
+L16
+  [-L11+R24+L13]
+R13
+  [-L13+R13]
+; a copy  which is a tee and a hand back
+L12
+  [-L11+R23+L12]
+R12
+  [-L12+R12]
+L19
+  [-]
+  +
+R2
+  [-]
+  +
+
+; ______ one turn of this loop is one block of the inner message
+[
+  [-]
+L11
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+R10
+  [-]
+; the inner block takes exactly one rate of bytes  whatever they are
+L10
+[
+  -
+L272
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+; is there another byte of this chunk  and of the message
+; either byte of the count being set is enough
+R167
+  [-]
+; the cell is looked at through a copy and handed straight back
+L25
+  [-R22+R1+L23]
+R23
+  [-L23+R23]
+L1
+  [[-]R3[-]+L3]
+; and the high byte through the same two cells
+; the cell is looked at through a copy and handed straight back
+L21
+  [-R21+R1+L22]
+R22
+  [-L22+R22]
+L1
+  [[-]R3[-]+L3]
+R6
+  [-]
+L3
+[
+  [-]
+; either byte of the count being set is enough
+R3
+  [-]
+; the cell is looked at through a copy and handed straight back
+L30
+  [-R24+R1+L25]
+R25
+  [-L25+R25]
+L1
+  [[-]R6[-]+L6]
+; and the high byte through the same two cells
+; the cell is looked at through a copy and handed straight back
+L23
+  [-R23+R1+L24]
+R24
+  [-L24+R24]
+L1
+  [[-]R6[-]+L6]
+R3
+]
+; the else arm is armed  because the wire arm clears it
+R1
+  [-]
+  +
+R2
+[
+  [-]
+; a byte from the wire enters the block
+L170
+  ,
+; one off the count  borrowing into the high byte when the low is out
+R142
+  [-R22+R1+L23]
+R23
+  [-L23+R23]
+  [-]
+  +
+; the low byte was not nought  so there is no borrow
+L1
+  [[-]L22-R23-L1]
+; and if it was  the high byte pays
+R1
+  [-L22-L1-R23]
+; one off the count  borrowing into the high byte when the low is out
+L25
+  [-R24+R1+L25]
+R25
+  [-L25+R25]
+  [-]
+  +
+; the low byte was not nought  so there is no borrow
+L1
+  [[-]L24-R25-L1]
+; and if it was  the high byte pays
+R1
+  [-L24-L1-R25]
+R3
+  [-]
+R2
+]
+; otherwise the padding byte enters  once; FIPS 202 gives SHAKE 31
+L2
+[
+  -
+L21
+[
+  [-]
+R1
+  [-]
+  +
+L148
+  +++++++++++++++++++++++++++++++
+R147
+]
+R21
+]
+L30
+]
+; ASSERT ptr=1873
+; the last byte of the LAST inner block gains 128
+R10
+[
+  [-]
+L148
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+R148
+]
+; and the block goes into the inner state
+; the block goes down to where keccak/absorb wants to find it
+L283
+  [-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]>[-L776+R776]
+; and the state it belongs to comes down to where absorb wants it
+L471
+  [-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]
+L1463
+; ASSERT ptr=0
+@@ABSORB136@@ 0
+; ASSERT ptr=0
+; and goes back up  because the other state wants these cells too
+  [-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]>[-R1264+L1264]
+; another inner block is wanted if the chunk or the padding is left
+R1685
+  [-]
+; the chunk first  and the message it is cut from
+; either byte of the count being set is enough
+R18
+  [-]
+; the cell is looked at through a copy and handed straight back
+L25
+  [-R22+R1+L23]
+R23
+  [-L23+R23]
+L1
+  [[-]R3[-]+L3]
+; and the high byte through the same two cells
+; the cell is looked at through a copy and handed straight back
+L21
+  [-R21+R1+L22]
+R22
+  [-L22+R22]
+L1
+  [[-]R3[-]+L3]
+R3
+[
+  [-]
+; either byte of the count being set is enough
+L18
+  [-]
+; the cell is looked at through a copy and handed straight back
+L9
+  [-R24+R1+L25]
+R25
+  [-L25+R25]
+L1
+  [[-]L15[-]+R15]
+; and the high byte through the same two cells
+; the cell is looked at through a copy and handed straight back
+L23
+  [-R23+R1+L24]
+R24
+  [-L24+R24]
+L1
+  [[-]L15[-]+R15]
+R3
+]
+; the cell is looked at through a copy and handed straight back
+L20
+  [-R17+R1+L18]
+R18
+  [-L18+R18]
+L1
+  [[-]L15[-]+R15]
+L15
+]
+
+; ______ and the digest comes off the inner state into the staging
+; it is a conveyor  so the bytes land in order: each goes to the
+; staging buffer's last cell and the buffer slides down after it
+L620
+  [-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]>[-L1264+R1264]
+R418
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+[
+  -
+L144
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+L1799
+  [-R1799+L1799]
+; ASSERT ptr=0
+@@ROTSTATE@@ 0
+; ASSERT ptr=0
+R1881
+]
+; the inner state is spent  and what rotstate left behind is cleared
+L1881
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+R1675
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; one on the count  carrying when the low byte comes back to nought
+R5
+  +
+R22
+  [-]
+  +
+L22
+  [-R20+R1+L21]
+R21
+  [-L21+R21]
+; the carry is assumed and then argued away
+L1
+  [[-]R2[-]L2]
+R2
+  [-L21+R21]
+; and the chunk counter is left clean  which a short last chunk
+; would otherwise not do
+L24
+  [-]
+R1
+  [-]
+R28
+]
+; the else arm: the message is out  so the next phase takes over
+L2
+[
+  -
+L10
+  [-]
+R1
+  [-]
+  +
+R9
+]
+R3
+]
+
+; ____ phase one: left_encode of the block size ____
+L14
+[
+  [-]
+; the block size is COPIED and not moved  because every chunk after this
+; one still wants it; moving it gave every later chunk a length of nought
+; and the message never ran out
+; a copy  which is a tee and a hand back
+L5
+  [-R620+L607+L13]
+R13
+  [-L13+R13]
+; a copy  which is a tee and a hand back
+L12
+  [-R620+L608+L12]
+R12
+  [-L12+R12]
+R607
+; ASSERT ptr=2508
+@@LEFTENC@@ 2508
+; ASSERT ptr=2508
+; its answer is already in order  so it only has to move
+R13
+  [-L785+R785]>[-L785+R785]>[-L785+R785]>[-L785+R785]>[-L785+R785]
+L5
+  [-L646+R646]
+L626
+  [-]
+  +
+L1
+]
+L6
+; ASSERT ptr=1887
+]
+
+; ____ and one byte is pushed  if the refill found one ____
+R3
+  [-]
+; the cell is looked at through a copy and handed straight back
+L16
+  [-R25+R1+L26]
+R26
+  [-L26+R26]
+L1
+  [[-]L9[-]+R9]
+L9
+; ASSERT ptr=1890
+[
+  [-]
+; the outer block slides down and the staged byte enters at its top
+L425
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+R137
+  [-L137+R137]
+R1
+  [-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]>[-L1+R1]
+R3
+  -
+L2
+  -
+; and if that filled the block  the block is absorbed
+; full until the count says otherwise
+R19
+  [-]
+  +
+R10
+  [-]
+; the cell is looked at through a copy and handed straight back
+L29
+  [-R27+R1+L28]
+R28
+  [-L28+R28]
+L1
+  [[-]R2[-]+L2]
+R2
+  [[-]L10[-]R10]
+L10
+; ASSERT ptr=1891
+[
+  [-]
+; the padding's own block ends with the 128 FIPS 202 puts there
+L6
+[
+  [-]
+L286
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+R286
+]
+; one rate of the outer message
+; the block goes down to where keccak/absorb wants to find it
+L421
+  [-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]>[-L640+R640]
+; and the state it belongs to comes down to where absorb wants it
+L535
+  [-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]
+L1263
+; ASSERT ptr=0
+@@ABSORB136@@ 0
+; ASSERT ptr=0
+; and goes back up  because the other state wants these cells too
+  [-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]>[-R1064+L1064]
+R1673
+  [-]
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+R19
+]
+L1
+]
+L4
+]
+; ASSERT ptr=1886
+
+; ==== and the answer is squeezed off the outer state ====
+; the two counters that are still standing are spent  and cleared so the
+; contract below can say EVERYTHING is
+L14
+  [-]
+R16
+  [-]
+R1
+  [-]
+L825
+  [-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]>[-L1064+R1064]
+; and nothing this file used is still standing
+; ASSERT zero 1064:2592
+L1263
+; ASSERT ptr=0
+@@SQUEEZE136@@ 0
+; ASSERT ptr=0
