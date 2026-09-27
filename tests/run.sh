@@ -404,6 +404,35 @@ dk idiom/xor64.bf 0f0f0f0f0f0f0f0ff0f0f0f0f0f0f0f0 ffffffffffffffff xor64Run "xo
 dk idiom/xor64.bf efcdab89674523011032547698badcfe ffffffffffffffff xor64Run "xor64 a word against its complement"
 dk idiom/xor64.bf 55aa55aa55aa55aaaa55aa55aa55aa55 ffffffffffffffff xor64Run "xor64 alternating bits"
 dk idiom/xor64.bf efcdab8967452301efcdab8967452301 0000000000000000 xor64Run "xor64 a real word against itself"
+
+# XOR8 is the same fourteen cell frame xor32 and xor64 carry inside them,
+# lifted into a routine of its own because AES wants the exclusive or of two
+# SINGLE bytes everywhere. brainfuck has no bitwise instruction, so it
+# decomposes both bytes and toggles a bit per pair; the edges are therefore
+# the bit patterns, not the magnitudes.
+dk idiom/xor8.bf 0000 00 xor8Run "xor8 nothing against nothing"
+dk idiom/xor8.bf ff00 ff xor8Run "xor8 all ones against nothing"
+dk idiom/xor8.bf 00ff ff xor8Run "xor8 nothing against all ones"
+dk idiom/xor8.bf ffff 00 xor8Run "xor8 all ones against all ones"
+dk idiom/xor8.bf 0ff0 ff xor8Run "xor8 nibbles that share no bit"
+dk idiom/xor8.bf 5aa5 ff xor8Run "xor8 a byte against its complement"
+dk idiom/xor8.bf 5353 00 xor8Run "xor8 a byte against itself"
+dk idiom/xor8.bf 5301 52 xor8Run "xor8 the low bit alone"
+dk idiom/xor8.bf 7f80 ff xor8Run "xor8 either side of the top bit"
+dk idiom/xor8.bf 801b 9b xor8Run "xor8 the AES reduction against the top bit"
+
+# Ten vectors are not 65536. This kernel is small enough to sweep, and the
+# operands swept against are the ones AES actually presents it with: nought,
+# the reduction constant, and both ends.
+run "xor8 swept over every operand at 0, 0x1b, 0x5a and 0xff" sh -c '
+  for x in 00 1b 5a ff; do
+    for y in $(seq 0 255); do
+      yh=$(printf %02x "$y")
+      got=$(printf "%s%s" "$x" "$yh" | ./tools/hx -r | ./tools/bfi idiom/xor8.bf | ./tools/hx)
+      want=$(printf "%02x" $(( 0x$x ^ y )))
+      [ "$got" = "$want" ] || { echo "xor8 $x against $yh gave $got not $want"; exit 1; }
+    done
+  done'
 dk idiom/xor64.bf 00000000000000000000000000000000 0000000000000000 xor64Run "xor64 nought against nought"
 dk idiom/xor64.bf 8040201008040201ffffffffffffffff 7fbfdfeff7fbfdfe xor64Run "xor64 one bit per byte against all ones"
 # AND64, the same widening again. The AND8 frame is unchanged down to the
@@ -1046,6 +1075,101 @@ dk index/fetch256twice.bf 00637c777bf26b6fc53001672bfed7ab76ca82c97dfa5947f0add4
 dk index/fetch256twice.bf ff637c777bf26b6fc53001672bfed7ab76ca82c97dfa5947f0add4a2af9ca472c0b7fd9326363ff7cc34a5e5f171d8311504c723c31896059a071280e2eb27b27509832c1a1b6e5aa0523bd6b329e32f8453d100ed20fcb15b6acbbe394a4c58cfd0efaafb434d338545f9027f503c9fa851a3408f929d38f5bcb6da2110fff3d2cd0c13ec5f974417c4a77e3d645d197360814fdc222a908846eeb814de5e0bdbe0323a0a4906245cc2d3ac629195e479e7c8376d8dd54ea96c56f4ea657aae08ba78252e1ca6b4c6e8dd741f4bbd8b8a703eb5664803f60e613557b986c11d9ee1f8981169d98e949b1e87e9ce5528df8ca1890dbfe6426841992d0fb054bb1600 1663 fetch256twiceRun "the same table read twice at 255 then 0"
 dk index/fetch256twice.bf fe637c777bf26b6fc53001672bfed7ab76ca82c97dfa5947f0add4a2af9ca472c0b7fd9326363ff7cc34a5e5f171d8311504c723c31896059a071280e2eb27b27509832c1a1b6e5aa0523bd6b329e32f8453d100ed20fcb15b6acbbe394a4c58cfd0efaafb434d338545f9027f503c9fa851a3408f929d38f5bcb6da2110fff3d2cd0c13ec5f974417c4a77e3d645d197360814fdc222a908846eeb814de5e0bdbe0323a0a4906245cc2d3ac629195e479e7c8376d8dd54ea96c56f4ea657aae08ba78252e1ca6b4c6e8dd741f4bbd8b8a703eb5664803f60e613557b986c11d9ee1f8981169d98e949b1e87e9ce5528df8ca1890dbfe6426841992d0fb054bb16fe bbbb fetch256twiceRun "the same table read twice at 254 then 254"
 
+# XTIME is multiplication by x in the AES field, and it is the first thing in
+# AES that CAN be a pasteable routine: unlike the S box read above it holds no
+# index, so every loop in it is pointer balanced and tools/bffoot accepts it.
+# The doubling needs no mask because a cell wraps at 256, and the reduction is
+# applied unconditionally as the top bit times 0x1b -- exclusive or with
+# nought being the identity, which makes the branch FIPS 197 writes in prose
+# cost nothing and makes the routine constant time in its input.
+#
+# The last four are the chain FIPS 197 section 4 point 2 works through itself.
+dk aes/xtime.bf 00 00 xtimeRun "xtime of nothing"
+dk aes/xtime.bf 01 02 xtimeRun "xtime of one is two"
+dk aes/xtime.bf 40 80 xtimeRun "xtime just below the reduction"
+dk aes/xtime.bf 7f fe xtimeRun "xtime of the largest byte that does not reduce"
+dk aes/xtime.bf 80 1b xtimeRun "xtime of the top bit alone IS the polynomial"
+dk aes/xtime.bf ff e5 xtimeRun "xtime of all ones"
+dk aes/xtime.bf 57 ae xtimeRun "xtime 0x57 is 0xae  FIPS 197 section 4 point 2"
+dk aes/xtime.bf ae 47 xtimeRun "xtime 0xae is 0x47  the same example continued"
+dk aes/xtime.bf 47 8e xtimeRun "xtime 0x47 is 0x8e  and again"
+dk aes/xtime.bf 8e 07 xtimeRun "xtime 0x8e is 0x07  and the fourth of them"
+
+# A byte has 256 values and this routine takes one byte, so there is no reason
+# to sample it. The reference here is shell arithmetic, which is neither the
+# brainfuck nor the Cryptol: a third way of saying the same thing.
+run "xtime swept over every one of the 256 bytes" sh -c '
+  for a in $(seq 0 255); do
+    ah=$(printf %02x "$a")
+    d=$(( (a * 2) % 256 ))
+    if [ "$a" -ge 128 ]; then d=$(( d ^ 27 )); fi
+    want=$(printf %02x "$d")
+    got=$(printf "%s" "$ah" | ./tools/hx -r | ./tools/bfi aes/xtime.bf | ./tools/hx)
+    [ "$got" = "$want" ] || { echo "xtime $ah gave $got not $want"; exit 1; }
+  done'
+
+# MIXCOLUMN is the first piece of AES that CAN be pasted, and the reason the
+# arithmetic comes before the S box: it holds no index, so every loop in it is
+# pointer balanced and tools/bffoot accepts it. FIPS 197 section 5 point 1
+# point 3 writes the step as a multiply by a matrix of 02 03 01 01 rotated;
+# the brainfuck uses the identity b_i = a_i xor t xor xtime(a_i xor a_j),
+# which is four xtimes instead of eight. The Cryptol carries the MATRIX and
+# not the identity, on purpose: a spec that shared the shortcut would agree
+# with a wrong shortcut.
+dk aes/mixcolumn.bf 00000000 00000000 mixcolumnRun "mixcolumn a column of nothing"
+dk aes/mixcolumn.bf 01010101 01010101 mixcolumnRun "mixcolumn one repeated byte is FIXED  t is nought and so is every pair"
+dk aes/mixcolumn.bf c6c6c6c6 c6c6c6c6 mixcolumnRun "mixcolumn and so is any other repeated byte"
+dk aes/mixcolumn.bf d4d4d4d5 d5d5d7d6 mixcolumnRun "mixcolumn one byte different from the other three"
+dk aes/mixcolumn.bf db135345 8e4da1bc mixcolumnRun "mixcolumn a column where the doubling reduces twice"
+dk aes/mixcolumn.bf f20a225c 9fdc589d mixcolumnRun "mixcolumn a column where it reduces once"
+dk aes/mixcolumn.bf 2d26314c 4d7ebdf8 mixcolumnRun "mixcolumn a column where it does not reduce at all"
+dk aes/mixcolumn.bf ff000000 e5ffff1a mixcolumnRun "mixcolumn the largest byte against three noughts"
+dk aes/mixcolumn.bf 000000ff ffff1ae5 mixcolumnRun "mixcolumn and at the other end of the column"
+dk aes/mixcolumn.bf d4bf5d30 046681e5 mixcolumnRun "mixcolumn FIPS 197 Appendix B round 1  the first column  a PUBLISHED value"
+
+# The fixed points are worth a vector each because they are where a wrong
+# constant hides: if t or a pair were mis-wired, a repeated byte would still
+# very often come back unchanged, and these say which ones must.
+#
+# And a sweep, whose reference is the MATRIX written out in shell arithmetic
+# -- a third way of saying it, sharing nothing with either the brainfuck or
+# the Cryptol. The columns are a cheap spread rather than random, because the
+# suite may not depend on a generator it cannot pin.
+run "mixcolumn swept over 256 columns by the matrix form" sh -c '
+  m2() { d=$(( ($1 * 2) % 256 )); if [ "$1" -ge 128 ]; then d=$(( d ^ 27 )); fi; echo $d; }
+  m3() { echo $(( $(m2 $1) ^ $1 )); }
+  for n in $(seq 0 255); do
+    a0=$n
+    a1=$(( (n * 7 + 1) % 256 ))
+    a2=$(( (n * 31 + 128) % 256 ))
+    a3=$(( (n * 91 + 27) % 256 ))
+    inh=$(printf "%02x%02x%02x%02x" $a0 $a1 $a2 $a3)
+    b0=$(( $(m2 $a0) ^ $(m3 $a1) ^ a2 ^ a3 ))
+    b1=$(( a0 ^ $(m2 $a1) ^ $(m3 $a2) ^ a3 ))
+    b2=$(( a0 ^ a1 ^ $(m2 $a2) ^ $(m3 $a3) ))
+    b3=$(( $(m3 $a0) ^ a1 ^ a2 ^ $(m2 $a3) ))
+    want=$(printf "%02x%02x%02x%02x" $b0 $b1 $b2 $b3)
+    got=$(printf "%s" "$inh" | ./tools/hx -r | ./tools/bfi aes/mixcolumn.bf | ./tools/hx)
+    [ "$got" = "$want" ] || { echo "mixcolumn $inh gave $got not $want"; exit 1; }
+  done'
+
+# MIXCOLUMNS is the same routine over four windows, and it is short only
+# because the state is column major: FIPS 197 section 3 point 4 numbers the
+# input so that a column is four CONSECUTIVE bytes. ShiftRows is the step that
+# pays for that; this one does not.
+#
+# The four round states are the worked example of FIPS 197 Appendix B, which
+# is the only place in this library where a whole cipher's intermediate values
+# are published. Rounds 1 and 2 are printed there. Rounds 5 and 9 are DERIVED
+# by running the same example on, which is sound precisely because rounds 1
+# and 2 come back right.
+dk aes/mixcolumns.bf 00000000000000000000000000000000 00000000000000000000000000000000 mixcolumnsRun "mixcolumns a state of nothing"
+dk aes/mixcolumns.bf 01010101010101010101010101010101 01010101010101010101010101010101 mixcolumnsRun "mixcolumns a state of one repeated byte is FIXED"
+dk aes/mixcolumns.bf d4bf5d30e0b452aeb84111f11e2798e5 046681e5e0cb199a48f8d37a2806264c mixcolumnsRun "mixcolumns FIPS 197 Appendix B round 1  a PUBLISHED value"
+dk aes/mixcolumns.bf 49db873b453953897f02d2f177de961a 584dcaf11b4b5aacdbe7caa81b6bb0e5 mixcolumnsRun "mixcolumns FIPS 197 Appendix B round 2  a PUBLISHED value"
+dk aes/mixcolumns.bf e1fb967ce8c8ae9b356cd2ba974ffb53 25d1a9adbd11d168b63a338e4c4cc0b0 mixcolumnsRun "mixcolumns FIPS 197 Appendix B round 5  DERIVED from the same example"
+dk aes/mixcolumns.bf 876e46a6f24ce78c4d904ad897ecc395 473794ed40d4e4a5a3703aa64c9f42bc mixcolumnsRun "mixcolumns FIPS 197 Appendix B round 9  DERIVED from the same example"
+
 # SHAKE256 is sponge136 handed FIPS 202's 31 and the caller's own length. The
 # squeeze LOOP is the one thing here that SHA3 never exercises, so these cover
 # its boundary from both sides: one short of a rate, exactly a rate, and one
@@ -1575,6 +1699,42 @@ if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Coun
 :prove add8_low_bit_term_is_needed
 ICRY
 ); then echo "PASS dropping the low bit term is refuted by counterexample"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
+
+# AES rests on two shortcuts, and both are proved rather than sampled. xtime
+# doubles a cell and exclusive ors 0x1b when the top bit was set; the field
+# says multiply by x modulo the polynomial. Over all 256 bytes those agree.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
+:l perm.cry
+:prove xtime_is_the_field
+ICRY
+); then echo "PASS xtime proved equal to multiplying by x in the field"; pass=$((pass+1)); else echo "FAIL the xtime identity"; fail=$((fail+1)); fi
+
+# and the companion that must be REFUTED: drop the reduction and the shift is
+# wrong for exactly the 128 bytes with their top bit set.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Counterexample"
+:l perm.cry
+:prove xtime_reduction_is_needed
+ICRY
+); then echo "PASS dropping xtime's reduction is refuted by counterexample"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
+
+# MixColumns is the bigger one. FIPS 197 writes a matrix of 02 03 01 01, which
+# reads as eight multiplies; the brainfuck uses b_i = a_i xor t xor
+# xtime(a_i xor a_j), which is four xtimes. Most of the routine's cost rests on
+# those being the same map, so it is proved over all 2^32 columns and not
+# argued for in a comment.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
+:l perm.cry
+:prove mix_identity_matches
+ICRY
+); then echo "PASS the four xtime identity proved equal to the FIPS 197 matrix"; pass=$((pass+1)); else echo "FAIL the MixColumns identity"; fail=$((fail+1)); fi
+
+# and its companion: t is what carries the two 01 entries of each matrix row,
+# so dropping it must be refuted.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Counterexample"
+:l perm.cry
+:prove mix_without_t_is_not_enough
+ICRY
+); then echo "PASS dropping t from the MixColumns identity is refuted"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
 
 echo
 echo "== summary =="

@@ -1,0 +1,311 @@
+; bfsodium MIXCOLUMN : one column of the AES MixColumns step
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; idiom/xor8 is PASTED fifteen times and aes/xtime four times;
+;
+; INTERFACE entry=25 exit=0 footprint=0:31
+; IO  in:  a{4}   one column  a0 first      (4 bytes)
+;     out: b{4}   the column mixed          (4 bytes)
+;
+; FIPS 197 section 5 point 1 point 3 writes this as a multiply by a fixed matrix whose
+; entries are 02 03 01 01 rotated  which reads as sixteen field multiplies;
+; It is the same map written four ways  and the cheap way to say it is
+;
+;   t is a0 xor a1 xor a2 xor a3
+;   b_i is a_i xor t xor xtime(a_i xor a_j)   where j is i plus one modulo four
+;
+; THAT COSTS FOUR XTIMES AND FIFTEEN EXCLUSIVE ORS and no multiply at all;
+; The matrix form would need the three multiply by two and the three multiply
+; by three separately  which is eight xtimes and twelve exclusive ors  so the
+; identity is not a flourish  it is most of the cost;
+;
+; AND IT IS PASTEABLE  which is the whole reason this comes first: it holds no
+; index  so every loop in it is pointer balanced and tools/bffoot accepts it;
+; The S box read cannot say that and never will  which is recorded at length
+; in index/fetch256 and in HANDOFF;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x15  the paste workspace; aes/xtime reaches 0 to 21 and idiom/xor8
+;               reaches 0 to 16  so twenty two cells serve both  and every
+;               paste sits at this file's own zero
+;   @0x16:0x19  a0 a1 a2 a3  the column as read; THE ANSWERS COME BACK OVER
+;               THEM  so a caller that pastes this gets its column mixed in
+;               place and needs no second buffer
+;   @0x1a       t    the exclusive or of all four
+;   @0x1b:0x1e  x0 x1 x2 x3  each one xtime of a neighboring pair
+;   @0x1f       g    the cell a copy hands its value back through
+;
+; THE ORDER IS FORCED BY WHAT IS STILL NEEDED; b_3 wants a_0  so every x_i is
+; computed before any a_i is spent; After that each a_i is wanted once more
+; and is MOVED rather than copied  which is why phase three is the cheap one;
+
+; the workspace is stepped over and the column read above it
+  >>>>>>>>>>>>>>>>>>>>>>,>,>,>,
+; ASSERT ptr=+25
+; ASSERT zero +0:+21
+; ASSERT zero +26:+31
+L25
+; ASSERT ptr=+0
+
+; ==== phase one : t is the exclusive or of all four ====
+; a0 into the first operand
+R22
+  [-L21+R30+L9]
+R9
+  [-L9+R9]
+L31
+; a1 into the second
+R23
+  [-L21+R29+L8]
+R8
+  [-L8+R8]
+L31
+; a0 xor a1
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and that is the start of t
+  [-R26+L26]
+; t so far into the first operand
+R26
+  [-L25+R25]
+L26
+; a2 into the second
+R24
+  [-L22+R29+L7]
+R7
+  [-L7+R7]
+L31
+; t xor a2
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and back into t
+  [-R26+L26]
+; t so far into the first operand
+R26
+  [-L25+R25]
+L26
+; a3 into the second
+R25
+  [-L23+R29+L6]
+R6
+  [-L6+R6]
+L31
+; t xor a3
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and back into t
+  [-R26+L26]
+; ASSERT ptr=+0
+; ASSERT zero +1:+21
+
+; ==== phase two : x_i is xtime of a_i xor its neighbour ====
+; EVERY ONE OF THEM IS COMPUTED BEFORE ANY a_i IS SPENT  because
+; b_3 wants a_0 and a_0 would otherwise be gone by then
+; a0 into the first operand
+R22
+  [-L21+R30+L9]
+R9
+  [-L9+R9]
+L31
+; a1 into the second
+R23
+  [-L21+R29+L8]
+R8
+  [-L8+R8]
+L31
+; a0 xor a1  which lands where xtime wants its input
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and multiplied by x in the field
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+; that is x0
+  [-R27+L27]
+; a1 into the first operand
+R23
+  [-L22+R30+L8]
+R8
+  [-L8+R8]
+L31
+; a2 into the second
+R24
+  [-L22+R29+L7]
+R7
+  [-L7+R7]
+L31
+; a1 xor a2  which lands where xtime wants its input
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and multiplied by x in the field
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+; that is x1
+  [-R28+L28]
+; a2 into the first operand
+R24
+  [-L23+R30+L7]
+R7
+  [-L7+R7]
+L31
+; a3 into the second
+R25
+  [-L23+R29+L6]
+R6
+  [-L6+R6]
+L31
+; a2 xor a3  which lands where xtime wants its input
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and multiplied by x in the field
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+; that is x2
+  [-R29+L29]
+; a3 into the first operand
+R25
+  [-L24+R30+L6]
+R6
+  [-L6+R6]
+L31
+; a0 into the second
+R22
+  [-L20+R29+L9]
+R9
+  [-L9+R9]
+L31
+; a3 xor a0  which lands where xtime wants its input
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and multiplied by x in the field
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+; that is x3
+  [-R30+L30]
+; ASSERT ptr=+0
+; ASSERT zero +1:+21
+
+; ==== phase three : b_i is a_i xor t xor x_i ====
+; each a_i is wanted once more  so it is MOVED and not copied  and
+; the last use of t moves it too
+; a0 is spent into the first operand
+R22
+  [-L21+R21]
+L22
+; and a copy of t into the second
+R26
+  [-L24+R29+L5]
+R5
+  [-L5+R5]
+L31
+; a0 xor t
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; that becomes the first operand of the second one
+  [-R1+L1]
+; and x0 the second
+R27
+  [-L25+R25]
+L27
+; which is b0
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and it comes to rest where a0 was
+  [-R22+L22]
+; a1 is spent into the first operand
+R23
+  [-L22+R22]
+L23
+; and a copy of t into the second
+R26
+  [-L24+R29+L5]
+R5
+  [-L5+R5]
+L31
+; a1 xor t
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; that becomes the first operand of the second one
+  [-R1+L1]
+; and x1 the second
+R28
+  [-L26+R26]
+L28
+; which is b1
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and it comes to rest where a1 was
+  [-R23+L23]
+; a2 is spent into the first operand
+R24
+  [-L23+R23]
+L24
+; and a copy of t into the second
+R26
+  [-L24+R29+L5]
+R5
+  [-L5+R5]
+L31
+; a2 xor t
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; that becomes the first operand of the second one
+  [-R1+L1]
+; and x2 the second
+R29
+  [-L27+R27]
+L29
+; which is b2
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and it comes to rest where a2 was
+  [-R24+L24]
+; a3 is spent into the first operand
+R25
+  [-L24+R24]
+L25
+; and t itself  which is wanted no more
+R26
+  [-L24+R24]
+L26
+; a3 xor t
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; that becomes the first operand of the second one
+  [-R1+L1]
+; and x3 the second
+R30
+  [-L28+R28]
+L30
+; which is b3
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+; and it comes to rest where a3 was
+  [-R25+L25]
+; ASSERT ptr=+0
+; ASSERT zero +0:+21
+; ASSERT zero +26:+31
+
+; emit
+; the four bytes of the mixed column
+R22
+  .>.>.>.

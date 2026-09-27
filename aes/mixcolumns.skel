@@ -1,0 +1,171 @@
+; bfsodium MIXCOLUMNS : the FIPS 197 step  all four columns of the state
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; aes/mixcolumn is PASTED four times;
+;
+; INTERFACE entry=47 exit=0 footprint=0:47
+; IO  in:  state{16}   column major  as FIPS 197 numbers it   (16 bytes)
+;     out: state{16}   the same sixteen cells  mixed
+;
+; THE STATE IS COLUMN MAJOR AND THAT IS THE WHOLE OF WHY THIS IS SHORT; FIPS
+; 197 section 3 point 4 numbers the input so that bytes nought to three are
+; the first column  four to seven the second and so on  so a column is four
+; CONSECUTIVE bytes and this step is aes/mixcolumn over four windows;
+;
+; ShiftRows is the step that pays for that choice  since a row is four bytes
+; four apart; This one does not;
+;
+; EACH COLUMN IS MOVED INTO THE ROUTINE'S OWN INPUT CELLS and the answer moved
+; back; A move is not a copy: the column is gone from the state while it is
+; being mixed and the cells it came from are nought  so nothing needs clearing
+; and the journey home walks noughts  which is one test per cell;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x1f  aes/mixcolumn's frame  pasted at this file's own zero; its
+;               column goes in at @0x16 to @0x19 and comes back there
+;   @0x20:0x2f  state{16}  column major; the answers come back over it
+
+; the frame is stepped over and the state read above it
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=+47
+; ASSERT zero +0:+31
+L47
+; ASSERT ptr=+0
+
+; ==== column 0 : bytes 0 to 3 of the state ====
+; the column moves down into the routine's input cells
+R32
+  [-L10+R10]
+L32
+R33
+  [-L10+R10]
+L33
+R34
+  [-L10+R10]
+L34
+R35
+  [-L10+R10]
+L35
+; ASSERT ptr=+0
+@@MIXCOLUMN@@ 0
+; ASSERT ptr=+0
+; and the mixed column moves back into the state
+R22
+  [-R10+L10]
+L22
+R23
+  [-R10+L10]
+L23
+R24
+  [-R10+L10]
+L24
+R25
+  [-R10+L10]
+L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+31
+
+; ==== column 1 : bytes 4 to 7 of the state ====
+; the column moves down into the routine's input cells
+R36
+  [-L14+R14]
+L36
+R37
+  [-L14+R14]
+L37
+R38
+  [-L14+R14]
+L38
+R39
+  [-L14+R14]
+L39
+; ASSERT ptr=+0
+@@MIXCOLUMN@@ 0
+; ASSERT ptr=+0
+; and the mixed column moves back into the state
+R22
+  [-R14+L14]
+L22
+R23
+  [-R14+L14]
+L23
+R24
+  [-R14+L14]
+L24
+R25
+  [-R14+L14]
+L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+31
+
+; ==== column 2 : bytes 8 to 11 of the state ====
+; the column moves down into the routine's input cells
+R40
+  [-L18+R18]
+L40
+R41
+  [-L18+R18]
+L41
+R42
+  [-L18+R18]
+L42
+R43
+  [-L18+R18]
+L43
+; ASSERT ptr=+0
+@@MIXCOLUMN@@ 0
+; ASSERT ptr=+0
+; and the mixed column moves back into the state
+R22
+  [-R18+L18]
+L22
+R23
+  [-R18+L18]
+L23
+R24
+  [-R18+L18]
+L24
+R25
+  [-R18+L18]
+L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+31
+
+; ==== column 3 : bytes 12 to 15 of the state ====
+; the column moves down into the routine's input cells
+R44
+  [-L22+R22]
+L44
+R45
+  [-L22+R22]
+L45
+R46
+  [-L22+R22]
+L46
+R47
+  [-L22+R22]
+L47
+; ASSERT ptr=+0
+@@MIXCOLUMN@@ 0
+; ASSERT ptr=+0
+; and the mixed column moves back into the state
+R22
+  [-R22+L22]
+L22
+R23
+  [-R22+L22]
+L23
+R24
+  [-R22+L22]
+L24
+R25
+  [-R22+L22]
+L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+31
+
+; emit
+; the sixteen bytes of the state  in the order they were read
+R32
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

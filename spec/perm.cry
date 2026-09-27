@@ -105,3 +105,37 @@ property add8_low_bit_term_is_needed x y = carry == (h >> 7)
   where
     h     = (x >> 1) + (y >> 1)
     carry = take`{8} (((zero # x) : [16]) + (zero # y))
+
+// ---------------------------------------------------------------------------
+// AES: the two shortcuts the brainfuck takes, proved rather than believed.
+
+// aes/xtime doubles the cell -- which wraps at 256, and the wrap IS the shift
+// -- and exclusive ors 0x1b when the top bit was set. FIPS 197 says multiply
+// by x modulo the polynomial. The claim is that those are the same map, and
+// it is provable over all 256 bytes rather than sampled.
+xtimeShift : [8] -> [8]
+xtimeShift a = if a @ 0 then (a << 1) ^ 0x1b else a << 1
+
+property xtime_is_the_field a = xtimeShift a == gfmul a 0x02
+
+// and the companion that must be REFUTED, so the first is not a claim that
+// would hold whatever was deleted: without the reduction the shift is wrong
+// for exactly the 128 bytes that have their top bit set.
+property xtime_reduction_is_needed a = (a << 1) == gfmul a 0x02
+
+// aes/mixcolumn uses b_i = a_i xor t xor xtime(a_i xor a_j), where t is the
+// exclusive or of all four. That is FOUR xtimes; the FIPS 197 matrix of
+// 02 03 01 01 reads as eight multiplies. Most of the routine's cost rests on
+// the two being the same map, so it is proved over all 2^32 columns.
+mixIdentity : [4][8] -> [4][8]
+mixIdentity a = [ x ^ t ^ gfmul 0x02 (x ^ y) | x <- a | y <- a <<< 1 ]
+  where t = foldl (^) 0x00 a
+
+property mix_identity_matches a = mixIdentity a == mixcolumn a
+
+// and its companion: t is what carries the two 01 entries of each matrix row,
+// so dropping it must be refuted.
+mixWithoutT : [4][8] -> [4][8]
+mixWithoutT a = [ x ^ gfmul 0x02 (x ^ y) | x <- a | y <- a <<< 1 ]
+
+property mix_without_t_is_not_enough a = mixWithoutT a == mixcolumn a

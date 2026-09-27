@@ -126,6 +126,7 @@ routine, the suite fails until it has a row here.
 | `idiom/add64` | 1220 | 291 | boundary vectors + Cryptol  carry cascade and wrap |
 | `idiom/and64` | 480 | 601 | boundary vectors + Cryptol |
 | `idiom/xor64` | 290 | 427 | boundary vectors + Cryptol |
+| `idiom/xor8` | 97 | 113 | boundary vectors + Cryptol  and a 1024 run sweep |
 | `chacha20/rotl32` | 259 | 175 | boundary vectors + Cryptol |
 | `chacha20/xor32` | 125 | 190 | boundary vectors + Cryptol |
 | `chacha20/stagger` | 225 | 253 | Cryptol |
@@ -166,6 +167,9 @@ routine, the suite fails until it has a row here.
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `index/fetch256` | 101 | 70 | the real S-box at both ends and the middle, index 255 included, which `fetch8` cannot reach |
 | `index/fetch256twice` | 182 | 100 | the same table read twice, which is what lets one table serve all two hundred of AES's reads |
+| `aes/xtime` | 157 | 123 | all 256 bytes swept + Cryptol over the field polynomial  and the identity proved |
+| `aes/mixcolumn` | 1285 | 311 | FIPS 197 Appendix B + the fixed points + 256 columns against the matrix form |
+| `aes/mixcolumns` | 5127 | 171 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -238,12 +242,12 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 455 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 455 | golden vectors, dual oracle |
+| 2 | yes | 494 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 494 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
-| 8 | yes | 8 | Cryptol design proofs, two of which must be refuted |
+| 8 | yes | 12 | Cryptol design proofs, two of which must be refuted |
 | 9 | yes | 6 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
@@ -1032,9 +1036,79 @@ the reasoning.
    bytes. A table typed from memory is exactly the defect cSHAKE128 and
    KMAC256 sample 4 already cost.
 
-   **Next:** the arithmetic that has no index in it — `xtime` and MixColumns
-   — which CAN be balanced routines and therefore pasteable, then SubBytes
-   and ShiftRows and the key expansion, then a block.
+   **DONE: the arithmetic that has no index in it.** `idiom/xor8`,
+   `aes/xtime`, `aes/mixcolumn` and `aes/mixcolumns` — the first four routines
+   of AES, and every one of them **pasteable**, which is the whole reason they
+   came before the S-box. They hold no index, so every loop in them is
+   pointer-balanced and `bffoot` accepts them; `mixcolumn` alone pastes
+   nineteen times and it still passes.
+
+   **`idiom/xor8` is a kernel that was already here twice.** It is the
+   fourteen-cell frame inside `idiom/xor32` and `idiom/xor64`, in the same
+   order down to the character, lifted into a routine of its own because AES
+   wants the exclusive or of two single bytes everywhere. **It is not pasted
+   back into those two, and that is deferred rather than settled:** they fetch
+   `x_i` from cell `i` and `y_i` from cell `i + 8`, and a paste takes its
+   operands adjacent at its own base, so unifying them means staging two bytes
+   per byte of the word and moving the answer back. That is a change to two
+   proven files and it belongs in a unit of its own.
+
+   **`xtime` applies its reduction unconditionally.** The top bit is taken as
+   a value rather than as a branch, `0x1b` is multiplied by it, and the
+   exclusive or runs whatever that came to — exclusive or with nought being
+   the identity. So the branch FIPS 197 writes in prose costs nothing beyond
+   the multiply, and the routine is constant-time in its input, which the walk
+   in `fetch256` emphatically is not.
+
+   **MixColumns costs four xtimes and not eight**, by
+   `b_i = a_i ^ t ^ xtime(a_i ^ a_j)` where `t` is the exclusive or of all
+   four. Most of the routine rests on that identity, so it is **proved and not
+   argued**: `mix_identity_matches` is Q.E.D. against the FIPS 197 matrix over
+   all 2^32 columns in a quarter of a second, and `mix_without_t_is_not_enough`
+   is refuted by counterexample, so the claim is not one that would hold
+   whatever was deleted. `xtime_is_the_field` and its own refutation companion
+   do the same for the reduction.
+
+   **The two oracles are kept apart on purpose.** The Cryptol carries the
+   MATRIX; the brainfuck carries the identity. A spec that shared the shortcut
+   would have agreed with a wrong shortcut — the trap `absorbRun` and
+   `poly1305Run34` are already kept apart to avoid.
+
+   **AND THE MEASUREMENT CONTRADICTS AN ASSUMPTION §9.1 MADE.** Executed
+   instructions, measured rather than estimated:
+
+   | routine | mean | min | max |
+   |---|---|---|---|
+   | `idiom/xor8` | 24,067 | 7,456 | 31,410 |
+   | `aes/xtime` | 32,790 | 4,414 | 59,928 |
+   | `aes/mixcolumn` | 816,779 | 519,104 | 980,551 |
+   | `aes/mixcolumns` | 3,520,320 | 3,109,771 | 3,741,923 |
+
+   Nine rounds of MixColumns is **about 32 million instructions**, against
+   49.6 million for the block's two hundred S-box reads. Add roughly four
+   million for eleven AddRoundKeys and four for the key expansion's own
+   exclusive ors and an AES-128 block is **near 90 million, not the 75 million
+   §9.1 projected** — because that projection treated everything other than
+   the table reads as a rounding error, and **the arithmetic is a third of the
+   block.** The conclusion step 1 drew still stands with room to spare: 90
+   million against SHA-256's 1.15 billion is still an order of magnitude, and
+   nothing here changes whether AES is affordable. But §9.1's split of where
+   the cost goes was wrong and this is the correction.
+
+   **The lever, identified and NOT measured.** `xor8` is dear because it
+   halves *both* operands eight times, and a column mix calls it nineteen
+   times — decomposing the same four bytes over and over. A bit-sliced column
+   would decompose each byte **once**, do every exclusive or as a bit toggle,
+   and recompose once; on the shape of the halving cost that is plausibly an
+   order of magnitude, and `xtime` becomes a shift of the bit array and nearly
+   free. It is written down here rather than done because it is a different
+   representation and not an optimization of these routines, because the
+   byte-wise `xor8` is wanted anyway for AddRoundKey, and because **this
+   project does not prefer an unmeasured form to a measured one.** Same rule
+   the conveyor lookup is held to.
+
+   **Next:** SubBytes, which is where an indexed walk has to go *inside* the
+   routine, then ShiftRows and the key expansion, then a block.
 
 **DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
 for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's
@@ -1993,6 +2067,22 @@ regression guard and Cryptol is the oracle. Twice now the dual oracle has caught
 and Cryptol said so. Do not pin a value you computed in your head.
 
 ## Traps that have actually bitten
+
+- **`rebuild.sh` CANNOT BOOTSTRAP A NEW PASTE, AND ITS COMMENT SAYS IT CAN.**
+  It iterates to a fixpoint rather than hard-coding a dependency order, which
+  is right and which handles a *stale* callee. It does not handle an **absent**
+  one. Skeletons are visited in `*/*.skel` order, so `aes/mixcolumn.skel` is
+  reached before `idiom/xor8.skel` exists as a `.bf`; `bfexpand` then refuses
+  to paste a file it cannot read, and `set -eu` takes the whole rebuild down
+  on the first pass instead of retrying on the next.
+
+  The symptom names the callee, so it is a one-minute diagnosis and no worse.
+  **Expand a new routine and its callers by hand, in dependency order, once** —
+  after that the `.bf` files exist and every later `rebuild.sh` converges
+  normally. Left as a trap rather than fixed because the fix is not the
+  one-liner it looks like: "retry a failure next pass" and "report a cycle"
+  are the same observation seen twice, and telling them apart is the only
+  thing the `max` counter currently does.
 
 - **A `.bf` THAT STILL MATCHES `HEAD` WHILE ITS `.skel` DOES NOT IS THE BUG.**
   Raising HKDF's info cap meant inserting cells into `sha512/hashcore`,

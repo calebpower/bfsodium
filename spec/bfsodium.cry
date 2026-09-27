@@ -2414,6 +2414,57 @@ fetch256twiceRun : [258][8] -> [2][8]
 fetch256twiceRun inb = [ t @ (inb @ 0), t @ (inb @ 257) ]
   where t = take`{256} (drop`{1} inb)
 
+// ---------------------------------------------------------------------------
+// AES: the field, and the arithmetic in it that has no index.
+//
+// FIPS 197 section 4: a byte is an element of GF(2^8) modulo the polynomial
+// x^8 + x^4 + x^3 + x + 1. This is written with Cryptol's polynomial
+// primitives rather than as a shift and a conditional exclusive or, ON
+// PURPOSE: the brainfuck IS the shift and the conditional, so restating that
+// here would be one oracle wearing two hats. pmult and pmod say what the
+// field is; they do not say how to multiply in it.
+
+aesPoly : [9]
+aesPoly = <| x^^8 + x^^4 + x^^3 + x + 1 |>
+
+gfmul : [8] -> [8] -> [8]
+gfmul a b = pmod (pmult a b) aesPoly
+
+// idiom/xor8 is the kernel that already lives inside xor32 and xor64, lifted
+// into a routine of its own because AES wants the exclusive or of two SINGLE
+// bytes everywhere: AddRoundKey is sixteen of them and MixColumns is dozens.
+xor8Run : [2][8] -> [1][8]
+xor8Run inb = [ (inb @ 0) ^ (inb @ 1) ]
+
+// And multiplying by x, which is the whole of MixColumns' arithmetic and the
+// first thing in AES that can be a pasteable routine, because unlike the
+// S-box read it holds no index and every loop in it is pointer-balanced.
+xtimeRun : [1][8] -> [1][8]
+xtimeRun inb = [ gfmul (inb @ 0) 0x02 ]
+
+// MixColumns, written as FIPS 197 section 5 point 1 point 3 writes it: a
+// multiply by a fixed matrix over the field. THE BRAINFUCK DOES NOT DO IT
+// THIS WAY -- it uses the identity b_i = a_i ^ t ^ xtime(a_i ^ a_j), which
+// costs four xtimes instead of eight. Writing the matrix here is the whole
+// value of the second oracle: if the identity were wrong, a spec that also
+// used it would agree with the mistake.
+gfdot : [4][8] -> [4][8] -> [8]
+gfdot m a = foldl (^) 0x00 [ gfmul x y | x <- m | y <- a ]
+
+mixcolumn : [4][8] -> [4][8]
+mixcolumn a = [ gfdot [0x02, 0x03, 0x01, 0x01] a
+              , gfdot [0x01, 0x02, 0x03, 0x01] a
+              , gfdot [0x01, 0x01, 0x02, 0x03] a
+              , gfdot [0x03, 0x01, 0x01, 0x02] a ]
+
+mixcolumnRun : [4][8] -> [4][8]
+mixcolumnRun inb = mixcolumn inb
+
+// The state is column major, so a column is four consecutive bytes and the
+// step is the column map over four windows.
+mixcolumnsRun : [16][8] -> [16][8]
+mixcolumnsRun inb = join [ mixcolumn c | c <- split`{4} inb ]
+
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
