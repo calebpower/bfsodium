@@ -175,6 +175,7 @@ routine, the suite fails until it has a row here.
 | `aes/xorword` | 216 | 66 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 918 | 103 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 12599 | 1903 | the FIPS 197 Appendix A schedule + three more keys |
+| `aes/encrypt128` | 71873 | 1609 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -247,8 +248,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 522 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 522 | golden vectors, dual oracle |
+| 2 | yes | 527 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 527 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -1253,10 +1254,71 @@ the reasoning.
    against SHA-256's 1.15 billion for one block. But the projection has now
    moved twice, in the same direction, and it should be read as a floor.
 
-   **Next:** the block — AddRoundKey, nine full rounds, and a last round with no
-   MixColumns — then AES-128 has a vector from FIPS 197 Appendix C and step 6 is
-   done to the cipher. The block cannot paste `subbytes` or `keyexpand128`, so
-   it carries the walk itself and its generator emits what its skeleton cannot.
+   **DONE: the block. AES-128 runs in hand-written brainfuck.**
+   `aes/encrypt128` — AddRoundKey, nine rounds of SubBytes ShiftRows
+   MixColumns AddRoundKey, and a last round with no MixColumns. It agrees with
+   **every end-to-end value FIPS 197 publishes**: Appendix C.1 and the
+   Appendix B worked example, whose intermediate states already pin
+   `subbytes`, `shiftrows` and `mixcolumns` separately. So the cipher is
+   checked against its own parts and the parts against published
+   intermediates, and the failure where every step is individually right and
+   the assembly is wrong has nowhere left to hide.
+
+   One block is **1,022,202 instructions of brainfuck**, assembled from eleven
+   `addroundkey` pastes, ten `shiftrows`, nine `mixcolumns`, forty `xorword`,
+   ten `xtime`, ten `xor8`, and **two hundred hand-carried S-box walks**.
+
+   **A PASTE MAY SIT AT ANY BASE, AND THAT IS WHAT MAKES THE BLOCK AFFORDABLE.**
+   The state has two incompatible demands: sit near the walker, or two hundred
+   reads pay to travel there and back; and sit on the IO cells of every routine
+   pasted over it, or each round pays thirty two moves a paste. Both are had at
+   once by choosing the *base* so the routine's IO lands where the state
+   already is — `shiftrows` wants its state at base+0, `mixcolumns` at base+32,
+   `addroundkey` at base+25, so with the state at 82 the bases are 82, 50 and
+   57 and **the state never moves for any of them**. Until this file every
+   paste site in the library sat at nought, and the base argument had never had
+   to mean anything.
+
+   **The schedule runs beside the rounds**, so nothing holds a hundred and
+   seventy six bytes. After round r's four words are generated the window *is*
+   round key r, in order, because word 4r lands in slot nought. The block
+   carries sixteen cells of key schedule; `aes/keyexpand128` stays a separate
+   program for callers that want the schedule itself.
+
+   **THE DEFECT: a paste site stands at its base, and `@@NAME@@ 82` does not
+   move the pointer.** It only rebases the callee's contracts. Standing at
+   nought while naming 82 pastes the routine at nought *and rewrites its
+   assertions to claim otherwise*. Every vector came back wrong and the zero
+   key on the zero block returned sixteen copies of `0x36` — Rcon for the tenth
+   round, the last constant the file touches. Written up under **Traps**. The
+   callee's own contracts would have said so at once; my scratchpad interpreter
+   was throwing every comment away, which is now fixed, and the block is
+   checked under contracts in the suite.
+
+   **Cost, measured: 112,104,416 instructions for one block** (min 105.3M, max
+   117.5M over eight random key and block pairs). This file projected 106M one
+   commit ago — **6% low, and the first projection in this sequence that came
+   close.** It came close because it was built by adding up *measurements*
+   rather than arithmetic; the two before it were arithmetic and were out by
+   20% and 40%.
+
+   **So step 1's question is answered by the thing itself rather than by an
+   estimate of it.** An AES-128 block is 112 million instructions against
+   SHA-256's 1.15 billion for one block — an order of magnitude cheaper, which
+   is what the measurement of a single table read predicted before any of this
+   was written.
+
+   **WHAT STEP 6 DOES NOT INCLUDE, said plainly.** There is no decryption:
+   InvMixColumns wants multiplication by 9, 11, 13 and 14, which is the general
+   field multiply this library has only ever *estimated*, and the inverse S-box
+   is a second 256-byte table. That is a unit, not a variation. And there are
+   no modes — which is the wall `index/fetch256` flagged, now concrete: **a
+   mode cannot paste `encrypt128`**, because the block carries an unbalanced
+   walk and so has no INTERFACE line, so CBC or CTR or GCM would have to carry
+   a 4.6MB body per invocation. That is the decision `fetch256` said should not
+   be made on the way past, and it is now due rather than hypothetical. The two
+   ways out have not changed: teach `bffoot` to accept a declared-bounded
+   unbalanced walk, or write the lookup as a conveyor and measure it.
 
 **DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
 for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's
@@ -2210,11 +2272,42 @@ proved nothing:
 
 **Two oracles.** `tools/dkat.sh` requires the brainfuck to equal both a pinned
 vector and the Cryptol spec. Where the RFC gives no vector, the pin is a
-regression guard and Cryptol is the oracle. Twice now the dual oracle has caught
-*me* rather than the brainfuck: an expected value I worked out by hand was wrong
-and Cryptol said so. Do not pin a value you computed in your head.
+regression guard and Cryptol is the oracle. **Three times now the dual oracle
+has caught *me* rather than the brainfuck**, most recently while writing
+`aes/encrypt128`'s vectors: a plausible-looking ciphertext went into a `dk` line
+from nowhere at all, and the spec produced `f70ddef9…` where the typed value had
+begun `2e2b34ca…` — not a near miss, an unrelated number. Do not pin a value you
+computed in your head, and do not pin one you did not compute.
 
 ## Traps that have actually bitten
+
+- **A PASTE SITE STANDS AT ITS BASE. `@@NAME@@ 82` DOES NOT MOVE THE POINTER.**
+  The number after the macro rebases the callee's contracts and nothing else;
+  `bfexpand` walks in by the callee's own `entry` offset *from wherever the
+  pointer already is*. Every paste site in the library until now sat at base
+  nought, where standing at nought happens to be correct, so the argument has
+  never had to earn its meaning — and `aes/encrypt128` is the first file that
+  pastes at 50, 57, 82 and 16 rather than at 0.
+
+  Standing at nought while naming base 82 pastes the routine at nought **and
+  rewrites its assertions to claim otherwise**, so the contracts do not merely
+  fail to help, they are actively restated as lies about where the code is.
+
+  What it looked like: every AES vector wrong, and the zero key on the zero
+  block coming back as sixteen copies of `0x36` — which is Rcon for the tenth
+  round, the last constant the file touches. A cipher returning one repeated
+  byte means a step is writing over the state rather than transforming it, and
+  the byte names which step.
+
+  **The callee's rebased contracts would have caught this and mine would not.**
+  My own `ASSERT ptr=0` either side of the paste passed, because with `exit=0`
+  the pointer does come back to where it started — at the wrong place. The
+  assertions that disagree are the ones *inside* the pasted body, and they only
+  speak under `BFI_CONTRACTS=1`. The scratchpad interpreter used for quick
+  local runs ignores comments, so it cannot see them. **Run a new paste site
+  under contracts before trusting a vector to find the fault**, and write the
+  walk to the base as `aead/chacha20poly1305` does, which says it in as many
+  words: *to absorb's base, which is where a paste site always stands.*
 
 - **A VALUE WANTED TWICE, SPENT ONCE. THIS IS THE THIRD TIME.** Every operand
   cell in this library is *consumed* by the routine that reads it — `xor8`

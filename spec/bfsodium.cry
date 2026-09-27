@@ -2534,6 +2534,28 @@ keyexpand128Run key = join ws
     subword v = [ aesSbox b | b <- v ]
     rcon n = [rcons @ (n - 1), 0x00, 0x00, 0x00]
 
+// One AES-128 block, FIPS 197 section 5.1: AddRoundKey, then nine rounds of
+// SubBytes ShiftRows MixColumns AddRoundKey, then a last round with no
+// MixColumns. It is assembled from the four step functions above rather than
+// written out again, which is the point -- each of those is independently
+// pinned against the Appendix B worked example, so the cipher is checked
+// against its own parts and the parts against published intermediate states.
+aesRound : [16][8] -> [16][8] -> [16][8]
+aesRound st rk = [ x ^ k | x <- mixcolumnsRun (shiftrowsRun (subbytesRun st))
+                         | k <- rk ]
+
+aesLastRound : [16][8] -> [16][8] -> [16][8]
+aesLastRound st rk = [ x ^ k | x <- shiftrowsRun (subbytesRun st) | k <- rk ]
+
+encrypt128Run : [32][8] -> [16][8]
+encrypt128Run inb = aesLastRound (foldl aesRound st0 middle) (rks ! 0)
+  where
+    key    = take`{16} inb
+    pt     = take`{16} (drop`{16} inb)
+    rks    = split`{11} (keyexpand128Run key)
+    st0    = [ p ^ k | p <- pt | k <- rks @ 0 ]
+    middle = take`{9} (drop`{1} rks)
+
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

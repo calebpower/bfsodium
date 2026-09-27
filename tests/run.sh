@@ -148,6 +148,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
               grep -q "^; INTERFACE" "$f" || echo "$f"
           done)
     want="aead/chacha20poly1305.bf
+aes/encrypt128.bf
 aes/keyexpand128.bf
 aes/subbytes.bf
 chacha20/stream.bf
@@ -1272,6 +1273,50 @@ dk aes/keyexpand128.bf 2b7e151628aed2a6abf7158809cf4f3c 2b7e151628aed2a6abf71588
 dk aes/keyexpand128.bf 000102030405060708090a0b0c0d0e0f 000102030405060708090a0b0c0d0e0fd6aa74fdd2af72fadaa678f1d6ab76feb692cf0b643dbdf1be9bc5006830b3feb6ff744ed2c2c9bf6c590cbf0469bf4147f7f7bc95353e03f96c32bcfd058dfd3caaa3e8a99f9deb50f3af57adf622aa5e390f7df7a69296a7553dc10aa31f6b14f9701ae35fe28c440adf4d4ea9c02647438735a41c65b9e016baf4aebf7ad2549932d1f08557681093ed9cbe2c974e13111d7fe3944a17f307a78b4d2b30c5 keyexpand128Run "keyexpand128 the FIPS 197 Appendix C point 1 key  DERIVED"
 dk aes/keyexpand128.bf 00000000000000000000000000000000 00000000000000000000000000000000626363636263636362636363626363639b9898c9f9fbfbaa9b9898c9f9fbfbaa90973450696ccffaf2f457330b0fac99ee06da7b876a1581759e42b27e91ee2b7f2e2b88f8443e098dda7cbbf34b9290ec614b851425758c99ff09376ab49ba7217517873550620bacaf6b3cc61bf09b0ef903333ba9613897060a04511dfa9fb1d4d8e28a7db9da1d7bb3de4c664941b4ef5bcb3e92e21123e951cf6f8f188e keyexpand128Run "keyexpand128 an all nought key  DERIVED  where every word is the S box of the last"
 dk aes/keyexpand128.bf ffffffffffffffffffffffffffffffff ffffffffffffffffffffffffffffffffe8e9e9e917161616e8e9e9e917161616adaeae19bab8b80f525151e6454747f0090e2277b3b69a78e1e7cb9ea4a08c6ee16abd3e52dc2746b33becd8179b60b6e5baf3ceb766d488045d385013c658e671d07db3c6b6a93bc2eb916bd12dc98de90d208d2fbb89b6ed5018dd3c7dd15096337366b988fad054d8e20d68a5335d8bf03f233278c5f366a027fe0e0514a3d60a3588e472f07b82d2d7858cd7c326 keyexpand128Run "keyexpand128 an all ones key  DERIVED"
+
+# ENCRYPT128 is the cipher. AddRoundKey, nine rounds of SubBytes ShiftRows
+# MixColumns AddRoundKey, then a last round with no MixColumns. Like
+# aes/subbytes and aes/keyexpand128 it carries the S box walk inside it -- two
+# hundred times -- so it has no INTERFACE line and is on the pinned list.
+#
+# THE LAYOUT IS THE WHOLE PROBLEM AND IT IS SOLVED BY CHOOSING PASTE BASES.
+# The state must sit near the walker or two hundred reads pay to travel there
+# and back, and it must sit on the IO cells of every routine pasted over it or
+# each round pays thirty two moves per paste. Both are had at once because a
+# paste may sit at ANY base: shiftrows wants its state at base+0, mixcolumns
+# at base+32 and addroundkey at base+25, so with the state at 82 their bases
+# are 82, 50 and 57 and the state never moves for any of them. This is the
+# first file in the library where the base argument earns its keep.
+#
+# THE SCHEDULE RUNS BESIDE THE ROUNDS. After the four words of round r are
+# generated the window IS round key r, in order, because word 4r lands in slot
+# nought. So the block holds sixteen cells of key schedule rather than a
+# hundred and seventy six, and aes/keyexpand128 stays a separate program for
+# callers that want the schedule itself.
+#
+# The round key is COPIED into addroundkey's operand cells and not moved,
+# every round, because addroundkey spends its key and the window is wanted
+# again to make the next one. That is the rule aes/keyexpand128's round
+# constant broke; see HANDOFF.
+#
+# Two of the three vectors are PUBLISHED and they are the only end to end
+# values FIPS 197 gives: Appendix C.1, and the Appendix B worked example whose
+# intermediate states already pin subbytes, shiftrows and mixcolumns
+# separately. So the cipher is checked against its own parts and the parts
+# against published intermediates -- the failure where every step is
+# individually right and the assembly is wrong has nowhere left to hide.
+dk aes/encrypt128.bf 000102030405060708090a0b0c0d0e0f00112233445566778899aabbccddeeff 69c4e0d86a7b0430d8cdb78070b4c55a encrypt128Run "encrypt128 FIPS 197 Appendix C point 1  a PUBLISHED value"
+dk aes/encrypt128.bf 2b7e151628aed2a6abf7158809cf4f3c3243f6a8885a308d313198a2e0370734 3925841d02dc09fbdc118597196a0b32 encrypt128Run "encrypt128 FIPS 197 Appendix B  the worked example  a PUBLISHED value"
+dk aes/encrypt128.bf 00000000000000000000000000000000000000000000000000000000000000ff f70ddef93ba62588242a0e67d0d645e0 encrypt128Run "encrypt128 the zero key on a block of one byte  DERIVED"
+dk aes/encrypt128.bf 0000000000000000000000000000000000000000000000000000000000000000 66e94bd4ef8a2c3b884cfa59ca342b2e encrypt128Run "encrypt128 the zero key on the zero block  DERIVED"
+
+# The block is the first file where a paste site has to STAND somewhere other
+# than nought, and the contracts are what say whether it did: a paste at the
+# wrong place carries the callee's assertions rebased to the place it was
+# supposed to be, so they disagree with the pointer immediately. They are
+# silent without BFI_CONTRACTS, which is how the first cut of this file got as
+# far as producing wrong ciphertext before anything complained.
+run "encrypt128 checked with its contracts live" sh -c "printf 000102030405060708090a0b0c0d0e0f00112233445566778899aabbccddeeff | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aes/encrypt128.bf >/dev/null"
 
 # SHAKE256 is sponge136 handed FIPS 202's 31 and the caller's own length. The
 # squeeze LOOP is the one thing here that SHA3 never exercises, so these cover
