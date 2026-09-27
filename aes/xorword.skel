@@ -1,0 +1,66 @@
+; bfsodium XORWORD : the exclusive or of two four byte words
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; idiom/xor8 is PASTED four times;
+;
+; INTERFACE entry=24 exit=0 footprint=0:24
+; IO  in:  a{4}  b{4}      (8 bytes)
+;     out: (a xor b){4}    (4 bytes)
+;
+; AES IS FULL OF THIS; a word is the unit the key expansion works in  and
+; AddRoundKey is four of these; It exists so that a caller pastes FOUR of them
+; where it would otherwise paste sixteen exclusive ors  which matters because
+; bfstyle caps a skeleton at two thousand lines and the key expansion is forty
+; unrolled words;
+;
+; THE ANSWER COMES BACK OVER a  so a caller that pastes this gets its word
+; replaced in place and needs no second buffer;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x10  idiom/xor8 pasted at this file's own zero; its two operands go
+;               in at @0x01 and @0x02 and its answer comes back at @0x00
+;   @0x11:0x14  a{4}  first word; THE ANSWER COMES BACK HERE
+;   @0x15:0x18  b{4}  second word  spent
+
+; the two words  the workspace stepped over first
+  >>>>>>>>>>>>>>>>>,>,>,>,>,>,>,>,
+; ASSERT ptr=+24
+; ASSERT zero +0:+16
+  L24
+; ASSERT ptr=+0
+; byte 0 of each word
+  R17[-L16+R16]L17
+  R21[-L19+R19]L21
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  [-R17+L17]
+; byte 1 of each word
+  R18[-L17+R17]L18
+  R22[-L20+R20]L22
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  [-R18+L18]
+; byte 2 of each word
+  R19[-L18+R18]L19
+  R23[-L21+R21]L23
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  [-R19+L19]
+; byte 3 of each word
+  R20[-L19+R19]L20
+  R24[-L22+R22]L24
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  [-R20+L20]
+; ASSERT zero +0:+16
+; ASSERT zero +21:+24
+
+; emit
+; the four bytes of the answer
+  R17
+  .>.>.>.

@@ -172,6 +172,9 @@ routine, the suite fails until it has a row here.
 | `aes/mixcolumns` | 5127 | 171 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
 | `aes/shiftrows` | 150 | 168 | FIPS 197 Appendix B rounds 1 5 and 9 + the permutation read off a state of its own indices |
 | `aes/subbytes` | 1128 | 742 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
+| `aes/xorword` | 216 | 66 | boundary vectors + Cryptol |
+| `aes/addroundkey` | 918 | 103 | FIPS 197 Appendix B round nought + its own inverse applied twice |
+| `aes/keyexpand128` | 12599 | 1903 | the FIPS 197 Appendix A schedule + three more keys |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -244,8 +247,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 508 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 508 | golden vectors, dual oracle |
+| 2 | yes | 522 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 522 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -1184,8 +1187,76 @@ the reasoning.
    file — the walk tokens are a hundred characters and the table is 33KB, so
    that is the cheap way round as well as the only one.
 
-   **Next:** the key expansion, which needs the S-box walk and `xor8` and
-   nothing else new, then a block.
+   **DONE: the key schedule, and the two exclusive ors it is built from.**
+   `aes/xorword`, `aes/addroundkey` and `aes/keyexpand128`. That is every piece
+   of AES-128 except the block that assembles them.
+
+   **`bfstyle`'s two thousand line cap on a skeleton is a design force, not a
+   lint, and this is where it bit.** The key schedule is forty unrolled words;
+   at four `xor8` pastes a word that is a hundred and sixty paste sites, and
+   the skeleton does not fit. `aes/xorword` exists so that forty pastes do the
+   same work. It is worth saying out loud because the block will hit the same
+   wall harder, and because the obvious reading — that `xorword` is a tidiness
+   — is wrong.
+
+   **UNROLLING TURNS A ROTATION INTO STATIC ADDRESSING**, which belongs on the
+   list of ways this library dodges an index, beside the conveyor, the counter
+   slide and prepending. The schedule only ever wants `w[i-4]` and `w[i-1]`, so
+   four words of window are enough — but a *rolling* window shifts twelve bytes
+   per word, which is four hundred and eighty moves and about nine hundred
+   skeleton lines against a cap of two thousand. Because the forty words are
+   unrolled, **the slot can be chosen at generation time**: word i lives in slot
+   i mod 4, the slot holding `w[i-4]` is the one about to be overwritten, and
+   the window never moves at all. The rotation exists only in the generator.
+
+   **The round constants are derived in both oracles.** Rcon for round n is
+   x^(n-1) in the field, so the brainfuck starts at one and pastes `aes/xtime`
+   and the Cryptol starts at one and doubles. Ten literals would have been ten
+   more chances at the mistake KMAC256 sample 4 already cost — and a mistyped
+   table in the spec would have agreed with a mistyped table in the program.
+
+   **The answer is emitted as it is computed**, four bytes at a time, so
+   nothing ever holds a hundred and seventy six bytes and there is no buffer to
+   size. Like `aes/subbytes` it carries the S-box walk inside it — forty times —
+   so it has no INTERFACE line and is on the pinned list.
+
+   **THE DEFECT, AND IT IS THE THIRD OF ITS KIND.** `rcon` was *moved* into the
+   exclusive or that applies it rather than copied, so it was spent on first use
+   and `xtime` then doubled an empty cell: round constant 1 was right and every
+   later one was nought. Every contract passed. What caught it was the published
+   Appendix A schedule, and the signature was exact — word 8 came back
+   `f0c295f2` against `f2c295f2`, differing by `0x02`, which is the round
+   constant that went missing. Written up under **Traps**, with the two earlier
+   instances, because the rule being broken is not the one the conventions
+   state.
+
+   **Where the block now stands, measured:**
+
+   | step | per call | per block |
+   |---|---|---|
+   | key expansion | 20,971,342 | ×1 = 21M |
+   | SubBytes | 4,197,733 | ×10 = 42M |
+   | ShiftRows | 139,131 | ×10 = 1.4M |
+   | MixColumns | 3,520,320 | ×9 = 32M |
+   | AddRoundKey | 877,139 | ×11 = 9.6M |
+
+   which is **near 106 million**, against the 90 million this file projected one
+   commit ago and the 75 million §9.1 projected before that. **Both earlier
+   numbers were low for the same reason: they costed the arithmetic and forgot
+   the travel.** AddRoundKey was put at 385k from sixteen exclusive ors and
+   measures 877k; the key expansion was put at 14M and measures 21M. A byte
+   moved over d cells costs 2d per unit of itself, and in this library that is
+   never a rounding error — *every estimate made here that omitted it has come
+   in low, three times out of three.*
+
+   The conclusion step 1 drew is still untouched with room to spare: 106 million
+   against SHA-256's 1.15 billion for one block. But the projection has now
+   moved twice, in the same direction, and it should be read as a floor.
+
+   **Next:** the block — AddRoundKey, nine full rounds, and a last round with no
+   MixColumns — then AES-128 has a vector from FIPS 197 Appendix C and step 6 is
+   done to the cipher. The block cannot paste `subbytes` or `keyexpand128`, so
+   it carries the walk itself and its generator emits what its skeleton cannot.
 
 **DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
 for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's
@@ -2144,6 +2215,30 @@ regression guard and Cryptol is the oracle. Twice now the dual oracle has caught
 and Cryptol said so. Do not pin a value you computed in your head.
 
 ## Traps that have actually bitten
+
+- **A VALUE WANTED TWICE, SPENT ONCE. THIS IS THE THIRD TIME.** Every operand
+  cell in this library is *consumed* by the routine that reads it — `xor8`
+  halves both its operands away, `bytepad` spends its string, `xtime` spends
+  its byte. That is deliberate and it is what makes the callers cheap. The
+  standing rule "a copy is always an add, so clear the destination unless the
+  adding is the point" covers the *destination*. **The dual rule is the one
+  that keeps breaking: an operand cell is spent, so a value wanted again must
+  be COPIED into it and not moved.**
+
+  - `keccak/bytepad` spent KMAC's one-string flag; all eight vectors failed.
+  - ParallelHash moved `bs` into `left_encode`, so every chunk after the first
+    got a length of nought and the message never ran out.
+  - `aes/keyexpand128` moved `rcon` into the exclusive or that applies it, so
+    it was gone before `xtime` could make the next one. **Round constant 1 was
+    right and every later one was nought.**
+
+  All three passed every contract. The corruption stays inside the footprint
+  and a spent cell is a legitimately empty cell, so nothing structural can see
+  it — **only a vector can**, and in each case the vector that caught it was a
+  published one. The diagnosis is quick when you look for it: the first wrong
+  output differs from the right one by exactly the value that went missing.
+  Here word 8 came back `f0c295f2` against `f2c295f2`, which is `0x02` — the
+  second round constant, exactly.
 
 - **`rebuild.sh` CANNOT BOOTSTRAP A NEW PASTE, AND ITS COMMENT SAYS IT CAN.**
   It iterates to a fixpoint rather than hard-coding a dependency order, which

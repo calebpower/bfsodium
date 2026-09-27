@@ -1,0 +1,918 @@
+; bfsodium ADDROUNDKEY : the state exclusive ored with a round key
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; aes/xorword is PASTED four times;
+;
+; INTERFACE entry=56 exit=0 footprint=0:56
+; IO  in:  state{16}  key{16}      (32 bytes)
+;     out: state{16}  the two exclusive ored
+;
+; FIPS 197 section 5 point 1 point 4  and it is the whole of the step; This is
+; the cheapest thing in the cipher and the only one that is its own inverse;
+;
+; THE STATE IS COLUMN MAJOR AND SO IS THE ROUND KEY  so this is four words
+; against four words and the column structure never has to be unpicked;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x18  aes/xorword pasted at this file's own zero; its words go in at
+;               @0x11 and @0x15 and its answer comes back at @0x11
+;   @0x19:0x28  state{16}  column major; THE ANSWER COMES BACK HERE
+;   @0x29:0x38  key{16}    the round key  spent
+
+  >>>>>>>>>>>>>>>>>>>>>>>>>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,   ; the state and then the round key  the workspace
+  >,>,>,>,>,>,>,>,>,>,>,>,>,>,>,                               ; stepped over
+                                                               ; ASSERT ptr=56
+                                                               ; ASSERT zero 0:24
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<+>>>>>>>>]<<<<<<<<<<<<<   ; column 0 of each
+  <<<<<<<<<<<<                                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<+>>>>>>>>]<<<<<<<<<<<<
+  <<<<<<<<<<<<<<                                               ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<+>>>>>>>>]<<<<<<<<<<<
+  <<<<<<<<<<<<<<<<                                             ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<+>>>>>>>>]<<<<<<<<<<
+  <<<<<<<<<<<<<<<<<<                                           ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<
+  <<<<<+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<                                                   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<
+  <<<<<<+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<                                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<
+  <<<<<<<+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<                                               ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<
+  <<<<<<<<+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<                                             ; continued
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>>>>>>>>                                     ; walk in to this routine entry offset
+                                                               ; ASSERT ptr=24
+                                                               ; ASSERT zero 0:16
+  <<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]<<<<<   ; byte 0 of each word
+  <<<<<<<<<<<<                                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>
+  >>>>]<<<<<<<<<<<<<<<<<<<<<                                   ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]<<   ; byte 1 of each word
+  <<<<<<<<<<<<<<<<                                             ; continued
+  >>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>
+  >>>>>>>]<<<<<<<<<<<<<<<<<<<<<<                               ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>   ; byte 2 of each word
+  ]<<<<<<<<<<<<<<<<<<<                                         ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>
+  >>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<                           ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>   ; byte 3 of each word
+  >>>]<<<<<<<<<<<<<<<<<<<<                                     ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>
+  >>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<                       ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
+                                                               ; ASSERT zero 0:16
+                                                               ; ASSERT zero 21:24
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[->>>>>>>>+<<<<<<<<]<<<<<<<<<<<<<<<<<       ; and the mixed column goes home
+  >>>>>>>>>>>>>>>>>>[->>>>>>>>+<<<<<<<<]<<<<<<<<<<<<<<<<<<
+  >>>>>>>>>>>>>>>>>>>[->>>>>>>>+<<<<<<<<]<<<<<<<<<<<<<<<<<<<
+  >>>>>>>>>>>>>>>>>>>>[->>>>>>>>+<<<<<<<<]<<<<<<<<<<<<<<<<<<
+  <<                                                           ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<+>>>>>>>>>>>>]<   ; column 1 of each
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<+>>>>>>>>>>>>]
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                               ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<+>>>>>>>>>>>>
+  ]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                             ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<+>>>>>>>>>>>
+  >]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                           ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<
+  <<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<                                   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<
+  <<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<
+  <<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                               ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<
+  <<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                             ; continued
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>>>>>>>>                                     ; walk in to this routine entry offset
+                                                               ; ASSERT ptr=24
+                                                               ; ASSERT zero 0:16
+  <<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]<<<<<   ; byte 0 of each word
+  <<<<<<<<<<<<                                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>
+  >>>>]<<<<<<<<<<<<<<<<<<<<<                                   ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]<<   ; byte 1 of each word
+  <<<<<<<<<<<<<<<<                                             ; continued
+  >>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>
+  >>>>>>>]<<<<<<<<<<<<<<<<<<<<<<                               ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>   ; byte 2 of each word
+  ]<<<<<<<<<<<<<<<<<<<                                         ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>
+  >>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<                           ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>   ; byte 3 of each word
+  >>>]<<<<<<<<<<<<<<<<<<<<                                     ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>
+  >>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<                       ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
+                                                               ; ASSERT zero 0:16
+                                                               ; ASSERT zero 21:24
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[->>>>>>>>>>>>+<<<<<<<<<<<<]<<<<<<<<<<<<<   ; and the mixed column goes home
+  <<<<                                                         ; continued
+  >>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>+<<<<<<<<<<<<]<<<<<<<<<<<<
+  <<<<<<                                                       ; continued
+  >>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>+<<<<<<<<<<<<]<<<<<<<<<<<
+  <<<<<<<<                                                     ; continued
+  >>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>+<<<<<<<<<<<<]<<<<<<<<<<
+  <<<<<<<<<<                                                   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>>   ; column 2 of each
+  >>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>
+  >>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<               ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>
+  >>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<             ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>
+  >>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<           ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>]<<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>]<<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>]<<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<               ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>]<<<<   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<             ; continued
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>>>>>>>>                                     ; walk in to this routine entry offset
+                                                               ; ASSERT ptr=24
+                                                               ; ASSERT zero 0:16
+  <<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]<<<<<   ; byte 0 of each word
+  <<<<<<<<<<<<                                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>
+  >>>>]<<<<<<<<<<<<<<<<<<<<<                                   ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]<<   ; byte 1 of each word
+  <<<<<<<<<<<<<<<<                                             ; continued
+  >>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>
+  >>>>>>>]<<<<<<<<<<<<<<<<<<<<<<                               ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>   ; byte 2 of each word
+  ]<<<<<<<<<<<<<<<<<<<                                         ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>
+  >>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<                           ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>   ; byte 3 of each word
+  >>>]<<<<<<<<<<<<<<<<<<<<                                     ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>
+  >>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<                       ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
+                                                               ; ASSERT zero 0:16
+                                                               ; ASSERT zero 21:24
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]<<<<<   ; and the mixed column goes home
+  <<<<<<<<<<<<                                                 ; continued
+  >>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]<<<<
+  <<<<<<<<<<<<<<                                               ; continued
+  >>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]<<<
+  <<<<<<<<<<<<<<<<                                             ; continued
+  >>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<]<<
+  <<<<<<<<<<<<<<<<<<                                           ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<   ; column 3 of each
+  <+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<                                                           ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<
+  <<+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<                                                         ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<
+  <<<+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<                                                       ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<
+  <<<<+>>>>>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<<<                                                     ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  >>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  >>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<                                                           ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  >>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<                                                         ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  >>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  <<<<<<                                                       ; continued
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>>>>>>>>                                     ; walk in to this routine entry offset
+                                                               ; ASSERT ptr=24
+                                                               ; ASSERT zero 0:16
+  <<<<<<<<<<<<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]<<<<<   ; byte 0 of each word
+  <<<<<<<<<<<<                                                 ; continued
+  >>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>
+  >>>>]<<<<<<<<<<<<<<<<<<<<<                                   ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]<<   ; byte 1 of each word
+  <<<<<<<<<<<<<<<<                                             ; continued
+  >>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>
+  >>>>>>>]<<<<<<<<<<<<<<<<<<<<<<                               ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>   ; byte 2 of each word
+  ]<<<<<<<<<<<<<<<<<<<                                         ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>
+  >>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<                           ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
+  >>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>   ; byte 3 of each word
+  >>>]<<<<<<<<<<<<<<<<<<<<                                     ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>
+  >>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<                       ; continued
+                                                               ; ASSERT ptr=0
+  >>                                                           ; walk in to this routine entry offset
+                                                               ; beneath them
+                                                               ; ASSERT ptr=2
+                                                               ; ASSERT zero 0:0
+                                                               ; ASSERT zero 3:16
+<                                                              ; x is staged into a
+                                                               ; ASSERT ptr=1
+  [->>+<<]
+>                                                              ; and y into b
+  [->>>>>+<<<<<]
+>>>>>>>>>>>>                                                   ; the weight starts at one
+                                                               ; ASSERT ptr=14
+  +
+> ++++++++                                                     ; and there are eight bits to do
+                                                               ; ASSERT ptr=15
+; ============================================================ ; ; ; eight bit steps
+  [-
+  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
+  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
+  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
+  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
+  <<<<<<< [-<+>]                                               ; a becomes qa
+  >>>> [-<+>]                                                  ; b becomes qb
+  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
+  >> [-<<++>>]                                                 ; and comes back doubled
+  <                                                            ; back to the counter
+  ]
+                                                               ; ASSERT ptr=15
+<<                                                             ; the result comes home
+                                                               ; ASSERT ptr=13
+  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
+<<<<<<<<<<<<<
+                                                               ; ASSERT ptr=0
+                                                               ; ASSERT zero 1:16
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
+                                                               ; ASSERT zero 0:16
+                                                               ; ASSERT zero 21:24
+
+                                                               ; walk back out to the routine base
+
+                                                               ; ASSERT ptr=0
+  >>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<   ; and the mixed column goes home
+  <<]<<<<<<<<<<<<<<<<<                                         ; continued
+  >>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<
+  <<<]<<<<<<<<<<<<<<<<<<                                       ; continued
+  >>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<
+  <<<<]<<<<<<<<<<<<<<<<<<<                                     ; continued
+  >>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<
+  <<<<<]<<<<<<<<<<<<<<<<<<<<                                   ; continued
+                                                               ; ASSERT zero 0:24
+                                                               ; ASSERT zero 41:56
+
+; emit
+  >>>>>>>>>>>>>>>>>>>>>>>>>                                    ; the sixteen bytes of the state
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

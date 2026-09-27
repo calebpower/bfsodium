@@ -2502,6 +2502,38 @@ shiftrowsRun : [16][8] -> [16][8]
 shiftrowsRun inb = join (transpose [ r <<< i | r <- rows | i <- [0 .. 3] ])
   where rows = transpose (split`{4} inb)
 
+// A word against a word, and a state against a round key. Both are one map
+// applied elementwise; they are separate routines in the brainfuck only
+// because a paste is what keeps a skeleton under bfstyle's line cap.
+xorwordRun : [8][8] -> [4][8]
+xorwordRun inb = [ x ^ y | x <- take`{4} inb | y <- drop`{4} inb ]
+
+addroundkeyRun : [32][8] -> [16][8]
+addroundkeyRun inb = [ x ^ y | x <- take`{16} inb | y <- drop`{16} inb ]
+
+// The AES-128 key schedule, FIPS 197 section 5.2. Word i is w[i-4] xor temp,
+// where temp is w[i-1] put through RotWord, SubBytes and a round constant on
+// every fourth word and left alone otherwise.
+//
+// The round constants are DERIVED: Rcon for round n is x^(n-1) in the field,
+// so the sequence starts at one and doubles. Writing 01 02 04 08 10 20 40 80
+// 1b 36 out as ten literals would be ten more chances to make the mistake
+// KMAC256 sample 4 already cost, and it would agree with a mistyped table in
+// the brainfuck.
+rcons : [10][8]
+rcons = [0x01] # [ gfmul r 0x02 | r <- take`{9} rcons ]
+
+keyexpand128Run : [16][8] -> [176][8]
+keyexpand128Run key = join ws
+  where
+    ws : [44][4][8]
+    ws = split`{4} key # [ (ws @ (i - 4)) ^ temp i | i <- ([4 .. 43] : [40][8]) ]
+    temp i = if i % 4 == 0 then subword (rotword (ws @ (i - 1))) ^ rcon (i / 4)
+                           else ws @ (i - 1)
+    rotword v = v <<< 1
+    subword v = [ aesSbox b | b <- v ]
+    rcon n = [rcons @ (n - 1), 0x00, 0x00, 0x00]
+
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

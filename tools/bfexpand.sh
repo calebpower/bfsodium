@@ -112,6 +112,7 @@ while IFS= read -r line; do
         '@@XOR8@@'*)    import "$repo/idiom/xor8.bf" "${line##* }"; continue ;;
         '@@XTIME@@'*)   import "$repo/aes/xtime.bf" "${line##* }"; continue ;;
         '@@MIXCOLUMN@@'*) import "$repo/aes/mixcolumn.bf" "${line##* }"; continue ;;
+        '@@XORWORD@@'*) import "$repo/aes/xorword.bf" "${line##* }"; continue ;;
         '@@ROUND@@'*)   import "$repo/sha256/round.bf" "${line##* }"; continue ;;
         '@@HASHCORE@@'*) import "$repo/sha256/hashcore.bf" "${line##* }"; continue ;;
         '@@HASHCORE512@@'*) import "$repo/sha512/hashcore.bf" "${line##* }"; continue ;;

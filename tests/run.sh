@@ -148,6 +148,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
               grep -q "^; INTERFACE" "$f" || echo "$f"
           done)
     want="aead/chacha20poly1305.bf
+aes/keyexpand128.bf
 aes/subbytes.bf
 chacha20/stream.bf
 index/fetch256.bf
@@ -1219,6 +1220,58 @@ dk aes/subbytes.bf f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff 8ca1890dbfe6426841992d0fb054
 dk aes/subbytes.bf 193de3bea0f4e22b9ac68d2ae9f84808 d42711aee0bf98f1b8b45de51e415230 subbytesRun "subbytes FIPS 197 Appendix B round 1  a PUBLISHED value"
 dk aes/subbytes.bf e0927fe8c86363c0d9b1355085b8be01 e14fd29be8fbfbba35c89653976cae7c subbytesRun "subbytes FIPS 197 Appendix B round 5  DERIVED from the same example"
 dk aes/subbytes.bf ea835cf00445332d655d98ad8596b0c5 87ec4a8cf26ec3d84d4c46959790e7a6 subbytesRun "subbytes FIPS 197 Appendix B round 9  DERIVED from the same example"
+
+# XORWORD and ADDROUNDKEY are one map applied elementwise, and they are
+# separate routines in the brainfuck only because a paste is what keeps a
+# skeleton under bfstyle's two thousand line cap: the key expansion is forty
+# unrolled words, and forty xorword pastes fit where a hundred and sixty xor8
+# pastes do not. AddRoundKey is the cheapest step in the cipher and the only
+# one that is its own inverse, which the metamorphic check below spends.
+dk aes/xorword.bf 0000000000000000 00000000 xorwordRun "xorword nothing against nothing"
+dk aes/xorword.bf ffffffff00000000 ffffffff xorwordRun "xorword all ones against nothing"
+dk aes/xorword.bf ffffffffffffffff 00000000 xorwordRun "xorword all ones against all ones"
+dk aes/xorword.bf 5aa5f00f0f0fa5a5 55aa55aa xorwordRun "xorword a word against a pattern that shares no bit with it"
+dk aes/xorword.bf 2b7e1516a0fafe17 8b84eb01 xorwordRun "xorword two real schedule words"
+dk aes/addroundkey.bf 0000000000000000000000000000000000000000000000000000000000000000 00000000000000000000000000000000 addroundkeyRun "addroundkey nothing against nothing"
+dk aes/addroundkey.bf ffffffffffffffffffffffffffffffff00000000000000000000000000000000 ffffffffffffffffffffffffffffffff addroundkeyRun "addroundkey a state against a nought key is unchanged"
+dk aes/addroundkey.bf ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff 00000000000000000000000000000000 addroundkeyRun "addroundkey a state against itself is nothing"
+dk aes/addroundkey.bf 3243f6a8885a308d313198a2e03707342b7e151628aed2a6abf7158809cf4f3c 193de3bea0f4e22b9ac68d2ae9f84808 addroundkeyRun "addroundkey FIPS 197 Appendix B round nought  a PUBLISHED value"
+
+# AddRoundKey is the only step in the cipher that is its own inverse, and that
+# is a property no single vector can state. Applying it twice with the same
+# key must give the state back.
+run "addroundkey applied twice with the same key gives the state back" sh -c '
+  s=3243f6a8885a308d313198a2e0370734
+  k=2b7e151628aed2a6abf7158809cf4f3c
+  once=$(printf "%s%s" "$s" "$k" | ./tools/hx -r | ./tools/bfi aes/addroundkey.bf | ./tools/hx)
+  twice=$(printf "%s%s" "$once" "$k" | ./tools/hx -r | ./tools/bfi aes/addroundkey.bf | ./tools/hx)
+  [ "$twice" = "$s" ] || { echo "addroundkey twice gave $twice not $s"; exit 1; }'
+
+# KEYEXPAND128 is FIPS 197 section 5.2 and the last piece before a block.
+# Word i is w[i-4] xor temp, where temp is w[i-1] put through RotWord,
+# SubBytes and a round constant on every fourth word and left alone otherwise.
+# Like aes/subbytes it carries the S box walk inside it -- forty times -- and
+# so has no INTERFACE line and is on the pinned list above.
+#
+# FOUR STATIC SLOTS AND NO SHIFTING. The schedule only ever wants w[i-4] and
+# w[i-1], so four words of window are enough. A rolling window would shift
+# twelve bytes per word, which is four hundred and eighty moves and about nine
+# hundred skeleton lines against a cap of two thousand. Because the forty
+# words are UNROLLED the slot can be picked at generation time instead: word i
+# lives in slot i mod 4. The window never moves at all.
+#
+# THE ROUND CONSTANTS ARE DERIVED IN BOTH ORACLES. Rcon for round n is x^(n-1)
+# in the field, so the brainfuck starts at one and pastes aes/xtime, and the
+# Cryptol starts at one and doubles. Ten literals would be ten more chances to
+# make the mistake KMAC256 sample 4 already cost -- and a mistyped table in
+# the spec would agree with a mistyped table in the program.
+#
+# The answer is emitted as it is computed, four bytes at a time, so nothing
+# holds a hundred and seventy six bytes and there is no buffer to size.
+dk aes/keyexpand128.bf 2b7e151628aed2a6abf7158809cf4f3c 2b7e151628aed2a6abf7158809cf4f3ca0fafe1788542cb123a339392a6c7605f2c295f27a96b9435935807a7359f67f3d80477d4716fe3e1e237e446d7a883bef44a541a8525b7fb671253bdb0bad00d4d1c6f87c839d87caf2b8bc11f915bc6d88a37a110b3efddbf98641ca0093fd4e54f70e5f5fc9f384a64fb24ea6dc4fead27321b58dbad2312bf5607f8d292fac7766f319fadc2128d12941575c006ed014f9a8c9ee2589e13f0cc8b6630ca6 keyexpand128Run "keyexpand128 FIPS 197 Appendix A  a PUBLISHED schedule"
+dk aes/keyexpand128.bf 000102030405060708090a0b0c0d0e0f 000102030405060708090a0b0c0d0e0fd6aa74fdd2af72fadaa678f1d6ab76feb692cf0b643dbdf1be9bc5006830b3feb6ff744ed2c2c9bf6c590cbf0469bf4147f7f7bc95353e03f96c32bcfd058dfd3caaa3e8a99f9deb50f3af57adf622aa5e390f7df7a69296a7553dc10aa31f6b14f9701ae35fe28c440adf4d4ea9c02647438735a41c65b9e016baf4aebf7ad2549932d1f08557681093ed9cbe2c974e13111d7fe3944a17f307a78b4d2b30c5 keyexpand128Run "keyexpand128 the FIPS 197 Appendix C point 1 key  DERIVED"
+dk aes/keyexpand128.bf 00000000000000000000000000000000 00000000000000000000000000000000626363636263636362636363626363639b9898c9f9fbfbaa9b9898c9f9fbfbaa90973450696ccffaf2f457330b0fac99ee06da7b876a1581759e42b27e91ee2b7f2e2b88f8443e098dda7cbbf34b9290ec614b851425758c99ff09376ab49ba7217517873550620bacaf6b3cc61bf09b0ef903333ba9613897060a04511dfa9fb1d4d8e28a7db9da1d7bb3de4c664941b4ef5bcb3e92e21123e951cf6f8f188e keyexpand128Run "keyexpand128 an all nought key  DERIVED  where every word is the S box of the last"
+dk aes/keyexpand128.bf ffffffffffffffffffffffffffffffff ffffffffffffffffffffffffffffffffe8e9e9e917161616e8e9e9e917161616adaeae19bab8b80f525151e6454747f0090e2277b3b69a78e1e7cb9ea4a08c6ee16abd3e52dc2746b33becd8179b60b6e5baf3ceb766d488045d385013c658e671d07db3c6b6a93bc2eb916bd12dc98de90d208d2fbb89b6ed5018dd3c7dd15096337366b988fad054d8e20d68a5335d8bf03f233278c5f366a027fe0e0514a3d60a3588e472f07b82d2d7858cd7c326 keyexpand128Run "keyexpand128 an all ones key  DERIVED"
 
 # SHAKE256 is sponge136 handed FIPS 202's 31 and the caller's own length. The
 # squeeze LOOP is the one thing here that SHA3 never exercises, so these cover

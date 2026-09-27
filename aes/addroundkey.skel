@@ -1,0 +1,103 @@
+; bfsodium ADDROUNDKEY : the state exclusive ored with a round key
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; aes/xorword is PASTED four times;
+;
+; INTERFACE entry=56 exit=0 footprint=0:56
+; IO  in:  state{16}  key{16}      (32 bytes)
+;     out: state{16}  the two exclusive ored
+;
+; FIPS 197 section 5 point 1 point 4  and it is the whole of the step; This is
+; the cheapest thing in the cipher and the only one that is its own inverse;
+;
+; THE STATE IS COLUMN MAJOR AND SO IS THE ROUND KEY  so this is four words
+; against four words and the column structure never has to be unpicked;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x18  aes/xorword pasted at this file's own zero; its words go in at
+;               @0x11 and @0x15 and its answer comes back at @0x11
+;   @0x19:0x28  state{16}  column major; THE ANSWER COMES BACK HERE
+;   @0x29:0x38  key{16}    the round key  spent
+
+; the state and then the round key  the workspace stepped over
+  >>>>>>>>>>>>>>>>>>>>>>>>>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=+56
+; ASSERT zero +0:+24
+  L56
+; ASSERT ptr=+0
+; column 0 of each
+  R25[-L8+R8]L25
+  R26[-L8+R8]L26
+  R27[-L8+R8]L27
+  R28[-L8+R8]L28
+  R41[-L20+R20]L41
+  R42[-L20+R20]L42
+  R43[-L20+R20]L43
+  R44[-L20+R20]L44
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the mixed column goes home
+  R17[-R8+L8]L17
+  R18[-R8+L8]L18
+  R19[-R8+L8]L19
+  R20[-R8+L8]L20
+; column 1 of each
+  R29[-L12+R12]L29
+  R30[-L12+R12]L30
+  R31[-L12+R12]L31
+  R32[-L12+R12]L32
+  R45[-L24+R24]L45
+  R46[-L24+R24]L46
+  R47[-L24+R24]L47
+  R48[-L24+R24]L48
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the mixed column goes home
+  R17[-R12+L12]L17
+  R18[-R12+L12]L18
+  R19[-R12+L12]L19
+  R20[-R12+L12]L20
+; column 2 of each
+  R33[-L16+R16]L33
+  R34[-L16+R16]L34
+  R35[-L16+R16]L35
+  R36[-L16+R16]L36
+  R49[-L28+R28]L49
+  R50[-L28+R28]L50
+  R51[-L28+R28]L51
+  R52[-L28+R28]L52
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the mixed column goes home
+  R17[-R16+L16]L17
+  R18[-R16+L16]L18
+  R19[-R16+L16]L19
+  R20[-R16+L16]L20
+; column 3 of each
+  R37[-L20+R20]L37
+  R38[-L20+R20]L38
+  R39[-L20+R20]L39
+  R40[-L20+R20]L40
+  R53[-L32+R32]L53
+  R54[-L32+R32]L54
+  R55[-L32+R32]L55
+  R56[-L32+R32]L56
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the mixed column goes home
+  R17[-R20+L20]L17
+  R18[-R20+L20]L18
+  R19[-R20+L20]L19
+  R20[-R20+L20]L20
+; ASSERT zero +0:+24
+; ASSERT zero +41:+56
+
+; emit
+; the sixteen bytes of the state
+  R25
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
