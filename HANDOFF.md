@@ -170,6 +170,8 @@ routine, the suite fails until it has a row here.
 | `aes/xtime` | 157 | 123 | all 256 bytes swept + Cryptol over the field polynomial  and the identity proved |
 | `aes/mixcolumn` | 1285 | 311 | FIPS 197 Appendix B + the fixed points + 256 columns against the matrix form |
 | `aes/mixcolumns` | 5127 | 171 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
+| `aes/shiftrows` | 150 | 168 | FIPS 197 Appendix B rounds 1 5 and 9 + the permutation read off a state of its own indices |
+| `aes/subbytes` | 1128 | 742 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -242,12 +244,12 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 494 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 494 | golden vectors, dual oracle |
+| 2 | yes | 508 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 508 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
-| 8 | yes | 12 | Cryptol design proofs, two of which must be refuted |
+| 8 | yes | 14 | Cryptol design proofs, two of which must be refuted |
 | 9 | yes | 6 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
@@ -1107,8 +1109,83 @@ the reasoning.
    project does not prefer an unmeasured form to a measured one.** Same rule
    the conveyor lookup is held to.
 
-   **Next:** SubBytes, which is where an indexed walk has to go *inside* the
-   routine, then ShiftRows and the key expansion, then a block.
+   **DONE: ShiftRows and SubBytes, the two byte-level steps.** `aes/shiftrows`
+   is pasteable like the arithmetic; `aes/subbytes` is the first file in this
+   library that **cannot be**, and it is the finding above arriving.
+
+   **ShiftRows has no arithmetic in it at all.** On a column-major state, row r
+   shifted left by r is the fixed permutation `s'[r+4c] = s[r+4((c+r) mod 4)]`
+   — thirty two moves, two passes because the permutation is a cycle and one
+   pass would overwrite a byte still wanted. It is **the step that pays for the
+   column-major order** that makes MixColumns short: a row is four bytes four
+   apart. It still costs only 139k. The Cryptol says it the other way round —
+   transpose the state, rotate row r left by r, transpose back — so the index
+   arithmetic is checked against the description it came from rather than
+   against itself.
+
+   **SubBytes has no INTERFACE line and that is forced.** The walk advances
+   three cells a turn, so `bffoot` cannot bound a footprint, so `bfexpand` will
+   not paste it. It is a PROGRAM: the walk is carried inside it sixteen times,
+   and `aes/subbytes.bf` joins the pinned no-INTERFACE list — **the first entry
+   there that is a routine in spirit rather than a whole program.** An AES
+   round will have to carry the walk too, which is the wall item 6 predicted,
+   met exactly where it said.
+
+   **The S-box is derived in both oracles and transcribed in neither.** The
+   generator computes it from the multiplicative inverse and the affine
+   transform; the Cryptol computes x^254 — written as seven named squarings,
+   because 2+4+8+16+32+64+128 is 254 and a clever one-liner would only imply
+   that — and the same affine map. `inverse_is_an_inverse` is Q.E.D. over all
+   256 bytes and `every_byte_has_an_inverse` is refuted, so the nought guard is
+   a real exception rather than decoration.
+
+   **And the table the brainfuck writes is byte for byte the one the
+   `index/fetch256` vectors already carry** — two independent derivations
+   agreeing, one of them gated before this file existed. That is the check that
+   matters, because a table typed from memory would agree with a spec typed
+   from the same memory.
+
+   **THE STATE SITS BELOW THE FRAME, AND BOTH LAYOUTS WERE BUILT AND RUN.** A
+   byte moved over d cells costs about 2d per unit of itself, and a state
+   parked above the table would sit seven hundred and seventy cells from the
+   walker. The two forms agree on every answer over forty random states and
+   cost **4,197,733** and **10,642,982** instructions respectively — two and a
+   half times, for nothing but travel. The rejected form is a scratchpad
+   instrument and is not committed; the number is, because an argued cost is
+   not a measured one. *The first version of this paragraph said "three times"
+   from arithmetic, and the arithmetic was wrong.*
+
+   **The table is written, not computed, and that is arithmetic rather than
+   measurement.** An inverse in the field is x^254, thirteen multiplies by
+   square-and-multiply; a general multiply out of `xtime` and `xor8` is eight
+   rounds of one of each, which on their measured means is about 450k — so
+   near **6 million per byte** against a fetch of 248k. That is an estimate,
+   flagged as one in the header, because the general multiply is not written.
+   It is not close enough for the estimate to matter.
+
+   **Where the block now stands, measured except where marked:**
+
+   | step | per call | per block |
+   |---|---|---|
+   | SubBytes | 4,197,733 | ×10 = 42M |
+   | ShiftRows | 139,131 | ×10 = 1.4M |
+   | MixColumns | 3,520,320 | ×9 = 32M |
+   | AddRoundKey | 16 × 24,067 | ×11 = 4.2M |
+   | key expansion | *estimated* | ~14M |
+
+   which is **near 90 million**, the figure the correction above already
+   arrived at from the other direction. Two thirds of the cipher is now
+   written and measured, and the projection has not moved.
+
+   **One thing the block will have to do differently:** `aes/subbytes` writes
+   the S-box on every call, which costs 33k and is invisible against its own
+   4.2 million. A block must write it **once** and drive one hundred and sixty
+   walks against it, so the block's generator emits the walk rather than the
+   file — the walk tokens are a hundred characters and the table is 33KB, so
+   that is the cheap way round as well as the only one.
+
+   **Next:** the key expansion, which needs the S-box walk and `xor8` and
+   nothing else new, then a block.
 
 **DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
 for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's

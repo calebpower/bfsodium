@@ -148,6 +148,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
               grep -q "^; INTERFACE" "$f" || echo "$f"
           done)
     want="aead/chacha20poly1305.bf
+aes/subbytes.bf
 chacha20/stream.bf
 index/fetch256.bf
 index/fetch256twice.bf
@@ -1170,6 +1171,55 @@ dk aes/mixcolumns.bf 49db873b453953897f02d2f177de961a 584dcaf11b4b5aacdbe7caa81b
 dk aes/mixcolumns.bf e1fb967ce8c8ae9b356cd2ba974ffb53 25d1a9adbd11d168b63a338e4c4cc0b0 mixcolumnsRun "mixcolumns FIPS 197 Appendix B round 5  DERIVED from the same example"
 dk aes/mixcolumns.bf 876e46a6f24ce78c4d904ad897ecc395 473794ed40d4e4a5a3703aa64c9f42bc mixcolumnsRun "mixcolumns FIPS 197 Appendix B round 9  DERIVED from the same example"
 
+# SHIFTROWS has no arithmetic in it at all: row r of the state is cyclically
+# shifted left by r, which on a COLUMN MAJOR state is the fixed permutation
+# s' at r plus 4c is s at r plus 4 times ((c plus r) mod 4). Thirty two moves.
+# The Cryptol says it the other way round -- take the rows out by transposing,
+# rotate row r left by r, put them back -- so the index arithmetic the
+# brainfuck uses is checked against the description it came from rather than
+# against itself.
+#
+# This is the step that pays for the column major order that makes MixColumns
+# short, and the vectors are chosen to show the permutation rather than to
+# sample it: a state of its own indices reads the whole map off in one line.
+dk aes/shiftrows.bf 00000000000000000000000000000000 00000000000000000000000000000000 shiftrowsRun "shiftrows a state of nothing"
+dk aes/shiftrows.bf 000102030405060708090a0b0c0d0e0f 00050a0f04090e03080d02070c01060b shiftrowsRun "shiftrows a state of its own indices  which reads the permutation off"
+dk aes/shiftrows.bf 11000000220000003300000044000000 11000000220000003300000044000000 shiftrowsRun "shiftrows row nought alone  which does NOT move"
+dk aes/shiftrows.bf 00000011000000220000003300000044 00000044000000110000002200000033 shiftrowsRun "shiftrows row three alone  shifted left by three"
+dk aes/shiftrows.bf d42711aee0bf98f1b8b45de51e415230 d4bf5d30e0b452aeb84111f11e2798e5 shiftrowsRun "shiftrows FIPS 197 Appendix B round 1  a PUBLISHED value"
+dk aes/shiftrows.bf e14fd29be8fbfbba35c89653976cae7c e1fb967ce8c8ae9b356cd2ba974ffb53 shiftrowsRun "shiftrows FIPS 197 Appendix B round 5  DERIVED from the same example"
+dk aes/shiftrows.bf 87ec4a8cf26ec3d84d4c46959790e7a6 876e46a6f24ce78c4d904ad897ecc395 shiftrowsRun "shiftrows FIPS 197 Appendix B round 9  DERIVED from the same example"
+
+# SUBBYTES IS THE FIRST FILE THAT HAS TO LIVE WITH index/fetch256's FINDING.
+# The walk advances three cells a turn, so its loops are not pointer balanced,
+# so tools/bffoot cannot bound a footprint and tools/bfexpand will not paste a
+# file with no INTERFACE line. It is therefore a PROGRAM: the walk is carried
+# inside it sixteen times rather than pasted, and an AES round will have to
+# carry it too. aes/subbytes.bf joins the pinned no-INTERFACE list above for
+# exactly that reason, and it is the first entry there that is a routine in
+# spirit rather than a whole program.
+#
+# THE S BOX IS DERIVED IN BOTH ORACLES AND TRANSCRIBED IN NEITHER. The
+# brainfuck writes 256 runs of plus signs, generated from the multiplicative
+# inverse and the affine transform; the Cryptol computes x to the 254 and the
+# same affine map. The table the brainfuck writes is byte for byte the one the
+# index/fetch256 vectors above already carry, which is a third agreement and
+# one that was already gated before this file existed.
+#
+# The state sits BELOW the frame, which is a cost decision and a measured one.
+# Both layouts were built and run on the same forty random states; they agree
+# on every answer, and the one parked above the table costs 10.64 million
+# instructions against 4.20 -- two and a half times, for nothing but travel,
+# because every byte would cross seven hundred and seventy cells to reach the
+# walker and the same coming back. See HANDOFF.
+dk aes/subbytes.bf 00000000000000000000000000000000 63636363636363636363636363636363 subbytesRun "subbytes a state of nothing  every byte becomes 0x63"
+dk aes/subbytes.bf ffffffffffffffffffffffffffffffff 16161616161616161616161616161616 subbytesRun "subbytes a state of all ones  every byte becomes 0x16"
+dk aes/subbytes.bf 000102030405060708090a0b0c0d0e0f 637c777bf26b6fc53001672bfed7ab76 subbytesRun "subbytes the first sixteen entries of the table"
+dk aes/subbytes.bf f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff 8ca1890dbfe6426841992d0fb054bb16 subbytesRun "subbytes the LAST sixteen  255 included  which fetch8 cannot reach"
+dk aes/subbytes.bf 193de3bea0f4e22b9ac68d2ae9f84808 d42711aee0bf98f1b8b45de51e415230 subbytesRun "subbytes FIPS 197 Appendix B round 1  a PUBLISHED value"
+dk aes/subbytes.bf e0927fe8c86363c0d9b1355085b8be01 e14fd29be8fbfbba35c89653976cae7c subbytesRun "subbytes FIPS 197 Appendix B round 5  DERIVED from the same example"
+dk aes/subbytes.bf ea835cf00445332d655d98ad8596b0c5 87ec4a8cf26ec3d84d4c46959790e7a6 subbytesRun "subbytes FIPS 197 Appendix B round 9  DERIVED from the same example"
+
 # SHAKE256 is sponge136 handed FIPS 202's 31 and the caller's own length. The
 # squeeze LOOP is the one thing here that SHA3 never exercises, so these cover
 # its boundary from both sides: one short of a rate, exactly a rate, and one
@@ -1735,6 +1785,23 @@ if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Coun
 :prove mix_without_t_is_not_enough
 ICRY
 ); then echo "PASS dropping t from the MixColumns identity is refuted"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
+
+# The S box is DERIVED in both oracles and transcribed in neither, and the
+# whole derivation turns on x to the 254 being the multiplicative inverse.
+# That is a claim about a field with 256 elements, so it is proved.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Q.E.D."
+:l perm.cry
+:prove inverse_is_an_inverse
+ICRY
+); then echo "PASS x to the 254 proved to be the inverse in the AES field"; pass=$((pass+1)); else echo "FAIL the inverse identity"; fail=$((fail+1)); fi
+
+# and the companion that must be REFUTED, so the nought guard above is a real
+# exception rather than decoration: nought has no inverse.
+if (cd spec && CRYPTOLPATH=. cryptol -b /dev/stdin <<'ICRY' 2>&1 | grep -q "Counterexample"
+:l perm.cry
+:prove every_byte_has_an_inverse
+ICRY
+); then echo "PASS nought having no inverse is confirmed by counterexample"; pass=$((pass+1)); else echo "FAIL the refutation did not come"; fail=$((fail+1)); fi
 
 echo
 echo "== summary =="

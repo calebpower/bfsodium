@@ -139,3 +139,14 @@ mixWithoutT : [4][8] -> [4][8]
 mixWithoutT a = [ x ^ gfmul 0x02 (x ^ y) | x <- a | y <- a <<< 1 ]
 
 property mix_without_t_is_not_enough a = mixWithoutT a == mixcolumn a
+
+// The S-box is DERIVED in bfsodium.cry rather than transcribed, and the whole
+// derivation turns on x^254 being the multiplicative inverse. That is a claim
+// about a field with 256 elements, so it is provable rather than asserted.
+property inverse_is_an_inverse x =
+    (x == zero) \/ (gfmul x (aesInv x) == 0x01)
+
+// and the companion that must be REFUTED, so the guard above is a real
+// exception and not decoration: nought has no inverse, and x^254 for x = 0 is
+// 0 rather than anything that multiplies back to one.
+property every_byte_has_an_inverse x = gfmul x (aesInv x) == 0x01

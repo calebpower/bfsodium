@@ -2465,6 +2465,43 @@ mixcolumnRun inb = mixcolumn inb
 mixcolumnsRun : [16][8] -> [16][8]
 mixcolumnsRun inb = join [ mixcolumn c | c <- split`{4} inb ]
 
+// The S-box, DERIVED and not typed. FIPS 197 section 5.1.1 defines it as the
+// multiplicative inverse in GF(2^8) followed by an affine transform, and that
+// is what this says. A 256-byte table transcribed here would be a second
+// chance to make the mistake cSHAKE128's 200-byte vector and KMAC256 sample 4
+// already cost, and it would agree with a mistyped brainfuck table.
+//
+// The inverse is x^254, because x^255 is 1 for every nonzero x in a field of
+// 256 elements, and 0^254 is 0 which is the convention FIPS 197 fixes. The
+// squarings are written out rather than folded from a recursive sequence:
+// 2+4+8+16+32+64+128 is 254, and seven named lines say that where a clever
+// one-liner would only imply it.
+aesInv : [8] -> [8]
+aesInv x = foldl gfmul 0x01 [x2, x4, x8, x16, x32, x64, x128]
+  where x2   = gfmul x   x
+        x4   = gfmul x2  x2
+        x8   = gfmul x4  x4
+        x16  = gfmul x8  x8
+        x32  = gfmul x16 x16
+        x64  = gfmul x32 x32
+        x128 = gfmul x64 x64
+
+aesAffine : [8] -> [8]
+aesAffine b = b ^ (b <<< 1) ^ (b <<< 2) ^ (b <<< 3) ^ (b <<< 4) ^ 0x63
+
+aesSbox : [8] -> [8]
+aesSbox x = aesAffine (aesInv x)
+
+subbytesRun : [16][8] -> [16][8]
+subbytesRun inb = [ aesSbox b | b <- inb ]
+
+// ShiftRows, written the way FIPS 197 section 5.1.2 describes it rather than
+// as the index arithmetic the brainfuck uses: take the rows out of the
+// column-major state, rotate row r left by r, and put them back.
+shiftrowsRun : [16][8] -> [16][8]
+shiftrowsRun inb = join (transpose [ r <<< i | r <- rows | i <- [0 .. 3] ])
+  where rows = transpose (split`{4} inb)
+
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
