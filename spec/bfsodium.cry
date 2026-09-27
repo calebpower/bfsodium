@@ -2391,6 +2391,31 @@ parallelhashxof256Run_nS inb =
       # [0x00, 0x01]
 
 // ---------------------------------------------------------------------------
+// INDEXED ADDRESSING: the 256-entry runtime lookup AES's S-box is.
+//
+// index/fetch8 cannot do this one. Its walk counter is idx+1 in a single
+// cell and 255+1 is 0, so the last element of a full byte-indexed table is
+// unreachable -- and an S-box is exactly 256 entries indexed by exactly a
+// byte. index/fetch256 counts with the index itself, which costs a group.
+//
+// The entries are trivial BECAUSE the brainfuck is not: the whole content of
+// the claim is that a walk of O(index) lands on the same element that `@`
+// does, at every index including the two ends.
+//
+// IO: idx{1} table{256}, and for the twice form idx{1} table{256} jdx{1} --
+//     the second index comes last because a read prologue only moves right.
+
+fetch256Run : [257][8] -> [1][8]
+fetch256Run inb = [ (drop`{1} inb) @ (inb @ 0) ]
+
+// And that the table survives being read, which is what lets ONE table serve
+// all two hundred of AES's reads rather than being rebuilt for each.
+fetch256twiceRun : [258][8] -> [2][8]
+fetch256twiceRun inb = [ t @ (inb @ 0), t @ (inb @ 257) ]
+  where t = take`{256} (drop`{1} inb)
+
+
+// ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4
 // rather than taken from Cryptol's library, for the reason SHA-256 was: oracle
 // B has to be independent of whatever the toolchain ships.

@@ -164,6 +164,8 @@ routine, the suite fails until it has a row here.
 | `sha256/pbkdf2` | 136571 | 716 | RFC 7914 §11's published c=1 and c=2 vectors, two output blocks, a block cut short, and the longest salt allowed |
 | `sha256/drbg` | 222028 | 608 | NIST's published CAVP vector for HMAC_DRBG SHA-256, a generate cut short, and the longest seed allowed |
 | `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `index/fetch256` | 101 | 70 | the real S-box at both ends and the middle, index 255 included, which `fetch8` cannot reach |
+| `index/fetch256twice` | 182 | 100 | the same table read twice, which is what lets one table serve all two hundred of AES's reads |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -236,8 +238,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 446 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 446 | golden vectors, dual oracle |
+| 2 | yes | 455 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 455 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -978,7 +980,61 @@ the reasoning.
    rates, with their XOF forms, and every one of them is bounded only by the
    library's own `mlen{2}`.
 
-6. **AES itself, if and only if step 1 says so.**
+6. **AES itself, and step 1 said so.**
+
+   **DONE: `index/fetch256` and `index/fetch256twice`.** The 256-entry runtime
+   lookup AES's S-box is, rebuilt as committed artifacts. The instrument that
+   measured this lived in a scratchpad and is gone; what survived was the
+   measurement in CONVENTIONS and the two findings it recorded, which were
+   enough to rebuild it.
+
+   **`index/fetch8` genuinely cannot do it**, and that is worth restating
+   because it is the whole reason for a second file: fetch8 walks a counter of
+   `idx + 1` in a single cell, and 255 + 1 is 0, so the last element of a full
+   byte-indexed table is unreachable. `fetch256` counts with the index itself,
+   which costs it a group — element k lives in group k+1 rather than k+2, and
+   a walk of nought stops where it starts. **Index 255 has a vector of its own
+   and it is the point of the file.**
+
+   **AND AN INDEXED WALK CANNOT BE A PASTEABLE ROUTINE.** This is the finding
+   of the unit and it shapes everything behind it. `tools/bffoot` requires
+   every loop body to be POINTER BALANCED — "so the footprint cannot be
+   bounded" otherwise — and a walk advances three cells per turn by
+   construction. That is why `index/fetch8`, `store8` and `fetchword` have no
+   INTERFACE lines; it reads like an oversight and it is not one, it is
+   forced. `tools/bfexpand` refuses to paste a file without an INTERFACE, so:
+
+   **anything containing an indexed read is a PROGRAM, and a program cannot be
+   pasted.** AES must therefore carry the walk inside itself rather than paste
+   it, and when CMAC, GCM or CTR_DRBG want to paste AES they will hit the same
+   wall one level up. There are only two ways out and both are decisions
+   rather than code: teach `bffoot` to accept a declared-bounded unbalanced
+   walk — which weakens the one rule that makes footprints checkable, and it
+   cannot track the pointer past such a loop anyway, so it would have to stop
+   checking the file entirely — or write the lookup as a CONVEYOR, which is
+   balanced and costs a slide of the whole table per step. **Neither should be
+   chosen on the way past.** The measurement in CONVENTIONS is of the walking
+   form; a conveyor form would need measuring before it could be preferred.
+
+   **These three siblings had never carried a vector.** `index/` was the
+   escape hatch nothing used, so nothing tested it. `fetch256` is about to be
+   load-bearing for two hundred reads a block, so it carries nine: both ends,
+   the middle, and three that read the same table twice. The last three are
+   not decoration — the claim that ONE table serves all two hundred reads
+   rests entirely on the datum being copied rather than moved and the trail
+   being cleared on the way home, and nothing else in the suite would notice
+   if that stopped being true.
+
+   **The S-box in those vectors is DERIVED, not typed.** It is computed from
+   FIPS 197 — the multiplicative inverse in GF(2^8) then the affine transform
+   — and checked against the two values CONVENTIONS happens to record,
+   `S[254] = 0xbb` and `S[255] = 0x16`, plus being a permutation of all 256
+   bytes. A table typed from memory is exactly the defect cSHAKE128 and
+   KMAC256 sample 4 already cost.
+
+   **Next:** the arithmetic that has no index in it — `xtime` and MixColumns
+   — which CAN be balanced routines and therefore pasteable, then SubBytes
+   and ShiftRows and the key expansion, then a block.
 
 **DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
 for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's
