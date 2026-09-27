@@ -705,11 +705,11 @@ the reasoning.
    repository.
 
    **A FALSE "PUBLISHED" CLAIM, CAUGHT BEFORE IT SHIPPED.** cSHAKE128's
-   200-byte vector was initially labelled as NIST sample 2 from memory. The
+   200-byte vector was initially labeled as NIST sample 2 from memory. The
    computed value diverges from that recollection at byte 10 — and the first
    ten bytes agreeing is the tell, because that is what half-remembering looks
    like. It is now named `cshake128Run_200` for its message length and
-   labelled DERIVED. What stands on its own: the Keccak reference reproduces
+   labeled DERIVED. What stands on its own: the Keccak reference reproduces
    SHAKE128, SHAKE256 and SHA3-256 from a third party; **cSHAKE256 samples 3
    and 4 match NIST exactly**, which confirms the construction; and
    **cSHAKE128 sample 1 matches exactly across all thirty two bytes**, which
@@ -769,7 +769,7 @@ the reasoning.
    cannot be a parameter here, and this can.
 
    **Five of the six samples are NIST's own printed answers and the sixth is
-   not**, and the rule from cSHAKE128 is why it is labelled that way. KMAC256
+   not**, and the rule from cSHAKE128 is why it is labeled that way. KMAC256
    sample 4's published value could not be quoted from a source — a recalled
    tail disagreed with the computed one and was the wrong length besides — so
    it ships as DERIVED. What it rests on is not recollection: the same
