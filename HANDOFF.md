@@ -171,11 +171,16 @@ routine, the suite fails until it has a row here.
 | `aes/mixcolumn` | 1285 | 311 | FIPS 197 Appendix B + the fixed points + 256 columns against the matrix form |
 | `aes/mixcolumns` | 5127 | 171 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
 | `aes/shiftrows` | 150 | 168 | FIPS 197 Appendix B rounds 1 5 and 9 + the permutation read off a state of its own indices |
-| `aes/subbytes` | 1128 | 742 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
+| `aes/subbytes` | 1131 | 745 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
 | `aes/xorword` | 216 | 66 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 918 | 103 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 12599 | 1903 | the FIPS 197 Appendix A schedule + three more keys |
 | `aes/encrypt128` | 71873 | 1609 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
+| `aes/gfmul` | 1367 | 276 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
+| `aes/invmixcolumn` | 2062 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
+| `aes/invmixcolumns` | 8186 | 78 | all nine Appendix B rounds run backwards + round trips MixColumns |
+| `aes/invshiftrows` | 149 | 167 | all ten Appendix B rounds run backwards + round trips ShiftRows |
+| `aes/invsubbytes` | 1136 | 750 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -248,12 +253,12 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 527 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 527 | golden vectors, dual oracle |
+| 2 | yes | 560 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 560 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
-| 8 | yes | 14 | Cryptol design proofs, two of which must be refuted |
+| 8 | yes | 19 | Cryptol design proofs, two of which must be refuted |
 | 9 | yes | 6 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
@@ -1319,6 +1324,98 @@ the reasoning.
    be made on the way past, and it is now due rather than hypothetical. The two
    ways out have not changed: teach `bffoot` to accept a declared-bounded
    unbalanced walk, or write the lookup as a conveyor and measure it.
+
+7. **AES decryption, in progress.** Every piece of the inverse cipher is
+   done — `aes/gfmul`, `aes/invmixcolumn`, `aes/invmixcolumns`,
+   `aes/invshiftrows` and `aes/invsubbytes` — and the block that assembles
+   them is not.
+
+   **INVMIXCOLUMNS DOES NOT USE A GENERAL MULTIPLY, and that is the whole
+   shape of this step.** FIPS 197 §5.3.3 writes it as a matrix of `0e 0b 0d
+   09`, which is sixteen general multiplies a column. The brainfuck prepares
+   the column and runs the **forward** MixColumns over it:
+
+   ```
+   u = xtime(xtime(a0^a2))   v = xtime(xtime(a1^a3))
+   InvMixColumns(a) = MixColumns(a0^u, a1^v, a2^u, a3^v)
+   ```
+
+   Preparing multiplies by 5 and 4 in the right places, and `2·5^1·4 = 14`,
+   `3·5^1·4 = 11`, `1·5^2·4 = 13`, `1·5^3·4 = 9` — the matrix row for row. It
+   measures **1,241,467** against roughly 9.5 million for the matrix form, and
+   **it reuses `aes/mixcolumn`**, which is already pinned against Appendix B
+   and a 256-column sweep. The inverse is not a second implementation of the
+   forward step; it is the forward step with its input prepared.
+
+   **`aes/gfmul` therefore has no caller, and that is deliberate rather than
+   an oversight** — said here because a routine nothing calls is how
+   `index/fetch8` went untested for a year. It earns its place two ways: it is
+   the general primitive of the field, and it **retires an estimate that three
+   headers were quoting**. A general multiply had been put at 450k from the
+   measured means of `xtime` and `xor8`. It measures **581,610**. Fourth
+   estimate in this sequence, fourth one low, same cause every time — the
+   travel and the copies between the pieces, never the pieces themselves.
+   `aes/subbytes`' header has been corrected accordingly: an inverse by
+   square-and-multiply is near 7.6 million a byte, not 6.
+
+   **THE IDENTITY IS CHECKED AND NOT PROVED, and the two words are not
+   interchangeable.** `mix_identity_matches`, the forward twin, is Q.E.D.
+   against the FIPS matrix over all 2^32 columns in a quarter of a second. z3
+   does not return on the inverse inside 150 seconds — the inverse matrix
+   entries are four-bit constants and the `pmult` terms blow up where `02` and
+   `03` stayed small. A proof that does not finish cannot go in a suite that
+   already takes ninety minutes, so `run.sh` checks it over five thousand
+   columns **and says so in those words**.
+
+   What is not weaker, and is worth listing so the gap is not read as a hole:
+   the identity agrees with the matrix over 216,608 columns in the scratchpad
+   reference; every one of the nine published Appendix B rounds inverts
+   through the brainfuck; `InvMixColumns(MixColumns(s)) == s` over sixty random
+   states; and the companion at scale two **is** refuted, in half a second.
+
+   **The asymmetry is worth keeping in mind for the next one of these:**
+   refuting is existential, so a counterexample is cheap where the positive
+   claim over 2^32 is not. A refutation companion may prove instantly beside a
+   claim that will not prove at all, and that pairing is not evidence that the
+   claim is nearly proved.
+
+   **InvShiftRows and InvSubBytes are the forward steps with one thing
+   changed each**, and both are checked against the Appendix B rounds run
+   BACKWARDS — the same published data approached from the other end.
+   `invshiftrows` is `shiftrows` with one sign flipped in the permutation;
+   `invsubbytes` is `subbytes` with the table read the other way.
+
+   **THE INVERSE S-BOX IS DERIVED TWO DIFFERENT WAYS ON PURPOSE.** The
+   brainfuck reads the forward permutation backwards, which *cannot* disagree
+   with the permutation it was read from. The Cryptol undoes the affine
+   transform and takes the multiplicative inverse, which is what FIPS 197
+   §5.3.2 actually describes. `inv_sbox_is_the_inverse` proves they agree over
+   all 256 bytes, Q.E.D. in half a second. A mistake would have to be made
+   twice, in two different shapes, to survive — which is the whole point of
+   keeping two oracles and is worth doing deliberately when the cheap
+   derivation is available.
+
+   **Both new generators were proved by identity against the committed
+   forward files before being trusted.** `srgen.py` was parameterized for the
+   inverse, the forward output diffed against the committed
+   `aes/shiftrows.skel` — and it had CHANGED. The parameterization was
+   reverted, identity re-established, and the inverse written as its own
+   generator instead. The same for `sbgen.py`. Two minutes of checking caught
+   a silent regression in a generator whose output is a committed artifact;
+   **do not skip the identity diff when touching a generator that already has
+   a file in the tree.**
+
+   **Next:** `aes/decrypt128`. Its vector is FIPS 197 Appendix C.1 run
+   backwards and its real check is that it round-trips `aes/encrypt128`. It
+   has a problem the forward block did not: **decryption needs BOTH tables** —
+   the forward S-box for the key schedule's SubWord and the inverse for
+   InvSubBytes — and the round keys are consumed in reverse order. Two
+   resident tables plus a 176-byte schedule cannot all sit near the state, and
+   the measured cost of getting that wrong is the 2.5× in `aes/subbytes`'
+   header. The way out that looks right, and is not yet built or measured:
+   run the schedule forward into `w{176}` with the forward table, then CLEAR
+   that table and write the inverse one into the same cells, so only one is
+   ever resident.
 
 **DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
 for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's

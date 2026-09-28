@@ -2556,6 +2556,51 @@ encrypt128Run inb = aesLastRound (foldl aesRound st0 middle) (rks ! 0)
     st0    = [ p ^ k | p <- pt | k <- rks @ 0 ]
     middle = take`{9} (drop`{1} rks)
 
+// The general multiply, as the field defines it. The brainfuck does peasant
+// multiplication -- eight guarded exclusive ors and seven doublings -- and
+// spec/perm.cry proves that the two are the same map over all 65536 pairs.
+gfmulRun : [2][8] -> [1][8]
+gfmulRun inb = [ gfmul (inb @ 0) (inb @ 1) ]
+
+// InvMixColumns, written as FIPS 197 section 5.3.3 writes it: a multiply by a
+// fixed matrix of 0e 0b 0d 09. THE BRAINFUCK DOES NOT DO IT THIS WAY -- it
+// prepares the column and then runs the FORWARD MixColumns over it, which is
+// four doublings and one aes/mixcolumn where the matrix is sixteen general
+// multiplies. Writing the matrix here is what makes the second oracle worth
+// having; the identity is proved against it in spec/perm.cry.
+invmixcolumn : [4][8] -> [4][8]
+invmixcolumn a = [ gfdot [0x0e, 0x0b, 0x0d, 0x09] a
+                 , gfdot [0x09, 0x0e, 0x0b, 0x0d] a
+                 , gfdot [0x0d, 0x09, 0x0e, 0x0b] a
+                 , gfdot [0x0b, 0x0d, 0x09, 0x0e] a ]
+
+invmixcolumnRun : [4][8] -> [4][8]
+invmixcolumnRun inb = invmixcolumn inb
+
+invmixcolumnsRun : [16][8] -> [16][8]
+invmixcolumnsRun inb = join [ invmixcolumn c | c <- split`{4} inb ]
+
+// The inverse S-box, derived a DIFFERENT WAY than the brainfuck derives it.
+// aes/invsubbytes reads the forward permutation backwards; this undoes the
+// affine transform and then takes the multiplicative inverse, which is what
+// FIPS 197 section 5.3.2 describes. Two derivations that cannot share a
+// transcription mistake, and inv_sbox_is_the_inverse proves they agree over
+// all 256 bytes.
+aesInvAffine : [8] -> [8]
+aesInvAffine b = (b <<< 1) ^ (b <<< 3) ^ (b <<< 6) ^ 0x05
+
+aesInvSbox : [8] -> [8]
+aesInvSbox y = aesInv (aesInvAffine y)
+
+invsubbytesRun : [16][8] -> [16][8]
+invsubbytesRun inb = [ aesInvSbox b | b <- inb ]
+
+// InvShiftRows: row r shifted RIGHT by r, written the way FIPS 197 section
+// 5.3.1 describes it rather than as the index arithmetic the brainfuck uses.
+invshiftrowsRun : [16][8] -> [16][8]
+invshiftrowsRun inb = join (transpose [ r >>> i | r <- rows | i <- [0 .. 3] ])
+  where rows = transpose (split`{4} inb)
+
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

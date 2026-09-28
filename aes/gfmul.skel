@@ -1,0 +1,276 @@
+; bfsodium GFMUL : multiply two bytes in the AES field
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; aes/xtime is PASTED seven times and idiom/xor8 eight;
+;
+; INTERFACE entry=26 exit=0 footprint=0:29
+; IO  in:  a{1} at @0x17  and  b{1} at @0x1a      (2 bytes)
+;     out: the product{1} at @0x00                (1 byte)
+;
+; FIPS 197 section 4 point 2 : peasant multiplication over GF(2^8)  eight
+; times round  and UNROLLED so that no counter is needed and every loop here
+; is pointer balanced; That is what makes it pasteable;
+;
+;   for each of the eight bits of b  low first
+;     if that bit is set  the product takes an exclusive or with a
+;     a becomes xtime(a)  and b is halved
+;
+; THE BRANCH IS NOT A BRANCH; a paste cannot be made conditional  so the low
+; bit GUARDS A COPY instead: a is copied into a scratch cell under a loop that
+; runs the bit's own number of times  which is nought or one  and the
+; exclusive or then runs unconditionally against nought or against a; That is
+; the same trick aes/xtime uses for its reduction;
+;
+; THE EIGHTH XTIME IS NOT DONE because nothing would read it; that is thirty
+; three thousand instructions saved out of four hundred thousand  which is the
+; only optimization here and it is worth naming because the rest is the naive
+; algorithm on purpose; It does mean the multiplicand survives the last turn
+; and has to be CLEARED by hand at the end  which the contract at the foot of
+; this file is what noticed;
+;
+; INVMIXCOLUMNS DOES NOT USE THIS  and it is worth saying so plainly so that
+; nobody wires it up: multiplying by 9  11  13 and 14 the general way is
+; sixteen of these per column  where the identity in aes/invmixcolumn is four
+; xtimes and one aes/mixcolumn; This exists as the general primitive of the
+; field  and because the cost of a general multiply had been ESTIMATED in
+; three headers and never measured;
+;
+; THE ESTIMATE WAS LOW  as every estimate in this library has been; it was put
+; at 450 thousand from the measured means of aes/xtime and idiom/xor8  and one
+; multiply measures 581 thousand 610; The difference is the travel and the
+; guarded copies  which is the same thing the block projection forgot twice;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x15  the paste workspace; aes/xtime reaches 0 to 21 and idiom/xor8
+;               reaches 0 to 16  and the PRODUCT comes to rest at @0x00
+;   @0x16       acc   the product  accumulating
+;   @0x17       a     the multiplicand  doubled each turn
+;   @0x18       t     a guarded by the low bit  so nought or a
+;   @0x19       g     the cell a copy hands its value back through
+;   @0x1a       b     the multiplier  halved away to nought
+;   @0x1b       bq    HALVE frame: b shifted right one
+;   @0x1c       bl    HALVE frame: the low bit of b
+;   @0x1d       bf    HALVE frame scratch  restored to nought
+
+; the multiplicand  then the multiplier three cells above it
+  >>>>>>>>>>>>>>>>>>>>>>>,>>>,
+; ASSERT ptr=+26
+; ASSERT zero +0:+21
+  L26
+; ASSERT ptr=+0
+
+; ==== bit 0 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a doubles in the field
+  R23[-L23+R23]L23
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; ==== bit 1 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a doubles in the field
+  R23[-L23+R23]L23
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; ==== bit 2 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a doubles in the field
+  R23[-L23+R23]L23
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; ==== bit 3 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a doubles in the field
+  R23[-L23+R23]L23
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; ==== bit 4 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a doubles in the field
+  R23[-L23+R23]L23
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; ==== bit 5 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a doubles in the field
+  R23[-L23+R23]L23
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; ==== bit 6 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a doubles in the field
+  R23[-L23+R23]L23
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; ==== bit 7 of the multiplier ====
+; halve b  which leaves the quotient and the bit that fell off
+  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+; the bit GUARDS a copy of a: nought or one turns of the loop
+  R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
+; and the product takes an exclusive or with it  which is the
+; identity when the bit was clear
+  R22[-L21+R21]L22R24[-L22+R22]L24
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; and the eighth doubling is not done  nothing would read it
+; b becomes its own quotient
+  R27[-L1+R1]L27
+; ASSERT ptr=+0
+
+; THE MULTIPLICAND IS STILL THERE because the eighth doubling was
+; skipped  and a routine must hand its frame back clear or a second
+; paste at the same base moves its own a into a dirty cell  which
+; adds rather than sets; Clearing it costs at most 255
+  R23[-]L23
+; the product comes home
+  R22[-L22+R22]L22
+; ASSERT ptr=+0
+; ASSERT zero +1:+29
+
+; emit
+; the product  which is the whole of the answer
+  .

@@ -1,0 +1,78 @@
+; bfsodium INVMIXCOLUMNS : the FIPS 197 inverse step  all four columns
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; aes/invmixcolumn is PASTED four times;
+;
+; INTERFACE entry=50 exit=0 footprint=0:50
+; IO  in:  state{16}   column major  as FIPS 197 numbers it   (16 bytes)
+;     out: state{16}   the same sixteen cells  unmixed
+;
+; The state is column major  so a column is four CONSECUTIVE bytes and this
+; step is aes/invmixcolumn over four windows; It is the mirror of
+; aes/mixcolumns and it is short for the same reason;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x22  aes/invmixcolumn pasted at this file's own zero; its column
+;               goes in at @0x16 to @0x19 and comes back there
+;   @0x23:0x32  state{16}  column major; the answers come back over it
+
+; the frame is stepped over and the state read above it
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=+50
+; ASSERT zero +0:+34
+  L50
+; ASSERT ptr=+0
+
+; ==== column 0 : bytes 0 to 3 of the state ====
+; down into the routine's own cells  and back after
+  R35[-L13+R13]L35R36[-L13+R13]L36R37[-L13+R13]L37R38[-L13+R13]L38
+  
+; ASSERT ptr=+0
+@@INVMIXCOLUMN@@ 0
+; ASSERT ptr=+0
+  
+  R22[-R13+L13]L22R23[-R13+L13]L23R24[-R13+L13]L24R25[-R13+L13]L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+34
+
+; ==== column 1 : bytes 4 to 7 of the state ====
+; down into the routine's own cells  and back after
+  R39[-L17+R17]L39R40[-L17+R17]L40R41[-L17+R17]L41R42[-L17+R17]L42
+  
+; ASSERT ptr=+0
+@@INVMIXCOLUMN@@ 0
+; ASSERT ptr=+0
+  
+  R22[-R17+L17]L22R23[-R17+L17]L23R24[-R17+L17]L24R25[-R17+L17]L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+34
+
+; ==== column 2 : bytes 8 to 11 of the state ====
+; down into the routine's own cells  and back after
+  R43[-L21+R21]L43R44[-L21+R21]L44R45[-L21+R21]L45R46[-L21+R21]L46
+  
+; ASSERT ptr=+0
+@@INVMIXCOLUMN@@ 0
+; ASSERT ptr=+0
+  
+  R22[-R21+L21]L22R23[-R21+L21]L23R24[-R21+L21]L24R25[-R21+L21]L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+34
+
+; ==== column 3 : bytes 12 to 15 of the state ====
+; down into the routine's own cells  and back after
+  R47[-L25+R25]L47R48[-L25+R25]L48R49[-L25+R25]L49R50[-L25+R25]L50
+  
+; ASSERT ptr=+0
+@@INVMIXCOLUMN@@ 0
+; ASSERT ptr=+0
+  
+  R22[-R25+L25]L22R23[-R25+L25]L23R24[-R25+L25]L24R25[-R25+L25]L25
+; ASSERT ptr=+0
+; ASSERT zero +0:+34
+
+; emit
+; the sixteen bytes of the state  in the order they were read
+  R35
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.

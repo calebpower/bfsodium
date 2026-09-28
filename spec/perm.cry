@@ -150,3 +150,61 @@ property inverse_is_an_inverse x =
 // exception and not decoration: nought has no inverse, and x^254 for x = 0 is
 // 0 rather than anything that multiplies back to one.
 property every_byte_has_an_inverse x = gfmul x (aesInv x) == 0x01
+
+// ---------------------------------------------------------------------------
+// AES decryption: the shortcuts the inverse takes, proved rather than believed.
+
+// aes/gfmul does peasant multiplication: eight guarded exclusive ors, the
+// multiplicand doubling each turn. The field says pmult then pmod. Proved
+// over all 65536 pairs rather than sampled.
+gfPeasant : [8] -> [8] -> [8]
+gfPeasant a b = foldl (^) 0x00 [ if bi then ai else 0x00
+                               | ai <- as
+                               | bi <- reverse b ]
+  where as : [8][8]
+        as = [a] # [ gfmul x 0x02 | x <- take`{7} as ]
+
+property peasant_is_the_field a b = gfPeasant a b == gfmul a b
+
+// aes/invmixcolumn does NOT multiply by the 0e 0b 0d 09 matrix. It prepares
+// the column and runs the FORWARD MixColumns over it, which is four doublings
+// and one aes/mixcolumn where the matrix is sixteen general multiplies --
+// better than seven times cheaper, and it reuses a routine already pinned
+// against FIPS 197 Appendix B. The whole of the inverse rests on these being
+// the same map.
+//
+// THIS ONE IS CHECKED AND NOT PROVED, and the difference is not cosmetic.
+// mix_identity_matches, its forward twin, is Q.E.D. over all 2^32 columns in
+// a quarter of a second; z3 does not return on this one inside 150 seconds,
+// because the inverse matrix entries are four-bit constants and the pmult
+// terms blow up where 02 and 03 stayed small. A proof that does not finish
+// cannot go in the suite, so run.sh checks it over five thousand columns and
+// says so in those words. What is NOT weaker: the identity was also checked
+// against the matrix over 216608 columns in the reference, every one of the
+// nine published Appendix B rounds inverts, and the round trip below holds.
+invMixViaMix : [4][8] -> [4][8]
+invMixViaMix a = mixcolumn [ a @ 0 ^ u, a @ 1 ^ v, a @ 2 ^ u, a @ 3 ^ v ]
+  where u = gfmul 0x04 ((a @ 0) ^ (a @ 2))
+        v = gfmul 0x04 ((a @ 1) ^ (a @ 3))
+
+property inv_mix_identity_matches a = invMixViaMix a == invmixcolumn a
+
+// and the companion that must be REFUTED: the scale is four and not two, and
+// a claim that would hold at either is no claim at all. NOTE THE ASYMMETRY --
+// this one IS provable, in half a second, because refuting is existential:
+// z3 needs one counterexample where the positive claim needs all 2^32.
+invMixWrongScale : [4][8] -> [4][8]
+invMixWrongScale a = mixcolumn [ a @ 0 ^ u, a @ 1 ^ v, a @ 2 ^ u, a @ 3 ^ v ]
+  where u = gfmul 0x02 ((a @ 0) ^ (a @ 2))
+        v = gfmul 0x02 ((a @ 1) ^ (a @ 3))
+
+property inv_mix_scale_is_not_two a = invMixWrongScale a == invmixcolumn a
+
+// and that the inverse really does invert, which no vector states. Checked
+// rather than proved for the same reason as above.
+property inv_mix_inverts_mix a = invmixcolumn (mixcolumn a) == a
+
+// The inverse S-box is derived one way in the spec and another in the
+// brainfuck, so that a mistake would have to be made twice in two different
+// shapes to survive. This is what says they agree.
+property inv_sbox_is_the_inverse x = aesInvSbox (aesSbox x) == x

@@ -1,0 +1,139 @@
+; bfsodium INVMIXCOLUMN : one column of the AES InvMixColumns step
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; idiom/xor8 is PASTED six times  aes/xtime four and
+; aes/mixcolumn once;
+;
+; INTERFACE entry=25 exit=0 footprint=0:34
+; IO  in:  a{4} at @0x16  one column  a0 first     (4 bytes)
+;     out: b{4} at @0x16  the column unmixed       (4 bytes)
+;
+; FIPS 197 section 5 point 3 point 3 writes this as a multiply by a matrix of
+; 0e 0b 0d 09 rotated  which is sixteen GENERAL field multiplies; aes/gfmul
+; measures 581 thousand  so the matrix form is near nine and a half million a
+; column; THIS MEASURES 1 MILLION 241 THOUSAND  which is better than seven
+; times cheaper  and that multiple is built from an estimate of an assembly
+; that does not exist  so read it as a floor;
+;
+; THE WHOLE STEP IS MixColumns WITH THE COLUMN PREPARED FIRST:
+;
+;   u is xtime(xtime(a0 xor a2))    v is xtime(xtime(a1 xor a3))
+;   InvMixColumns(a) is MixColumns(a0 xor u  a1 xor v  a2 xor u  a3 xor v)
+;
+; and it is exact rather than close; Preparing the column multiplies it by 5
+; and 4 in the right places  and 2 times 5 xor 1 times 4 is 14  3 times 5 xor
+; 1 times 4 is 11  1 times 5 xor 2 times 4 is 13 and 1 times 5 xor 3 times 4
+; is 9  which is the FIPS matrix row for row; spec/perm_cry proves it over all
+; 2 to the 32 columns rather than sampling it;
+;
+; SO THE INVERSE REUSES THE FORWARD ROUTINE  which is the point: aes/mixcolumn
+; is already pinned against FIPS 197 Appendix B and a sweep  and nothing here
+; re_implements it;
+;
+; u AND v ARE EACH WANTED TWICE  so each is COPIED for its first use and MOVED
+; for its second; idiom/xor8 spends its operands  and that rule has now cost
+; this library three defects;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x1f  aes/mixcolumn pasted at this file's own zero; its column goes
+;               in at @0x16 to @0x19 and the answer comes back there; the
+;               exclusive ors and the doublings above use the same cells
+;   @0x16:0x19  a{4}  the column; THE ANSWER COMES BACK OVER IT
+;   @0x20       u     xtime twice of a0 xor a2
+;   @0x21       v     xtime twice of a1 xor a3
+;   @0x22       g     the cell a copy hands its value back through
+
+; the column  the mixcolumn frame stepped over first
+  >>>>>>>>>>>>>>>>>>>>>>,>,>,>,
+; ASSERT ptr=+25
+; ASSERT zero +0:+21
+; ASSERT zero +32:+34
+  L25
+; ASSERT ptr=+0
+
+; ==== the column is prepared  which is the whole of the inverse ====
+; u is xtime twice of a0 xor a2
+  R22[-L21+R33+L12]R12[-L12+R12]L34R24[-L22+R32+L10]R10[-L10+R10]L34
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R32+L32]
+; ASSERT ptr=+0
+; v is xtime twice of a1 xor a3
+  R23[-L22+R33+L11]R11[-L11+R11]L34R25[-L23+R32+L9]R9[-L9+R9]L34
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  
+  [-R33+L33]
+; ASSERT ptr=+0
+; a0 takes u  which is COPIED because a2 wants it too
+  R22[-L21+R21]L22R32[-L30+R32+L2]R2[-L2+R2]L34
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R22+L22]
+; a2 takes u  which is MOVED because nothing wants it after
+  R24[-L23+R23]L24R32[-L30+R30]L32
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R24+L24]
+; a1 takes v  copied for the same reason
+  R23[-L22+R22]L23R33[-L31+R32+L1]R1[-L1+R1]L34
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R23+L23]
+; a3 takes v  and spends it
+  R25[-L24+R24]L25R33[-L31+R31]L33
+  
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  
+  [-R25+L25]
+; ASSERT ptr=+0
+; ASSERT zero +32:+34
+
+; ==== and then it is simply MixColumns ====
+  
+; ASSERT ptr=+0
+@@MIXCOLUMN@@ 0
+; ASSERT ptr=+0
+  
+
+; emit
+; the four bytes of the unmixed column
+  R22
+  .>.>.>.

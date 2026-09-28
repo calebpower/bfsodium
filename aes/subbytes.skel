@@ -35,13 +35,16 @@
 ;
 ; THE TABLE IS NOT COMPUTED PER BYTE and the arithmetic says why; An inverse
 ; in the field is x to the 254  which is thirteen multiplies by square and
-; multiply; A general multiply built from aes/xtime and idiom/xor8 is eight
-; rounds of one of each  which on their MEASURED means is about 450 thousand
-; instructions  so an inverse is near 6 million per byte against a fetch of
-; 248 thousand; That is an estimate and not a measurement  because the general
-; multiply is not written yet  but it is not close: the table is more than an
-; order of magnitude cheaper and the 33 thousand instructions that write it
-; are paid once for all sixteen bytes;
+; multiply; aes/gfmul now exists and MEASURES 581 thousand 610  so an inverse
+; is near seven and a half million per byte against a fetch of 248 thousand;
+; The table is more than an order of magnitude cheaper and the 33 thousand
+; instructions that write it are paid once for all sixteen bytes;
+;
+; THIS PARAGRAPH USED TO SAY 450 THOUSAND AND SIX MILLION  estimated from the
+; measured means of aes/xtime and idiom/xor8 before the multiply was written;
+; The estimate was low by a quarter  as every estimate in this library has
+; been  and for the same reason: it costed the pieces and forgot the travel
+; and the copies between them;
 ;
 ; TAPE MAP  (home @0)
 ;   @0x000:0x00f  state{16}  read here  and the answers come back here
