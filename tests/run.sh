@@ -1876,7 +1876,7 @@ echo "== design proofs (Cryptol) =="
 # The argument was: a proof is a statement over bitvectors -- "for all x,
 # reduceTail (foldOnce x) == x % p136" -- and quantifying over 2^136 inputs
 # does not care which kernel asked. That is TRUE, and it still is. Running
-# these eight twice buys almost nothing.
+# them twice buys almost nothing.
 #
 # The second half was that Cryptol is therefore not needed on that guest at
 # all, because the dual oracle's values are pinned literals. That is FALSE.
@@ -1892,8 +1892,12 @@ echo "== design proofs (Cryptol) =="
 #
 # So Cryptol is installed on both guests -- security/hs-cryptol, quarterly, at
 # the version guest-setup verifies against CRYPTOL_VERSION -- and once it is
-# there, running these eight costs eight z3 invocations rather than a Haskell
-# toolchain. At that price an exception is not worth its own documentation.
+# there, running them costs z3 invocations rather than a Haskell toolchain.
+# At that price an exception is not worth its own documentation.
+#
+# THE COUNT IN THIS COMMENT USED TO BE "eight" AND WAS NOT UPDATED as proofs
+# were added; there are twenty now. A number in prose beside a thing that
+# grows is a number that will be wrong, so this says none.
 #
 # WHAT SURVIVES is the platform in the summary below. That went in to make an
 # asymmetric run legible and is worth keeping anyway: a count with no platform

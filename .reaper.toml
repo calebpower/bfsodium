@@ -20,14 +20,17 @@ project = "bfsodium"
 # memcmp(a, b, n) != 0 into a different symbol and gcc does not, and that was
 # a defect nothing runnable on the development host could reveal.
 #
-# It does NOT run the eight design proofs, and tier 8 in tests/run.sh says so
-# in the log on every run. A proof is a statement over bitvectors -- "for all
-# x, reduceTail (foldOnce x) == x % p136" -- and quantifying over 2^136 inputs
-# does not care which kernel asked. Cryptol is also not a runtime dependency
-# of anything else: the dual oracle's values are pinned literals that Cryptol
-# computed once, at authoring time. So the FreeBSD guest runs every KAT, every
-# metamorphic relation, the composition tier and all five C tools, and is
-# short eight checks that execute no brainfuck.
+# IT RUNS EVERYTHING THE OTHER GUEST RUNS. An earlier version of this comment
+# said it skipped the design proofs because "the dual oracle's values are
+# pinned literals that Cryptol computed once" -- which is FALSE, and tier 8 in
+# tests/run.sh sets out why at length: tools/dkat.sh invokes `cryptol -b` ONCE
+# PER VECTOR and compares the brainfuck against what the spec computes live.
+# Taking Cryptol off this guest produced 156 failures in two tiers. So Cryptol
+# is installed on both, and once it is there the proofs cost z3 invocations
+# rather than a toolchain.
+#
+# Both guests therefore report the SAME COUNT. An asymmetric pair of summary
+# lines is a symptom, not the design.
 #
 # security/hs-cryptol IS in ports, quarterly carries 3.4.0, and that is the
 # version CRYPTOL_VERSION pins -- so this is a choice and not a limitation. An

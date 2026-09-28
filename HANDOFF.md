@@ -6,12 +6,29 @@ actually built and where it has bitten.
 
 ## State
 
-**Gated: 354 pass, 0 fail on `ubuntu-26.04` AND 354 pass, 0 fail on
-`freebsd-15.1`, at `7ffd67f`** -- `reaper test`, which the lane section below
+**Gated: 1078 pass, 0 fail on `ubuntu-26.04` AND 1078 pass, 0 fail on
+`freebsd-15.1`, at `9611769`** -- `reaper test`, which the lane section below
 calls the gate of record. `tools/guest-setup.sh` clones and builds brainstem
 at `BRAINSTEM_COMMIT` before the suite starts, so every gate here needs the
-network. The previous gates were 347 at `cc974dc` and 345 at `7436078`, both
-on one guest.
+network.
+
+**AND THE PREVIOUS ONE WAS 354 AT `7ffd67f`, FIFTY THREE COMMITS AND SEVEN
+HUNDRED AND TWENTY FOUR CHECKS EARLIER.** That is the largest gap this gate
+has ever had, and it covered the 64-bit idioms, SHA-512 and its three
+variants, the whole of SP 800-185, and the whole of AES. Everything in that
+span was green on the container lane the day it landed, and the container
+lane is Linux only -- so for fifty three commits nothing had been compiled by
+a second C compiler, which is the one thing the FreeBSD guest exists for.
+
+It came back green, which is the good outcome and not the instructive one.
+**The instructive part is how the gap went unnoticed:** each commit honestly
+said "LINUX HALF ONLY, the FreeBSD half has not run and this commit does not
+claim it", and every one of those sentences was true. Fifty three true
+sentences add up to a false impression, because a per-commit disclaimer
+measures one commit and nobody was measuring the run. The line above is the
+only place that counts, which is why it is the first thing in this file --
+and it had been stale since `7ffd67f`. The previous gates before that were
+347 at `cc974dc` and 345 at `7436078`, both on one guest.
 
 **KILLING `container-test.sh` DOES NOT STOP ITS CONTAINER**, and the second
 one writes into the same `out/suite.log` through the `out/` bind mount. Two
