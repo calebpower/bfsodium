@@ -2601,6 +2601,26 @@ invshiftrowsRun : [16][8] -> [16][8]
 invshiftrowsRun inb = join (transpose [ r >>> i | r <- rows | i <- [0 .. 3] ])
   where rows = transpose (split`{4} inb)
 
+// The inverse cipher, FIPS 197 section 5.3: AddRoundKey with the LAST round
+// key, then nine rounds of InvShiftRows InvSubBytes AddRoundKey
+// InvMixColumns, then a last round with no InvMixColumns. Assembled from the
+// inverse step functions above, each of which is independently pinned against
+// the Appendix B worked example run backwards.
+aesInvRound : [16][8] -> [16][8] -> [16][8]
+aesInvRound st rk =
+    invmixcolumnsRun [ x ^ k | x <- invsubbytesRun (invshiftrowsRun st) | k <- rk ]
+
+decrypt128Run : [32][8] -> [16][8]
+decrypt128Run inb =
+    [ x ^ k | x <- invsubbytesRun (invshiftrowsRun (foldl aesInvRound st0 middle))
+            | k <- rks @ 0 ]
+  where
+    key    = take`{16} inb
+    ct     = take`{16} (drop`{16} inb)
+    rks    = split`{11} (keyexpand128Run key)
+    st0    = [ c ^ k | c <- ct | k <- rks ! 0 ]
+    middle = reverse (take`{9} (drop`{1} rks))
+
 
 // ---------------------------------------------------------------------------
 // SHA-512's tables and its compression function. Written out from FIPS 180-4

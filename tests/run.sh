@@ -148,6 +148,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
               grep -q "^; INTERFACE" "$f" || echo "$f"
           done)
     want="aead/chacha20poly1305.bf
+aes/decrypt128.bf
 aes/encrypt128.bf
 aes/invsubbytes.bf
 aes/keyexpand128.bf
@@ -1386,6 +1387,49 @@ dk aes/invsubbytes.bf 8ca1890dbfe6426841992d0fb054bb16 f0f1f2f3f4f5f6f7f8f9fafbf
 dk aes/invsubbytes.bf d42711aee0bf98f1b8b45de51e415230 193de3bea0f4e22b9ac68d2ae9f84808 invsubbytesRun "invsubbytes FIPS 197 Appendix B round 1 run backwards  a PUBLISHED value"
 dk aes/invsubbytes.bf e14fd29be8fbfbba35c89653976cae7c e0927fe8c86363c0d9b1355085b8be01 invsubbytesRun "invsubbytes FIPS 197 Appendix B round 5 run backwards  DERIVED from the same example"
 dk aes/invsubbytes.bf 87ec4a8cf26ec3d84d4c46959790e7a6 ea835cf00445332d655d98ad8596b0c5 invsubbytesRun "invsubbytes FIPS 197 Appendix B round 9 run backwards  DERIVED from the same example"
+
+# DECRYPT128 is the inverse cipher, and it has a problem the forward block did
+# not: it needs BOTH tables. The key schedule's SubWord wants the forward
+# S box and InvSubBytes wants the inverse one. Two tables are 1536 cells, and
+# a byte moved over d cells costs about 2d per unit of itself, so whichever
+# table did not sit beside the state would pay for every read to travel there
+# and back -- which aes/subbytes measured at two and a half times.
+#
+# SO ONLY ONE TABLE IS EVER RESIDENT. Phase one writes the FORWARD table and
+# runs the schedule into w{176}; then the table is CLEARED and the INVERSE
+# table written into the same cells, and phase two runs the rounds. The clear
+# and the rewrite cost about sixty six thousand instructions once, against the
+# tens of millions the travel would have cost. It is the first file here that
+# treats the tape as something to be re-furnished rather than laid out once.
+#
+# The whole schedule is stored, which the forward block did not need: the
+# round keys are consumed BACKWARDS, so there is nothing to recompute on the
+# way. w{176} sits at the bottom where the journey to addroundkey's own cells
+# is shortest.
+#
+# Two vectors are PUBLISHED -- Appendix C.1 and the Appendix B worked example,
+# both run backwards -- and the fourth is aes/encrypt128's own committed
+# vector reversed, so the two blocks are pinned against each other on a value
+# the forward direction already gated.
+dk aes/decrypt128.bf 000102030405060708090a0b0c0d0e0f69c4e0d86a7b0430d8cdb78070b4c55a 00112233445566778899aabbccddeeff decrypt128Run "decrypt128 FIPS 197 Appendix C point 1 backwards  PUBLISHED"
+dk aes/decrypt128.bf 2b7e151628aed2a6abf7158809cf4f3c3925841d02dc09fbdc118597196a0b32 3243f6a8885a308d313198a2e0370734 decrypt128Run "decrypt128 FIPS 197 Appendix B backwards  PUBLISHED"
+dk aes/decrypt128.bf 0000000000000000000000000000000066e94bd4ef8a2c3b884cfa59ca342b2e 00000000000000000000000000000000 decrypt128Run "decrypt128 the zero block, back to nothing"
+dk aes/decrypt128.bf 00000000000000000000000000000000f70ddef93ba62588242a0e67d0d645e0 000000000000000000000000000000ff decrypt128Run "decrypt128 encrypt128's OWN committed vector reversed"
+
+# And the check no single vector can state: that decryption undoes encryption.
+# This is the only assertion in the suite that runs two whole ciphers, about
+# two hundred and thirty million instructions, and it is worth every one of
+# them -- an inverse that agrees with its own vectors but not with the forward
+# block would pass everything above.
+run "decrypt128 undoes encrypt128 on the Appendix B example" sh -c '
+  k=2b7e151628aed2a6abf7158809cf4f3c
+  p=3243f6a8885a308d313198a2e0370734
+  c=$(printf "%s%s" "$k" "$p" | ./tools/hx -r | ./tools/bfi aes/encrypt128.bf | ./tools/hx)
+  back=$(printf "%s%s" "$k" "$c" | ./tools/hx -r | ./tools/bfi aes/decrypt128.bf | ./tools/hx)
+  [ "$back" = "$p" ] || { echo "round trip gave $back not $p"; exit 1; }'
+
+# and the contracts, which are what say a paste stood where it claimed to.
+run "decrypt128 checked with its contracts live" sh -c "printf 000102030405060708090a0b0c0d0e0f69c4e0d86a7b0430d8cdb78070b4c55a | ./tools/hx -r | BFI_CONTRACTS=1 ./tools/bfi aes/decrypt128.bf >/dev/null"
 
 # The block is the first file where a paste site has to STAND somewhere other
 # than nought, and the contracts are what say whether it did: a paste at the

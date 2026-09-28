@@ -117,6 +117,8 @@ while IFS= read -r line; do
         '@@MIXCOLUMNS@@'*) import "$repo/aes/mixcolumns.bf" "${line##* }"; continue ;;
         '@@ADDROUNDKEY@@'*) import "$repo/aes/addroundkey.bf" "${line##* }"; continue ;;
         '@@INVMIXCOLUMN@@'*) import "$repo/aes/invmixcolumn.bf" "${line##* }"; continue ;;
+        '@@INVMIXCOLUMNS@@'*) import "$repo/aes/invmixcolumns.bf" "${line##* }"; continue ;;
+        '@@INVSHIFTROWS@@'*) import "$repo/aes/invshiftrows.bf" "${line##* }"; continue ;;
         '@@ROUND@@'*)   import "$repo/sha256/round.bf" "${line##* }"; continue ;;
         '@@HASHCORE@@'*) import "$repo/sha256/hashcore.bf" "${line##* }"; continue ;;
         '@@HASHCORE512@@'*) import "$repo/sha512/hashcore.bf" "${line##* }"; continue ;;

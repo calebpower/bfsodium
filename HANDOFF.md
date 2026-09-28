@@ -181,6 +181,7 @@ routine, the suite fails until it has a row here.
 | `aes/invmixcolumns` | 8186 | 78 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 149 | 167 | all ten Appendix B rounds run backwards + round trips ShiftRows |
 | `aes/invsubbytes` | 1136 | 750 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
+| `aes/decrypt128` | 109624 | 1825 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -253,8 +254,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 560 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 560 | golden vectors, dual oracle |
+| 2 | yes | 566 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 566 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -368,9 +369,18 @@ the reasoning.
    rewritten was correct. See the trap under "Traps that have actually
    bitten".
 
-4. **HMAC_DRBG, the SP 800-108 KDFs, PBKDF2.** Loops over an HMAC whose map is
-   final by then. **The counter-mode KDF is built**; the rest of the step is
-   not.
+4. **DONE: HMAC_DRBG, the SP 800-108 KDFs, PBKDF2.** Loops over an HMAC whose
+   map is final by then. All four are built and pinned: `sha256/kdfctr`,
+   `sha256/kdffb`, `sha256/pbkdf2` and `sha256/drbg`, with four to six vectors
+   each.
+
+   **This item read "the counter-mode KDF is built; the rest of the step is
+   not" for longer than it was true**, and it was found by checking the tree
+   against the prose rather than by anyone noticing. A status line that
+   understates what exists is the same species of defect as one that
+   overstates it: both send the next person to the wrong place. The routine
+   table is generated and could not drift; this paragraph was hand-written and
+   did.
 
    `sha256/kdfctr` is SP 800-108r1 §4.1 over HMAC-SHA-256. It is the simplest
    shape in this whole list and worth saying why: the counter goes FIRST, so
@@ -1325,7 +1335,7 @@ the reasoning.
    ways out have not changed: teach `bffoot` to accept a declared-bounded
    unbalanced walk, or write the lookup as a conveyor and measure it.
 
-7. **AES decryption, in progress.** Every piece of the inverse cipher is
+7. **DONE: AES decryption.** Every piece of the inverse cipher is
    done — `aes/gfmul`, `aes/invmixcolumn`, `aes/invmixcolumns`,
    `aes/invshiftrows` and `aes/invsubbytes` — and the block that assembles
    them is not.
@@ -1405,17 +1415,65 @@ the reasoning.
    **do not skip the identity diff when touching a generator that already has
    a file in the tree.**
 
-   **Next:** `aes/decrypt128`. Its vector is FIPS 197 Appendix C.1 run
-   backwards and its real check is that it round-trips `aes/encrypt128`. It
-   has a problem the forward block did not: **decryption needs BOTH tables** —
-   the forward S-box for the key schedule's SubWord and the inverse for
-   InvSubBytes — and the round keys are consumed in reverse order. Two
-   resident tables plus a 176-byte schedule cannot all sit near the state, and
-   the measured cost of getting that wrong is the 2.5× in `aes/subbytes`'
-   header. The way out that looks right, and is not yet built or measured:
-   run the schedule forward into `w{176}` with the forward table, then CLEAR
-   that table and write the inverse one into the same cells, so only one is
-   ever resident.
+   **DONE: `aes/decrypt128`. AES-128 now runs both ways in hand-written
+   brainfuck, and the two halves invert each other.** The inverse cipher
+   agrees with both end-to-end values FIPS 197 publishes, run backwards; with
+   `aes/encrypt128`'s own committed vector reversed; and — the check no single
+   vector can state — **encrypt then decrypt returns the plaintext**, which the
+   suite now runs as two whole ciphers.
+
+   One block is **109,624 lines and 7.0MB**, the largest artifact in the tree,
+   and **138,283,367 instructions** against encryption's 112,104,416. The 1.23×
+   reconciles: nine InvMixColumns at 5.1M against MixColumns at 3.5M is about
+   14M of it, and the rest is the stored schedule and its travel.
+
+   **ONLY ONE TABLE IS EVER RESIDENT, and that is the whole design.**
+   Decryption needs both — the forward S-box for the key schedule's SubWord,
+   the inverse for InvSubBytes — and two tables are 1,536 cells, so whichever
+   did not sit beside the state would pay for every read to travel there and
+   back. `aes/subbytes` measured that at 2.5×. So phase one writes the FORWARD
+   table and runs the schedule into `w{176}`; then **the table is cleared and
+   the inverse written into the same 768 cells**; then phase two runs the
+   rounds. The clear and rewrite cost about 66,000 instructions once.
+
+   This is the first file here that treats the tape as something to be
+   **re-furnished** rather than laid out once, and it is worth naming as a
+   technique: where two large constants are wanted at different times and only
+   one place is cheap, the cheap place can be reused. It costs a clear.
+
+   **The whole schedule is stored, which the forward block did not need.**
+   Decryption consumes round keys backwards, so nothing can be recomputed on
+   the way; `w{176}` sits at the bottom where the journey to `addroundkey`'s
+   own cells is shortest. The forward block kept sixteen cells of window
+   instead, and both choices were forced by which direction the keys are
+   consumed in — not by preference.
+
+   **The defect on the way, and it was already in Traps.** Fifty section
+   dividers written as `; ---- round N ----`. A hyphen is a command byte, so
+   `bflint` refused the file and reported the count exactly: 1,857,764
+   instructions under `bfi` against 1,858,164 under canonical brainfuck — the
+   400 strays a conforming interpreter with no comment rule would have
+   executed. It would have decrypted correctly here and produced garbage
+   elsewhere, which is precisely the portability claim that lint defends. Cost:
+   one re-expansion. **The trap was already written down and I walked into it
+   anyway**, which is worth recording as its own small lesson about how much
+   protection a written-down trap actually gives.
+
+   **Next:** AES is complete as a cipher. What is NOT done, in the order they
+   are worth doing:
+
+   - **The FreeBSD half has seen none of these eight commits.** `reaper test`
+     is the gate of record and only the container lane has run. Nothing here
+     is obviously platform-sensitive, but the bisect cost grows with every
+     commit and this is the one risk that care cannot close.
+   - **The modes wall, now fully concrete.** `encrypt128` and `decrypt128`
+     both carry unbalanced walks, so neither has an INTERFACE line, so **no
+     mode can paste either** — CBC, CTR, GCM and CMAC would each carry a
+     multi-megabyte body per invocation. The two ways out are unchanged and
+     both are decisions: teach `bffoot` a declared-bounded unbalanced walk, or
+     write the lookup as a conveyor and measure it. AES-192 and AES-256 are
+     head-only changes by comparison and do not hit this.
+   - **The deferred cleanup batch**, unchanged.
 
 **DELIBERATELY DEFERRED, AND NOT FORGOTTEN:** tier 6 (item 6 below), a lane
 for BoneMesh's three `bf/` checks, a scheduled pin bump, brainstem's
