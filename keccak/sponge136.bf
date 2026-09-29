@@ -140106,3 +140106,4 @@
 
 ; emit  every byte of the answer went out inside the squeeze above  so
                                                                ; there is nothing here but the paste's own walk home
+                                                               ; ASSERT ptr=0

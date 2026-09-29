@@ -220,10 +220,10 @@ routine, the suite fails until it has a row here.
 | `keccak/parallelhash256` | 262184 | 773 | the same at SHAKE256's rate: NIST samples 4 and 5, a short last chunk, and a chunk bigger than a rate |
 | `keccak/squeeze136` | 51607 | 231 | inside the first rate, and one byte past it, which is the only path that stirs |
 | `keccak/squeeze168` | 51613 | 231 | the same two at SHAKE128's rate |
-| `keccak/sponge136` | 140108 | 497 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sponge136` | 140109 | 497 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
 | `keccak/sha3_256` | 140136 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
 | `keccak/shake256` | 140138 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 149689 | 504 | one inside the first rate and one past it + Cryptol |
+| `keccak/sponge168` | 149690 | 504 | one inside the first rate and one past it + Cryptol |
 | `keccak/shake128` | 149713 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
 | `keccak/sha3_384` | 61875 | 458 | rate 104  the same four + Cryptol |
@@ -277,12 +277,12 @@ must have no marker in the suite at all.
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 19 | Cryptol design proofs, two of which must be refuted |
-| 9 | yes | 6 | legibility and portability |
+| 9 | yes | 8 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
 | 9c | yes | 4 | provenance: every .bf equals bfexpand of its skeleton |
 | 9d | yes | 2 | the INTERFACE line tells the truth |
-| 9e | yes | 2 | the routine AND tier tables describe the tree |
+| 9e | yes | 6 | the routine AND tier tables describe the tree |
 | 10 | yes | 2 | one definition of the toolchain, and the declared guests |
 | 11 | manual | 0 | mutation, a discipline rather than a check |
 | 12 | yes | 14 | composition: a program chains routines through the broker |
@@ -2451,7 +2451,97 @@ from nowhere at all, and the spec produced `f70ddef9…` where the typed value h
 begun `2e2b34ca…` — not a near miss, an unrelated number. Do not pin a value you
 computed in your head, and do not pin one you did not compute.
 
+## The provenance failure, and the rebuild it forces
+
+**Sixteen of the eighteen skeletons added for AES were emitted by Python
+generators, and all eighteen carry the header `; HAND WRITTEN`.** That is a
+false claim, in committed and pushed artifacts, in a project whose stated
+purpose is hand-written brainfuck. CONVENTIONS §6 is not ambiguous — *"`x.skel`
+is what a person writes"* — and `bfstyle`'s size budget says in as many words
+that it exists to catch exactly this: *"a claim about PROVENANCE … anything
+past about 2000 lines had stopped being written and started being generated."*
+
+**The guard was hit three times and defeated three times.** `keyexpand128`
+came out at 2091 lines and was packed onto denser lines to reach 1883;
+`encrypt128` at 1609 and `decrypt128` at 1825 were shaped to fit from the
+start. The workaround was then written up as an insight — *"bfstyle's 2000
+line cap is a design force, not a lint"* — in this file and in commit
+`de16eb6`. It was a design force. It was measuring the thing it was built to
+measure, and the response was to route around it.
+
+Correctness is not the issue and does not excuse it: every one of those files
+is gated at 1078/0 on both platforms, and tier 9c proves each `.bf` is its
+`.skel` expanded. **Provenance is a different claim and it is the false one.**
+
+**THE REBUILD, AND WHAT CHANGES.** Agreed with the owner: AES is rebuilt, and
+skeletons work differently from here on.
+
+- Composition is by **including another skeleton's text**, not by pasting a
+  compiled `.bf`. See CONVENTIONS §6.
+- Building blocks live in `block/`. **The leaves are pure brainfuck and
+  comments** — that is where hand-written instructions live.
+- The graph is acyclic, every reference resolves, and nothing in `block/` is
+  orphaned. `tools/bfdag.pl` proves all three.
+- No control logic on the templating side. Only the name of a file.
+
+**And the rebuild must change the SHAPE, not just the notation.** Re-expressing
+the same unrolled design in blocks would still be ~1300 lines of skeleton, and
+writing it would be running a generator in one's head and typing the output.
+That satisfies the letter of the rule and not the point of it.
+
+**Unrolling was the disease; the generator was the symptom.** Two hundred
+S-box reads, forty key-schedule words and sixteen state bytes per round were
+unrolled because unrolled code needs no counters — and 1825 lines can only
+come from a machine. This project already made the other choice once, on
+purpose: `spec/perm.cry` proves *"a brainfuck quarter round needs ONE add, ONE
+xor and ONE rotate in a loop, at fixed tape positions, instead of twelve
+unrolled ops"*, and ChaCha20 is looped because of it. AES should be looped for
+the same reason.
+
+**What that needs first, and it is not yet done: measure the conveyor.** A
+loop needs its data to arrive at a fixed place, which means sliding rather
+than walking. That has never been measured — and it is the *same* measurement
+as the modes wall's option (b). One experiment settles both: a conveyor
+`fetch256` against the walking one, same vectors, instruction counts side by
+side. If it is affordable, AES is rebuilt looped, the skeletons are short and
+genuinely hand-written, and the modes wall goes away as a side effect. If it
+is ruinous, that is known with a number and unrolling can be argued for with
+eyes open.
+
+**One honest exception to settle before the rebuild: the S-box is 256 bytes of
+constant.** It cannot be hand-typed — 32,640 plus signs — and it must not be,
+because "derived, not typed" is the rule that cSHAKE128 and KMAC256 sample 4
+each cost a day to. The proposal on the table is a second provenance category,
+`DERIVED TABLE`, **mechanically enforced**: such a block may contain only `+`,
+`>` and comments, so a file with no loops and no control flow cannot be a
+transpiler's output in the sense the rule cares about; and its values are
+checked against the table the `index/fetch256` vectors already gate. Not yet
+agreed.
+
 ## Traps that have actually bitten
+
+- **A FILE THAT DOES NOT END IN A NEWLINE LOSES ITS LAST LINE, SILENTLY.**
+  Shell's `while IFS= read -r line` does not deliver an unterminated final
+  line. `tools/bfexpand.sh` read skeletons that way for the whole life of the
+  project, so the last line of any skeleton without a trailing newline was
+  dropped on the floor and never reached the `.bf`.
+
+  Two files were in that state: `keccak/sponge136.skel` and
+  `keccak/sponge168.skel`, and what each of them ended with was
+  `; ASSERT ptr=0` — **a contract**. So both sponges carried a pointer
+  assertion that had never once been evaluated, in a suite whose whole
+  argument is that contracts are checked rather than believed.
+
+  Both hold, which is the lucky half. The unlucky half is that nothing in the
+  suite would have said if they did not, and nothing would ever have said,
+  because the check was missing from the artifact rather than failing in it.
+
+  It surfaced only because `%%include%%` moved skeleton reading out of the
+  shell and into `tools/bfinclude.pl`, which terminates every line it emits —
+  so the regeneration tier suddenly produced one line MORE than the committed
+  file and failed. **A tool change exposed it; no amount of care would have.**
+  `tests/run.sh` now checks that every `.skel` and every `.bf` ends with a
+  newline, which is the cheap guard that should always have been there.
 
 - **A PASTE SITE STANDS AT ITS BASE. `@@NAME@@ 82` DOES NOT MOVE THE POINTER.**
   The number after the macro rebases the callee's contracts and nothing else;

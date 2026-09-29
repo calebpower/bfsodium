@@ -21,6 +21,23 @@
 # symbolic name, and generates no loop. The emitted .bf is the committed
 # artifact and every check runs on it.
 #
+# THERE IS A SECOND COMPOSITION FORM and it is not a paste. A line reading
+#
+#     %%block/name%%
+#
+# substitutes that skeleton's TEXT, recursively, before any of the below runs.
+# tools/bfinclude.pl does it and its header says why inclusion rather than a
+# paste. The short version: an include reads the callee's .skel, so there is
+# one source of truth per block and no window in which a caller is built
+# against a stale callee; and it needs no INTERFACE line, so a component may
+# contain an indexed walk, which no paste can.
+#
+# A BLOCK SHOULD NOT CARRY "; ASSERT ptr=" LINES. An include is text and the
+# same text may appear at different places, so a pointer assertion inside one
+# would be a claim about wherever it happened to land. Contracts belong to the
+# file being assembled, written around the include by the author who knows
+# where the pointer stands.
+#
 #   bfexpand.sh FILE.skel > FILE.bf
 set -eu
 here=$(cd "$(dirname "$0")" && pwd); repo=$(cd "$here/.." && pwd)
@@ -102,7 +119,14 @@ import() {
 # pipeline reported the layout's success instead. A redirection keeps the loop in
 # THIS shell, where "exit 1" still means what it says.
 raw=$(mktemp)
-trap 'rm -f "$raw"' EXIT HUP INT TERM
+flat=$(mktemp)
+trap 'rm -f "$raw" "$flat"' EXIT HUP INT TERM
+
+# Includes are flattened FIRST, in one pass, by a tool that can recurse. A
+# shell function cannot: `line` is global in POSIX sh, so a recursive read
+# loop would clobber its own caller's current line. The flattening is also
+# where a cycle is caught, and it names the whole ring rather than the fact.
+perl "$here/bfinclude.pl" "$1" > "$flat"
 
 {
 while IFS= read -r line; do
@@ -185,7 +209,7 @@ while IFS= read -r line; do
         ';'*)         printf '%s\n' "$line" ;;
         *)            printf '%s\n' "$line" | perl -pe 's{^([^;]*)}{ my $c = $1; $c =~ s/R(\d+)/">" x $1/ge; $c =~ s/L(\d+)/"<" x $1/ge; $c }e' ;;
     esac
-done < "$1"
+done < "$flat"
 } > "$raw"
 
 perl "$here/bflayout.pl" < "$raw"

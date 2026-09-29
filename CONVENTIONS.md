@@ -410,6 +410,70 @@ off the rails once by drifting into a transpiler, and the size budget in
 pastes a callee's body, so a callee must be expanded before its callers or the
 caller embeds a stale copy.
 
+### Building blocks, and the second composition form
+
+There is a second way to compose, and it is **not** a paste. A line reading
+
+```
+%%block/name%%
+```
+
+substitutes that **skeleton's text**, recursively, before anything else runs.
+`tools/bfinclude.pl` does it. The differences from `@@NAME@@ base` are the
+whole point of having both while the library migrates to the newer one:
+
+| | `@@NAME@@ base` | `%%block/name%%` |
+|---|---|---|
+| reads | the callee's committed `.bf` | the callee's `.skel` |
+| takes | the routine's *body*, minus its read prologue and everything from `; emit` | the file's text, entire |
+| wraps | `>`×entry and `<`×exit from the callee's `; INTERFACE` | nothing |
+| rebases | the callee's `ASSERT` offsets to the base | nothing |
+| requires | an `INTERFACE` line, so `bffoot` must accept the callee | nothing |
+
+**Why inclusion.** A paste reads the callee's `.bf`, so a caller can be
+regenerated against a **stale** callee and nothing says so — that cost an
+afternoon once and HANDOFF still carries it as the worst trap in the file. An
+include reads the only artifact a person edits, so there is one source of
+truth per block and no window in which two artifacts disagree.
+
+It also decouples composition from `tools/bffoot`. A paste needs an
+`INTERFACE` line; `bffoot` will not issue one for a file whose loops are
+unbalanced; an indexed walk is unbalanced by construction — so the S-box read
+could not be a component at all. Inclusion does not care: it is text. The
+assembled `.bf` is still judged by every tool in the suite, once, at the end.
+
+**The rules a block obeys.**
+
+- **The graph is acyclic and every reference resolves.** `tools/bfdag.pl`
+  proves both, and also that no block in `block/` is included by nobody: a
+  component nothing includes is a component nothing tests, which is how
+  `index/fetch8` sat a year unused and unvectored.
+- **The leaves are pure.** A block that includes nothing is brainfuck and
+  comments, and nothing else. That is where the hand-written instructions
+  live.
+- **There is no control logic on the templating side.** No conditional, no
+  repetition, no parameter, no arithmetic. A skeleton is text plus the names
+  of other files. `Rn`/`Ln` remain, because a run length is a number the
+  author wrote down and not a computation — §6's rule is that every offset is
+  worked out by the author, and `R46` is "forty six arrows", not an offset
+  derived from a name.
+- **A block carries no `; ASSERT ptr=` line.** An include is text and the same
+  text may land in different places, so a pointer assertion inside one would
+  be a claim about wherever it happened to fall. Contracts belong to the file
+  being assembled, written around the include by the author who knows where
+  the pointer stands.
+
+### The picture of the graph
+
+`tools/bfgraph.pl` draws the include graph as `graph.drawio` and is generated
+documentation in the same family as `bftable.pl` and `bftier.pl`: the suite
+fails if the committed file is not the one this tree produces. It also
+**measures the picture** — no line may cross a node it does not connect, no
+two lines may lie on top of one another, and there are minimum separations.
+A diagram that is redrawn automatically can become unreadable automatically,
+and every one of those three checks failed at some point while the layout was
+being written.
+
 **A `.bf` is never hand-edited.** The suite regenerates every one from its
 skeleton and compares byte for byte. If you find yourself editing a `.bf`, you
 are editing the wrong file.

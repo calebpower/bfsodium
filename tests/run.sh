@@ -99,6 +99,8 @@ run "bflint self-test" ./tools/bflint --selftest
 run "bffoot self-test" ./tools/bffoot --selftest
 run "bftable self-test" perl tools/bftable.pl --selftest
 run "bftier self-test" perl tools/bftier.pl --selftest
+run "bfdag self-test" perl tools/bfdag.pl --selftest
+run "bfgraph self-test" perl tools/bfgraph.pl --selftest
 # Every committed ROUTINE, not a named list of directories. index/ sat outside
 # the old "chacha20 poly1305" globs and so was linted, styled and
 # footprint-checked by nothing at all -- it passes when run by hand, which is
@@ -223,6 +225,37 @@ run "HANDOFF's routine table describes the tree" perl tools/bftable.pl
 # table saying what you want and what you have in one column drifts the
 # moment those differ, and they almost always differ.
 run "HANDOFF's tier table describes the suite" perl tools/bftier.pl
+
+# The include graph, and the picture of it. bfdag proves the graph itself is
+# sound: every reference resolves, nothing is cyclic, and no block sits in
+# block/ with nobody including it -- which is how index/fetch8 went a year
+# unused and unvectored.
+run "the skeleton include graph is a DAG with no orphans" perl tools/bfdag.pl
+
+# A FILE THAT DOES NOT END IN A NEWLINE LOSES ITS LAST LINE, silently. Shell's
+# `while read` does not deliver an unterminated final line, so tools/bfexpand
+# dropped it for as long as it read skeletons directly -- and keccak/sponge136
+# and sponge168 both ended with "; ASSERT ptr=0" and no newline, so that
+# contract had never once been checked. Both hold, which is the lucky half;
+# the unlucky half is that nothing would have said if they did not.
+run "every skeleton and every .bf ends with a newline" sh -c '
+    bad=$(for f in */*.skel */*.bf; do
+              [ -n "$(tail -c1 "$f")" ] && echo "$f"
+          done)
+    [ -z "$bad" ] || { echo "these lose their last line to a missing newline:"; echo "$bad"; exit 1; }'
+
+# graph.drawio is generated documentation and gets the same treatment as
+# HANDOFF's tables: the committed file must be the one this tree produces.
+run "graph.drawio describes the tree" perl tools/bfgraph.pl
+
+# AND THE PICTURE MUST BE READABLE, which is not the same claim. A diagram
+# redrawn automatically can become unreadable automatically, so the geometry
+# is measured: no line crosses a node it does not connect, no two lines lie
+# on top of one another, and the separations hold. Each of those failed while
+# the layout was being written -- 27 lines through unrelated nodes, and forty
+# lines 2px apart in the busiest gutter -- and the measurement is what said
+# so rather than the looking.
+run "the picture of the include graph is readable" perl tools/bfgraph.pl --audit
 
 # There is ONE definition of the toolchain, in tools/guest-setup.sh, and both
 # lanes run it: reaper's [build] calls it with no argument, the Containerfile
