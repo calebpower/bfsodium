@@ -1,0 +1,32 @@
+; THE EIGHT BIT STEPS OF AN EXCLUSIVE OR  entered at cnt with the fourteen
+; cell frame below it: a qa pa fa b qb pb fb t ft res p cnt tmp; a and b are
+; halved away  t ends as the exclusive or of each bit pair  and res gathers
+; the weight whenever t is set; CONVENTIONS section 5 carries the entry;
+;
+; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also carry  down to the
+; character; they are not yet built on it  which HANDOFF records as held out
+; of the rebuild rather than forgotten;
+  [-
+; HALVE a  giving qa and pa
+  L12
+%%block/halve%%
+; HALVE b  giving qb and pb
+  R4
+%%block/halve%%
+; the low bit of a toggles t
+  L2 [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]
+; the low bit of b toggles t
+  R4 [->>>+<[->-<]>[-<+>]<<<]
+; if t then res gets the weight in hand
+  R2 [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
+; a becomes qa
+  L7 [-<+>]
+; b becomes qb
+  R4 [-<+>]
+; the weight goes into the scratch
+  R6 [->>+<<]
+; and comes back doubled
+  R2 [-<<++>>]
+; back to the counter
+  L1
+  ]

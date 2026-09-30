@@ -77,28 +77,10 @@ R12
 R1 ++++++++
 ; ASSERT ptr=+15
 ; ==== eight bit steps ====
-  [-
-; HALVE a  giving qa and pa
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]
-; HALVE b  giving qb and pb
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]
-; the low bit of a toggles t
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]
-; the low bit of b toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]
-; if t then res gets the weight in hand
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]
-; a becomes qa
-  <<<<<<< [-<+>]
-; b becomes qb
-  >>>> [-<+>]
-; the weight goes into the scratch
-  >>>>>> [->>+<<]
-; and comes back doubled
-  >> [-<<++>>]
-; back to the counter
-  <
-  ]
+; the kernel is a block now  and idiom/xor32 and idiom/xor64 carry the same
+; one inline; building those two on it is held out of this rebuild and
+; recorded in HANDOFF rather than forgotten;
+%%block/xor8kernel%%
 ; ASSERT ptr=+15
 ; the result comes home
 L2

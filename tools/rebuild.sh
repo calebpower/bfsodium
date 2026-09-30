@@ -23,6 +23,9 @@ pass=1
 while [ "$pass" -le "$max" ]; do
     changed=0
     for s in */*.skel; do
+        # A block/ skeleton has no .bf and must not grow one: it is text that
+        # its includers carry, and tools/bftable fails if one appears.
+        case "$s" in block/*) continue ;; esac
         out="${s%.skel}.bf"
         sh tools/bfexpand.sh "$s" > "$out.new"
         if [ -f "$out" ] && cmp -s "$out.new" "$out"; then

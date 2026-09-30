@@ -15,8 +15,17 @@
  *  2. LEGIBILITY. The conventions require a tape map, an IO header, and
  *     annotation rather than walls of unexplained command bytes.
  *
+ * --fragment drops the second family and keeps the first. A block/ skeleton
+ * is not a routine: it has no IO of its own and no tape of its own, because
+ * it is a sequence of relative tokens that its includer places. Demanding a
+ * TAPE MAP of it would be demanding a claim it is not in a position to make,
+ * and the header would then be duplicated into the .bf at every include
+ * site. The PORTABILITY rule still applies with full force -- a command byte
+ * in a comment is a command byte wherever the comment ends up.
+ *
  * Usage:
  *   bflint FILE...          check; exit 1 if any file fails
+ *   bflint --fragment F...  check PORTABILITY only, for a block/ skeleton
  *   bflint --fix FILE...    rewrite comment prose in place to be portable
  *   bflint --selftest       prove the checker complains at broken input
  *
@@ -125,10 +134,32 @@ static int fix_file(const char *path) {
     return 0;
 }
 
-static int check_file(const char *path, int quiet) {
+static int check_mode(const char *path, int quiet, int fragment);
+static int check_file(const char *path, int quiet) { return check_mode(path, quiet, 0); }
+static int check_mode(const char *path, int quiet, int fragment) {
     size_t n; char *src = slurp(path, &n);
     if (!src) return 1;
     int bad = 0;
+
+    /* A "; ASSERT" line in a SKELETON is a DIRECTIVE, not prose. bfexpand
+     * rewrites "ptr=+2" into "ptr=2" on its way to the .bf, so the plus
+     * sign never reaches a committed file -- but it is sitting in the
+     * skeleton, and a plain portability scan reads it as a command byte in
+     * a comment. That is how this check first ran: it failed 80 of 98
+     * skeletons, every one of them correct. The lines are blanked here,
+     * keeping their length so diagnostics still name the right line, and
+     * the .bf lint sees the rewritten contract with full force. */
+    if (fragment) {
+        size_t i = 0;
+        while (i < n) {
+            size_t j = i;
+            while (j < n && (src[j] == 32 || src[j] == 9)) j++;
+            if (j < n && src[j] == 59 && strncmp(src + j + 1, " ASSERT", 7) == 0)
+                while (i < n && src[i] != 10) src[i++] = 32;
+            while (i < n && src[i] != 10) i++;
+            if (i < n) i++;
+        }
+    }
 
     size_t a_len, b_len;
     char *ours  = stream(src, n, 1, &a_len);   /* ';' honored (bfi)        */
@@ -155,15 +186,19 @@ static int check_file(const char *path, int quiet) {
         }
     }
 
-    /* Legibility floor: required headers. */
-    if (!strstr(src, "TAPE MAP")) {
+    /* Legibility floor: required headers. A fragment is exempt; see the top. */
+    if (!fragment && !strstr(src, "TAPE MAP")) {
         bad = 1; if (!quiet) printf("FAIL %s: missing TAPE MAP header\n", path);
     }
-    if (!strstr(src, "IO ")) {
+    if (!fragment && !strstr(src, "IO ")) {
         bad = 1; if (!quiet) printf("FAIL %s: missing IO signature header\n", path);
     }
 
-    /* Legibility floor: no unexplained wall of command bytes on one line. */
+    /* Legibility floor: no unexplained wall of command bytes on one line.
+     * A FRAGMENT is exempt: a skeleton's long lines are normal -- a 257 byte
+     * read prologue is one line by design -- and tools/bflayout wraps them on
+     * the way to the .bf, which is where this rule then bites. */
+    if (!fragment)
     {
         size_t line = 1, run = 0; int cmt = 0;
         for (size_t i = 0; i <= n; i++) {
@@ -217,6 +252,35 @@ static int selftest(void) {
     if (check_file(tmp, 1) != 0) { printf("SELFTEST FAIL: false positive on a good file\n"); fails++; }
     else printf("selftest ok: clean file passes\n");
 
+    /* (e) a FRAGMENT has no headers and that is not a fault. A block/ file
+     * is a sequence of relative tokens, not a routine, so it has no IO and
+     * no tape of its own to describe. */
+    f = fopen(tmp, "wb"); fputs("; a block  all relative\n  [->>>+<<<]\n", f); fclose(f);
+    if (check_mode(tmp, 1, 1) != 0) { printf("SELFTEST FAIL: fragment rejected for having no headers\n"); fails++; }
+    else printf("selftest ok: a fragment needs no TAPE MAP\n");
+
+    /* (f) but PORTABILITY still binds a fragment, and harder: a command
+     * byte in a block comment lands in every file that includes it. */
+    f = fopen(tmp, "wb"); fputs("; a block  with a comma, in the prose\n  [->>>+<<<]\n", f); fclose(f);
+    if (check_mode(tmp, 1, 1) == 0) { printf("SELFTEST FAIL: fragment allowed a command byte in a comment\n"); fails++; }
+    else printf("selftest ok: a fragment is still held to portability\n");
+
+    /* (g) and the exemption must not leak: without --fragment the headers
+     * are still required, or a routine could drop them by accident. */
+    f = fopen(tmp, "wb"); fputs("; a block  all relative\n  [->>>+<<<]\n", f); fclose(f);
+    if (check_mode(tmp, 1, 0) == 0) { printf("SELFTEST FAIL: headers no longer required without --fragment\n"); fails++; }
+    else printf("selftest ok: the fragment exemption does not leak\n");
+
+    /* (h) a relative contract is a DIRECTIVE and its plus sign is notation.
+     * bfexpand rewrites "ptr=+2" to "ptr=2" before it reaches any .bf. */
+    f = fopen(tmp, "wb"); fputs("; ASSERT ptr=+2\n; ASSERT zero +0:+9\n  [-]\n", f); fclose(f);
+    if (check_mode(tmp, 1, 1) != 0) { printf("SELFTEST FAIL: a relative ASSERT was read as prose\n"); fails++; }
+    else printf("selftest ok: a relative ASSERT is a directive\n");
+
+    /* (i) but a plus sign in REAL prose is still caught, in a fragment. */
+    f = fopen(tmp, "wb"); fputs("; two + two\n  [-]\n", f); fclose(f);
+    if (check_mode(tmp, 1, 1) == 0) { printf("SELFTEST FAIL: a plus sign in fragment prose was allowed\n"); fails++; }
+    else printf("selftest ok: a plus sign in prose is still caught\n");
     remove(tmp);
     if (fails) { printf("SELFTEST FAILED (%d)\n", fails); return 1; }
     printf("SELFTEST PASSED\n");
@@ -226,9 +290,10 @@ static int selftest(void) {
 int main(int argc, char **argv) {
     if (argc < 2) { fprintf(stderr, "usage: %s [--fix|--selftest] FILE...\n", argv[0]); return 2; }
     if (strcmp(argv[1], "--selftest") == 0) return selftest();
-    int fix = (strcmp(argv[1], "--fix") == 0);
-    int start = fix ? 2 : 1, bad = 0;
+    int fix  = (strcmp(argv[1], "--fix") == 0);
+    int frag = (strcmp(argv[1], "--fragment") == 0);
+    int start = (fix || frag) ? 2 : 1, bad = 0;
     for (int i = start; i < argc; i++)
-        bad |= fix ? fix_file(argv[i]) : check_file(argv[i], 0);
+        bad |= fix ? fix_file(argv[i]) : check_mode(argv[i], 0, frag);
     return bad ? 1 : 0;
 }

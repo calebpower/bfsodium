@@ -86,9 +86,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -137,9 +164,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -188,9 +242,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -249,9 +330,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -287,50 +395,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -358,9 +508,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -417,9 +594,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -455,50 +659,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -526,9 +772,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -586,9 +859,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -624,50 +924,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -695,9 +1037,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -755,9 +1124,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -793,50 +1189,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -864,9 +1302,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -928,9 +1393,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -973,9 +1465,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1024,9 +1543,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1069,9 +1615,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1120,9 +1693,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1165,9 +1765,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1213,9 +1840,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1259,9 +1913,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1358,9 +2039,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1409,9 +2117,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1460,9 +2195,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1521,9 +2283,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1559,50 +2348,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -1630,9 +2461,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1689,9 +2547,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1727,50 +2612,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -1798,9 +2725,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1858,9 +2812,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -1896,50 +2877,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -1967,9 +2990,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2027,9 +3077,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2065,50 +3142,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -2136,9 +3255,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2200,9 +3346,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2245,9 +3418,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2296,9 +3496,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2341,9 +3568,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2392,9 +3646,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2437,9 +3718,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2485,9 +3793,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2531,9 +3866,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2630,9 +3992,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2681,9 +4070,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2732,9 +4148,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2793,9 +4236,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2831,50 +4301,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -2902,9 +4414,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2961,9 +4500,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -2999,50 +4565,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -3070,9 +4678,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3130,9 +4765,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3168,50 +4830,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -3239,9 +4943,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3299,9 +5030,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3337,50 +5095,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -3408,9 +5208,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3472,9 +5299,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3517,9 +5371,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3568,9 +5449,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3613,9 +5521,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3664,9 +5599,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3709,9 +5671,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3757,9 +5746,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3803,9 +5819,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3902,9 +5945,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -3953,9 +6023,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4004,9 +6101,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4065,9 +6189,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4103,50 +6254,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -4174,9 +6367,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4233,9 +6453,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4271,50 +6518,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -4342,9 +6631,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4402,9 +6718,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4440,50 +6783,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -4511,9 +6896,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4571,9 +6983,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4609,50 +7048,92 @@
 >                                                              ; and the top bit  by seven halvings that keep the
                                                                ; quotient
                                                                ; ASSERT ptr=18
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving one of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving one of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving two of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving two of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving three of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving three of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving four of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving four of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving five of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving five of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving six of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving six of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
   [-<+>]
 <
-  [->>>+<[-<+>>-<]>[-<+>]<<<]                                  ; halving seven of seven; the bit that falls off is not
->>                                                             ; ; wanted
+                                                               ; halving seven of seven; the bit that falls off is not
+                                                               ; wanted HALVE  the byte at this cell  with q t and f
+                                                               ; in the three cells above it; q becomes it shifted
+                                                               ; right one and t the bit that fell off; the pointer
+                                                               ; comes back here; CONVENTIONS section 5 carries the
+                                                               ; vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+>>
   [-]
 <<
 >
@@ -4680,9 +7161,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4744,9 +7252,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4789,9 +7324,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4840,9 +7402,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4885,9 +7474,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4936,9 +7552,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -4981,9 +7624,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -5029,9 +7699,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
@@ -5075,9 +7772,36 @@
 > ++++++++                                                     ; and there are eight bits to do
                                                                ; ASSERT ptr=15
 ; ============================================================ ; ; ; eight bit steps
+                                                               ; the kernel is a block now  and idiom/xor32 and
+                                                               ; idiom/xor64 carry the same one inline; building those
+                                                               ; two on it is held out of this rebuild and recorded in
+                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
+                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
+                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
+                                                               ; cnt tmp; a and b are halved away  t ends as the
+                                                               ; exclusive or of each bit pair  and res gathers the
+                                                               ; weight whenever t is set; CONVENTIONS section 5
+                                                               ; carries the entry;
+;
+                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
+                                                               ; carry  down to the character; they are not yet built
+                                                               ; on it  which HANDOFF records as held out of the
+                                                               ; rebuild rather than forgotten;
   [-
-  <<<<<<<<<<<< [->>>+<[-<+>>-<]>[-<+>]<<<]                     ; HALVE a  giving qa and pa
-  >>>> [->>>+<[-<+>>-<]>[-<+>]<<<]                             ; HALVE b  giving qb and pb
+  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
+  >>>>                                                         ; HALVE b  giving qb and pb
+                                                               ; HALVE  the byte at this cell  with q t and f in the
+                                                               ; three cells above it; q becomes it shifted right one
+                                                               ; and t the bit that fell off; the pointer comes back
+                                                               ; here; CONVENTIONS section 5 carries the vocabulary
+                                                               ; entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]
   << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
   >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
   >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand

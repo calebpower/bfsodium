@@ -62,7 +62,9 @@
 
 ; ==== bit 0 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the
@@ -88,7 +90,9 @@
 
 ; ==== bit 1 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the
@@ -114,7 +118,9 @@
 
 ; ==== bit 2 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the
@@ -140,7 +146,9 @@
 
 ; ==== bit 3 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the
@@ -166,7 +174,9 @@
 
 ; ==== bit 4 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the
@@ -192,7 +202,9 @@
 
 ; ==== bit 5 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the
@@ -218,7 +230,9 @@
 
 ; ==== bit 6 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the
@@ -244,7 +258,9 @@
 
 ; ==== bit 7 of the multiplier ====
 ; halve b  which leaves the quotient and the bit that fell off
-  R26[->>>+<[-<+>>-<]>[-<+>]<<<]L26
+  R26
+%%block/halve%%
+  L26
 ; the bit GUARDS a copy of a: nought or one turns of the loop
   R28[-L5[-R1+R1+L2]R2[-L2+R2]R3]L28
 ; and the product takes an exclusive or with it  which is the

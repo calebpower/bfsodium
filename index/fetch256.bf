@@ -81,18 +81,31 @@
   [->>>+<<<]
 >>>
                                                                ; ASSERT ptr=4
-                                                               ; the walk out: spend one step  carry what is left to
-                                                               ; the next group  drop a trail  and step on; a walk of
-                                                               ; nought stops here
+                                                               ; THE INDEXED WALK  entered at group 1's walker with
+                                                               ; the index in it; the tape is groups of three  (d a b)
+                                                               ; and the answer comes to rest in group 0's walker; the
+                                                               ; caller owns the two lines that put the index there
+                                                               ; and its own contract  because a pointer assertion
+                                                               ; belongs to the file being assembled;
+;
+                                                               ; THIS IS WHY AES CANNOT BE PASTED; the walk advances
+                                                               ; three cells a turn  so no loop here is pointer
+                                                               ; balanced  so tools/bffoot will not bound it and
+                                                               ; tools/bfexpand will not paste a file holding it; an
+                                                               ; INCLUDE does not care and that is the whole reason
+                                                               ; this is a block; the walk out: spend one step  carry
+                                                               ; what is left to the next group  drop a trail  and
+                                                               ; step on; a walk of nought stops where it starts
   [-[->>>+<<<]>+<>>>]
                                                                ; the datum is COPIED into the walker and put back from
                                                                ; the trail cell  which is nought in this group because
                                                                ; the walk stopped before setting it; that is what
-                                                               ; leaves the table as it was
+                                                               ; leaves the table fit to be read again
   <[->+>+<<]>>[-<<+>>]<
                                                                ; the walk back: hand the value down one group  then
                                                                ; follow the trail while it is set  clearing it; group
-                                                               ; 0's is never set
+                                                               ; 0's trail is never set and that is what stops the
+                                                               ; walk
   [-<<<+>>>]<<[-<[-<<<+>>>]<<]
   <                                                            ; and the value has come to rest in group 0's walker
                                                                ; ASSERT ptr=1

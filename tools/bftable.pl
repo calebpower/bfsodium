@@ -52,6 +52,23 @@ sub check {
 
         my $bf   = lines_in("$dir/$routine.bf");
         my $skel = lines_in("$dir/$routine.skel");
+
+        # A block/ leaf has no .bf and is not supposed to have one: it is text
+        # that its includers carry into theirs, not a program of its own. Its
+        # first column is nought, and the check is that it STAYS nought -- a
+        # block that has grown a .bf has stopped being a block.
+        if (defined $skel && $routine =~ m{^block/}) {
+            if (defined $bf) {
+                push @bad, "$routine: a block has grown a .bf; a block is text, not a program";
+            } elsif ($said_bf != 0 || $skel != $said_skel) {
+                push @bad, sprintf("%-28s table says %s/%s, the tree says 0/%d",
+                                   $routine, $said_bf, $said_skel, $skel);
+                $line =~ s/^(\| \`\Q$routine\E\` \| )\d+( \| )\d+( \|)/${1}0$2$skel$3/
+                    if $rewrite;
+            }
+            next;
+        }
+
         if (!defined $bf || !defined $skel) {
             push @bad, "$routine: the table has a row for it and the tree does not";
             next;
@@ -123,6 +140,21 @@ sub selftest {
     $doc->("| \`idiom/gone\` | 1 | 1 | prose |\n");
     ($bad) = check($dir, 'H.md', 0);
     grep { /the tree does not/ } @$bad or $fail->('a row with no routine was not caught');
+
+    # A block/ leaf is text its includers carry: a skeleton, no .bf, and a
+    # first column of nought. Both polarities are checked here. It is made
+    # only now, because the cases above use a document that does not
+    # mention it and every skeleton must have a row.
+    mkdir "$dir/block" or die $!;
+    $write->('block/leaf.skel', 4);
+    $doc->("| `block/leaf` | 0 | 4 | a leaf |\n| `idiom/one` | 7 | 3 | prose |\n");
+    ($bad) = check($dir, 'H.md', 0);
+    @$bad and $fail->("a block with no .bf was called wrong: @$bad");
+
+    $write->('block/leaf.bf', 9);
+    ($bad) = check($dir, 'H.md', 0);
+    @$bad == 1 or $fail->('a block that grew a .bf was not caught');
+    unlink "$dir/block/leaf.bf";
 
     print "bftable: selftest passed\n";
     exit 0;

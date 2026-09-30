@@ -52,7 +52,7 @@ R17
 R1
 ; ASSERT ptr=+18
 ; halving one of seven; the bit that falls off is not wanted
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
+%%block/halve%%
 R2
   [-]
 L2
@@ -60,7 +60,7 @@ R1
   [-L1+R1]
 L1
 ; halving two of seven; the bit that falls off is not wanted
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
+%%block/halve%%
 R2
   [-]
 L2
@@ -68,7 +68,7 @@ R1
   [-L1+R1]
 L1
 ; halving three of seven; the bit that falls off is not wanted
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
+%%block/halve%%
 R2
   [-]
 L2
@@ -76,7 +76,7 @@ R1
   [-L1+R1]
 L1
 ; halving four of seven; the bit that falls off is not wanted
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
+%%block/halve%%
 R2
   [-]
 L2
@@ -84,7 +84,7 @@ R1
   [-L1+R1]
 L1
 ; halving five of seven; the bit that falls off is not wanted
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
+%%block/halve%%
 R2
   [-]
 L2
@@ -92,7 +92,7 @@ R1
   [-L1+R1]
 L1
 ; halving six of seven; the bit that falls off is not wanted
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
+%%block/halve%%
 R2
   [-]
 L2
@@ -100,7 +100,7 @@ R1
   [-L1+R1]
 L1
 ; halving seven of seven; the bit that falls off is not wanted
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
+%%block/halve%%
 R2
   [-]
 L2

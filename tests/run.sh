@@ -121,6 +121,14 @@ run "bfgraph self-test" perl tools/bfgraph.pl --selftest
 bf_routines() { for f in */*.bf; do case "$f" in programs/*) ;; *) echo "$f" ;; esac; done; }
 
 for f in $(bf_routines); do run "lint $f" ./tools/bflint "$f"; done
+
+# THE COMMENT RULE BINDS THE SKELETON TOO, and hardest for a block: a command
+# byte in block/halve's prose lands in EVERY file that includes it, and the
+# .bf is where that shows up rather than where it was written. Skeletons are
+# checked as FRAGMENTS -- portability only -- because a block is not a
+# routine and has no IO or tape of its own to describe. The header rules stay
+# on the .bf, where a routine does have both.
+for f in */*.skel; do run "lint $f" ./tools/bflint --fragment "$f"; done
 # TIER 9a 9b
 for f in $(bf_routines); do run "style $f" ./tools/bfstyle "$f"; done
 # A routine is pasted into its callers on the strength of its INTERFACE line, so
@@ -187,7 +195,12 @@ sha512/sha512_256.bf"
 # it is also what caught bfexpand dropping all but the first line of a
 # multi-line read prologue, which pasted 47 stray reads into a caller.
 # TIER 9c
+# A block/ skeleton is SKIPPED here and it has to be: it has no .bf, because
+# it is text its includers carry rather than a program of its own, and
+# bftable fails if one ever grows a .bf. Regenerating it would compare a file
+# against nothing.
 for s in */*.skel; do
+    case "$s" in block/*) continue ;; esac
     run "regenerates ${s%.skel}.bf" \
         sh -c "sh tools/bfexpand.sh '$s' | cmp -s - '${s%.skel}.bf'"
 done

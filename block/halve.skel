@@ -1,0 +1,4 @@
+; HALVE  the byte at this cell  with q t and f in the three cells above it;
+; q becomes it shifted right one and t the bit that fell off; the pointer
+; comes back here; CONVENTIONS section 5 carries the vocabulary entry;
+  [->>>+<[-<+>>-<]>[-<+>]<<<]

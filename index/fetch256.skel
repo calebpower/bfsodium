@@ -52,18 +52,7 @@ L767
   [-R3+L3]
 R3
 ; ASSERT ptr=4
-; the walk out: spend one step  carry what is left to the next
-; group  drop a trail  and step on; a walk of nought stops here
-  [-[->>>+<<<]>+<>>>]
-; the datum is COPIED into the walker and put back from the trail
-; cell  which is nought in this group because the walk stopped
-; before setting it; that is what leaves the table as it was
-  <[->+>+<<]>>[-<<+>>]<
-; the walk back: hand the value down one group  then follow the
-; trail while it is set  clearing it; group 0's is never set
-  [-<<<+>>>]<<[-<[-<<<+>>>]<<]
-; and the value has come to rest in group 0's walker
-  <
+%%block/walk256%%
 ; ASSERT ptr=1
 
 ; emit  the datum  which is the whole of the answer
