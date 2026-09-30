@@ -2498,25 +2498,84 @@ xor and ONE rotate in a loop, at fixed tape positions, instead of twelve
 unrolled ops"*, and ChaCha20 is looped because of it. AES should be looped for
 the same reason.
 
-**What that needs first, and it is not yet done: measure the conveyor.** A
-loop needs its data to arrive at a fixed place, which means sliding rather
-than walking. That has never been measured — and it is the *same* measurement
-as the modes wall's option (b). One experiment settles both: a conveyor
-`fetch256` against the walking one, same vectors, instruction counts side by
-side. If it is affordable, AES is rebuilt looped, the skeletons are short and
-genuinely hand-written, and the modes wall goes away as a side effect. If it
-is ruinous, that is known with a number and unrolling can be argued for with
-eyes open.
+**The conveyor is measured now, and the section below records it.** The short
+form: the walk stays, the state is conveyed past it, and the rebuild is
+looped rather than unrolled.
 
-**One honest exception to settle before the rebuild: the S-box is 256 bytes of
-constant.** It cannot be hand-typed — 32,640 plus signs — and it must not be,
-because "derived, not typed" is the rule that cSHAKE128 and KMAC256 sample 4
-each cost a day to. The proposal on the table is a second provenance category,
-`DERIVED TABLE`, **mechanically enforced**: such a block may contain only `+`,
-`>` and comments, so a file with no loops and no control flow cannot be a
-transpiler's output in the sense the rule cares about; and its values are
-checked against the table the `index/fetch256` vectors already gate. Not yet
-agreed.
+### The conveyor, measured
+
+**It is 129 times dearer than the walk, and that settles two arguments.**
+
+A conveyor `fetch256` was built as a scratchpad instrument -- rotate the whole
+table left one place, `idx` times, so the wanted element arrives at a fixed
+read point, every loop body balanced. Run against the committed walking
+`index/fetch256` on the real S-box, same inputs, instructions counted:
+
+| index | walk | conveyor |
+|---|---|---|
+| 0 | 4,185 | 775 |
+| 1 | 5,925 | 281,525 |
+| 64 | 26,889 | 19,196,535 |
+| 127 | 321,936 | 37,771,130 |
+| 200 | 608,877 | 59,148,590 |
+| 255 | 350,412 | 75,389,120 |
+| **mean** | **295,798** | **38,119,971** |
+
+Both are correct; this is cost alone. At two hundred lookups a block that is
+about **7.6 billion** instructions against 59 million, which would make an AES
+block seven times dearer than a SHA-256 block -- and being an order of
+magnitude cheaper was the entire reason step 6 was allowed to start.
+
+**Why, in one line: one rotation of the 256-cell table costs 298,980, about
+the same as one whole walk.** Reaching element k means paying that ~127 times.
+The conveyor loses because it moves 256 bytes in order to read one.
+
+**BUT THE COST IS TABLE SIZE TIMES ROTATIONS, so a small conveyor is a
+different animal:**
+
+| | |
+|---|---|
+| one rotation of 16 cells | ~15,600 |
+| a full pass, 16 rotations | 260,928 |
+| the 16 S-box walks it enables | 4,732,768 |
+| **overhead** | **5.5%** |
+
+**So the rebuild's shape is the opposite of what was proposed here.** The
+proposal was to convey *instead of* walking. It is **both**: keep the walk for
+the table, and convey the STATE past it. SubBytes is then one walk written
+**once** inside a sixteen-iteration loop rather than sixteen unrolled ones, for
+five and a half percent. That is what brings the skeleton to a size a person
+can write, and the same trick serves the key schedule's four-word window.
+
+**And the modes wall needs no decision after all.** Option (b), a conveyor
+lookup, is dead by measurement. Option (a), teaching `bffoot` a bounded
+unbalanced walk, is unnecessary: `%%include%%` decouples composition from
+`bffoot` entirely, so a mode names the cipher from ONE source of truth and the
+rule that makes every footprint checkable stays intact. The wall is gone and
+nothing had to be weakened.
+
+### The DERIVED TABLE proposal is withdrawn
+
+It was raised here as the only honest way to hold the 256-byte S-box, on the
+grounds that it can be neither hand-typed nor generated. **The project had
+already solved this and the proposal was made without checking.**
+`sha256/hashcore.skel` lays out all sixty four SHA-256 round constants as runs
+of `+` and `-`, one line each, with a comment naming the value:
+
+```
+; K 0 is 0x428a2f98
+```
+
+That is 256 bytes of derived constant inside a hand-written skeleton, and it
+predates all of this. `sha512/hashcore` and `keccak/permute1600` do the same.
+**A table of constants inside a hand-written file was never the problem** --
+what made the AES skeletons not hand-written was two hundred unrolled walks
+and offsets computed from symbolic names, not the table.
+
+So `block/sbox256.skel` follows `hashcore`'s form: one line per entry, each
+with a comment naming its value, so a reviewer can check any single byte
+against FIPS 197 without decoding plus signs. It is hand-written in the sense
+this project has always meant, and no new category exists.
 
 ## Traps that have actually bitten
 
