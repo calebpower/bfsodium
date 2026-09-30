@@ -1,0 +1,49 @@
+; ROTATE SIXTEEN  entered at the first byte of a sixteen byte run with one
+; free cell immediately below it; every byte moves down one place and the
+; first wraps round to the top; the pointer comes back where it started;
+;
+; THIS IS THE CONVEYOR  and it is how a loop reaches sixteen bytes without an
+; index: turn the run instead of walking to it  and the byte under the fixed
+; read point is a different one each turn; sixteen turns put the run back as
+; it was;
+;
+; IT IS AFFORDABLE HERE AND NOWHERE NEAR A TABLE; one turn of sixteen cells
+; measures 12 thousand 314 instructions on FIPS 197 Appendix B's round one
+; state; In aes/subbytes the loop machinery  this turning plus the two
+; seventeen cell byte moves that feed the walk  costs 324 thousand for a pass
+; of sixteen against the 4 million 750 thousand of the walks it enables: six
+; point eight percent;
+;
+; THE FILE CAME OUT SIX POINT FOUR PERCENT DEARER AND NOT SIX POINT EIGHT
+; and the gap between those two numbers is the whole reason this paragraph
+; names both; the looped cut of aes/subbytes also swapped a PACKED ABSOLUTE
+; table for block/sbox256's delta coded one  which is 17 thousand
+; instructions cheaper on its own  so the net against the unrolled file is
+; 307 thousand where the loop machinery alone is 324 thousand; Quoting the
+; net as the cost of the turning would credit the conveyor with a saving that
+; belongs to the table;
+;
+; THAT SHARE IS NOT A CONSTANT AND THIS COMMENT WOULD LIE IF IT SAID SO; a
+; turn's cost tracks the byte values it carries  79 instructions on a run
+; of nought  and 29 thousand 404 on a run of 0xff  while a walk's tracks
+; the index it walks to; So the share runs from four point one percent on a
+; state of 0xff to worse than double on a state of nought  where every walk
+; stops at the first group and there is nothing for the turning to amortise;
+; The figure above is quoted at a published state because real states are
+; not nought;
+;
+; One turn of a 256 cell table costs about as much as a whole walk  which is
+; why the table is walked and only the state is turned; HANDOFF carries the
+; measurements;
+; the first byte drops into the free cell below the run
+  [-<+>]
+; and every other byte moves down one place
+  >[-<+>]>[-<+>]>[-<+>]>[-<+>]>[-<+>]>[-<+>]>[-<+>]>[-<+>]
+  >[-<+>]>[-<+>]>[-<+>]>[-<+>]>[-<+>]>[-<+>]>[-<+>]
+; the pointer is on the last byte now  and the one that dropped out comes
+; back round to fill it
+  L16
+  [-R16+L16]
+  R16
+; and home to the first byte
+  L15

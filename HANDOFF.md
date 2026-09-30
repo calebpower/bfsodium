@@ -128,9 +128,20 @@ the transpiler that used to generate most of the repo (`tools/bfemit.sh`,
 `tools/*asm.sh`) is deleted.
 
 **AND THE SKELETONS ARE NOT ALL HAND-WRITTEN AT THE MOMENT, WHICH IS WHAT THE
-REBUILD IS FOR.** Sixteen of the AES skeletons were emitted by generators, in
-breach of CONVENTIONS §6; the section above records it in full. This sentence
-comes out when the last of them has been rewritten, and not before.
+REBUILD IS FOR.** Sixteen of the eighteen AES-related skeletons were emitted
+by generators, in breach of CONVENTIONS §6; the section above records it in
+full. Rather than a count that has to be recomputed at every step, the two
+lists, which are checkable against the git history:
+
+Rewritten by hand: `idiom/xor8`, `aes/xtime`, `aes/gfmul`, `index/fetch256`
+and `index/fetch256twice` at `367a6af`; `aes/subbytes` and `aes/invsubbytes`
+with the blocks that carry their tables.
+
+Still generated, untouched: `aes/xorword`, `aes/mixcolumn`, `aes/mixcolumns`,
+`aes/invmixcolumn`, `aes/invmixcolumns`, `aes/shiftrows`, `aes/invshiftrows`,
+`aes/addroundkey`, `aes/keyexpand128`, `aes/encrypt128`, `aes/decrypt128`.
+
+This sentence comes out when that second list is empty, and not before.
 
 The two columns below are checked by `tools/bftable.pl`, not typed. If you add a
 routine, the suite fails until it has a row here. A `block/` leaf has no `.bf`
@@ -142,6 +153,9 @@ nought and it is verified through whatever includes it.
 | `block/walk256` | 0 | 22 | a leaf; the indexed walk, through index/fetch256's nine vectors and everything that reads a table |
 | `block/halve` | 0 | 4 | a leaf; every routine that includes it, which is `xor8` and `xtime` |
 | `block/xor8kernel` | 0 | 32 | a leaf; `idiom/xor8`'s vectors and its 1024 run sweep |
+| `block/rotate16` | 0 | 49 | a leaf; one turn against a one-place rotation on four states, sixteen turns against the identity, and `aes/subbytes`' own vectors, which come out in order only if the turning is exact |
+| `block/sbox256` | 0 | 524 | a leaf; the S box, through `aes/subbytes`' FIPS 197 vectors and both ends of the table |
+| `block/invsbox256` | 0 | 524 | a leaf; the same permutation read backwards, through `aes/invsubbytes` and the round trip |
 | `idiom/add8` | 175 | 183 | every one of the 65536 pairs + two proved identities |
 | `chacha20/add32` | 631 | 166 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
@@ -198,7 +212,7 @@ nought and it is verified through whatever includes it.
 | `aes/mixcolumn` | 1966 | 311 | FIPS 197 Appendix B + the fixed points + 256 columns against the matrix form |
 | `aes/mixcolumns` | 7851 | 171 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
 | `aes/shiftrows` | 150 | 168 | FIPS 197 Appendix B rounds 1 5 and 9 + the permutation read off a state of its own indices |
-| `aes/subbytes` | 1131 | 745 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
+| `aes/subbytes` | 636 | 100 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
 | `aes/xorword` | 324 | 66 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1350 | 103 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 17879 | 1903 | the FIPS 197 Appendix A schedule + three more keys |
@@ -207,7 +221,7 @@ nought and it is verified through whatever includes it.
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
 | `aes/invmixcolumns` | 12662 | 78 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 149 | 167 | all ten Appendix B rounds run backwards + round trips ShiftRows |
-| `aes/invsubbytes` | 1136 | 750 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
+| `aes/invsubbytes` | 641 | 105 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
 | `aes/decrypt128` | 159940 | 1825 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
@@ -2572,18 +2586,58 @@ The conveyor loses because it moves 256 bytes in order to read one.
 **BUT THE COST IS TABLE SIZE TIMES ROTATIONS, so a small conveyor is a
 different animal:**
 
+**Measured on FIPS 197 Appendix B's round one state, with `block/rotate16`
+timed on its own against an identical harness that omits it:**
+
 | | |
 |---|---|
-| one rotation of 16 cells | ~15,600 |
-| a full pass, 16 rotations | 260,928 |
-| the 16 S-box walks it enables | 4,732,768 |
-| **overhead** | **5.5%** |
+| one turn of 16 cells | 12,314 |
+| the 16 S-box walks it enables | 4,749,640 |
+| the loop machinery for a pass: that turning plus the two 17-cell byte moves that feed the walk | 323,897 |
+| **the loop's own overhead** | **6.8%** |
+| the table, which got *cheaper*: packed absolute 34,193 to `block/sbox256`'s delta-coded 17,149 | -17,044 |
+| **net, the looped file against the unrolled one** | **+306,853 = 6.4%** |
+
+**Two shares, both real, measuring different things.** The looped file is 6.4%
+dearer end to end; the loop machinery on its own is 6.8%, and the difference is
+a table that got 17,044 instructions cheaper on the way past. The first cut of
+this section quoted the net as though it were the cost of the turning, which
+credits the conveyor with a saving that belongs to `block/sbox256`'s delta
+coding. **The packed absolute tables cost about twice the delta-coded block:
+34,193 against 17,149.** That is a finding with a consequence beyond this
+table -- see R4 below.
+
+**And that share is not a constant, which the first cut of this table implied
+by quoting one number with no input beside it.** A turn's cost tracks the byte
+values it carries; a walk's tracks the index it walks to. Both were measured:
+
+| state | one turn | looped SubBytes | unrolled | overhead |
+|---|---|---|---|---|
+| all `0x00` | 79 | 240,334 | 107,951 | +123% |
+| `0x00`..`0x0f` | n/a | 469,438 | 284,816 | +65% |
+| FIPS App B round 1 | 12,314 | 5,090,686 | 4,783,833 | +6.4% |
+| all `0x80` | 14,799 | 5,625,950 | 5,229,167 | +7.6% |
+| all `0xff` | 29,404 | 5,942,862 | 5,710,239 | +4.1% |
+
+The overhead is fixed and the walks are not, so the worst case is a state of
+nought, where every walk stops at the first group and there is nothing to
+amortise. Real states are not nought. The figure quoted in the skeletons is
+the published-state one, and the skeletons say which state that is.
+
+**How the first figure went wrong, because the shape of the mistake recurs.**
+The 5.5% was arithmetic over two numbers measured in different harnesses, and
+the denominator was never checked against the routine it described. Then, on
+re-measuring, the comparison was run on the bytes `0x00`..`0x0f` -- sixteen
+indices all sitting at the head of the table, the cheapest possible walk --
+which gave +65%, and the original claim was briefly written off as an order of
+magnitude out. It was not; the input was pathological. **A cost claim needs
+the input printed next to it, or it is not a measurement, it is an anecdote.**
 
 **So the rebuild's shape is the opposite of what was proposed here.** The
 proposal was to convey *instead of* walking. It is **both**: keep the walk for
 the table, and convey the STATE past it. SubBytes is then one walk written
 **once** inside a sixteen-iteration loop rather than sixteen unrolled ones, for
-five and a half percent. That is what brings the skeleton to a size a person
+six point four percent on a published state. That is what brings the skeleton to a size a person
 can write, and the same trick serves the key schedule's four-word window.
 
 **And the modes wall needs no decision after all.** Option (b), a conveyor
@@ -2615,6 +2669,117 @@ So `block/sbox256.skel` follows `hashcore`'s form: one line per entry, each
 with a comment naming its value, so a reviewer can check any single byte
 against FIPS 197 without decoding plus signs. It is hand-written in the sense
 this project has always meant, and no new category exists.
+
+### R4 and R5, measured before either is built
+
+**R4, `aes/keyexpand128`, is mostly mechanical, and that was not expected.**
+The 1,903-line file's body is **ten byte-identical repetitions of one
+175-line group**. Verified by hashing the code lines of all ten groups: they
+agree, and the only difference anywhere in the file is one trailing blank
+line in group ten. A group is four words -- `4k+0` at 94 lines doing RotWord,
+SubWord as four S-box walks and the Rcon xor, then three plain word-xors at
+27 lines each.
+
+**The four static slots survive being looped, and the existing header's own
+argument is what proves it.** That header says the window can stay still only
+because the forty words are unrolled, so `slot = i mod 4` is a generation-time
+constant. That holds just as well for a loop whose body is one whole group,
+because the slot pattern has period four and the body covers exactly one
+period:
+
+| word in body | writes slot | reads w[i-4] from | reads w[i-1] from |
+|---|---|---|---|
+| 4k+0 | 0 | 0, about to be overwritten | 3, from the previous group |
+| 4k+1 | 1 | 1 | 0 |
+| 4k+2 | 2 | 2 | 1 |
+| 4k+3 | 3 | 3 | 2 |
+
+Every slot is a fixed offset inside the body, so **the window never moves and
+R4 needs no conveyor at all** -- unlike SubBytes, whose sixteen bytes had no
+such period and for which `block/rotate16` was the only way in. R4 needs no
+unrolled tail either, since group ten is identical to the other nine. R5's
+rounds are NOT, because round ten of the cipher has no MixColumns.
+
+**The table is half the cost, and neither R4 nor R5 can claim R1+R2's
+invariant.**
+`aes/keyexpand128`, `aes/encrypt128` and `aes/decrypt128` each lay the S box
+down as packed absolute `+` runs on lines of 475 to 768 bytes -- the very
+packing that got `keyexpand128` under the 2000-line cap. Measured, that form
+costs about **twice** the delta-coded block:
+
+| | instructions |
+|---|---|
+| the packed absolute table, as committed | 34,193 |
+| `block/sbox256`, delta-coded | 17,149 |
+
+So `%%block/sbox256%%` is shorter to read AND ~17,000 instructions cheaper per
+lay-down. But it is not the same instruction bytes, so R4's and R5's invariant
+is the vectors -- FIPS 197 Appendix A and C.1 and Appendix B, both directions,
+plus the round trip -- and not the byte-identity R1+R2 could claim. Say so in
+their messages rather than letting the stronger claim be assumed to carry.
+
+**R4 was built and measured against the four pinned vectors before this was
+written, and it comes out NEUTRAL, not cheaper.** 19,037,565 instructions
+against the unrolled file's 19,035,884: **+1,681, or +0.01%.** The table gives
+back about 17,000 and the loop spends about as much walking to its counter and
+home again, because the counter cannot live at cell 0 -- the paste workspace
+owns that -- so it sits above the table at `@0x332` and every one of the ten
+turns pays 1,636 instructions to reach it and return.
+
+That is the third cost claim in this rebuild that arithmetic got wrong and a
+measurement corrected, after the conveyor's 5.5% and this section's own first
+sentence. The pattern is always the same: costing the pieces and forgetting
+the travel. **Do not write a cost sentence that has not been run.**
+
+Nothing pastes `keyexpand128`: `aes/encrypt128` mentions it three times in
+prose and carries its own inline schedule. So R4 ripples into nothing, exactly
+as R3 did.
+
+### R5 splits in two, and the decrypt half needs a decision
+
+**`aes/encrypt128` is the easy half and has the same shape as R4.** Its nine
+rounds are byte-identical in code -- 143 lines each, all hashing the same --
+and round ten is 142 lines and differs, because it has no MixColumns. So R5's
+forward side is round nought, a loop of nine, and one unrolled tail. It should
+land near 370 lines from 1,609. The rounds can be identical because the file
+computes each round key JUST IN TIME, in order, and never holds 176 bytes.
+
+**`aes/decrypt128` cannot be done that way, and no arrangement of blocks fixes
+it.** The inverse cipher wants the round keys in REVERSE order, so the file
+computes the whole schedule first and stores all 176 bytes. That makes both of
+its phases differ per iteration, and measurement says they differ ONLY in an
+address that steps by 16:
+
+| | round 9 | round 8 |
+|---|---|---|
+| reads its round key | `R144[-R83+L83]L144` | `R128[-R99+L99]L128` |
+
+Its forty schedule groups diverge the same way, at the store rather than the
+read. Everything else in each repetition is identical. **An include takes no
+parameters -- CONVENTIONS forbids control logic on the templating side -- so
+`%%block%%` cannot express "the same code at a different offset". This is an
+index, and it has to be paid for.** Three ways, and the third is the one to
+prefer:
+
+| | how | estimated cost on a 138M routine |
+|---|---|---|
+| a | convey the 176-byte schedule 16 cells per round, a generalised `block/rotate16` | ~+14.4M, +10% |
+| b | an indexed walk with a 16-byte stride over the eleven round keys | new machinery, not estimated |
+| c | **regress the schedule from the last round key** | ~+19M, +14% |
+
+**(c) is the one that matches the project.** The AES-128 schedule is
+invertible -- `w[i-4]` is `w[i]` xor the same temp function of `w[i-1]` -- so
+the inverse cipher can run the schedule BACKWARDS and consume each round key
+as it is produced, exactly as `encrypt128` consumes them forwards. That
+removes the 176-byte store, removes both indices, needs no new block, and
+makes the two halves structurally symmetric. It costs one extra forward pass
+to reach `w40..w43` before the regression can start, which is where the +19M
+comes from. **It is the dearest of the three by a few percent and the only one
+that leaves the file looking like something a person wrote.**
+
+These are estimates from the cost law and not measurements, which this
+document has now been wrong about three times in one rebuild. **Measure before
+choosing.** Nothing here is built.
 
 ## Traps that have actually bitten
 
