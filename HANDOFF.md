@@ -2085,8 +2085,8 @@ are `BFI_COUNT=1` under the pinned interpreter, and each was taken from a run
 whose output was checked against its KAT in the same command — see the trap
 about that below.
 
-| primitive | instructions | 0 |
-| --- | --- | 0 |
+| primitive | instructions | wall |
+|---|---|---|
 | `sha256` of the empty message | 1,145,948,360 | ~2 s |
 | `sha256` of "abc" | 1,180,129,364 | ~2 s |
 
@@ -2121,7 +2121,7 @@ bytes and DOUBLE is `ADD8(x, x)`. Migrating that took `blockloop` to 686
 million. Same kernel, a caller nobody had counted.
 
 | | before | after | |
-| ---|--- | --- | 0 |
+|---|---|---|---|
 | `ADD8` at 255 plus 255 | 750,977 | 40,796 | 18× |
 | `add32` max plus max | 3,070,694 | 229,973 | 13× |
 | `rotl32` by 16 | 19,981,909 | 1,433,049 | 14× |
@@ -2147,14 +2147,14 @@ advice has now been earned twice.
 step counter per source line and the paste sites marked, on the large vector:
 
 | | instructions | share |
-| --- | --- | 0 |
+|---|---|---|
 | `mulmod136`'s own glue | 527,025,347 | 52.9% |
 | `fold136` after the double, 136 calls | 269,024,405 | 27.0% |
 | `fold136` after the add, 68 calls | 118,046,136 | 11.9% |
-| `add136` | 37,217,271 | 0 |
-| `dbl136` | 32,051,014 | 0 |
-| `halve136` | 7,672,872 | 0 |
-| `reducep136` | 3,104,969 | 0 |
+| `add136` | 37,217,271 | 3.7% |
+| `dbl136` | 32,051,014 | 3.2% |
+| `halve136` | 7,672,872 | 0.8% |
+| `reducep136` | 3,104,969 | 0.3% |
 
 Two things in that table were not what anyone had written down. **The glue is
 the biggest line** — the 17-byte carries in and out of the work frame, and
@@ -2173,7 +2173,7 @@ carry as its high byte. `4H` cannot wrap, because four times 63 is 252, so the
 one carry `add8` computes is the only carry in the file.
 
 | | before | after | |
-| ---|--- | --- | 0 |
+|---|---|---|---|
 | `fold136` on mid-range bytes | 2,143,729 | 449,517 | 4.8× |
 | `fold136` all `0xff` | 817,802 | 635,880 | 1.3× |
 | `reducep136` max | 860,034 | 678,112 | 1.3× |
@@ -2202,7 +2202,7 @@ back rather than 220 each way, and the cell that keeps it is `add136`'s own
 carry frame, which is why the putting back happens first.
 
 | | before | after | |
-| ---|--- | --- | 0 |
+|---|---|---|---|
 | `mulmod136` large | 675,977,009 | 145,361,714 | 4.65× |
 | **`mulmod136` large, against the original** | 987,082,567 | 145,361,714 | **6.79×** |
 | `AEAD, RFC §2.8.2` | 8,587,084,818 | 3,581,010,128 | 2.40× |
@@ -2223,7 +2223,7 @@ through a byte that is not 255 costs one instruction**, and the carry reaches
 byte two at all only when byte one was 255.
 
 | | before | after | |
-| ---|--- | --- | 0 |
+|---|---|---|---|
 | `fold136`, all ones | 635,880 | 116,020 | 5.5× |
 | `fold136`, a value with no short bytes | 436,942 | 125,114 | 3.5× |
 | `mulmod136`, the large vector | 145,361,714 | 89,473,525 | 1.62× |
@@ -2239,7 +2239,7 @@ followed by `rotr(w, 8−s)`, which is one pasted `ROTR32`. Nothing is doubled
 anywhere in the file.
 
 | | before | after | |
-| ---|--- | --- | 0 |
+|---|---|---|---|
 | `rotl32` by 16 | 2,636,189 | 40,002 | 66× |
 | `rotl32` by 12 | 1,948,789 | 189,304 | 10× |
 | `rotl32` by 8 | 1,316,645 | 21,835 | 60× |
@@ -2296,13 +2296,26 @@ in `poly1305.skel` is where to start.
 **And the profile again, after all of it.** The same run, now 146 million:
 
 | | instructions | share |
-| --- | --- | 0 |
+|---|---|---|
 | `fold136` after the double, 136 calls | 53,903,009 | 36.9% |
-| `add136` | 37,199,789 | 0 |
-| `dbl136` | 32,051,014 | 0 |
+| `add136` | 37,199,789 | 25.5% |
+| `dbl136` | 32,051,014 | 22.0% |
 | `mulmod136`'s own glue | 13,727,482 | 9.4% |
 | `fold136` after the byte, 17 calls | 7,098,315 | 4.9% |
-| `reducep136` | 1,616,787 | 0 |
+| `reducep136` | 1,616,787 | 1.1% |
+
+**One figure in that table is recomputed, not recovered.** Ten tables in this
+document had lost their last column to a corruption that replaced the cell
+with `0`, and it sat in pushed history for dozens of commits (see the trap
+below). Nine of the lost cells came back out of `8ecbf3c`, checked against
+each table's own denominator. `dbl136`'s share here did not: the same row text
+appears in the 995-million profile above, so the search matched that one and
+offered 3.2%, which is that table's answer and not this one's. 32,051,014
+against the 145.7 million these rows imply is 22.0%, and that is what the cell
+now says. A share is a quotient of two counts, so this is arithmetic on
+numbers the table already carries rather than a measurement invented to fill
+a hole -- but it is derived, and the difference is the whole point of the
+sentence above about derivations wearing a measurement's clothes.
 
 The glue is 9.4% where it was 52.9%, and the next item is visible without
 guessing: **the fold after the double does not need a general fold.** `t` stays
@@ -2318,7 +2331,7 @@ addition, so it pays the adder four times per bit. `idiom/rotr32` shifts right
 by HALVE, a plain countdown, at about a fifth of the cost per bit:
 
 | | left | right | |
-| ---|--- | --- | 0 |
+|---|---|---|---|
 | ChaCha's ROTL 16 | 1,433,049 | ROTR 16: 320,371 | 4.5× |
 | ChaCha's ROTL 12 | 1,171,833 | ROTR 20: 375,597 | 3.1× |
 | ChaCha's ROTL 8 | 718,685 | ROTR 24: 478,955 | 1.5× |
@@ -2384,7 +2397,7 @@ The state occupies cells 0..199 and cannot move, so every frame was packed as
 close above it as it would go.
 
 | | before | after | |
-| ---|--- | --- | 0 |
+|---|---|---|---|
 | `theta` transport, per unit of byte value | 47,600 | 32,700 | 1.46× |
 | `theta`, a random state | 60,962,481 | 46,787,857 | 1.30× |
 | `rhopi` + `chi` transport | 99,200 | 45,300 | 2.19× |
@@ -2537,15 +2550,15 @@ table left one place, `idx` times, so the wanted element arrives at a fixed
 read point, every loop body balanced. Run against the committed walking
 `index/fetch256` on the real S-box, same inputs, instructions counted:
 
-| index | walk | 0 |
-| --- | --- | 0 |
-| 0 | 4,185 | 0 |
-| 1 | 5,925 | 0 |
-| 64 | 26,889 | 0 |
-| 127 | 321,936 | 0 |
-| 200 | 608,877 | 0 |
-| 255 | 350,412 | 0 |
-| **mean** | **295,798** | 0 |
+| index | walk | conveyor |
+|---|---|---|
+| 0 | 4,185 | 775 |
+| 1 | 5,925 | 281,525 |
+| 64 | 26,889 | 19,196,535 |
+| 127 | 321,936 | 37,771,130 |
+| 200 | 608,877 | 59,148,590 |
+| 255 | 350,412 | 75,389,120 |
+| **mean** | **295,798** | **38,119,971** |
 
 Both are correct; this is cost alone. At two hundred lookups a block that is
 about **7.6 billion** instructions against 59 million, which would make an AES

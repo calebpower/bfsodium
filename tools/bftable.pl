@@ -81,6 +81,25 @@ sub check {
             if $rewrite;
     }
 
+    # EVERY TABLE'S SEPARATOR ROW MUST BE ALL DASHES, and this rule is here
+    # because one was not. The 256-cell conveyor table in this document lost
+    # its whole third column to a careless rewrite: the separator became
+    # "| --- | --- | 0 |" and every conveyor figure became 0, leaving a table
+    # that still rendered, still read as a measurement, and said nothing
+    # true. Nothing noticed, because the row checks above only look at rows
+    # naming a routine. A separator cell that is not dashes is the cheapest
+    # possible signal that a table has been rewritten by something that did
+    # not understand it. A separator that is absent entirely is not checked
+    # here: the row rules above already fail on a gutted document, and
+    # demanding one would make this refuse the minimal fixtures its own
+    # self-test is built from.
+    for my $i (0 .. $#doc) {
+        my $l = $doc[$i];
+        next unless $l =~ /^\|/ && $l =~ /---/;
+        next if $l =~ /^\|(\s*:?-{3,}:?\s*\|)+\s*$/;
+        chomp(my $t = $l);
+        push @bad, "$doc line " . ($i + 1) . ": a table separator row is not all dashes: $t";
+    }
     for my $skel (sort glob "$dir/*/*.skel") {
         (my $routine = $skel) =~ s/\.skel$//;
         $routine =~ s/^\Q$dir\E\///;
@@ -155,6 +174,22 @@ sub selftest {
     ($bad) = check($dir, 'H.md', 0);
     @$bad == 1 or $fail->('a block that grew a .bf was not caught');
     unlink "$dir/block/leaf.bf";
+
+    # A good separator passes and a mangled one is caught: the pair that
+    # would have caught the conveyor table losing its third column.
+    $doc->("| a | b | c |\n|---|---|---|\n| `idiom/one` | 7 | 3 | prose |\n| `block/leaf` | 0 | 4 | a leaf |\n");
+    ($bad) = check($dir, 'H.md', 0);
+    @$bad and $fail->("a sound separator row was called wrong: @$bad");
+
+    $doc->("| a | b | c |\n| --- | --- | 0 |\n| `idiom/one` | 7 | 3 | prose |\n| `block/leaf` | 0 | 4 | a leaf |\n");
+    ($bad) = check($dir, 'H.md', 0);
+    grep { /not all dashes/ } @$bad
+        or $fail->('a separator row with a number in it was not caught');
+
+    # The spaced and aligned forms a person actually types are fine.
+    $doc->("| a | b |\n| :--- | ---: |\n| `idiom/one` | 7 | 3 | prose |\n| `block/leaf` | 0 | 4 | a leaf |\n");
+    ($bad) = check($dir, 'H.md', 0);
+    @$bad and $fail->("an aligned separator row was called wrong: @$bad");
 
     print "bftable: selftest passed\n";
     exit 0;
