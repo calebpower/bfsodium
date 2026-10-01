@@ -12,6 +12,13 @@
 ; step is aes/invmixcolumn over four windows; It is the mirror of
 ; aes/mixcolumns and it is short for the same reason;
 ;
+; THE COLUMN TRAVELS AND THE ROUTINE DOES NOT; aes/invmixcolumn works in its
+; own cells at @0x16 to @0x19  so each column is carried down into them  the
+; paste runs  and the answer is carried back over the column it came from;
+; The four blocks below are that one pattern with the distance growing by
+; four each time  because the column moves four cells further along while the
+; routine's cells stay where they are;
+;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x22  aes/invmixcolumn pasted at this file's own zero; its column
 ;               goes in at @0x16 to @0x19 and comes back there
@@ -27,11 +34,11 @@
 ; ==== column 0 : bytes 0 to 3 of the state ====
 ; down into the routine's own cells  and back after
   R35[-L13+R13]L35R36[-L13+R13]L36R37[-L13+R13]L37R38[-L13+R13]L38
-  
+
 ; ASSERT ptr=+0
 @@INVMIXCOLUMN@@ 0
 ; ASSERT ptr=+0
-  
+
   R22[-R13+L13]L22R23[-R13+L13]L23R24[-R13+L13]L24R25[-R13+L13]L25
 ; ASSERT ptr=+0
 ; ASSERT zero +0:+34
@@ -39,11 +46,11 @@
 ; ==== column 1 : bytes 4 to 7 of the state ====
 ; down into the routine's own cells  and back after
   R39[-L17+R17]L39R40[-L17+R17]L40R41[-L17+R17]L41R42[-L17+R17]L42
-  
+
 ; ASSERT ptr=+0
 @@INVMIXCOLUMN@@ 0
 ; ASSERT ptr=+0
-  
+
   R22[-R17+L17]L22R23[-R17+L17]L23R24[-R17+L17]L24R25[-R17+L17]L25
 ; ASSERT ptr=+0
 ; ASSERT zero +0:+34
@@ -51,11 +58,11 @@
 ; ==== column 2 : bytes 8 to 11 of the state ====
 ; down into the routine's own cells  and back after
   R43[-L21+R21]L43R44[-L21+R21]L44R45[-L21+R21]L45R46[-L21+R21]L46
-  
+
 ; ASSERT ptr=+0
 @@INVMIXCOLUMN@@ 0
 ; ASSERT ptr=+0
-  
+
   R22[-R21+L21]L22R23[-R21+L21]L23R24[-R21+L21]L24R25[-R21+L21]L25
 ; ASSERT ptr=+0
 ; ASSERT zero +0:+34
@@ -63,11 +70,11 @@
 ; ==== column 3 : bytes 12 to 15 of the state ====
 ; down into the routine's own cells  and back after
   R47[-L25+R25]L47R48[-L25+R25]L48R49[-L25+R25]L49R50[-L25+R25]L50
-  
+
 ; ASSERT ptr=+0
 @@INVMIXCOLUMN@@ 0
 ; ASSERT ptr=+0
-  
+
   R22[-R25+L25]L22R23[-R25+L25]L23R24[-R25+L25]L24R25[-R25+L25]L25
 ; ASSERT ptr=+0
 ; ASSERT zero +0:+34

@@ -14,6 +14,12 @@
 ; THE STATE IS COLUMN MAJOR AND SO IS THE ROUND KEY  so this is four words
 ; against four words and the column structure never has to be unpicked;
 ;
+; ONE PATTERN FOUR TIMES; aes/xorword takes its two words at @0x11 and @0x15
+; and hands the answer back at @0x11  so each column is carried down into
+; those cells  the paste runs  and the answer is carried back over the state
+; column it came from; The distance grows by four a column on each side
+; because the columns walk up the tape while the routine's own cells stay put;
+;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x18  aes/xorword pasted at this file's own zero; its words go in at
 ;               @0x11 and @0x15 and its answer comes back at @0x11

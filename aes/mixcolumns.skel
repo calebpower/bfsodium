@@ -21,6 +21,11 @@
 ; being mixed and the cells it came from are nought  so nothing needs clearing
 ; and the journey home walks noughts  which is one test per cell;
 ;
+; THE FOUR BLOCKS ARE ONE PATTERN WITH ONE NUMBER CHANGING; aes/mixcolumn
+; always works at @0x16 to @0x19  so column c  which starts at 32 plus 4c  is
+; carried down by 10 plus 4c and the answer carried back up by the same; Ten
+; for the first column  then fourteen  eighteen and twenty two;
+;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x1f  aes/mixcolumn's frame  pasted at this file's own zero; its
 ;               column goes in at @0x16 to @0x19 and comes back there

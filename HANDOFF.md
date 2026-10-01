@@ -127,47 +127,30 @@ Every committed `.bf` is produced by `tools/bfexpand.sh` from a skeleton, and
 the transpiler that used to generate most of the repo (`tools/bfemit.sh`,
 `tools/*asm.sh`) is deleted.
 
-**AND THE SKELETONS ARE NOT ALL HAND-WRITTEN AT THE MOMENT, WHICH IS WHAT THE
-REBUILD IS FOR.** Sixteen of the eighteen AES-related skeletons were emitted
-by generators, in breach of CONVENTIONS §6; the section above records it in
-full. Rather than a count that has to be recomputed at every step, the two
-lists, which are checkable against the git history:
+**Every skeleton in the tree is hand-written, and that claim is now true for
+the first time since AES was started.** Sixteen of the eighteen AES-related
+skeletons had been emitted by generators while carrying a `; HAND WRITTEN`
+line, in breach of CONVENTIONS §6. They were rebuilt over `367a6af`,
+`045962a`, `915b1cc`, `7a142b0`, `d345370` and the commit that deleted this
+caveat.
 
-Rewritten by hand: `idiom/xor8`, `aes/xtime`, `aes/gfmul`, `index/fetch256`
-and `index/fetch256twice` at `367a6af`; `aes/subbytes` and `aes/invsubbytes`
-at `045962a`; `aes/keyexpand128` at `915b1cc`; `aes/encrypt128` at `7a142b0`;
-`aes/decrypt128` with the regression that replaced its stored schedule.
+**And the last eight of them came out byte-identical.** `aes/xorword`,
+`aes/invmixcolumns`, `aes/addroundkey`, `aes/invmixcolumn`,
+`aes/invshiftrows`, `aes/shiftrows`, `aes/mixcolumns` and `aes/mixcolumn`
+were each written from their contract or their specification rather than
+transcribed -- two from their `; INTERFACE` lines alone, two by computing all
+sixteen offsets from the FIPS 197 permutation, the rest from the identities
+their own headers state -- and all eight reproduced the committed code
+exactly. The generator had nothing left to add to them.
 
-Still generated, untouched -- all eight small, none near the line cap, and
-none of them the reason the cap was ever hit: `aes/xorword` (66 lines),
-`aes/invmixcolumns` (78), `aes/addroundkey` (103), `aes/invmixcolumn` (139),
-`aes/invshiftrows` (167), `aes/shiftrows` (168), `aes/mixcolumns` (171),
-`aes/mixcolumn` (311).
-
-**AND THE REMAINING WORK ON THOSE EIGHT IS AUTHORSHIP, NOT CORRECTNESS.** All
-eight were audited: every header's paste claim matches its body exactly (four
-`xor8` in `xorword`, fifteen and four in `mixcolumn`, none in either
-ShiftRows, and so on), every `; INTERFACE` line agrees with the footprint the
-body uses, and the suite's vectors already prove the behaviour.
-
-**Two of them were then rewritten from the contract, by hand, without looking
-at the body: `aes/xorword` and `aes/addroundkey` both came out with code
-byte-identical to what is committed.** That is the evidence that these bodies
-are the idiomatic form a person writes rather than a generator's artifact --
-the generator had nothing left to add. Anyone can check it the same way:
-write `xorword` from its INTERFACE line and see that there is only one
-sensible answer.
-
-**So the choice on these eight is a real one and it is the owner's.** Giving
-them new headers would make the authorship claim literally true, but a header
-change rewrites that file's `.bf`, and all eight are PASTED by the rest of
-AES -- so it forces regenerating every AES artifact and a full gate, hours of
-machine time, for a change that alters no instruction. The alternative is to
-record the audit above, leave the bodies alone, and treat the claim as
-discharged by review rather than by retyping. **Do not quietly do the second
-and leave the caveat saying the first.**
-
-This sentence comes out when that second list is empty, and not before.
+**So be careful what lesson is drawn from the rebuild.** The breach was real
+and the claim was false, but the damage was concentrated: it was the three
+unrolled giants, `keyexpand128` at 1,903 lines, `decrypt128` at 1,825 and
+`encrypt128` at 1,609, plus the two SubBytes at 745 and 750. Those could only
+have come from a machine, and looping them is what the rebuild was actually
+for. The small routines were fine all along. **`bfstyle`'s 2000-line cap was
+measuring exactly the right thing**, which is why it was hit three times and
+routed around three times before anybody listened to it.
 
 The two columns below are checked by `tools/bftable.pl`, not typed. If you add a
 routine, the suite fails until it has a row here. A `block/` leaf has no `.bf`
@@ -238,16 +221,16 @@ nought and it is verified through whatever includes it.
 | `index/fetch256twice` | 218 | 86 | the same table read twice, which is what lets one table serve all two hundred of AES's reads |
 | `aes/xtime` | 219 | 123 | all 256 bytes swept + Cryptol over the field polynomial  and the identity proved |
 | `aes/mixcolumn` | 1966 | 311 | FIPS 197 Appendix B + the fixed points + 256 columns against the matrix form |
-| `aes/mixcolumns` | 7851 | 171 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
+| `aes/mixcolumns` | 7856 | 176 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
 | `aes/shiftrows` | 150 | 168 | FIPS 197 Appendix B rounds 1 5 and 9 + the permutation read off a state of its own indices |
 | `aes/subbytes` | 636 | 100 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
-| `aes/xorword` | 324 | 66 | boundary vectors + Cryptol |
-| `aes/addroundkey` | 1350 | 103 | FIPS 197 Appendix B round nought + its own inverse applied twice |
+| `aes/xorword` | 330 | 72 | boundary vectors + Cryptol |
+| `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2362 | 306 | the FIPS 197 Appendix A schedule + three more keys |
 | `aes/encrypt128` | 16648 | 410 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
-| `aes/invmixcolumns` | 12662 | 78 | all nine Appendix B rounds run backwards + round trips MixColumns |
+| `aes/invmixcolumns` | 12669 | 85 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 149 | 167 | all ten Appendix B rounds run backwards + round trips ShiftRows |
 | `aes/invsubbytes` | 641 | 105 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
 | `aes/decrypt128` | 25323 | 558 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
@@ -1368,6 +1351,22 @@ the reasoning.
    round key r, in order, because word 4r lands in slot nought. The block
    carries sixteen cells of key schedule; `aes/keyexpand128` stays a separate
    program for callers that want the schedule itself.
+
+- **A PASTE DOES NOT CARRY THE CALLEE'S HEADER, SO RE-HEADING A PASTED
+  ROUTINE IS A LOCAL CHANGE.** `tools/bfexpand.sh` takes only the callee's
+  body: it drops the read prologue and everything from `; emit`, so the
+  header comments never reach the caller. Only comments INSIDE the pasted
+  body propagate.
+
+  This was believed the other way round, and it was written into this file as
+  the reason re-heading the last eight skeletons would be expensive --
+  "it forces regenerating every AES artifact and a full gate, hours of machine
+  time". It does not. When the eight were re-headed, exactly five `.bf` moved,
+  each its own; `keyexpand128.bf`, `encrypt128.bf` and `decrypt128.bf` came
+  back byte-identical, headers and all. **The regeneration was still the right
+  way to find that out** -- the alternative was to assume it -- but a cost
+  estimate that talks somebody out of doing a thing deserves the same
+  measurement as a cost estimate that talks them into it.
 
    **THE DEFECT: a paste site stands at its base, and `@@NAME@@ 82` does not
    move the pointer.** It only rebases the callee's contracts. Standing at

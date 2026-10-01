@@ -10,12 +10,18 @@
 ;
 ; AES IS FULL OF THIS; a word is the unit the key expansion works in  and
 ; AddRoundKey is four of these; It exists so that a caller pastes FOUR of them
-; where it would otherwise paste sixteen exclusive ors  which matters because
-; bfstyle caps a skeleton at two thousand lines and the key expansion is forty
-; unrolled words;
+; where it would otherwise paste sixteen exclusive ors;
 ;
 ; THE ANSWER COMES BACK OVER a  so a caller that pastes this gets its word
-; replaced in place and needs no second buffer;
+; replaced in place and needs no second buffer; That is what lets the key
+; schedule and the regression in aes/decrypt128 work a slot over without a
+; buffer of their own;
+;
+; ONE BYTE AT A TIME THROUGH THE SAME PASTE; idiom/xor8 sits at this file's
+; own zero and takes its two operands at @0x01 and @0x02  handing the answer
+; back at @0x00; So each byte is three steps: carry the two bytes down to the
+; operand cells  paste  and carry the answer back over a's byte; The four
+; blocks below are the same three steps with the offsets walked along;
 ;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x10  idiom/xor8 pasted at this file's own zero; its two operands go

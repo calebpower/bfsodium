@@ -12,6 +12,13 @@
 ; step is aes/invmixcolumn over four windows; It is the mirror of
 ; aes/mixcolumns and it is short for the same reason;
 ;
+; THE COLUMN TRAVELS AND THE ROUTINE DOES NOT; aes/invmixcolumn works in its
+; own cells at @0x16 to @0x19  so each column is carried down into them  the
+; paste runs  and the answer is carried back over the column it came from;
+; The four blocks below are that one pattern with the distance growing by
+; four each time  because the column moves four cells further along while the
+; routine's cells stay where they are;
+;
 ; TAPE MAP  (home @0)
 ;   @0x00:0x22  aes/invmixcolumn pasted at this file's own zero; its column
 ;               goes in at @0x16 to @0x19 and comes back there

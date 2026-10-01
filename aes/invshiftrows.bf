@@ -1,4 +1,4 @@
-; bfsodium INVSHIFTROWS : row r of the state cyclically shifted right by r
+; bfsodium INVSHIFTROWS : row r of the state cyclically shifted RIGHT by r
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
@@ -13,13 +13,13 @@
 ;
 ;   s' at r plus 4c  is  s at r plus 4 times ((c minus r) mod 4)
 ;
-; which is THIRTY TWO MOVES AND NO ARITHMETIC; Row nought does not move  and
-; the permutation says so by itself rather than by a special case;
+; which is aes/shiftrows with the sign of r turned round  and nothing else;
+; Row nought does not move  and the permutation says so by itself rather than
+; by a special case;
 ;
-; THIS IS aes/shiftrows WITH ONE SIGN CHANGED and it is a separate file rather
-; than a flag on that one; A flag would be a cell to read  a branch to take
-; and a contract to weaken  where the permutation is thirty two moves either
-; way; FIPS 197 numbers them as two steps and so does this;
+; IT IS ITS OWN STEP AND NOT A LOOP OVER shiftrows; the two differ only in
+; that one subtraction  so writing one in terms of the other would cost a
+; level of indirection to save sixteen lines;
 ;
 ; AND IT IS PASTEABLE  like the arithmetic and unlike InvSubBytes: there is no
 ; index anywhere  so every loop is pointer balanced;

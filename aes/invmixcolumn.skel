@@ -55,83 +55,83 @@
 ; ==== the column is prepared  which is the whole of the inverse ====
 ; u is xtime twice of a0 xor a2
   R22[-L21+R33+L12]R12[-L12+R12]L34R24[-L22+R32+L10]R10[-L10+R10]L34
-  
+
 ; ASSERT ptr=+0
 @@XOR8@@ 0
 ; ASSERT ptr=+0
-  
-  
+
+
 ; ASSERT ptr=+0
 @@XTIME@@ 0
 ; ASSERT ptr=+0
-  
-  
+
+
 ; ASSERT ptr=+0
 @@XTIME@@ 0
 ; ASSERT ptr=+0
-  
+
   [-R32+L32]
 ; ASSERT ptr=+0
 ; v is xtime twice of a1 xor a3
   R23[-L22+R33+L11]R11[-L11+R11]L34R25[-L23+R32+L9]R9[-L9+R9]L34
-  
+
 ; ASSERT ptr=+0
 @@XOR8@@ 0
 ; ASSERT ptr=+0
-  
-  
+
+
 ; ASSERT ptr=+0
 @@XTIME@@ 0
 ; ASSERT ptr=+0
-  
-  
+
+
 ; ASSERT ptr=+0
 @@XTIME@@ 0
 ; ASSERT ptr=+0
-  
+
   [-R33+L33]
 ; ASSERT ptr=+0
 ; a0 takes u  which is COPIED because a2 wants it too
   R22[-L21+R21]L22R32[-L30+R32+L2]R2[-L2+R2]L34
-  
+
 ; ASSERT ptr=+0
 @@XOR8@@ 0
 ; ASSERT ptr=+0
-  
+
   [-R22+L22]
 ; a2 takes u  which is MOVED because nothing wants it after
   R24[-L23+R23]L24R32[-L30+R30]L32
-  
+
 ; ASSERT ptr=+0
 @@XOR8@@ 0
 ; ASSERT ptr=+0
-  
+
   [-R24+L24]
 ; a1 takes v  copied for the same reason
   R23[-L22+R22]L23R33[-L31+R32+L1]R1[-L1+R1]L34
-  
+
 ; ASSERT ptr=+0
 @@XOR8@@ 0
 ; ASSERT ptr=+0
-  
+
   [-R23+L23]
 ; a3 takes v  and spends it
   R25[-L24+R24]L25R33[-L31+R31]L33
-  
+
 ; ASSERT ptr=+0
 @@XOR8@@ 0
 ; ASSERT ptr=+0
-  
+
   [-R25+L25]
 ; ASSERT ptr=+0
 ; ASSERT zero +32:+34
 
 ; ==== and then it is simply MixColumns ====
-  
+
 ; ASSERT ptr=+0
 @@MIXCOLUMN@@ 0
 ; ASSERT ptr=+0
-  
+
 
 ; emit
 ; the four bytes of the unmixed column
