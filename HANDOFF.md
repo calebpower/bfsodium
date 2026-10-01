@@ -215,7 +215,7 @@ nought and it is verified through whatever includes it.
 | `aes/subbytes` | 636 | 100 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
 | `aes/xorword` | 324 | 66 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1350 | 103 | FIPS 197 Appendix B round nought + its own inverse applied twice |
-| `aes/keyexpand128` | 17879 | 1903 | the FIPS 197 Appendix A schedule + three more keys |
+| `aes/keyexpand128` | 2362 | 306 | the FIPS 197 Appendix A schedule + three more keys |
 | `aes/encrypt128` | 106421 | 1609 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
@@ -2761,11 +2761,26 @@ parameters -- CONVENTIONS forbids control logic on the templating side -- so
 index, and it has to be paid for.** Three ways, and the third is the one to
 prefer:
 
-| | how | estimated cost on a 138M routine |
+**Measured, not estimated.** A rotation generator was written, made to prove
+it actually rotates before reporting any cost, and run on random bytes:
+
+| | instructions |
+|---|---|
+| 176 cells by 16, one round key consumed | 1,380,309 |
+| 176 cells by 4, one schedule word stored | 428,499 |
+| 16 cells by 1, as a sanity check against `block/rotate16`'s in-situ 12,314 | 13,729 |
+
+| | how | cost on the 138.28M routine |
 |---|---|---|
-| a | convey the 176-byte schedule 16 cells per round, a generalised `block/rotate16` | ~+14.4M, +10% |
-| b | an indexed walk with a 16-byte stride over the eleven round keys | new machinery, not estimated |
-| c | **regress the schedule from the last round key** | ~+19M, +14% |
+| a | convey the 176-byte schedule: 16 cells per round for ten rounds, 4 cells per word for forty words | 13.80M + 17.14M = **+30.94M, +22.4%** |
+| b | an indexed walk with a 16-byte stride over the eleven round keys | new machinery, not measured |
+| c | **regress the schedule from the last round key** | one more schedule pass, measured at 19.04M: **+13.8%** |
+
+**(a) was estimated here at +10% and measures +22.4%.** That is the fourth
+cost claim in this rebuild that the cost law underestimated, and the first
+three are recorded above. The law is a guide to shape, not to magnitude: it
+says a byte moved `d` cells costs about `2vd`, and it keeps coming in low
+because the loop and pointer overhead around the moves is not in it.
 
 **(c) is the one that matches the project.** The AES-128 schedule is
 invertible -- `w[i-4]` is `w[i]` xor the same temp function of `w[i-1]` -- so
@@ -2777,9 +2792,17 @@ to reach `w40..w43` before the regression can start, which is where the +19M
 comes from. **It is the dearest of the three by a few percent and the only one
 that leaves the file looking like something a person wrote.**
 
-These are estimates from the cost law and not measurements, which this
-document has now been wrong about three times in one rebuild. **Measure before
-choosing.** Nothing here is built.
+**So (c) wins on cost as well as on shape**, which is not how it looked when
+these options were first written down. Nothing here is built.
+
+Two notes on how the measurement went, because both are traps this document
+already names. The first generator silently dropped the wrapped bytes and
+reported costs for a program that did not rotate; the numbers were wrong by
+about 50% and looked entirely plausible. The second had its test data drawn
+from a `random.Random(7)` re-seeded on every byte, so every cell held `0xa5`.
+**The fix that mattered was making the harness verify the rotation before
+reporting a cost at all** -- after which it said "HARNESS WRONG" twice more
+before it said anything else.
 
 ## Traps that have actually bitten
 
