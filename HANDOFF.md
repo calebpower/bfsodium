@@ -216,7 +216,7 @@ nought and it is verified through whatever includes it.
 | `aes/xorword` | 324 | 66 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1350 | 103 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2362 | 306 | the FIPS 197 Appendix A schedule + three more keys |
-| `aes/encrypt128` | 106421 | 1609 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
+| `aes/encrypt128` | 16648 | 410 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
 | `aes/invmixcolumns` | 12662 | 78 | all nine Appendix B rounds run backwards + round trips MixColumns |
@@ -1368,13 +1368,19 @@ the reasoning.
    InvMixColumns wants multiplication by 9, 11, 13 and 14, which is the general
    field multiply this library has only ever *estimated*, and the inverse S-box
    is a second 256-byte table. That is a unit, not a variation. And there are
-   no modes — which is the wall `index/fetch256` flagged, now concrete: **a
-   mode cannot paste `encrypt128`**, because the block carries an unbalanced
-   walk and so has no INTERFACE line, so CBC or CTR or GCM would have to carry
-   a 4.6MB body per invocation. That is the decision `fetch256` said should not
-   be made on the way past, and it is now due rather than hypothetical. The two
-   ways out have not changed: teach `bffoot` to accept a declared-bounded
-   unbalanced walk, or write the lookup as a conveyor and measure it.
+   no modes — which is the wall `index/fetch256` flagged: **a mode cannot paste
+   `encrypt128`**, because the block carries an unbalanced walk and so has no
+   INTERFACE line.
+
+   **That wall is down and this paragraph predates its coming down.**
+   `%%include%%` composes by text and never consults `bffoot`, so a mode can
+   name the cipher from one source of truth without pasting anything. Neither
+   of the two ways out this paragraph used to offer was needed: `bffoot` was
+   not weakened, and the conveyor lookup it proposed is dead by measurement at
+   129× the walk. Both are recorded in the conveyor section below. The body a
+   mode would carry is not 4.6MB either — `encrypt128.bf` is 1.3MB since its
+   rounds were looped, and an include lands it once rather than per
+   invocation.
 
 7. **DONE: AES decryption.** Every piece of the inverse cipher is
    done — `aes/gfmul`, `aes/invmixcolumn`, `aes/invmixcolumns`,
@@ -1463,8 +1469,10 @@ the reasoning.
    vector can state — **encrypt then decrypt returns the plaintext**, which the
    suite now runs as two whole ciphers.
 
-   One block is **109,624 lines and 7.0MB**, the largest artifact in the tree,
-   and **138,283,367 instructions** against encryption's 112,104,416. The 1.23×
+   One block is **159,940 lines and 11.9MB**, the largest artifact in the tree
+   by a wide margin now that `encrypt128` has been looped down to 16,648 lines
+   and 1.3MB, and **138,283,367 instructions** against encryption's
+   112,104,416 — a figure the looping moved by -0.01%, so the ratio stands. The 1.23×
    reconciles: nine InvMixColumns at 5.1M against MixColumns at 3.5M is about
    14M of it, and the rest is the stored schedule and its travel.
 
@@ -2792,8 +2800,48 @@ to reach `w40..w43` before the regression can start, which is where the +19M
 comes from. **It is the dearest of the three by a few percent and the only one
 that leaves the file looking like something a person wrote.**
 
-**So (c) wins on cost as well as on shape**, which is not how it looked when
-these options were first written down. Nothing here is built.
+**And then a fourth option appeared on reading the file's own header, which
+beats all three.** (c) was recommended for about an hour before this replaced
+it.
+
+`aes/decrypt128`'s header says *"the whole schedule is stored... decryption
+consumes the round keys BACKWARDS so there is nothing to recompute on the
+way."* The second half of that is false, and the first half is what it costs.
+It also says only ONE table is ever resident, forward in phase one and inverse
+in phase two, because two would make every read of the far one travel. That
+kills (c) as stated: regressing needs `SubWord`, which needs the FORWARD
+table, which phase two does not have.
+
+**But the temp does not need recomputing either.** In `w[i] = w[i-4] XOR
+temp(w[i-1])` the regression `w[i-4] = w[i] XOR temp(w[i-1])` uses the SAME
+temp. For `i` not a multiple of four that temp is just `w[i-1]`, which the
+window holds. For the ten multiples of four it is
+`SubWord(RotWord(w[i-1])) xor Rcon`, and phase one computes every one of them
+on its way up.
+
+**So phase one stores the ten temps -- 40 cells, not 176 -- and phase two
+needs no forward table, no `SubWord`, and no Rcon at all.** The Rcon run and
+the `block/rotate10` this document proposed an hour ago are both unnecessary;
+the Rcon is already folded into the stored temp.
+
+| | what is stored | phase two needs | measured cost |
+|---|---|---|---|
+| a | the 176-byte schedule | a 176-cell turn per round | +24.69M, +22.4% |
+| c | nothing | a second forward pass, and a table it cannot have | +19.04M, +13.8% |
+| **d** | **ten 4-byte temps, 40 cells** | **a 40-cell turn by 4** | **+2.33M, +1.7%** |
+
+The regression was checked in Python against the forward schedule before any
+brainfuck was written: from `w40..w43` and the ten stored temps it reproduces
+every word down to `w0`, and the recovered first four words are the key.
+
+The 40-cell conveyor is measured at 122,524 a turn, 19 turns (ten storing in
+phase one, nine reading in phase two) for 2.33M. **The rest of (d) is NOT
+measured** -- the forty word-xors of the regression, and whatever phase one
+gives back by storing 40 bytes instead of 176. So +1.7% is a floor built from
+one measurement and some arithmetic, and this document has been wrong about
+exactly that four times. Measure it when it is built.
+
+Nothing here is built.
 
 Two notes on how the measurement went, because both are traps this document
 already names. The first generator silently dropped the wrapped bytes and
