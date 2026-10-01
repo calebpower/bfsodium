@@ -127,12 +127,27 @@ Every committed `.bf` is produced by `tools/bfexpand.sh` from a skeleton, and
 the transpiler that used to generate most of the repo (`tools/bfemit.sh`,
 `tools/*asm.sh`) is deleted.
 
-**Every skeleton in the tree is hand-written, and that claim is now true for
-the first time since AES was started.** Sixteen of the eighteen AES-related
+**Every AES skeleton is hand-written, and that claim is now true for the
+first time since AES was started.** Sixteen of the eighteen AES-related
 skeletons had been emitted by generators while carrying a `; HAND WRITTEN`
 line, in breach of CONVENTIONS §6. They were rebuilt over `367a6af`,
-`045962a`, `915b1cc`, `7a142b0`, `d345370` and the commit that deleted this
-caveat.
+`045962a`, `915b1cc`, `7a142b0`, `d345370` and `6095111`.
+
+**The tree-wide claim is narrower than that, and here is exactly how far it
+goes.** Of 104 skeletons: 86 carry `; HAND WRITTEN`; 8 are `block/` leaves,
+which carry no provenance line because they are fragments their includers
+account for; 9 older files carry no line but were last written AFTER the
+transpiler was deleted at `7cfa69f`, so no generator existed to write them.
+
+**That leaves one: `chacha20/xor32`.** It carries no provenance line and was
+last touched before the transpiler went, so the tree cannot say who wrote it.
+It is legible and correct -- its four byte blocks differ only in offsets and
+the suite pins it against Cryptol -- but it is written in raw runs of `>` and
+`<` rather than the `R`/`L` shorthand every other file uses, which is the
+house style of the transpiler era. **Settling it means rewriting it in the
+modern idiom and checking the instruction stream is unchanged**, the same
+method the last eight AES skeletons were done by. It is one small file and it
+is the only provenance question left in the repository.
 
 **And the last eight of them came out byte-identical.** `aes/xorword`,
 `aes/invmixcolumns`, `aes/addroundkey`, `aes/invmixcolumn`,
