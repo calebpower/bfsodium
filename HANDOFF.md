@@ -135,11 +135,37 @@ lists, which are checkable against the git history:
 
 Rewritten by hand: `idiom/xor8`, `aes/xtime`, `aes/gfmul`, `index/fetch256`
 and `index/fetch256twice` at `367a6af`; `aes/subbytes` and `aes/invsubbytes`
-with the blocks that carry their tables.
+at `045962a`; `aes/keyexpand128` at `915b1cc`; `aes/encrypt128` at `7a142b0`;
+`aes/decrypt128` with the regression that replaced its stored schedule.
 
-Still generated, untouched: `aes/xorword`, `aes/mixcolumn`, `aes/mixcolumns`,
-`aes/invmixcolumn`, `aes/invmixcolumns`, `aes/shiftrows`, `aes/invshiftrows`,
-`aes/addroundkey`, `aes/keyexpand128`, `aes/encrypt128`, `aes/decrypt128`.
+Still generated, untouched -- all eight small, none near the line cap, and
+none of them the reason the cap was ever hit: `aes/xorword` (66 lines),
+`aes/invmixcolumns` (78), `aes/addroundkey` (103), `aes/invmixcolumn` (139),
+`aes/invshiftrows` (167), `aes/shiftrows` (168), `aes/mixcolumns` (171),
+`aes/mixcolumn` (311).
+
+**AND THE REMAINING WORK ON THOSE EIGHT IS AUTHORSHIP, NOT CORRECTNESS.** All
+eight were audited: every header's paste claim matches its body exactly (four
+`xor8` in `xorword`, fifteen and four in `mixcolumn`, none in either
+ShiftRows, and so on), every `; INTERFACE` line agrees with the footprint the
+body uses, and the suite's vectors already prove the behaviour.
+
+**Two of them were then rewritten from the contract, by hand, without looking
+at the body: `aes/xorword` and `aes/addroundkey` both came out with code
+byte-identical to what is committed.** That is the evidence that these bodies
+are the idiomatic form a person writes rather than a generator's artifact --
+the generator had nothing left to add. Anyone can check it the same way:
+write `xorword` from its INTERFACE line and see that there is only one
+sensible answer.
+
+**So the choice on these eight is a real one and it is the owner's.** Giving
+them new headers would make the authorship claim literally true, but a header
+change rewrites that file's `.bf`, and all eight are PASTED by the rest of
+AES -- so it forces regenerating every AES artifact and a full gate, hours of
+machine time, for a change that alters no instruction. The alternative is to
+record the audit above, leave the bodies alone, and treat the claim as
+discharged by review rather than by retyping. **Do not quietly do the second
+and leave the caveat saying the first.**
 
 This sentence comes out when that second list is empty, and not before.
 
@@ -156,6 +182,8 @@ nought and it is verified through whatever includes it.
 | `block/rotate16` | 0 | 49 | a leaf; one turn against a one-place rotation on four states, sixteen turns against the identity, and `aes/subbytes`' own vectors, which come out in order only if the turning is exact |
 | `block/sbox256` | 0 | 524 | a leaf; the S box, through `aes/subbytes`' FIPS 197 vectors and both ends of the table |
 | `block/invsbox256` | 0 | 524 | a leaf; the same permutation read backwards, through `aes/invsubbytes` and the round trip |
+| `block/rotate40down4` | 0 | 32 | a leaf; one turn against a four-place rotation on random bytes, ten turns against the identity, and `aes/decrypt128`'s own vectors, which only come out right if phase one's ten temps land where phase two reads them |
+| `block/rotate40up4` | 0 | 27 | a leaf; the same, and proved to invert `block/rotate40down4` |
 | `idiom/add8` | 175 | 183 | every one of the 65536 pairs + two proved identities |
 | `chacha20/add32` | 631 | 166 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
@@ -222,7 +250,7 @@ nought and it is verified through whatever includes it.
 | `aes/invmixcolumns` | 12662 | 78 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 149 | 167 | all ten Appendix B rounds run backwards + round trips ShiftRows |
 | `aes/invsubbytes` | 641 | 105 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
-| `aes/decrypt128` | 159940 | 1825 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
+| `aes/decrypt128` | 25323 | 558 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
 | `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 219 | 237 | the same for right_encode |
 | `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -2841,7 +2869,17 @@ gives back by storing 40 bytes instead of 176. So +1.7% is a floor built from
 one measurement and some arithmetic, and this document has been wrong about
 exactly that four times. Measure it when it is built.
 
-Nothing here is built.
+**BUILT, AND (d) WON.** Measured on the Appendix B key and ciphertext:
+139,980,084 instructions unrolled with its stored schedule against
+142,154,478 looped and regressing -- **+2,174,394, or +1.55%**. The
+regression costs about 10.1M on its own, the round-key copy a few million
+more, and dropping the 176-byte store gives back about 8.6M because the
+committed phase one moved every word some 209 cells to file it.
+
+**That is the first cost prediction in this rebuild that held.** The estimate
+was +1.6 to +3.6% and it came in at +1.55%. The four that did not hold are
+recorded above, and the difference is that this one was assembled out of
+measurements rather than out of the cost law.
 
 Two notes on how the measurement went, because both are traps this document
 already names. The first generator silently dropped the wrapped bytes and
@@ -2853,6 +2891,19 @@ reporting a cost at all** -- after which it said "HARNESS WRONG" twice more
 before it said anything else.
 
 ## Traps that have actually bitten
+
+- **A `,>` READ PROLOGUE MAKES `; ASSERT ptr=` BLIND TO A SHORT READ.** The
+  regression harness for `aes/decrypt128` read one byte too few on each of its
+  two input lines, and both pointer assertions passed. With the pattern `,>`
+  repeated, each read is paired with a move, so the final pointer is the same
+  whether the line reads *n* bytes or *n-1* -- the assertion checks the
+  pointer, and the pointer is right. The committed prologues all end with a
+  comma: *n* commas and *n-1* moves. **That asymmetry is the whole reason
+  their assertions are load-bearing**, and the harness had copied the shape
+  without the property. The symptom was a result shifted by one byte, which
+  looked like an arithmetic bug and cost an hour of looking in the wrong file.
+  Write the prologue so the comma count and the move count differ, or the
+  assertion below it is decoration.
 
 - **A FILE THAT DOES NOT END IN A NEWLINE LOSES ITS LAST LINE, SILENTLY.**
   Shell's `while IFS= read -r line` does not deliver an unterminated final
