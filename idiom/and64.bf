@@ -2,6 +2,8 @@
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
+; HAND WRITTEN; nothing is pasted and nothing is included;
+;
 ; THE 64 BIT WIDENING OF idiom/and32  which is itself chacha20/xor32 with a
 ; different combining step; The AND8 frame is unchanged down to the character
 ; and so is every arrow inside the bit step  because those arrows are all

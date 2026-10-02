@@ -1,5 +1,8 @@
 ; bfsodium SHR32 : shift a 32 bit little endian word right by n
 ;
+; HAND WRITTEN; block/rshift32 is INCLUDED; this file differs from
+; idiom/rotr32 by one line  which discards that bit instead of wrapping it;
+;
 ; INTERFACE entry=4 exit=4 footprint=0:12
 ; IO  in:  w{4} LE  followed by  n{1}       (5 bytes)
 ;     out: (w shifted right by n){4} LE     (4 bytes)

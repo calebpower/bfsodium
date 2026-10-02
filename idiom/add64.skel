@@ -2,6 +2,8 @@
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
+; HAND WRITTEN; idiom/add8 is PASTED eight times;
+;
 ; INTERFACE entry=16 exit=16 footprint=0:27
 ; IO  in:  a{8} LE  followed by  b{8} LE      (16 bytes)
 ;     out: sum{8} LE                          (8 bytes; final carry dropped)

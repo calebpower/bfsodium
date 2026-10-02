@@ -1,5 +1,8 @@
 ; bfsodium ROTR32 : rotate a 32 bit little endian word right by n
 ;
+; HAND WRITTEN; block/rshift32 is INCLUDED  which is the whole of the step
+; except the bit that falls out of byte 0;
+;
 ; INTERFACE entry=4 exit=4 footprint=0:12
 ; IO  in:  w{4} LE  followed by  n{1}       (5 bytes)
 ;     out: (w rotated right by n){4} LE     (4 bytes)

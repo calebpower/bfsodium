@@ -1,5 +1,8 @@
 ; bfsodium ROTL64 : rotate a 64 bit little endian word LEFT by n
 ;
+; HAND WRITTEN; idiom/rotr64 is PASTED once  because a left rotation by n
+; is a right rotation by 64 minus n and there is no reason to write it twice;
+;
 ; INTERFACE entry=8 exit=0 footprint=0:27
 ; IO  in:  w{8} LE  followed by  n{1}       (9 bytes)
 ;     out: (w rotated left by n){8} LE      (8 bytes)

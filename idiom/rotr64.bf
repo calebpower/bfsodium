@@ -1,5 +1,8 @@
 ; bfsodium ROTR64 : rotate a 64 bit little endian word right by n
 ;
+; HAND WRITTEN; block/rshift64 is INCLUDED  which is the whole of the step
+; except the bit that falls out of byte 0;
+;
 ; INTERFACE entry=8 exit=8 footprint=0:20
 ; IO  in:  w{8} LE  followed by  n{1}       (9 bytes)
 ;     out: (w rotated right by n){8} LE     (8 bytes)

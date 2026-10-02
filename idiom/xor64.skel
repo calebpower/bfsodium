@@ -2,6 +2,9 @@
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
+; HAND WRITTEN; nothing is pasted and nothing is included; the eight bit
+; steps are written out for the reason chacha20/xor32 records;
+;
 ; INTERFACE entry=16 exit=16 footprint=0:37
 ; IO  in:  x{8} LE  followed by  y{8} LE      (16 bytes)
 ;     out: (x xor y){8} LE                    (8 bytes)
