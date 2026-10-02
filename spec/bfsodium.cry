@@ -2556,6 +2556,33 @@ encrypt128Run inb = aesLastRound (foldl aesRound st0 middle) (rks ! 0)
     st0    = [ p ^ k | p <- pt | k <- rks @ 0 ]
     middle = take`{9} (drop`{1} rks)
 
+// AES-128 in counter mode (NIST SP 800-38A section 6.5), taking and returning
+// the exact wire bytes aes/ctr128.bf reads and writes:
+//   in  = key(16) # counter(16 BE) # len(2 LE) # plaintext(len)
+//   out = ciphertext(len)
+// The length prefix is what the brainfuck uses to know when to stop, since a
+// primitive here never relies on end of input (CONVENTIONS section 7).
+//
+// The counter block is a 128-bit BIG-endian integer and the whole block
+// increments, which is what SP 800-38A F.5 exercises: its initial counter is
+// f0f1..feff, so the second block's is f0f1..ff00 and the carry leaves the
+// last byte. Note the contrast with streamRun above, whose counter is a
+// 32-bit LITTLE-endian word inside a larger state -- the two modes disagree
+// about both width and byte order, and writing each one out here is what
+// stops the brainfuck borrowing the wrong convention from its neighbour.
+//
+// Decryption is this same function applied to the ciphertext; there is no
+// inverse cipher anywhere in it, which is why aes/ctr128.bf was the first
+// mode written.
+ctr128Run : {n} (fin n, 64 >= width n) => [34 + n][8] -> [n][8]
+ctr128Run inb = [ p ^ k | p <- ptext | k <- ks ]
+  where
+    key   = take`{16} inb
+    ctr0  = join (take`{16} (drop`{16} inb)) : [128]
+    ptext = drop`{34} inb
+    ks    = take`{n} (join [ encrypt128Run (key # (split (ctr0 + i) : [16][8]))
+                           | i <- [0 ...] : [_][128] ])
+
 // The general multiply, as the field defines it. The brainfuck does peasant
 // multiplication -- eight guarded exclusive ors and seven doublings -- and
 // spec/perm.cry proves that the two are the same map over all 65536 pairs.

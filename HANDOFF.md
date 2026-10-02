@@ -195,6 +195,11 @@ nought and it is verified through whatever includes it.
 | `block/rshift64` | 0 | 184 | a leaf; the same at 64 bits, through `idiom/rotr64` and `idiom/shr64` |
 | `block/enccase32` | 0 | 111 | a leaf; which case a 32 bit length encodes to, through `keccak/leftenc` and `keccak/rightenc` at every byte count and both sides of every boundary |
 | `block/unstage16` | 0 | 68 | a leaf; the sixteen byte temporary coming home, through `aes/shiftrows` and `aes/invshiftrows` and the FIPS 197 rounds that use them |
+| `block/aes128table` | 0 | 43 | the S box lay down lifted out of the cipher so a mode can pay for it once; proved by `aes/encrypt128` coming back INSTRUCTION IDENTICAL across the split, and by `aes/ctr128`'s four published blocks, which are wrong in all 256 places if it is ever run twice |
+| `block/aes128encrypt` | 0 | 370 | the forward rounds without their program; the same identity proof, plus the round constant contract that stops a second block starting from the 0x6c the schedule leaves behind |
+| `block/aes128decrypt` | 0 | 510 | both phases of the inverse cipher, which do not separate because the table is swapped between them; proved by `aes/decrypt128` coming back instruction identical across its own split |
+| `block/copy16` | 0 | 68 | sixteen bytes copied down 885 cells; included TWICE by `aes/ctr128`, which is only possible because its tape was laid out to give the key and the counter the same geometry, and where a wrong copy of either is a wrong published block |
+| `block/copy16back` | 0 | 59 | the staging cells emptied again, which is not tidiness: they are the cipher's own workspace and the schedule's round key, and the cipher is entered immediately afterwards; the same vectors |
 | `idiom/add8` | 175 | 183 | every one of the 65536 pairs + two proved identities |
 | `chacha20/add32` | 633 | 168 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
@@ -255,13 +260,14 @@ nought and it is verified through whatever includes it.
 | `aes/xorword` | 330 | 72 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2362 | 306 | the FIPS 197 Appendix A schedule + three more keys |
-| `aes/encrypt128` | 16682 | 410 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
+| `aes/ctr128` | 19828 | 738 | SP 800-38A F.5.1, all four published blocks and block one alone, so the pair separates a wrong cipher from a wrong per block restoration; one byte into the second block, which is the cheapest input that carries the counter; and the zero key, whose first sixteen bytes are `encrypt128`'s own pinned value checked four lines above by a different program |
+| `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
 | `aes/invmixcolumns` | 12669 | 85 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 166 | 113 | all ten Appendix B rounds run backwards + round trips ShiftRows |
 | `aes/invsubbytes` | 641 | 105 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
-| `aes/decrypt128` | 25357 | 558 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
+| `aes/decrypt128` | 25434 | 109 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
 | `keccak/leftenc` | 238 | 141 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 238 | 141 | the same for right_encode |
 | `keccak/bytepad136` | 3903 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -334,8 +340,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 566 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 566 | golden vectors, dual oracle |
+| 2 | yes | 573 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 573 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -1596,13 +1602,14 @@ mechanical change stays reviewable:
 | held out | why it was tempting, and why not now |
 |---|---|
 | **AES-192 and AES-256** | Nk of 6 and 8, twelve and fourteen rounds, over shapes that already exist. Blocked by nothing. The rebuild would have had to get the looping right for three key sizes at once instead of one. |
-| **Modes** — CBC, CTR, GCM, GMAC, CMAC, CTR_DRBG | Unblocked now that `%%include%%` removed the wall, and the largest remaining body of symmetric work. Adding a consumer while the thing it consumes is being rewritten is how a rebuild stops being reviewable. |
+| **Modes** — ~~CTR~~, CBC, GCM, GMAC, CMAC, CTR_DRBG | **CTR is built**; see "The first mode" below for what the cipher had to become and for the three defects it found. The remaining five need the forward cipher only, except CBC decryption, which is the sole consumer of `block/aes128decrypt` and the only one that has to restructure it. |
 | **Unifying `xor32`/`xor64` onto `block/xor8kernel`** | The kernel is duplicated in three files down to the character, which HANDOFF already records as deferred — and `block/xor8kernel` finally makes it cheap. But those two are not AES, and the rebuild's invariant is identical instruction bytes; changing files outside the scope would weaken it. |
 | **Migrating the rest of the library to `%%include%%`** | Agreed to happen, in its own commits. The older `@@NAME@@ base` form keeps working meanwhile; the two coexist by design. |
 | **The deferred cleanup batch above** | Unchanged and still owed: tier 6, the BoneMesh lane, the pin bump, `bfj.c`, the documentation contradictions. |
 
-Of these, **AES-192/256 needs no decision and modes need no decision any
-more**, so both are simply next in line. The rest are judgement calls.
+Of these, **AES-192/256 needs no decision and the remaining modes need no
+decision any more** — CTR proved the composition works, so the rest are
+simply next in line. The rest are judgement calls.
 
 **THAT QUESTION IS ANSWERED, AND THE ANSWER IS NO.** It used to read "does
 BoneMesh use cSHAKE or KMAC anywhere?", with the ordering above assuming not.
@@ -2991,7 +2998,212 @@ In each case the differing part is a line or two and everything around it is
 a block. When the difference is an offset instead, it is everywhere, and the
 files stay apart.
 
+## The first mode, and what the cipher had to become
+
+`aes/ctr128` is the first file here that uses a cipher as a *component* rather
+than being one. Getting there cost three changes to the tree and found three
+defects, two of which were in claims the tree was already making.
+
+### The cipher came out of its program, and then had to come apart again
+
+`aes/encrypt128` was a program: read a key and a block from the wire, emit
+sixteen bytes. A mode wants neither end of that. So the rounds moved into
+`block/aes128encrypt` and the wrapper became 86 lines of IO around an include —
+and `encrypt128.bf` came back **instruction-identical**, which is the check
+that the extraction changed nothing. `decrypt128` the same, 558 skeleton lines
+down to 109, `dabf6715d0f0` both sides.
+
+**That was not enough, and the reason is a correctness trap rather than a cost
+one.** `block/sbox256` is delta-coded: runs of `+` and `-` against the previous
+entry, which assumes every cell starts at **nought**. A mode that included the
+one-piece cipher once per block would lay the table over itself, every one of
+the 256 entries would be the sum of two, and the cipher would emit sixteen
+plausible bytes that are not the ciphertext. No contract in the tree would have
+caught it, because every contract there asserts a *pointer* or a *clear* cell,
+and this is neither.
+
+So the cipher is two blocks. `block/aes128table` lays the S box and
+`block/aes128encrypt` runs the rounds, and a mode runs the first once.
+
+**The split falls where it does so the instruction stream does not move.** The
+table block ends on the walk home from the table — at relative cell 45, which
+is the round constant's cell — and the rounds block opens on the `+` that makes
+that constant one. Concatenated, the two are byte-for-byte what was there
+before. Ending the table block at nought instead would have cost a longer walk
+home and a walk back out, and changed every AES artifact to buy tidiness. The
+seam is asserted from both sides: the table block's trailing `; ASSERT ptr=+45`
+and the rounds block's leading one are the same claim written by each party.
+
+### What a second block has to put back, measured rather than reasoned
+
+The cipher's exit state was dumped off the Appendix B vector, because two of
+the three facts were not what the file's own contracts said:
+
+| cell | after one block | the contract said |
+|---|---|---|
+| window @0:15 | the TENTH ROUND KEY | nothing |
+| rcon @45 | **0x6c** — the schedule xtimes it ten times | nothing |
+| @16:44, @46:81, @98:116 | clear | `zero 16:44` only |
+| state @82:97 | the ciphertext | nothing |
+| the S box @117:884 | intact, because `walk256` restores each datum | nothing |
+
+`encrypt128` asserts `zero 16:44` after the cipher, which stops one cell short
+of the round constant. A mode that trusted that assertion and re-entered would
+have made its second round key from `0x6c` instead of `0x01`, and produced a
+wrong ciphertext from a program whose every contract passed. **The contract
+that pins it now lives in the block itself** — `; ASSERT zero +45:+45`, which
+holds trivially for `encrypt128` and is load-bearing for every mode after it.
+
+### The layout was chosen to make one copy routine serve two sites
+
+Both of `ctr128`'s sixteen-byte operands have to be *copied* rather than moved:
+the key because every block wants it, the counter because the increment wants
+it. Brainfuck has no copy — a cell is spent by the loop that reads it — so each
+goes to two places and one of them hands it back.
+
+Those two copies are the same text, and only because the tape was laid out to
+make them so. The key sits exactly 885 cells above the window; the counter sits
+exactly 885 above the state; each stages 869 below itself. So `block/copy16` is
+one file included at offsets 885 and 967, and `block/copy16back` the same.
+**An include offset shifts a frame and does not rescale the distances inside
+it**, so had those two gaps differed by a single cell this would be two files
+and no offset could have saved it. The 66-cell gap at `@0x385:0x3c6` is not
+waste; it is what buys the sharing. This is the owner's principle — *if
+something repeats a lot it is probably a component of something larger that
+repeats less* — applied forwards for once, at design time, instead of to a
+corpus after the fact.
+
+### Counter mode needs no inverse cipher, and that decided the order
+
+CTR decryption is CTR encryption run on the ciphertext, because the keystream
+does not know which direction it is serving. So the first mode exercises the
+whole composition — the include, the offset, the per-block restoration — without
+needing `block/aes128decrypt`, which cannot be included twice at all: it lays
+the forward table, spends it on the key schedule, **clears it and writes the
+inverse one into the same cells**, and runs the rounds. There is no prefix of
+it a caller can run once.
+
+That matters for the rest of the roster, and the shape is better than it looks:
+**CTR, GCM, GMAC, CMAC and CTR\_DRBG all use the forward cipher only.** Cipher
+block chaining is the sole consumer of the inverse, so it is the only mode that
+has to pay for the restructuring, and `block/aes128decrypt`'s header now says
+what that restructuring is: phase one once, keeping the last round key and the
+ten temps; the swap once; then the inverse rounds per block from the kept round
+key rather than regressing from a window the previous block spent.
+
+### The vectors are chosen to separate the two ways a mode fails
+
+SP 800-38A F.5.1 is kinder than it looks. Its initial counter is `f0f1..feff`,
+so the second block's is `f0f1..ff00` and the increment **carries out of the
+last byte** — a published vector that tests the carry chain for us. A sixteen
+byte message would never run the increment; a thirty-two byte one would run
+only the easy case. So: 64 bytes for all four published blocks, 17 bytes as the
+cheapest input that reaches the carry, 16 bytes for block one alone, and the
+zero key whose first sixteen bytes are `encrypt128`'s own pinned
+`66e94bd4...`, checked four lines above by a different program.
+
+The one-block and four-block lines are kept as a **pair** on purpose: together
+they separate *the cipher is wrong* from *the restoration is wrong*, and on its
+own neither line can. The empty message is checked outside `dk`, because a
+zero-length Cryptol sequence is not something the batch's hex printer has an
+answer for; it is the only input that reaches the length test without entering
+the loop.
+
+All of it was run locally under the scratchpad interpreter with contracts
+**live** before any of it was wired into the suite: 554,625,886 steps for the
+64-byte vector and 2,353,673,284 for the 257-byte one, every assertion
+holding.
+
+**And one of those vectors exists because the published ones are too short.**
+`remaining` is a u16 whose decrement borrows from the high byte only when the
+low byte is already nought — which first happens at `0x0100`, so **a message
+of 256 bytes or fewer never runs that arm at all**. Every published CTR vector
+is 64 bytes. Nine instructions of this file's own bookkeeping would have
+shipped untested, and the symptom of a transposed sign there is a long message
+silently truncated or a loop that does not end.
+
+So there is a 257-byte line: the cheapest input that reaches it, seventeen
+blocks, `remaining` stepping `0x0101`, `0x0100`, `0x00ff`. Its expectation is
+**derived**, and the chain is worth stating because a derived vector is only
+as good as its derivation. No standard publishes a 257-byte CTR value, so it
+was computed by a small AES written for the purpose, which was first checked
+against every end-to-end value the standards *do* publish — FIPS 197 Appendix
+B and C.1 and SP 800-38A F.5.1 — before it was trusted to compute anything.
+The derivation is also legible in the answer: the line reuses the published key
+and counter, so its first keystream bytes are the ones the F.5.1 line already
+pins, and `ec8ddd70` is `ec8cdf73` exclusive-ored with `00010203`. Cryptol then
+checks the whole of it independently, which is the half of `dk` that makes a
+derived vector worth having.
+
+**The same gap is open in `chacha20/stream`**, whose longest vector is RFC
+8439's 114 bytes and whose borrow is the same shape and the same nine
+instructions. It is noted here rather than fixed, because that file is not that
+commit's subject — but it is a real untested arm in a shipped primitive, not a
+hypothetical, and it belongs with the seventeen dead contracts as work that
+file is owed.
+
+### A found defect, deferred with its scope named
+
+**A contract written after the last instruction in a program can never fire.**
+`; ASSERT` attaches to the *next* instruction; if there is no next instruction
+there is nothing to attach to, and the line reads as enforced when it is prose.
+**Seventeen** programs carry twenty-two such claims — `aes/keyexpand128`,
+`chacha20/stream` and fifteen keccak files — and at least one is also **false**:
+`chacha20/stream` ends `; ASSERT zero 0:397`, but a message ending partway
+through a block leaves the rest of that keystream sitting in cells 0 to 63.
+
+A `block/` skeleton is **exempt, and this is not a loophole**: its text is
+included into a caller, so a trailing contract there attaches to whatever
+instruction follows the include site. `block/aes128table`'s trailing
+`; ASSERT ptr=+45` is exactly that, and it fires on the rounds block's first
+`+`. The rule is about programs.
+
+`aes/ctr128` does not join the seventeen: its final walk is split one cell short,
+`L988` / contract / `L1`, which costs no instructions and makes the exit claim
+real. Note what it claims and what it does not — `j` is **not** asserted clear,
+because a message ending mid-block leaves the rest of that keystream counted
+and unused, which is the whole reason the tail needs no special case. That is
+the claim `chacha20/stream` got wrong by sweeping.
+
+The checker and the seventeen fixes are their own unit, not this one. Writing the
+rule into CONVENTIONS without the checker would be the exact failure shape this
+project keeps finding: a documented rule nothing enforces.
+
 ## Traps that have actually bitten
+
+- **A `--fix` THAT REWRITES THE DOCUMENT IT CHECKS, AND HAD NO SELF-TEST.**
+  `tools/bftier.pl --fix` sets a flag when it finds the tier table's separator
+  row and **never clears it**, so every later three-column row in `HANDOFF.md`
+  is rewritten as though it were a tier row. Eighteen separator lines became
+  `| --- | --- | 0 |` and a header cell became `0`.
+
+  The reason this is in the traps list rather than just the changelog: **that
+  damage was repaired by hand in `c753e57` without the cause being found**, so
+  it came straight back the next time `--fix` ran — the same tables, the same
+  way. Repairing a corrupted artifact without identifying what corrupted it is
+  not a fix, it is a delay, and the second occurrence cost more than the first
+  because by then the tool had been cleared of suspicion.
+
+  It was cleared because the wrong tool was suspected. `bftable.pl --fix` was
+  blamed, tested on a copy, and exonerated — correctly; it only ever touched
+  the two count columns. Both times the conclusion drawn was "the damage
+  pre-existed", which was true and useless.
+
+  `fix` now stops at the first line that is not a table row, never rewrites a
+  separator, and **takes a directory so it can be self-tested** — which is the
+  real defect. `check` had eight self-tests and `fix` had none, and a
+  subcommand that rewrites a tracked file is the worse of the two to leave
+  untested: its failure is a silent edit rather than a red line. There are now
+  two tests, both polarities: a later table must survive `--fix` untouched, and
+  a stale tier count must still be corrected, so the first cannot be satisfied
+  by a `--fix` that has quietly stopped working.
+
+- **A CONTRACT AFTER THE LAST INSTRUCTION IS NOT A CONTRACT.** `; ASSERT`
+  attaches to the next instruction, so one written at the end of a program
+  attaches to nothing and is never checked — while reading exactly like the
+  ones that are. Seventeen programs carry twenty-two; see the section above for the
+  list, for why `block/` skeletons are exempt, and for the one that is false as
+  well as dead.
 
 - **A ZERO BYTE FILE WITH A CARRIAGE RETURN IN ITS NAME IS INVISIBLE TO `ls`
   AND BREAKS EVERY GLOB.** A file list written from Python with the default

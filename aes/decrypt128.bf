@@ -108,6 +108,83 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                            ; continued
                                                                ; ASSERT ptr=0
 
+                                                               ; AES_128 DECRYPTION  the whole inverse cipher and none
+                                                               ; of the input or output; entered with the key in the
+                                                               ; window at the block's own zero and the ciphertext
+                                                               ; already in the state  and it leaves the plaintext in
+                                                               ; the state; The caller owns the reading and the
+                                                               ; writing;
+;
+                                                               ; THIS EXISTS SO A MODE CAN HAVE THE CIPHER WITHOUT ITS
+                                                               ; PROGRAM  for the reason block/aes128encrypt records:
+                                                               ; the inverse block carries an unbalanced walk  so it
+                                                               ; has no INTERFACE line and no caller can paste it  and
+                                                               ; it is a program besides; CBC and the rest want the
+                                                               ; rounds over cells they chose;
+;
+                                                               ; IT DOES BOTH PHASES; the schedule runs forward with
+                                                               ; the FORWARD table  then the table is cleared and the
+                                                               ; INVERSE one written into the same cells  then the
+                                                               ; rounds run backwards regressing the schedule from the
+                                                               ; last round key; All of that is one block because none
+                                                               ; of it is separately useful: a caller cannot run the
+                                                               ; inverse rounds without the regression and cannot
+                                                               ; regress without the ten temps phase one stored;
+;
+                                                               ; THE KEY IS SPENT AND SO IS THE TABLE; the schedule
+                                                               ; consumes the window and phase two swaps the resident
+                                                               ; table for the inverse one  so a caller running a
+                                                               ; second block must put the key back AND the forward
+                                                               ; table is gone; That is dearer than the forward
+                                                               ; direction  where the table survives; A mode
+                                                               ; decrypting many blocks pays the sixty six thousand
+                                                               ; instruction table swap per block unless it is written
+                                                               ; to avoid it;
+;
+                                                               ; WHY THIS DOES NOT SPLIT THE WAY THE FORWARD CIPHER
+                                                               ; DID; block/aes128table exists because the forward lay
+                                                               ; down is a PROLOGUE: it happens first  it happens once
+                                                               ; and the rounds can be run again over the table it
+                                                               ; left standing; None of that is true here; This file
+                                                               ; lays the forward table at base 246 and walks all the
+                                                               ; way home rather than stopping on the round constant
+                                                               ; so it is not even the same text as block/aes128table;
+                                                               ; and the INVERSE table is written in the MIDDLE of
+                                                               ; this file  over the forward one after phase one has
+                                                               ; finished with it; There is no prefix a caller can run
+                                                               ; once and then leave alone;
+;
+                                                               ; WHAT CBC DECRYPTION WILL HAVE TO DO  written here so
+                                                               ; it is not rediscovered: phase one ONCE  keeping the
+                                                               ; last round key and the ten temps; the table swap
+                                                               ; ONCE; then the inverse rounds per block  each
+                                                               ; starting from the KEPT round key rather than
+                                                               ; regressing from a window the previous block spent;
+                                                               ; That is a restructuring of this file rather than an
+                                                               ; include of it  and it is the only place in the mode
+                                                               ; roster that needs one; CTR  GCM  GMAC  CMAC and
+                                                               ; CTR_DRBG all use the FORWARD cipher only  so CBC
+                                                               ; decryption is the sole consumer of these lines and
+                                                               ; can pay for the shape it needs;
+;
+                                                               ; CONTRACTS ARE RELATIVE  and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x000        cnt    the loop counter of whichever phase is running
+;   @0x053:0x056  scratch for the downward turn
+;   @0x057:0x07e  the temp run{40}  ten four byte schedule temps
+;   @0x07f:0x082  scratch for the upward turn
+;   @0x083:0x09b  aes/xorword pasted at 131
+;   @0x09c:0x09f  g{4}
+;   @0x0a0:0x0af  window{16}  phase two: REGRESSING in place
+;   @0x0b0:0x0bf  window{16}  phase one: the key goes in here
+;   @0x0c0:0x0cf  the ciphertext  parked through phase one
+;   @0x0d0:0x0ee  phase one workspace  temp  rcon and g
+;   @0x0d3:0x0e2  state{16}  the answer comes back here
+;   @0x0e3:0x0f2  the round key
+;   @0x0f3:0x3f5  group 0 and the table  forward then INVERSE
+
 ; ============================================================ ; phase one : the key schedule  with the FORWARD table
                                                                ; the first four words ARE the key and they stay in the
                                                                ; window; the earlier cut also copied them into a 176

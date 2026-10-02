@@ -1,0 +1,59 @@
+; THE OTHER HALF OF block/copy16; sixteen staged bytes handed back UP 869
+; cells  to the source they were taken from; Entered where the STAGE begins
+; and it leaves the pointer on the stage's last cell;
+;
+; IT LEAVES THE STAGE EMPTY  which is the part that matters to the caller: the
+; staging cells of aes/ctr128 are cells the CIPHER uses as workspace  the
+; schedule's at 16 and the round key's at 98  and the cipher is entered
+; immediately afterwards; So this is not tidiness; a byte left behind here is
+; a wrong round key three hundred instructions later;
+;
+; Every move in it is relative  for the reason block/copy16 records;
+; ASSERT ptr=+0
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; the next byte
+R1
+  [-R869+L869]
+; ASSERT ptr=+15

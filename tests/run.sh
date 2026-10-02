@@ -191,6 +191,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
               grep -q "^; INTERFACE" "$f" || echo "$f"
           done)
     want="aead/chacha20poly1305.bf
+aes/ctr128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
 aes/invsubbytes.bf
@@ -1390,6 +1391,80 @@ dk aes/encrypt128.bf 000102030405060708090a0b0c0d0e0f00112233445566778899aabbccd
 dk aes/encrypt128.bf 2b7e151628aed2a6abf7158809cf4f3c3243f6a8885a308d313198a2e0370734 3925841d02dc09fbdc118597196a0b32 encrypt128Run "encrypt128 FIPS 197 Appendix B  the worked example  a PUBLISHED value"
 dk aes/encrypt128.bf 00000000000000000000000000000000000000000000000000000000000000ff f70ddef93ba62588242a0e67d0d645e0 encrypt128Run "encrypt128 the zero key on a block of one byte  DERIVED"
 dk aes/encrypt128.bf 0000000000000000000000000000000000000000000000000000000000000000 66e94bd4ef8a2c3b884cfa59ca342b2e encrypt128Run "encrypt128 the zero key on the zero block  DERIVED"
+
+# CTR128 is the FIRST MODE, and the first file here that uses a cipher as a
+# component rather than being one. It includes block/aes128table once and
+# block/aes128encrypt once per block, which is the composition the whole split
+# was for, and its vectors are chosen to exercise the three things a mode can
+# get wrong where a single block cannot.
+#
+# THE CARRY IS THE ONE THE PUBLISHED VECTOR TESTS FOR US. SP 800-38A F.5 picks
+# an initial counter of f0f1..feff, so the second block's counter is f0f1..ff00
+# and the increment carries out of the last byte. A sixteen-byte vector would
+# never run the increment at all and a thirty-two byte one would run only the
+# easy case; the 17-byte line below is the cheapest input that reaches the
+# carry, and the 64-byte line runs all four published blocks.
+#
+# THE OTHER TWO THINGS A MODE GETS WRONG are what the per-block restoration
+# exists for, and both were MEASURED with a tape dump rather than reasoned
+# about, because the file's own contracts did not cover them: after a block the
+# window holds the TENTH ROUND KEY and the round constant holds 0x6c. Any
+# vector of two or more blocks fails if either is left alone, which is why the
+# one-block line is kept alongside the four-block one -- the pair separates "the
+# cipher is wrong" from "the restoration is wrong", and on their own neither
+# line can.
+#
+# THE ZERO KEY LINE TIES THE MODE TO THE BLOCK. Counter mode on a zero key and
+# a zero counter encrypts the zero block, so its first sixteen bytes are
+# encrypt128's own pinned vector 66e94bd4... A disagreement there means the
+# mode, not the cipher, since that value is checked four lines above by a
+# different program.
+#
+# THE EMPTY MESSAGE is checked separately below rather than with dk, because a
+# zero-length Cryptol sequence is not something the batch's hex printer has an
+# answer for. It is still worth running: it is the only input that reaches the
+# length test without entering the loop.
+dk aes/ctr128.bf 2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfeff40006bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710 874d6191b620e3261bef6864990db6ce9806f66b7970fdff8617187bb9fffdff5ae4df3edbd5d35e5b4f09020db03eab1e031dda2fbe03d1792170a0f3009cee ctr128Run "ctr128 SP 800_38A F point 5 point 1  all four blocks  a PUBLISHED value"
+dk aes/ctr128.bf 2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfeff10006bc1bee22e409f96e93d7e117393172a 874d6191b620e3261bef6864990db6ce ctr128Run "ctr128 SP 800_38A F point 5 point 1 block one alone  a PUBLISHED value"
+dk aes/ctr128.bf 2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfeff11006bc1bee22e409f96e93d7e117393172aae 874d6191b620e3261bef6864990db6ce98 ctr128Run "ctr128 one byte into the second block  so the counter CARRIES  DERIVED"
+dk aes/ctr128.bf 2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfeff01006b 87 ctr128Run "ctr128 a message of one byte  the shortest message with output  DERIVED"
+dk aes/ctr128.bf 0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000 66e94bd4ef8a2c3b884cfa59ca342b2e ctr128Run "ctr128 the zero key and the zero counter  which is encrypt128's own pinned block  DERIVED"
+
+# THE BORROW NEEDS A MESSAGE PAST 256 BYTES, and none of the lines above is
+# one. `remaining` is a u16 and its decrement borrows from the high byte only
+# when the low byte is already nought -- which first happens at 0x0100, so a
+# message of 256 bytes or fewer never runs that arm at all. The published
+# vectors are 64 bytes. The four lines above therefore leave the borrow, which
+# is nine instructions of this file's own bookkeeping, completely untested; a
+# transposed sign there would have shipped, and the symptom would have been a
+# long message silently truncated or run on forever.
+#
+# So: 257 bytes, which is the CHEAPEST input that reaches it -- seventeen
+# blocks, and `remaining` steps 0x0101, 0x0100, 0x00ff. The plaintext is the
+# 256 byte values in order and then one more, so it is a value anyone can
+# retype rather than a blob.
+#
+# THIS EXPECTATION IS DERIVED, AND HERE IS THE CHAIN. No standard publishes a
+# 257 byte CTR vector, so it was computed by a small AES written for the
+# purpose, which was itself checked against every end-to-end value the
+# standards do publish -- FIPS 197 Appendix B and C.1 and SP 800-38A F.5.1 --
+# before it was trusted to compute anything. The derivation is also visible in
+# the answer: this message reuses the published key and counter, so the first
+# sixteen keystream bytes are the ones the F.5.1 line above already pins, and
+# `ec8ddd70` is `ec8cdf73` exclusive-ored with `00010203`. Cryptol then checks
+# the whole of it independently, which is the half of `dk` that makes a
+# derived vector worth having at all.
+#
+# The same gap exists in chacha20/stream, whose longest vector is RFC 8439's
+# 114 bytes and whose borrow is the same shape. Noted in HANDOFF rather than
+# fixed here, because that file is not this commit's subject.
+dk aes/ctr128.bf 2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfeff0101000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff00 ec8ddd709c657ab7fadb1c7ee693afeb263a6e2f7366477400b96dcce04d6db14a0de15b5cac1168969de2303b97426bd8ad0bacc4c4aef1ec330be0295195c1f04c05bb50cfd749b8217adcdc06eb4d08c8160919b457a24b938bc321d4b7445bb8ce1a2dbb4d9e0d00c6532f951c2d0debbcf333b6257e6d23c2d38cf8e9ce371d3ba5c46bce101d26bc9ea63e78b4ead3fde5192c737f842c52d5ebd053b20d01ef448c882579f0c77e2ea63e21bafd93035266049e234218451d6831de8cc51b5c3c0d27b820be3e571d7ac3563e4ef01c49bbb0fdc4da127b2df9a4c92904f7b6051fa5c850fa98201c07f4f03cdd6f8cbd702484b0900164c9fd40dd866c ctr128Run "ctr128 257 bytes  so the length's borrow from the high byte actually runs  DERIVED  see the note above"
+
+run "ctr128 on an empty message emits nothing and still lays the table" sh -c '
+    out=$(printf "%s" "2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfeff0000" \
+          | ./tools/hx -r | ./tools/bfi aes/ctr128.bf | ./tools/hx)
+    [ -z "$out" ] || { echo "expected no output  got $out"; exit 1; }
+'
 
 # GFMUL is the general multiply in GF(2^8): peasant multiplication, eight
 # turns, UNROLLED so no counter is needed and every loop is pointer balanced,

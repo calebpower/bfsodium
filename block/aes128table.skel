@@ -1,0 +1,43 @@
+; THE AES S BOX LAID INTO THE TAPE  256 data at a stride of three  for
+; whichever cipher is about to read them; Entered at the block's own zero and
+; it LEAVES THE POINTER AT CELL 45  which is the round constant's cell and
+; where block/aes128encrypt expects to begin;
+;
+; THAT SEAM IS THE WHOLE REASON THIS IS A SEPARATE FILE; a mode encrypts many
+; blocks and the table only has to be written once; It cannot simply be
+; written twice either  which is the part that would have bitten quietly:
+; block/sbox256 is a DELTA CODED run of plus and minus signs and it assumes
+; every cell begins at NOUGHT; Laid down over itself the second pass adds to
+; the first  the table is wrong in all 256 places  and the cipher produces
+; sixteen plausible bytes that are not the ciphertext; So the lay down lives
+; here  the rounds live next door  and a caller runs this ONCE;
+;
+; THE SPLIT FALLS WHERE IT DOES SO THE INSTRUCTIONS DO NOT MOVE; this file
+; ends on the walk home from the table and the next one opens on the round
+; constant  so the two concatenated are byte for byte the stream that was
+; here before the split; Ending at nought instead would have cost a longer
+; walk home and a walk back out  and changed every artifact to buy tidiness;
+;
+; THE TABLE SURVIVES A FORWARD BLOCK; block/walk256 copies the datum it reads
+; and puts it back  so the S box is still readable afterwards and a mode in
+; counter or cipher block chaining mode never lays it again; The INVERSE
+; cipher is not so lucky: it swaps the resident table for the inverse one
+; halfway through  and block/aes128decrypt says so in its own header;
+;
+; CONTRACTS ARE RELATIVE; every one is a claim about a cell of THIS block and
+; the include's offset resolves it; CONVENTIONS section 6 carries the rule;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x02d  rcon  where the pointer is left standing
+;   @0x072:0x074  group 0 of the walk; ITS TRAIL IS NEVER SET
+;   @0x075:0x374  groups 1 to 256  the S box
+
+; ==== the S box is written into the tape  one datum per group ====
+; block/sbox256 lands its first datum where the pointer stands and its last
+; 765 cells further on
+  R117
+; ASSERT ptr=+117
+%%block/sbox256%%
+; ASSERT ptr=+882
+  L837
+; ASSERT ptr=+45

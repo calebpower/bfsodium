@@ -189,25 +189,49 @@ sub check {
     return $bad;
 }
 
+# THE REWRITE TOUCHES ONE TABLE AND STOPS. It did not, and the damage was
+# ugly: the "inside the tier table" flag was set when the table's separator
+# was found and NEVER CLEARED, so every later three-column row in the document
+# was rewritten as though it were a tier row. Eighteen separator lines became
+# `| --- | --- | 0 |` and a header cell became `0`. That damage was repaired by
+# hand in c753e57 WITHOUT the cause being found, so it came straight back the
+# next time --fix ran -- the same ten tables, the same way.
+#
+# Two things let it live. The flag only ever went up, which is a bug anyone
+# reading the loop can see; and `fix` had NO SELF-TEST, while `check` had
+# eight. A subcommand that rewrites a tracked file and is never exercised is
+# the worst of the two halves to leave untested, because its failure is a
+# silent edit rather than a red line. It now takes a directory for the same
+# reason `check` does: so it can be run against a temporary tree.
 sub fix {
-    my $suite = suite_tiers($SUITE);
-    open my $in, '<', $DOC or die "bftier: cannot read $DOC: $!\n";
+    my ($dir) = @_;
+    $dir = '.' unless defined $dir;
+    my $suite = suite_tiers("$dir/$SUITE");
+    my $doc = "$dir/$DOC";
+    open my $in, '<', $doc or die "bftier: cannot read $doc: $!\n";
     my @out;
-    my $seen = 0;
+    my $seen = 0;   # inside the tier table
+    my $done = 0;   # it has been passed; never rewrite anything again
     while (my $l = <$in>) {
-        if ($l =~ /^\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|(.*)$/ && $seen) {
+        # The table ends at the first line that is not a row.
+        if ($seen && $l !~ /^\|/) { $seen = 0; $done = 1 }
+        # A separator row is never a tier row, whichever table it belongs to.
+        if ($seen && $l !~ /^\|\s*-+\s*\|/
+                  && $l =~ /^\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|(.*)$/) {
             my ($t, $b, undef, $rest) = ($1, $2, $3, $4);
             my $n = $b eq 'yes' ? ($suite->{$t} // 0) : 0;
             $l = sprintf "| %s | %s | %s |%s\n", $t, $b, $n, $rest;
         }
-        $seen = 1 if $l =~ /^\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|/ && !$seen && @out && $out[-1] =~ /^\| tier \| built \|/;
+        $seen = 1 if !$done && !$seen
+                     && $l =~ /^\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|/
+                     && @out && $out[-1] =~ /^\| tier \| built \|/;
         push @out, $l;
     }
     close $in;
-    open my $o, '>', $DOC or die "bftier: cannot write $DOC: $!\n";
+    open my $o, '>', $doc or die "bftier: cannot write $doc: $!\n";
     print $o @out;
     close $o;
-    print "bftier: $DOC rewritten\n";
+    print "bftier: $doc rewritten\n";
     return 0;
 }
 
@@ -237,6 +261,7 @@ sub selftest {
         print $h "## State\n\n| tier | built | run.sh lines | note |\n|---|---|---|---|\n";
         print $h $o{rows} // "| 1 | yes | 2 | x |\n| 6 | no | 0 | x |\n| 11 | manual | 0 | x |\n";
         print $h "\ntail\n";
+        print $h $o{extra_doc} // '';
         close $h;
         return $d;
     };
@@ -266,6 +291,34 @@ sub selftest {
         if ($got == $want) { print "selftest ok: $name\n" }
         else { print "SELFTEST FAIL: $name (wanted $want got $got)\n"; $fails++ }
     }
+    # --fix IS TESTED TOO, and on the thing it got wrong: a second markdown
+    # table further down the same document. The first of these two is the
+    # regression test for the damage described above `fix`; the second proves
+    # the rewrite still does its job, so the first cannot be satisfied by a
+    # --fix that has quietly stopped working.
+    my $other = "\n| primitive | instructions | wall |\n|---|---|---|\n"
+              . "| `sha256` of the empty message | 1,145,948,360 | ~2 s |\n";
+    {
+        my $d = $mk->(extra_doc => $other,
+                      rows => "| 1 | yes | 9 | x |\n| 6 | no | 0 | x |\n"
+                            . "| 11 | manual | 0 | x |\n");
+        fix($d);
+        open my $h, '<', "$d/$DOC" or die;
+        local $/; my $got = <$h>; close $h;
+        if (index($got, $other) >= 0) {
+            print "selftest ok: --fix left a later table alone\n";
+        } else {
+            print "SELFTEST FAIL: --fix rewrote a table that is not the tier table\n";
+            $fails++;
+        }
+        if ($got =~ /^\| 1 \| yes \| 2 \|/m) {
+            print "selftest ok: --fix still corrects a stale tier count\n";
+        } else {
+            print "SELFTEST FAIL: --fix did not correct the tier count\n";
+            $fails++;
+        }
+    }
+
     if ($fails) { print "SELFTEST FAILED ($fails)\n"; return 1 }
     print "bftier --selftest: ok\n";
     return 0;
@@ -273,5 +326,5 @@ sub selftest {
 
 my $arg = $ARGV[0] // '';
 exit selftest() if $arg eq '--selftest';
-exit fix()      if $arg eq '--fix';
+exit fix('.')   if $arg eq '--fix';
 exit check('.', 0);

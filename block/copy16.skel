@@ -1,0 +1,68 @@
+; SIXTEEN BYTES COPIED DOWN 885 CELLS  through temps 869 cells below the copy;
+; Entered where the SOURCE begins and it leaves the pointer on the source's
+; last byte  fifteen cells along; Every move in it is RELATIVE  so the same
+; text does the same job wherever it is included: it copies src through
+; src plus 15 into src minus 885  staging each byte in src minus 869;
+;
+; A COPY AND NOT A MOVE  because both of this mode's sixteen byte operands are
+; wanted again; the key is wanted by every block and the counter is wanted by
+; the increment; Brainfuck has no copy: a cell is SPENT by the loop that reads
+; it  so the value goes to two places and one of them hands it back; That is
+; block/copy16back and the two are useless apart;
+;
+; WHY ONE BLOCK AND NOT TWO PIECES OF STRAIGHT LINE TEXT; aes/ctr128 copies
+; the key into the window and the counter into the state  and its tape is laid
+; out SO THAT THOSE TWO COPIES HAVE THE SAME GEOMETRY: the key sits 885 above
+; the window and the counter sits 885 above the state  and both stage 869
+; below their source; The layout was chosen to make that true  which is the
+; only reason one text can serve both; Had the gap differed by a single cell
+; this would be two files and an include offset could not have saved it  since
+; an offset shifts a frame and does not rescale the distances inside it;
+; ASSERT ptr=+0
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; the next byte
+R1
+  [-L885+R16+R869]
+; ASSERT ptr=+15

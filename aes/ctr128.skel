@@ -1,0 +1,738 @@
+; bfsodium CTR128 : AES_128 in counter mode  NIST SP 800_38A section 6 point 5
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table block/aes128encrypt block/copy16 and
+; block/copy16back are INCLUDED; idiom/xor8 is PASTED; This file is the
+; plumbing of a mode and nothing else: it owns no round and no S box;
+;
+; IO  in:  key{16}  counter{16} BE  len{2} LE  plaintext{len}
+;     out: ciphertext{len}
+;
+; The length prefix is how the program knows when to stop; a bfsodium
+; primitive never relies on end of input;
+;
+; THE FIRST MODE  and so the first file to use a cipher as a component rather
+; than being one; aes/encrypt128 is a program: it reads a key and a block and
+; emits sixteen bytes; This one reads a key ONCE and runs the cipher as many
+; times as the length demands  which is only possible because the cipher was
+; split out of that program into block/aes128table and block/aes128encrypt;
+;
+; COUNTER MODE NEEDS NO INVERSE CIPHER  and that is the reason it is first;
+; decryption is this same program run on the ciphertext  because the keystream
+; does not know which direction it is serving; So this file exercises the whole
+; composition  the include  the offset and the per block restoration  without
+; also needing block/aes128decrypt  whose table is spent halfway through and
+; which therefore cannot be included twice; Cipher block chaining is the one
+; mode that will have to face that  and that block's header says how;
+;
+; THE TABLE IS LAID ONCE  and that is the whole point of the split; Seventeen
+; thousand instructions for the S box  paid once for a message of any length;
+; block/sbox256 is delta coded against ZEROED cells  so laying it twice would
+; double every entry and the cipher would emit sixteen plausible wrong bytes;
+; A mode that included the old single piece cipher once per block would have
+; been wrong and would have looked right;
+;
+; WHAT A SECOND BLOCK HAS TO PUT BACK  measured with a tape dump on the
+; Appendix B vector rather than reasoned about  because two of the three were
+; not what the file's own contracts claimed:
+;   the window          holds the TENTH ROUND KEY  not the key and not nought
+;   the round constant  holds 0x6c  because the schedule xtimes it ten times
+;   the state           holds the keystream  which the slide below empties
+; The first two are cleared and refilled at the head of every block; The
+; contract that pins the round constant now lives in the block itself  so the
+; next mode cannot rediscover it;
+;
+; THE LAYOUT WAS CHOSEN TO MAKE ONE COPY ROUTINE SERVE TWO SITES; the key sits
+; exactly 885 cells above the window and the counter exactly 885 above the
+; state  and each stages 869 cells below itself  so block/copy16 is one text
+; included at two offsets; An include offset shifts a frame and does NOT
+; rescale the distances inside it  so had those two gaps differed by a single
+; cell this would be two files; Choosing the layout to make them agree costs
+; nothing  and it is the only reason the factoring is available at all;
+;
+; ONE TURN OF THE LOOP IS ONE MESSAGE BYTE  as in chacha20/stream  so the tail
+; of a message needs no special case and no division: the count simply runs out
+; partway through a block and the rest of that keystream is abandoned;
+;
+; THE CARRY RUNS THE FULL SIXTEEN BYTES  because the published vectors need it:
+; SP 800_38A F point 5 starts its counter at f0f1 through feff  so the second
+; block's counter is f0f1 through ff00 and the increment carries out of the
+; last byte; A counter that wraps past two to the hundred and twenty eighth is
+; out of keystream and the carry is simply dropped  as RFC 8439 leaves that to
+; the caller in the other stream cipher here;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x374  THE CIPHER'S FRAME  exactly as block/aes128encrypt maps it
+;     @0x000:0x00f  window{16}   the key is COPIED in at every block
+;     @0x010:0x01f  ALSO the key copy's staging cells  which are the schedule's
+;                   workspace and are empty when the cipher is entered
+;     @0x02d        rcon  CLEARED at every block; see above
+;     @0x052:0x061  state{16}  the counter goes in  the keystream comes back
+;     @0x062:0x071  ALSO the counter copy's staging cells  which are the round
+;                   key's and are empty when the cipher is entered
+;     @0x075:0x374  the S box  laid ONCE by block/aes128table
+;   @0x375:0x384  savedkey{16}  the key as it came off the wire  never spent
+;   @0x3c7:0x3d6  ctr{16}  the counter block  big endian  INCREMENTED in place
+;   @0x3d7        carry  one before the increment  the carry out after it
+;   @0x3d8        cz     set when an incremented byte came back to nought
+;   @0x3d9        ct     a copy of that byte  so testing does not eat it
+;   @0x3da        cu     puts that copy back
+;   @0x3db:0x3dc  remaining{2} u16 LE  message bytes still to emit
+;   @0x3dd        nz     set while remaining is not zero
+;   @0x3de        j      keystream bytes left in this block
+;   @0x3df        e      the else arm of the borrowing decrement
+;   @0x3e0        t      a copy  so a count can be tested without being eaten
+;   @0x3e1        u      puts that copy back
+;   @0x3e2        f      set while the keystream is spent
+;   @0x3e3:0x3f3  idiom/xor8 pasted at 995; result 995  operands 996 and 997
+;
+; THE GAP AT @0x385:0x3c6 IS NOT WASTE; it is what puts the counter exactly 885
+; cells above the state  and it buys the shared copy routine above;
+
+; ==== the key  the counter block and the length ====
+; a read prologue may only ever move right  so the two operands are read
+; where they live rather than read low and moved up
+R885
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=900
+R67
+; ASSERT ptr=967
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=982
+; the two byte length prefix
+R5
+  ,>,
+; ASSERT ptr=988
+L988
+; ASSERT ptr=0
+
+; ==== the S box is written into the tape  ONCE ====
+; ASSERT zero 0:884
+%%block/aes128table%%
+; ASSERT ptr=45
+L45
+; ASSERT ptr=0
+
+; ==== is there anything to do ====
+R987
+; ASSERT ptr=987
+; The count is two bytes  so the flag is set if EITHER is not zero; each byte
+; is copied out through a temp and put straight back  so testing does not eat
+; it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back  so the count survives being looked at
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag  where the loop tests it
+L3
+; ASSERT ptr=989
+
+; ==== one turn is one message byte ====
+[
+
+; ==== if the keystream is spent  make another block ====
+; j is copied out and put straight back  because it is still the count of
+; keystream bytes left; the flag is armed first and the copy disarms it  so a
+; block is made only when j has reached nought
+R1
+; ASSERT ptr=990
+  [-R2+R1+L3]
+R3
+  [-L3+R3]
+R1
+; ASSERT ptr=994
+  [-]
+  +
+L2
+; ASSERT ptr=992
+  [[-]R2-L2]
+R2
+; ASSERT ptr=994
+[
+  -
+
+; the window and the round constant are what a second block has to put back
+L994
+; ASSERT ptr=0
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+; ASSERT ptr=15
+R30
+; ASSERT ptr=45
+  [-]
+L45
+; ASSERT ptr=0
+; everything below the table is now clear  which is what block/sbox256 would
+; need were it run again  and which proves the slide emptied the state
+; ASSERT zero 0:116
+
+; the key is COPIED into the window  because every block wants it again
+R885
+%%block/copy16%% 885
+; ASSERT ptr=900
+L884
+%%block/copy16back%% 16
+; ASSERT ptr=31
+; and the counter block into the state  for the same reason
+R936
+%%block/copy16%% 967
+; ASSERT ptr=982
+L884
+%%block/copy16back%% 98
+; ASSERT ptr=113
+; to the round constant  which is where the cipher begins
+L68
+; ASSERT ptr=45
+; ASSERT zero 16:44
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+
+; ==== the counter block steps by one  big endian ====
+; the carry starts set  so the last byte always increments; thereafter a byte
+; increments only if the one below it came back to nought  which is tested
+; through a copy because the byte itself is the answer
+R983
+; ASSERT ptr=983
+  +
+; byte 1 of sixteen  counting up from the least significant
+  [
+  -
+  L1
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R3+R1+L4]
+  R4
+  [-L4+R4]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 2 of sixteen  counting up from the least significant
+  [
+  -
+  L2
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R4+R1+L5]
+  R5
+  [-L5+R5]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 3 of sixteen  counting up from the least significant
+  [
+  -
+  L3
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R5+R1+L6]
+  R6
+  [-L6+R6]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 4 of sixteen  counting up from the least significant
+  [
+  -
+  L4
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R6+R1+L7]
+  R7
+  [-L7+R7]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 5 of sixteen  counting up from the least significant
+  [
+  -
+  L5
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R7+R1+L8]
+  R8
+  [-L8+R8]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 6 of sixteen  counting up from the least significant
+  [
+  -
+  L6
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R8+R1+L9]
+  R9
+  [-L9+R9]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 7 of sixteen  counting up from the least significant
+  [
+  -
+  L7
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R9+R1+L10]
+  R10
+  [-L10+R10]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 8 of sixteen  counting up from the least significant
+  [
+  -
+  L8
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R10+R1+L11]
+  R11
+  [-L11+R11]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 9 of sixteen  counting up from the least significant
+  [
+  -
+  L9
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R11+R1+L12]
+  R12
+  [-L12+R12]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 10 of sixteen  counting up from the least significant
+  [
+  -
+  L10
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R12+R1+L13]
+  R13
+  [-L13+R13]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 11 of sixteen  counting up from the least significant
+  [
+  -
+  L11
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R13+R1+L14]
+  R14
+  [-L14+R14]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 12 of sixteen  counting up from the least significant
+  [
+  -
+  L12
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R14+R1+L15]
+  R15
+  [-L15+R15]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 13 of sixteen  counting up from the least significant
+  [
+  -
+  L13
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R15+R1+L16]
+  R16
+  [-L16+R16]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 14 of sixteen  counting up from the least significant
+  [
+  -
+  L14
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R16+R1+L17]
+  R17
+  [-L17+R17]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 15 of sixteen  counting up from the least significant
+  [
+  -
+  L15
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R17+R1+L18]
+  R18
+  [-L18+R18]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; byte 16 of sixteen  counting up from the least significant
+  [
+  -
+  L16
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R18+R1+L19]
+  R19
+  [-L19+R19]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=983
+; a counter that wrapped past two to the hundred and twenty eighth is out of
+; keystream  and the carry is simply dropped
+  [-]
+; the block is sixteen bytes long
+R7
+; ASSERT ptr=990
+  ++++++++++++++++
+R4
+; ASSERT ptr=994
+]
+
+; ==== the leading keystream byte and the message byte meet ====
+L912
+; ASSERT ptr=82
+  [-R914+L914]
+R915
+; ASSERT ptr=997
+  ,
+L2
+; ASSERT ptr=995
+; ASSERT zero 998:1011
+@@XOR8@@ 995
+; ASSERT ptr=995
+  .
+  [-]
+
+; ==== the keystream slides down one  so the next byte is again at the head ====
+L912
+; ASSERT ptr=83
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; ASSERT ptr=97
+
+; ==== one fewer byte in this block ====
+R893
+; ASSERT ptr=990
+  -
+; ==== one fewer byte to go  borrowing from the high byte when the low runs out
+L3
+; ASSERT ptr=987
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L2
+; ASSERT ptr=991
+  [-]
+  +
+R1
+  [[-]L5-R4-R1]
+L1
+; ASSERT ptr=991
+  [-L3-L1-R4]
+L4
+; ==== is there anything left to do ====
+; ASSERT ptr=987
+; The count is two bytes  so the flag is set if EITHER is not zero; each byte
+; is copied out through a temp and put straight back  so testing does not eat
+; it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back  so the count survives being looked at
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag  where the loop tests it
+L3
+; ASSERT ptr=989
+]
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED; a contract
+; attaches to the NEXT instruction  so one written after the LAST
+; instruction in a program can never fire at all; Other programs in this
+; tree carry such a claim  which HANDOFF counts  and it reads as enforced
+; when it is only prose;
+; Splitting the walk by one cell costs no instructions and buys a real
+; check on every run;
+L988
+; ASSERT ptr=1
+; j is NOT claimed clear: a message ending partway through a block leaves
+; the rest of that keystream counted and unused  which is the whole reason
+; the tail needs no special case; Nor is the window  which holds the tenth
+; round key  nor the state  which holds what is left of the keystream;
+; ASSERT zero 983:989
+; ASSERT zero 991:1011
+L1

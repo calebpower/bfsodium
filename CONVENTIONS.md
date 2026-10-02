@@ -427,7 +427,7 @@ whole point of having both while the library migrates to the newer one:
 | reads | the callee's committed `.bf` | the callee's `.skel` |
 | takes | the routine's *body*, minus its read prologue and everything from `; emit` | the file's text, entire |
 | wraps | `>`×entry and `<`×exit from the callee's `; INTERFACE` | nothing |
-| rebases | the callee's `ASSERT` offsets to the base | nothing |
+| rebases | the callee's `ASSERT` offsets to the base | the block's RELATIVE `ASSERT` offsets, by the include's offset |
 | requires | an `INTERFACE` line, so `bffoot` must accept the callee | nothing |
 
 **Why inclusion.** A paste reads the callee's `.bf`, so a caller can be
@@ -457,6 +457,21 @@ assembled `.bf` is still judged by every tool in the suite, once, at the end.
   author wrote down and not a computation — §6's rule is that every offset is
   worked out by the author, and `R46` is "forty six arrows", not an offset
   derived from a name.
+- **A block may be entered at a cell other than its own nought, and when it
+  is, BOTH SIDES say so.** An include wraps nothing, so the pointer arrives
+  wherever the previous instruction left it; a block that needs it somewhere
+  particular states that as its first contract. `block/aes128table` ends
+  `; ASSERT ptr=+45` and `block/aes128encrypt` opens with the same line,
+  which is one claim written independently by each party to the seam.
+
+  This is not a licence to be clever with entry points. Those two were one
+  file until a mode needed the table laid once and the rounds run many times,
+  and the split falls at cell 45 for a mechanical reason: it is the only place
+  the two halves can be cut WITHOUT MOVING AN INSTRUCTION, so `aes/encrypt128`
+  regenerates byte-identical across the change. An entry offset chosen for
+  tidiness instead would have cost a longer walk home, a walk back out, and
+  the regeneration of every artifact downstream.
+
 - **A contract inside a block is written RELATIVE, and the include says where
   the block lands.** An include used to substitute text and nothing else,
   which made `; ASSERT ptr=9` inside a block a claim about cell nine of
