@@ -331,6 +331,7 @@ must have no marker in the suite at all.
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 19 | Cryptol design proofs, two of which must be refuted |
+| 8a | yes | 3 | the Cryptol oracle is delivered once and is load-bearing |
 | 9 | yes | 9 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
@@ -2985,13 +2986,15 @@ files stay apart.
 
 - **A ZERO BYTE FILE WITH A CARRIAGE RETURN IN ITS NAME IS INVISIBLE TO `ls`
   AND BREAKS EVERY GLOB.** A file list written from Python with the default
-  newline on Windows gives every path a trailing ``. A shell loop then
+  newline on Windows gives every path a trailing `
+`. A shell loop then
   creates `name<CR>.bf`. Windows cannot store a carriage return in a filename
   so MSYS encodes it as U+F00D, which means:
 
   - `ls` prints what looks like the same filename twice, because the terminal
     renders the escape and the eye slides over it
-  - `grep` for a literal `` in filenames finds nothing
+  - `grep` for a literal `
+` in filenames finds nothing
   - `*/*.bf` matches it, `fopen` rejects the name, and every per-file loop in
     the suite fails on it
 

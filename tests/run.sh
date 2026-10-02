@@ -31,7 +31,7 @@ cc -O2 -std=c99 -o tools/hx  tools/hx.c
 cc -O2 -std=c99 -o tools/bflint tools/bflint.c
 cc -O2 -std=c99 -o tools/bfstyle tools/bfstyle.c
 cc -O2 -std=c99 -o tools/bffoot tools/bffoot.c
-chmod +x tools/kat.sh tools/dkat.sh
+chmod +x tools/kat.sh tools/dkat.sh tools/dkbatch.sh tools/dkprobe.sh
 echo "built"
 
 echo
@@ -52,6 +52,39 @@ for cry in bfsodium perm; do
     esac
     echo "PASS spec/$cry.cry compiles"; pass=$((pass+1))
 done
+
+echo
+# TIER 8a
+echo "== tier 8a: the Cryptol oracle is delivered once =="
+# ==== the Cryptol oracle, asked once instead of 552 times ====
+#
+# A cold `cryptol -b` is 7,401 ms and two hundred expressions in one process
+# is 7,348 ms, measured in this container: the marginal cost of a question is
+# about 36 ms and everything else is startup. Asked one at a time the 552
+# dual-oracle vectors spend 68 minutes loading spec/bfsodium.cry; asked
+# together they take one startup and under half a minute.
+#
+# out/cry.answers is built HERE, inside the run, and never committed. A
+# checked-in answer file would quietly turn the second oracle into a third
+# pinned vector.
+run "the cryptol answers are batched" sh tools/dkbatch.sh
+
+# THE ROW COUNT IS THE GUARD. cryptol does not abort on a bad expression --
+# it complains and carries on -- so a broken question costs ONE answer and
+# the other 551 still pass. If the file is short, every missing vector would
+# silently lose its cryptol half while still printing PASS. dkbatch refuses
+# to write a short file; this says so again where a reader of the suite can
+# see it.
+run "every dk line has an answer in out/cry.answers" sh -c '
+    want=$(grep -c "^[[:space:]]*dk[[:space:]]" tests/run.sh)
+    got=$(grep -c . out/cry.answers)
+    test "$want" = "$got"'
+
+# AND THE LOOKUP PATH MUST BE LOAD-BEARING. Corrupt one answer and the check
+# that uses it has to go red; otherwise dkat could be reading nothing at all
+# and every vector would pass on the pinned value alone, which is half an
+# oracle wearing the clothes of two.
+run "a corrupted answer turns its vector red" sh tools/dkprobe.sh
 
 echo
 # TIER 1
