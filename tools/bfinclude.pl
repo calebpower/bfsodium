@@ -49,8 +49,36 @@ my $repo = abs_path("$here/..");
 my @stack;
 my %on_stack;
 
+# REBASING A CONTRACT THAT CAME FROM A BLOCK. An include used to substitute
+# text and nothing else, which left `; ASSERT ptr=` inside a block meaningless
+# -- the same text lands in different frames, so the number could only be a
+# claim about wherever it happened to fall, and CONVENTIONS forbade it
+# outright. The paste form never had that problem: `@@NAME@@ 82` rebases its
+# callee's contracts, which is why a pasteable routine writes them relative.
+#
+# So an include may now say where the block lands:
+#
+#   %%block/name%%        the block's frame starts at the caller's own zero
+#   %%block/name%% 82     it starts at cell 82
+#
+# and a relative contract inside the block is resolved against that. The
+# offset is a NUMBER, exactly as the paste form's base is; it is not control
+# logic, and nothing else about an include has changed.
+sub rebase {
+    my ($line, $base) = @_;
+    return $line if $base == 0 && $line !~ /ASSERT/;
+    if ($line =~ /^(\s*; ASSERT ptr=)\+?(-?\d+)(.*)$/) {
+        return "$1" . ($2 + $base) . "$3";
+    }
+    if ($line =~ /^(\s*; ASSERT zero )\+?(-?\d+):\+?(-?\d+)(.*)$/) {
+        return "$1" . ($2 + $base) . ":" . ($3 + $base) . "$4";
+    }
+    return $line;
+}
+
 sub flatten {
-    my ($path, $whence) = @_;
+    my ($path, $whence, $base) = @_;
+    $base ||= 0;
 
     if ($on_stack{$path}) {
         my @ring = @stack;
@@ -79,13 +107,13 @@ sub flatten {
         # An include is a WHOLE LINE and nothing else. Allowing one mid-line
         # would make the included text's first and last lines join their
         # neighbours, which is a formatting rule nobody would remember.
-        if ($l =~ /^\s*%%(.*?)%%\s*$/) {
-            my $name = $1;
+        if ($l =~ /^\s*%%(.*?)%%(?:\s+(-?\d+))?\s*$/) {
+            my ($name, $off) = ($1, $2);
             if ($name !~ m{^[A-Za-z0-9_][A-Za-z0-9_/]*$}) {
                 print STDERR "bfinclude: $path:$line: not a block name: $name\n";
                 exit 1;
             }
-            flatten("$repo/$name.skel", "$path:$line");
+            flatten("$repo/$name.skel", "$path:$line", $base + ($off || 0));
             next;
         }
 
@@ -100,7 +128,7 @@ sub flatten {
             exit 1;
         }
 
-        print "$l\n";
+        print rebase($l, $base) . "\n";
     }
 
     close $fh;

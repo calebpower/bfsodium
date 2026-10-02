@@ -32,11 +32,12 @@
 # against a stale callee; and it needs no INTERFACE line, so a component may
 # contain an indexed walk, which no paste can.
 #
-# A BLOCK SHOULD NOT CARRY "; ASSERT ptr=" LINES. An include is text and the
-# same text may appear at different places, so a pointer assertion inside one
-# would be a claim about wherever it happened to land. Contracts belong to the
-# file being assembled, written around the include by the author who knows
-# where the pointer stands.
+# A CONTRACT INSIDE A BLOCK IS WRITTEN RELATIVE and the include says where the
+# block lands: "%%block/name%% 82" puts its frame at cell 82 and every "+N"
+# contract it carries is resolved against that, accumulating through nesting.
+# tools/bfinclude.pl does the rebasing and tools/bfdag.pl rejects an absolute
+# one, because that would be a claim about somebody else's frame. See
+# CONVENTIONS section 6.
 #
 #   bfexpand.sh FILE.skel > FILE.bf
 set -eu

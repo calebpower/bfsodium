@@ -47,7 +47,7 @@ sub refs_of {
     while (my $l = <$fh>) {
         $n++;
         chomp $l;
-        push @r, [$1, $n] if $l =~ /^\s*%%(.*?)%%\s*$/;
+        push @r, [$1, $n] if $l =~ /^\s*%%(.*?)%%(?:\s+-?\d+)?\s*$/;
     }
     close $fh;
     return @r;
@@ -98,6 +98,34 @@ sub check {
     my %included;
     for my $f (keys %edges) { $included{$_} = 1 for @{ $edges{$f} } }
     my @orphans = grep { !$included{$_} && m{/block/} } @files;
+
+    # A CONTRACT INSIDE A BLOCK MUST BE RELATIVE. An include substitutes text,
+    # so an absolute `; ASSERT ptr=9` inside a block is a claim about cell nine
+    # of whatever frame the text happened to land in -- true for the caller it
+    # was written against and a confident lie for the next one. Written `+9` it
+    # is a claim about the ninth cell of the BLOCK, and tools/bfinclude adds
+    # the include's offset to it.
+    #
+    # The rule used to forbid these outright, because an include had no offset
+    # to resolve them against. It does now, so the prohibition became a
+    # requirement: say it relative, or do not say it. Three blocks carried
+    # absolute ones and nothing could see it, which is this project's standing
+    # failure shape -- a documented rule with no checker.
+    for my $f (@files) {
+        next unless $f =~ m{/block/};
+        open my $fh, '<', $f or next;
+        my $n = 0;
+        while (my $line = <$fh>) {
+            $n++;
+            next unless $line =~ /^\s*; ASSERT (?:ptr=|zero )/;
+            next if $line =~ /^\s*; ASSERT ptr=\+/;
+            next if $line =~ /^\s*; ASSERT zero \+\d+:\+\d+/;
+            chomp $line;
+            push @bad, sprintf("%s:%d: a contract in a block must be relative: %s",
+                               substr($f, length($root) + 1), $n, $line);
+        }
+        close $fh;
+    }
 
     push @bad, "include cycle: $_" for @cycles;
     push @bad, sprintf("%s is a block nothing includes", substr($_, length($root) + 1))
@@ -162,7 +190,20 @@ sub selftest {
               "block/r.skel"    => "%%block/leaf%%\n",
               "top.skel"        => "%%block/l%%\n%%block/r%%\n" }, 0);
 
-    print $fails ? "bfdag: $fails selftest(s) failed\n"
+                $case->("an ABSOLUTE contract in a block is caught",
+                { "block/leaf.skel" => "; leaf\n; ASSERT ptr=9\n  [-]\n",
+                  "top.skel"        => "%%block/leaf%%\n" }, 1);
+        $case->("a RELATIVE contract in a block is fine",
+                { "block/leaf.skel" => "; leaf\n; ASSERT ptr=+9\n  [-]\n",
+                  "top.skel"        => "%%block/leaf%% 82\n" }, 0);
+        $case->("an absolute zero range in a block is caught too",
+                { "block/leaf.skel" => "; leaf\n; ASSERT zero 5:9\n  [-]\n",
+                  "top.skel"        => "%%block/leaf%%\n" }, 1);
+        $case->("a contract OUTSIDE a block may be absolute",
+                { "block/leaf.skel" => "; leaf\n  [-]\n",
+                  "top.skel"        => "%%block/leaf%%\n; ASSERT ptr=4\n" }, 0);
+
+        print $fails ? "bfdag: $fails selftest(s) failed\n"
                  : "bfdag: selftests pass\n";
     return $fails ? 1 : 0;
 }

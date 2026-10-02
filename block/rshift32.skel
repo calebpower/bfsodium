@@ -25,7 +25,7 @@
 L4
   [-R9+L9]
 R9
-; ASSERT ptr=9
+; ASSERT ptr=+9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; the half goes back as the byte
 R1
@@ -35,14 +35,14 @@ R1
   [-L6+R6]
 ; back to the step counter
 L7
-; ASSERT ptr=4
+; ASSERT ptr=+4
 
 ; ____ halve byte 1 @0x01  its low bit into c1 @0x06 ____
 ; the byte steps into the halving frame
 L3
   [-R8+L8]
 R8
-; ASSERT ptr=9
+; ASSERT ptr=+9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; the half goes back as the byte
 R1
@@ -52,14 +52,14 @@ R1
   [-L5+R5]
 ; back to the step counter
 L7
-; ASSERT ptr=4
+; ASSERT ptr=+4
 
 ; ____ halve byte 2 @0x02  its low bit into c2 @0x07 ____
 ; the byte steps into the halving frame
 L2
   [-R7+L7]
 R7
-; ASSERT ptr=9
+; ASSERT ptr=+9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; the half goes back as the byte
 R1
@@ -69,14 +69,14 @@ R1
   [-L4+R4]
 ; back to the step counter
 L7
-; ASSERT ptr=4
+; ASSERT ptr=+4
 
 ; ____ halve byte 3 @0x03  its low bit into c3 @0x08 ____
 ; the byte steps into the halving frame
 L1
   [-R6+L6]
 R6
-; ASSERT ptr=9
+; ASSERT ptr=+9
   [->>>+<[-<+>>-<]>[-<+>]<<<]
 ; the half goes back as the byte
 R1
@@ -86,12 +86,12 @@ R1
   [-L3+R3]
 ; back to the step counter
 L7
-; ASSERT ptr=4
+; ASSERT ptr=+4
 
 ; ____ each kept bit lands as the top bit of the byte below it ____
 ; c1 is the top bit of w0
 R2
-; ASSERT ptr=6
+; ASSERT ptr=+6
   [-L6++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++R6]
 ; c2 is the top bit of w1
 R1

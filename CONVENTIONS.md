@@ -457,11 +457,36 @@ assembled `.bf` is still judged by every tool in the suite, once, at the end.
   author wrote down and not a computation — §6's rule is that every offset is
   worked out by the author, and `R46` is "forty six arrows", not an offset
   derived from a name.
-- **A block carries no `; ASSERT ptr=` line.** An include is text and the same
-  text may land in different places, so a pointer assertion inside one would
-  be a claim about wherever it happened to fall. Contracts belong to the file
-  being assembled, written around the include by the author who knows where
-  the pointer stands.
+- **A contract inside a block is written RELATIVE, and the include says where
+  the block lands.** An include used to substitute text and nothing else,
+  which made `; ASSERT ptr=9` inside a block a claim about cell nine of
+  whatever frame the text happened to fall in -- true for the caller it was
+  written against and a confident lie for the next one. So this rule used to
+  forbid them outright.
+
+  It does not have to. The paste form never had the problem: `@@NAME@@ 82`
+  rebases its callee's contracts, which is why a pasteable routine writes
+  them relative. An include may now say the same thing:
+
+      %%block/name%%        the block's frame starts at the caller's own zero
+      %%block/name%% 82     it starts at cell 82
+
+  and `tools/bfinclude.pl` adds that offset to every relative contract it
+  carries, accumulating through nesting. Written `+9`, a contract is a claim
+  about the ninth cell of the BLOCK, which is a claim the block is entitled
+  to make. Written `9` it is still a claim about somebody else's frame, so
+  `tools/bfdag.pl` rejects it.
+
+  **The offset is a number, exactly as the paste form's base is.** It is not
+  control logic and it does not reopen §6's prohibition on it: there is no
+  condition, no loop, and no arithmetic on a name.
+
+  This does cost something. `9ed4727` argued for includes by their severity --
+  *no base, no entry or exit wrapping, no prologue stripping, no contract
+  rebasing* -- and this trades the last of those five for contracts that
+  survive reuse. The trade was taken because the alternative, found when three
+  blocks had carried absolute contracts unnoticed, was to delete 27 working
+  checks.
 
 ### The picture of the graph
 
