@@ -182,26 +182,30 @@ nought and it is verified through whatever includes it.
 | `block/invsbox256` | 0 | 524 | a leaf; the same permutation read backwards, through `aes/invsubbytes` and the round trip |
 | `block/rotate40down4` | 0 | 32 | a leaf; one turn against a four-place rotation on random bytes, ten turns against the identity, and `aes/decrypt128`'s own vectors, which only come out right if phase one's ten temps land where phase two reads them |
 | `block/rotate40up4` | 0 | 27 | a leaf; the same, and proved to invert `block/rotate40down4` |
+| `block/rshift32` | 0 | 101 | a leaf; one bit of right shift across a 32 bit word, through `idiom/rotr32` and `idiom/shr32`, whose vectors and Cryptol checks are the proof |
+| `block/rshift64` | 0 | 184 | a leaf; the same at 64 bits, through `idiom/rotr64` and `idiom/shr64` |
+| `block/enccase32` | 0 | 111 | a leaf; which case a 32 bit length encodes to, through `keccak/leftenc` and `keccak/rightenc` at every byte count and both sides of every boundary |
+| `block/unstage16` | 0 | 68 | a leaf; the sixteen byte temporary coming home, through `aes/shiftrows` and `aes/invshiftrows` and the FIPS 197 rounds that use them |
 | `idiom/add8` | 175 | 183 | every one of the 65536 pairs + two proved identities |
 | `chacha20/add32` | 631 | 166 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
-| `idiom/rotr32` | 120 | 131 | boundary vectors + Cryptol |
-| `idiom/rotr64` | 206 | 225 | boundary vectors + Cryptol  SHA_512 Sigma1 counts |
-| `idiom/rotl64` | 307 | 148 | boundary vectors + Cryptol  both ends of the byte and bit split |
-| `idiom/shr32` | 121 | 133 | boundary vectors + Cryptol |
-| `idiom/shr64` | 210 | 229 | boundary vectors + Cryptol  SHA_512 sigma shifts |
+| `idiom/rotr32` | 144 | 50 | boundary vectors + Cryptol |
+| `idiom/rotr64` | 231 | 62 | boundary vectors + Cryptol  SHA_512 Sigma1 counts |
+| `idiom/rotl64` | 332 | 148 | boundary vectors + Cryptol  both ends of the byte and bit split |
+| `idiom/shr32` | 145 | 52 | boundary vectors + Cryptol |
+| `idiom/shr64` | 235 | 66 | boundary vectors + Cryptol  SHA_512 sigma shifts |
 | `idiom/add64` | 1220 | 291 | boundary vectors + Cryptol  carry cascade and wrap |
 | `idiom/and64` | 480 | 601 | boundary vectors + Cryptol |
 | `idiom/xor64` | 290 | 427 | boundary vectors + Cryptol |
 | `idiom/xor8` | 124 | 95 | boundary vectors + Cryptol  and a 1024 run sweep |
-| `chacha20/rotl32` | 259 | 175 | boundary vectors + Cryptol |
+| `chacha20/rotl32` | 283 | 175 | boundary vectors + Cryptol |
 | `chacha20/xor32` | 125 | 190 | boundary vectors + Cryptol |
 | `chacha20/stagger` | 225 | 253 | Cryptol |
 | `chacha20/rowrot` | 246 | 306 | Cryptol |
-| `chacha20/qrloop` | 1154 | 351 | RFC 8439 §2.2.1 |
-| `chacha20/blockloop` | 4207 | 1252 | RFC 8439 §2.3.2 |
-| `chacha20/blockkeep` | 4875 | 341 | RFC 8439 §2.3.2 + its input surviving |
-| `chacha20/stream` | 6156 | 711 | RFC 8439 §2.4.2 + block edges |
+| `chacha20/qrloop` | 1178 | 351 | RFC 8439 §2.2.1 |
+| `chacha20/blockloop` | 4231 | 1252 | RFC 8439 §2.3.2 |
+| `chacha20/blockkeep` | 4899 | 341 | RFC 8439 §2.3.2 + its input surviving |
+| `chacha20/stream` | 6180 | 711 | RFC 8439 §2.4.2 + block edges |
 | `poly1305/add136` | 2563 | 542 | boundary vectors + Cryptol |
 | `poly1305/halve136` | 470 | 539 | boundary vectors + Cryptol |
 | `poly1305/fold136` | 962 | 588 | boundary vectors + Cryptol |
@@ -211,73 +215,73 @@ nought and it is verified through whatever includes it.
 | `poly1305/clamp` | 248 | 299 | boundary vectors + Cryptol  the mask pinned both ways |
 | `poly1305/absorb` | 12583 | 127 | boundary vectors + Cryptol + folds to the RFC tag |
 | `poly1305/poly1305` | 17070 | 935 | RFC 8439 §2.5.2 + block edges |
-| `aead/keygen` | 4188 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
-| `sha256/round` | 8154 | 1158 | seven vectors + Cryptol |
-| `sha256/expand` | 3310 | 475 | seven vectors + Cryptol |
-| `sha512/expand` | 6750 | 595 | eight vectors + Cryptol |
-| `sha512/round` | 16760 | 1419 | FIPS 180-4 first abc round + six more + Cryptol |
-| `sha256/hashcore` | 26476 | 1635 | one message from memory, the wire, and both |
-| `sha256/sha256` | 26504 | 60 | FIPS 180-4 + both padding boundaries |
-| `sha512/hashcore` | 58423 | 1867 | one message from memory, the wire, and both |
-| `sha512/sha512` | 58473 | 64 | FIPS 180-4 + both padding boundaries |
-| `sha512/hmac` | 240868 | 1700 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
-| `sha512/hkdf` | 615493 | 583 | RFC 5869's three shapes at SHA-512 + one byte out |
-| `sha512/sha384` | 58568 | 84 | rate aside  this is SHA_512 with eight other words; nothing  abc and both block boundaries + Cryptol |
-| `sha512/sha512_224` | 58576 | 78 | the same four  and the only one whose digest cuts a word in half + Cryptol |
-| `sha512/sha512_256` | 58572 | 78 | the same four; its H4 was one bit wrong until the words were DERIVED + Cryptol |
-| `sha256/hmac` | 105014 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
-| `sha256/hkdf` | 294912 | 512 | RFC 5869 A.1, A.2 and A.3 |
-| `sha256/kdfctr` | 132269 | 324 | SP 800-108 §4.1 counter mode at both inner-hash block counts, one turn, two turns, a turn cut short and no fixed input |
-| `sha256/kdffb` | 133227 | 332 | SP 800-108 §4.2 feedback mode: one turn, two turns so the chain feeds back, a turn cut short, no fixed input, and the longest fixed input allowed |
-| `sha256/pbkdf2` | 136571 | 716 | RFC 7914 §11's published c=1 and c=2 vectors, two output blocks, a block cut short, and the longest salt allowed |
-| `sha256/drbg` | 222028 | 608 | NIST's published CAVP vector for HMAC_DRBG SHA-256, a generate cut short, and the longest seed allowed |
-| `aead/chacha20poly1305` | 53178 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
+| `aead/keygen` | 4212 | 44 | RFC 8439 §2.6.2 + A.4 vectors 1 and 2 |
+| `sha256/round` | 8298 | 1158 | seven vectors + Cryptol |
+| `sha256/expand` | 3454 | 475 | seven vectors + Cryptol |
+| `sha512/expand` | 6900 | 595 | eight vectors + Cryptol |
+| `sha512/round` | 16910 | 1419 | FIPS 180-4 first abc round + six more + Cryptol |
+| `sha256/hashcore` | 26764 | 1635 | one message from memory, the wire, and both |
+| `sha256/sha256` | 26792 | 60 | FIPS 180-4 + both padding boundaries |
+| `sha512/hashcore` | 58723 | 1867 | one message from memory, the wire, and both |
+| `sha512/sha512` | 58773 | 64 | FIPS 180-4 + both padding boundaries |
+| `sha512/hmac` | 241768 | 1700 | RFC 4231 cases 1, 2, 3 and 6 + three edges |
+| `sha512/hkdf` | 617293 | 583 | RFC 5869's three shapes at SHA-512 + one byte out |
+| `sha512/sha384` | 58868 | 84 | rate aside  this is SHA_512 with eight other words; nothing  abc and both block boundaries + Cryptol |
+| `sha512/sha512_224` | 58876 | 78 | the same four  and the only one whose digest cuts a word in half + Cryptol |
+| `sha512/sha512_256` | 58872 | 78 | the same four; its H4 was one bit wrong until the words were DERIVED + Cryptol |
+| `sha256/hmac` | 105878 | 1666 | RFC 4231 cases 1, 2, 3 and 6 |
+| `sha256/hkdf` | 296640 | 512 | RFC 5869 A.1, A.2 and A.3 |
+| `sha256/kdfctr` | 133133 | 324 | SP 800-108 §4.1 counter mode at both inner-hash block counts, one turn, two turns, a turn cut short and no fixed input |
+| `sha256/kdffb` | 134091 | 332 | SP 800-108 §4.2 feedback mode: one turn, two turns so the chain feeds back, a turn cut short, no fixed input, and the longest fixed input allowed |
+| `sha256/pbkdf2` | 137435 | 716 | RFC 7914 §11's published c=1 and c=2 vectors, two output blocks, a block cut short, and the longest salt allowed |
+| `sha256/drbg` | 223756 | 608 | NIST's published CAVP vector for HMAC_DRBG SHA-256, a generate cut short, and the longest seed allowed |
+| `aead/chacha20poly1305` | 53226 | 1533 | RFC 8439 §2.8.2 + both block edges + metamorphic |
 | `index/fetch256` | 114 | 59 | the real S-box at both ends and the middle, index 255 included, which `fetch8` cannot reach |
 | `index/fetch256twice` | 218 | 86 | the same table read twice, which is what lets one table serve all two hundred of AES's reads |
 | `aes/xtime` | 219 | 123 | all 256 bytes swept + Cryptol over the field polynomial  and the identity proved |
 | `aes/mixcolumn` | 1966 | 311 | FIPS 197 Appendix B + the fixed points + 256 columns against the matrix form |
 | `aes/mixcolumns` | 7856 | 176 | FIPS 197 Appendix B rounds 1 2 5 and 9 |
-| `aes/shiftrows` | 150 | 168 | FIPS 197 Appendix B rounds 1 5 and 9 + the permutation read off a state of its own indices |
+| `aes/shiftrows` | 167 | 114 | FIPS 197 Appendix B rounds 1 5 and 9 + the permutation read off a state of its own indices |
 | `aes/subbytes` | 636 | 100 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
 | `aes/xorword` | 330 | 72 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2362 | 306 | the FIPS 197 Appendix A schedule + three more keys |
-| `aes/encrypt128` | 16648 | 410 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
+| `aes/encrypt128` | 16682 | 410 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
 | `aes/invmixcolumns` | 12669 | 85 | all nine Appendix B rounds run backwards + round trips MixColumns |
-| `aes/invshiftrows` | 149 | 167 | all ten Appendix B rounds run backwards + round trips ShiftRows |
+| `aes/invshiftrows` | 166 | 113 | all ten Appendix B rounds run backwards + round trips ShiftRows |
 | `aes/invsubbytes` | 641 | 105 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
-| `aes/decrypt128` | 25323 | 558 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
-| `keccak/leftenc` | 219 | 237 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
-| `keccak/rightenc` | 219 | 237 | the same for right_encode |
-| `keccak/bytepad136` | 3865 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
-| `keccak/bytepad168` | 3914 | 251 | the same at SHAKE128's rate, including its own exactly-full limit and the one-string form |
-| `keccak/cshake256` | 168785 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
-| `keccak/cshake128` | 182971 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
-| `keccak/kmac128` | 206713 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
-| `keccak/kmac256` | 189323 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
-| `keccak/tuplehash128` | 230403 | 748 | SP 800-185 §5 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
-| `keccak/tuplehash256` | 213450 | 748 | the same at SHAKE256's rate: NIST samples 4, 5 and 6, and the XOF flag |
-| `keccak/theta` | 18769 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
-| `keccak/rhopi` | 9116 | 334 | the same six states + Cryptol |
-| `keccak/rhopichi` | 31539 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
-| `keccak/permute1600` | 51119 | 271 | the published all zero vector and a random state + Cryptol |
+| `aes/decrypt128` | 25357 | 558 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
+| `keccak/leftenc` | 238 | 141 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
+| `keccak/rightenc` | 238 | 141 | the same for right_encode |
+| `keccak/bytepad136` | 3903 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
+| `keccak/bytepad168` | 3952 | 251 | the same at SHAKE128's rate, including its own exactly-full limit and the one-string form |
+| `keccak/cshake256` | 170323 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
+| `keccak/cshake128` | 184509 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
+| `keccak/kmac128` | 208308 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/kmac256` | 190918 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
+| `keccak/tuplehash128` | 232055 | 748 | SP 800-185 §5 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/tuplehash256` | 215102 | 748 | the same at SHAKE256's rate: NIST samples 4, 5 and 6, and the XOF flag |
+| `keccak/theta` | 18894 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
+| `keccak/rhopi` | 9741 | 334 | the same six states + Cryptol |
+| `keccak/rhopichi` | 32164 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
+| `keccak/permute1600` | 51869 | 271 | the published all zero vector and a random state + Cryptol |
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
-| `keccak/absorb136` | 67866 | 284 | the published all-zero permutation, and a ladder state with every lane taking a block |
-| `keccak/absorb168` | 72077 | 336 | the same two at SHAKE128's rate: twenty-one lanes, not seventeen |
-| `keccak/parallelhash128` | 273787 | 773 | SP 800-185 §6 at SHAKE128's rate: NIST sample 1, a short last chunk, and the XOF flag |
-| `keccak/parallelhash256` | 262184 | 773 | the same at SHAKE256's rate: NIST samples 4 and 5, a short last chunk, and a chunk bigger than a rate |
-| `keccak/squeeze136` | 51607 | 231 | inside the first rate, and one byte past it, which is the only path that stirs |
-| `keccak/squeeze168` | 51613 | 231 | the same two at SHAKE128's rate |
-| `keccak/sponge136` | 140109 | 497 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
-| `keccak/sha3_256` | 140136 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
-| `keccak/shake256` | 140138 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 149690 | 504 | one inside the first rate and one past it + Cryptol |
-| `keccak/shake128` | 149713 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sha3_224` | 66165 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
-| `keccak/sha3_384` | 61875 | 458 | rate 104  the same four + Cryptol |
-| `keccak/sha3_512` | 58572 | 406 | rate 72  the same four + Cryptol |
+| `keccak/absorb136` | 68616 | 284 | the published all-zero permutation, and a ladder state with every lane taking a block |
+| `keccak/absorb168` | 72827 | 336 | the same two at SHAKE128's rate: twenty-one lanes, not seventeen |
+| `keccak/parallelhash128` | 276132 | 773 | SP 800-185 §6 at SHAKE128's rate: NIST sample 1, a short last chunk, and the XOF flag |
+| `keccak/parallelhash256` | 264529 | 773 | the same at SHAKE256's rate: NIST samples 4 and 5, a short last chunk, and a chunk bigger than a rate |
+| `keccak/squeeze136` | 52357 | 231 | inside the first rate, and one byte past it, which is the only path that stirs |
+| `keccak/squeeze168` | 52363 | 231 | the same two at SHAKE128's rate |
+| `keccak/sponge136` | 141609 | 497 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 141636 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 141638 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 151190 | 504 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 151213 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sha3_224` | 66915 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
+| `keccak/sha3_384` | 62625 | 458 | rate 104  the same four + Cryptol |
+| `keccak/sha3_512` | 59322 | 406 | rate 72  the same four + Cryptol |
 
 `aead/chacha20poly1305` is interleaved, not staged: sixteen bytes are
 encrypted, written out and folded into the tag, then the next sixteen. Nothing
@@ -2904,7 +2908,108 @@ from a `random.Random(7)` re-seeded on every byte, so every cell held `0xa5`.
 reporting a cost at all** -- after which it said "HARNESS WRONG" twice more
 before it said anything else.
 
+## What a block can and cannot factor, measured
+
+Four blocks were added at the commit this section arrived with to share code between eight skeletons
+that had been written twice. Deciding WHICH duplication to factor turned out
+to be the whole problem, and two limits decide it.
+
+### The amplification law: small and repeated is EXPENSIVE
+
+`%%include%%` is textual. Unlike a paste, which drops the callee's header, an
+include carries the block's comments into every expansion -- and then every
+paste downstream multiplies them again.
+
+So the cost of factoring something is not its size, it is **how many times it
+appears in the finished `.bf` after paste multiplication**:
+
+| candidate | sites in all `.bf` | block's comment lines | growth |
+|---|---|---|---|
+| `block/halve` | 145,004 | 3 | **+435,012 lines** |
+| `block/xor8kernel` | 30,653 | 22 | **+674,366 lines** |
+| the four blocks actually added | 2 each | 13 to 19 | +0.12% |
+
+The corpus is 5.46M lines. Factoring `halve` -- a ONE LINE idiom duplicated in
+seventeen skeletons, which is the most obviously repeated thing in the
+library -- would have grown the repository by eight percent. Factoring both it
+and the xor8 kernel would have added over a million lines.
+
+**So the rule is the opposite of the instinct.** The owner stated it before
+the measurement did: *if something is repeating a lot, it is probably a
+component of something larger that repeats fewer times.* Factor the larger
+thing, near the top of the paste chain, and the small one comes along inside
+it for free. `block/halve` and `block/xor8kernel` stay where they are, used
+only by the handful of files that already include them.
+
+### The parameter wall: a pervasive constant cannot be shared
+
+The largest apparent wins in the library are keccak's sibling pairs:
+
+| pair | lines each | identical |
+|---|---|---|
+| `tuplehash128` / `tuplehash256` | 492 | 93% |
+| `parallelhash128` / `parallelhash256` | 508 | 85% |
+| `sponge136` / `sponge168` | 215 | 89% |
+| `squeeze136` / `squeeze168` | 103 | 90% |
+
+**None of them can be factored, and the reason is structural.** They differ by
+a rate or a size, and that constant shifts every absolute tape offset
+downstream of it. `tuplehash128` says `R1362` where `tuplehash256` says
+`R1202`, `@@BYTEPAD168@@ 1760` against `@@BYTEPAD136@@ 1600`, `ASSERT
+ptr=2959` against `2767` -- forty-odd differences scattered through the file.
+The identical lines between them are real but interleaved, so the only
+extractable pieces are arbitrary slices, and a slice is not a component.
+
+CONVENTIONS §6 forbids control logic on the templating side, which forbids
+parameters, which is exactly what sharing these would require. **This is the
+same wall `aes/decrypt128` hit** when its nine inverse rounds differed only in
+an address stepping by 16: no arrangement of blocks could say it, and the way
+out was to remove the index from the algorithm rather than from the notation.
+
+Those ~1,300 duplicated lines are compile-time specialisation on a constant.
+They are not carelessness and they do not come out.
+
+### So: a pair is factorable when the difference is a LINE, not an OFFSET
+
+That is the whole test, and all four that passed it look the same:
+
+  - a rotate wraps the bit that falls out of byte 0 where a shift discards it
+  - `left_encode` places the count before the bytes and `right_encode` after
+  - ShiftRows and its inverse disagree only about which pass permutes
+
+In each case the differing part is a line or two and everything around it is
+a block. When the difference is an offset instead, it is everywhere, and the
+files stay apart.
+
 ## Traps that have actually bitten
+
+- **A ZERO BYTE FILE WITH A CARRIAGE RETURN IN ITS NAME IS INVISIBLE TO `ls`
+  AND BREAKS EVERY GLOB.** A file list written from Python with the default
+  newline on Windows gives every path a trailing ``. A shell loop then
+  creates `name<CR>.bf`. Windows cannot store a carriage return in a filename
+  so MSYS encodes it as U+F00D, which means:
+
+  - `ls` prints what looks like the same filename twice, because the terminal
+    renders the escape and the eye slides over it
+  - `grep` for a literal `` in filenames finds nothing
+  - `*/*.bf` matches it, `fopen` rejects the name, and every per-file loop in
+    the suite fails on it
+
+  It cost three gate failures that looked like three unrelated defects: a lint
+  failure, a style failure, and tier 9d's pinned list of files with no
+  `; INTERFACE`. Find them with Python and `0xE000 <= ord(c) <= 0xF8FF`, not
+  with the shell. **Write file lists with `newline=""` or strip them.**
+
+- **AND A CHECK THAT REPORTS A CAUSE IS NOT A CONFIRMED CAUSE.** The same
+  episode produced two wrong diagnoses before the right one. `bflint` failed
+  on a file inside a loop and passed on it alone, which was called a Windows
+  host artifact -- it was a real second file, and the container found it
+  exactly as the host had. Then a `grep` for carriage returns in file CONTENTS
+  reported thousands, which was shell quoting; the contents were always clean.
+  This document already says a failed check is not a negative result. The
+  companion rule is that a *passing* check on the thing you suspect does not
+  clear it either, until you know you tested the thing you meant to.
+
 
 - **A `,>` READ PROLOGUE MAKES `; ASSERT ptr=` BLIND TO A SHORT READ.** The
   regression harness for `aes/decrypt128` read one byte too few on each of its

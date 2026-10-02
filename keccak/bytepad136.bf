@@ -1442,6 +1442,25 @@
                                                                ; ASSERT ptr=412
   >>>                                                          ; walk in to this routine entry offset
                                                                ; ASSERT ptr=415
+                                                               ; WHICH CASE  for a 32 bit x already read into @0x00 to
+                                                               ; @0x03 big endian; the highest byte that is not nought
+                                                               ; decides how many bytes the encoding needs  and this
+                                                               ; leaves a one hot flag for that case with x untouched;
+;
+                                                               ; THERE IS NO INDEX IN IT; four fixed tests  highest
+                                                               ; byte first  each one clearing the flags below it;
+                                                               ; That is why keccak/leftenc and keccak/rightenc are
+                                                               ; PASTEABLE where a table read would not be;
+;
+                                                               ; IT IS THE WHOLE OF WHAT THE TWO ENCODINGS AGREE ON;
+                                                               ; SP 800_185 writes left_encode with the count BEFORE
+                                                               ; the bytes and right_encode with it AFTER  and that
+                                                               ; placement is the only difference between the two
+                                                               ; files; Everything up to choosing the case is this
+                                                               ; block;
+;
+                                                               ; the caller owns the read prologue and the four case
+                                                               ; bodies below;
 
 ; ============================================================ ; ; which case: the highest byte that is not nought
                                                                ; decides byte 3 is this byte not nought
@@ -3583,6 +3602,25 @@
                                                                ; ASSERT ptr=412
   >>>                                                          ; walk in to this routine entry offset
                                                                ; ASSERT ptr=415
+                                                               ; WHICH CASE  for a 32 bit x already read into @0x00 to
+                                                               ; @0x03 big endian; the highest byte that is not nought
+                                                               ; decides how many bytes the encoding needs  and this
+                                                               ; leaves a one hot flag for that case with x untouched;
+;
+                                                               ; THERE IS NO INDEX IN IT; four fixed tests  highest
+                                                               ; byte first  each one clearing the flags below it;
+                                                               ; That is why keccak/leftenc and keccak/rightenc are
+                                                               ; PASTEABLE where a table read would not be;
+;
+                                                               ; IT IS THE WHOLE OF WHAT THE TWO ENCODINGS AGREE ON;
+                                                               ; SP 800_185 writes left_encode with the count BEFORE
+                                                               ; the bytes and right_encode with it AFTER  and that
+                                                               ; placement is the only difference between the two
+                                                               ; files; Everything up to choosing the case is this
+                                                               ; block;
+;
+                                                               ; the caller owns the read prologue and the four case
+                                                               ; bodies below;
 
 ; ============================================================ ; ; which case: the highest byte that is not nought
                                                                ; decides byte 3 is this byte not nought

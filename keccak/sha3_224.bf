@@ -22226,7 +22226,32 @@
 
 ; ============================================================ ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -22845,7 +22870,32 @@
 
 ; ============================================================ ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -23450,7 +23500,32 @@
 
 ; ============================================================ ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -24065,7 +24140,32 @@
 
 ; ============================================================ ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -24677,7 +24777,32 @@
 
 ; ============================================================ ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -34173,7 +34298,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -34524,7 +34674,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -34864,7 +35039,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -35192,7 +35392,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -35506,7 +35731,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -35874,7 +36124,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -36231,7 +36506,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -36588,7 +36888,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -36932,7 +37257,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -37265,7 +37615,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -37651,7 +38026,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -38025,7 +38425,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -38387,7 +38812,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -38736,7 +39186,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -39085,7 +39560,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -39476,7 +39976,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -39867,7 +40392,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -40246,7 +40796,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -40613,7 +41188,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -40968,7 +41568,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -41377,7 +42002,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -41773,7 +42423,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -42157,7 +42832,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -42541,7 +43241,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame
@@ -42913,7 +43638,32 @@
 
 ; ============================================================ ; ; ; ; ; ; rotate one bit  n times
 [
-  -                                                            ; one step consumed
+                                                               ; RIGHT SHIFT ONE BIT  across a 64 bit little endian
+                                                               ; word at @0x00 to @0x07 with the halving frame above
+                                                               ; it; every byte is halved and the bit that fell off it
+                                                               ; is carried into the top bit of the byte below  so the
+                                                               ; word comes out shifted right by one;
+;
+                                                               ; THE BIT THAT FELL OUT OF BYTE 0 IS LEFT IN c0 FOR THE
+                                                               ; CALLER; that single bit is the only thing a rotate
+                                                               ; and a shift disagree about; idiom/rotr64 adds it back
+                                                               ; as the top bit of w7 and idiom/shr64 clears it;
+                                                               ; everything else the two files do is this block;
+;
+                                                               ; IT IS block/rshift32 AT TWICE THE WIDTH and not a
+                                                               ; loop over it: the carries run between ADJACENT bytes
+                                                               ; so a 32 bit pass over the low half would carry the
+                                                               ; wrong bit into byte 4; The two widths are two files
+                                                               ; for the same reason the two directions are  an
+                                                               ; include takes no parameters;
+;
+                                                               ; A HALVED BYTE IS AT MOST 127  so adding 128 to it
+                                                               ; cannot overflow and no second pass is needed;
+;
+                                                               ; the caller owns the loop: this is one step of it  and
+                                                               ; the caller's own contract says where the pointer
+                                                               ; stands; one step consumed
+  -
 
                                                                ; ____ halve byte 0 @0x00  its low bit into c0 @0x09
                                                                ; ____ the byte steps into the halving frame

@@ -107,61 +107,7 @@ L11
 ; ASSERT ptr=+0
 ; ASSERT zero +0:+15
 
-; ==== pass two : the temporary comes home over the empty state ====
-; column 0
-R16
-  [-L16+R16]
-L16
-R17
-  [-L16+R16]
-L17
-R18
-  [-L16+R16]
-L18
-R19
-  [-L16+R16]
-L19
-; column 1
-R20
-  [-L16+R16]
-L20
-R21
-  [-L16+R16]
-L21
-R22
-  [-L16+R16]
-L22
-R23
-  [-L16+R16]
-L23
-; column 2
-R24
-  [-L16+R16]
-L24
-R25
-  [-L16+R16]
-L25
-R26
-  [-L16+R16]
-L26
-R27
-  [-L16+R16]
-L27
-; column 3
-R28
-  [-L16+R16]
-L28
-R29
-  [-L16+R16]
-L29
-R30
-  [-L16+R16]
-L30
-R31
-  [-L16+R16]
-L31
-; ASSERT ptr=+0
-; ASSERT zero +16:+31
+%%block/unstage16%%
 
 ; emit
 ; the sixteen bytes of the state  in the order they were read

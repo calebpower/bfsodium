@@ -92,6 +92,23 @@
                                                                ; ASSERT ptr=0
                                                                ; ASSERT zero 0:15
 
+                                                               ; THE TEMPORARY COMES HOME  sixteen bytes from @0x10 to
+                                                               ; @0x1f moved down over the state at @0x00 to @0x0f
+                                                               ; which pass one left empty; the pointer comes back
+                                                               ; where it started;
+;
+                                                               ; IT IS THE SECOND HALF OF BOTH ShiftRows AND ITS
+                                                               ; INVERSE; the permutation is a cycle  so a single pass
+                                                               ; would overwrite a byte still wanted; pass one moves
+                                                               ; every source to its destination in the temporary
+                                                               ; which is a bijection  and this moves the temporary
+                                                               ; back; The two files disagree only about pass one  and
+                                                               ; agree about this exactly;
+;
+                                                               ; EVERY MOVE IS THE SAME DISTANCE  which is what makes
+                                                               ; it one block and not sixteen: the temporary sits
+                                                               ; directly above the state  so each byte travels
+                                                               ; sixteen cells and the journey walks noughts;
 ; ============================================================ ; pass two : the temporary comes home over the empty
                                                                ; state
 >>>>>>>>>>>>>>>>                                               ; column 0
