@@ -1,0 +1,105 @@
+; bfsodium CMACSUBKEYS : the two CMAC subkeys from a key
+; NIST SP 800_38B section 6 point 1  and RFC 4493 section 2 point 3
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table block/aes128encrypt block/copy16
+; block/copy16back block/moveup16 and block/shl128 are INCLUDED;
+;
+; IO  in:  key{16}
+;     out: K1{16} K2{16}      (32 bytes  K1 first)
+;
+;   L  = AES_128(key  the zero block)
+;   K1 = L doubled in the field
+;   K2 = K1 doubled in the field
+;
+; THIS EXISTS TO BE PINNED  and that is its whole job; aes/cmac128 derives the
+; same two values inside itself  where nothing can see them: a tag is sixteen
+; bytes and a wrong subkey is a wrong tag with no indication of which half
+; went wrong; RFC 4493 section 4 PUBLISHES L  K1 and K2 for its key  so this
+; file turns an invisible intermediate into a checked one  the same way
+; aes/keyexpand128 does for the schedule and aes/subbytes for the S box;
+;
+; THE ZERO BLOCK NEEDS NO WRITING; the state is already clear when the cipher
+; is entered  so the first thing this file encrypts is sixteen cells it never
+; touched; That is worth stating because it looks like an omission;
+;
+; THE DOUBLING IS NOT THE CIPHER'S FIELD; block/shl128 reduces by 0x87  the
+; low byte of the polynomial for GF(2^128)  where aes/xtime reduces by 0x1b
+; for GF(2^8); Same shape  different field  and the vectors below are the
+; reason that distinction is checked rather than asserted;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x374  the cipher's frame  exactly as block/aes128encrypt maps it
+;   @0x375:0x384  savedkey{16}  read here and copied into the window
+;   @0x3c7:0x40b  the block/shl128 frame; the value lives at @0x3c7:0x3d6
+;                 which is 885 cells above the state  so block/moveup16
+;                 carries the cipher's answer straight into it
+
+; ==== the key ====
+R885
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=900
+L900
+; ASSERT ptr=0
+
+; ==== the S box is written into the tape ====
+; ASSERT zero 0:884
+%%block/aes128table%%
+; ASSERT ptr=45
+L45
+; ASSERT ptr=0
+
+; ==== L is the cipher on the zero block ====
+; the key is COPIED  because the schedule spends the window and this file
+; has nothing further to do with the key  but the copy costs sixteen bytes
+; and leaving a working routine alone costs less than specialising it
+R885
+%%block/copy16%% 885
+; ASSERT ptr=900
+L884
+%%block/copy16back%% 16
+; ASSERT ptr=31
+; the state is still clear  which IS the zero block
+R14
+; ASSERT ptr=45
+; ASSERT zero 16:44
+; ASSERT zero 46:116
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+
+; ==== and it goes up to the doubling frame ====
+R82
+; ASSERT ptr=82
+; ASSERT zero 967:1035
+%%block/moveup16%% 82
+; ASSERT ptr=97
+R870
+; ASSERT ptr=967
+
+; ==== K1 is L doubled ====
+%%block/shl128%% 967
+; ASSERT ptr=967
+; emitting does not spend a cell  so K1 is still there to be doubled again
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; ASSERT ptr=982
+
+; ==== and K2 is K1 doubled ====
+L15
+; ASSERT ptr=967
+%%block/shl128%% 967
+; ASSERT ptr=967
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; ASSERT ptr=982
+
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED  for the
+; reason CONVENTIONS section 6 gives
+L981
+; ASSERT ptr=1
+; the window holds the tenth round key and the round constant holds 0x6c
+; so neither is claimed; everything this file owns above the table is clear
+; except K2  which is the answer
+; ASSERT zero 16:44
+; ASSERT zero 46:116
+; ASSERT zero 983:1035
+L1

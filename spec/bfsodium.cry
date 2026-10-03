@@ -2606,6 +2606,31 @@ cbcenc128Run inb = join (drop`{1} chain)
     chain = [iv] # [ encrypt128Run (key # [ p ^ c | p <- blk | c <- prv ])
                    | blk <- pt | prv <- chain ]
 
+// SP 800-38B section 6.1's `dbl`: a 128-bit left shift by one, reduced by the
+// polynomial of GF(2^128) when the bit that falls off the top is set. Its low
+// byte is 0x87, where aes/xtime's field reduces by 0x1b -- same shape, a
+// different field, which is the distinction block/shl128 exists to get right.
+dbl128 : [128] -> [128]
+// 0x87 is written to the full width on purpose: a Cryptol hex literal
+// carries its own, so the two-digit form is a [8] and will not unify
+// with the [128] it is exclusive-ored into.
+dbl128 x = if (x >> 127) != 0 then y ^ 0x00000000000000000000000000000087 else y
+  where y = x << 1
+
+// The two CMAC subkeys from a key (SP 800-38B section 6.1, RFC 4493 section
+// 2.3), taking and returning the exact wire bytes aes/cmacsubkeys.bf reads
+// and writes:
+//   in  = key(16)
+//   out = K1(16) # K2(16)
+// L is the cipher on the ZERO BLOCK, which is where the chain of two
+// doublings starts.
+cmacsubkeysRun : [16][8] -> [32][8]
+cmacsubkeysRun key = split (k1 # k2)
+  where
+    l  = join (encrypt128Run (key # zero))
+    k1 = dbl128 l
+    k2 = dbl128 k1
+
 // The general multiply, as the field defines it. The brainfuck does peasant
 // multiplication -- eight guarded exclusive ors and seven doublings -- and
 // spec/perm.cry proves that the two are the same map over all 65536 pairs.

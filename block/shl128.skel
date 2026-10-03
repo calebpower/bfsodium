@@ -1,0 +1,297 @@
+; A 128 BIT VALUE DOUBLED IN THE FIELD CMAC USES  which is a left shift by
+; one across sixteen big endian bytes  followed by a conditional exclusive or
+; of 0x87 into the last byte when the bit that fell off the first was set;
+;
+; NIST SP 800_38B section 6 point 1; It is exactly the shape of aes/xtime one
+; byte wide: double  and reduce by the field's polynomial if the top bit was
+; set; The polynomial here is x^128 plus x^7 plus x^2 plus x plus 1  whose low
+; byte is 0x87  where xtime's is 0x1b;
+;
+; THE REDUCTION IS UNCONDITIONAL  for the reason xtime gives: the top bit is
+; taken as a VALUE  0x87 is multiplied by it  and the exclusive or runs
+; whatever that came to; Exclusive or with nought is the identity  so the
+; branch SP 800_38B writes in prose costs nothing beyond the multiply  and
+; the work does not depend on the value of the bit;
+;
+; IN PLACE; the value goes in at cell nought through cell fifteen and the
+; answer comes back there; Everything above is scratch and is left clear
+; which the exit contract states;
+;
+; THE DOUBLING NEEDS NO MASK  again for xtime's reason: a cell wraps at 256
+; and the wrap IS the shift; What a byte needs from its neighbour is the
+; neighbour's TOP BIT  which is why block/topbit is included sixteen times;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x00:0x0f  v  the value  big endian  v at nought most significant
+;   @0x10:0x1f  d  the doubling temps  spent back into v
+;   @0x20:0x2f  h  the top bits; the one at nought triggers the reduction
+;   @0x30:0x33  the block/topbit frame  byte q t f
+;   @0x34:0x44  idiom/xor8 pasted at 0x34; result 0x34  operands 0x35 0x36
+;
+; ASSERT ptr=+0
+; ASSERT zero +16:+68
+
+; ==== every byte goes out twice: once to be doubled  once for its top bit ====
+; byte 0 of sixteen
+  [-R16+R32+L48]
+; to the topbit frame
+R48
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L16+R16]
+L47
+; byte 1 of sixteen
+  [-R16+R31+L47]
+; to the topbit frame
+R47
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L15+R15]
+L46
+; byte 2 of sixteen
+  [-R16+R30+L46]
+; to the topbit frame
+R46
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L14+R14]
+L45
+; byte 3 of sixteen
+  [-R16+R29+L45]
+; to the topbit frame
+R45
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L13+R13]
+L44
+; byte 4 of sixteen
+  [-R16+R28+L44]
+; to the topbit frame
+R44
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L12+R12]
+L43
+; byte 5 of sixteen
+  [-R16+R27+L43]
+; to the topbit frame
+R43
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L11+R11]
+L42
+; byte 6 of sixteen
+  [-R16+R26+L42]
+; to the topbit frame
+R42
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L10+R10]
+L41
+; byte 7 of sixteen
+  [-R16+R25+L41]
+; to the topbit frame
+R41
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L9+R9]
+L40
+; byte 8 of sixteen
+  [-R16+R24+L40]
+; to the topbit frame
+R40
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L8+R8]
+L39
+; byte 9 of sixteen
+  [-R16+R23+L39]
+; to the topbit frame
+R39
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L7+R7]
+L38
+; byte 10 of sixteen
+  [-R16+R22+L38]
+; to the topbit frame
+R38
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L6+R6]
+L37
+; byte 11 of sixteen
+  [-R16+R21+L37]
+; to the topbit frame
+R37
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L5+R5]
+L36
+; byte 12 of sixteen
+  [-R16+R20+L36]
+; to the topbit frame
+R36
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L4+R4]
+L35
+; byte 13 of sixteen
+  [-R16+R19+L35]
+; to the topbit frame
+R35
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L3+R3]
+L34
+; byte 14 of sixteen
+  [-R16+R18+L34]
+; to the topbit frame
+R34
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L2+R2]
+L33
+; byte 15 of sixteen
+  [-R16+R17+L33]
+; to the topbit frame
+R33
+; ASSERT ptr=+48
+%%block/topbit%% 48
+; and the bit goes to its place in h
+  [-L1+R1]
+
+; ==== every byte is doubled back into place  and the cell's wrap is the shift ====
+; byte 0
+L32
+  [-L16++R16]
+; byte 1
+R1
+  [-L16++R16]
+; byte 2
+R1
+  [-L16++R16]
+; byte 3
+R1
+  [-L16++R16]
+; byte 4
+R1
+  [-L16++R16]
+; byte 5
+R1
+  [-L16++R16]
+; byte 6
+R1
+  [-L16++R16]
+; byte 7
+R1
+  [-L16++R16]
+; byte 8
+R1
+  [-L16++R16]
+; byte 9
+R1
+  [-L16++R16]
+; byte 10
+R1
+  [-L16++R16]
+; byte 11
+R1
+  [-L16++R16]
+; byte 12
+R1
+  [-L16++R16]
+; byte 13
+R1
+  [-L16++R16]
+; byte 14
+R1
+  [-L16++R16]
+; byte 15
+R1
+  [-L16++R16]
+
+; ==== and takes the top bit of the byte below it  which is the shift's carry ====
+; the bit from byte 1 goes into byte 0
+R2
+  [-L33+R33]
+; the bit from byte 2 goes into byte 1
+R1
+  [-L33+R33]
+; the bit from byte 3 goes into byte 2
+R1
+  [-L33+R33]
+; the bit from byte 4 goes into byte 3
+R1
+  [-L33+R33]
+; the bit from byte 5 goes into byte 4
+R1
+  [-L33+R33]
+; the bit from byte 6 goes into byte 5
+R1
+  [-L33+R33]
+; the bit from byte 7 goes into byte 6
+R1
+  [-L33+R33]
+; the bit from byte 8 goes into byte 7
+R1
+  [-L33+R33]
+; the bit from byte 9 goes into byte 8
+R1
+  [-L33+R33]
+; the bit from byte 10 goes into byte 9
+R1
+  [-L33+R33]
+; the bit from byte 11 goes into byte 10
+R1
+  [-L33+R33]
+; the bit from byte 12 goes into byte 11
+R1
+  [-L33+R33]
+; the bit from byte 13 goes into byte 12
+R1
+  [-L33+R33]
+; the bit from byte 14 goes into byte 13
+R1
+  [-L33+R33]
+; the bit from byte 15 goes into byte 14
+R1
+  [-L33+R33]
+
+; ==== the bit that fell off the FIRST byte is the reduction ====
+; it is not tested; 0x87 is multiplied by it  so the exclusive or below
+; runs against 0x87 or against nought and costs the same either way
+L15
+  [-R21
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+  L21]
+
+; ==== and the last byte takes it ====
+L17
+  [-R39+L39]
+R37
+; ASSERT ptr=+52
+; ASSERT zero +55:+68
+@@XOR8@@ 52
+; ASSERT ptr=+52
+  [-L37+R37]
+L52
+; ASSERT ptr=+0
+; ASSERT zero +16:+68

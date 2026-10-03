@@ -73,7 +73,59 @@ sub rebase {
     if ($line =~ /^(\s*; ASSERT zero )\+?(-?\d+):\+?(-?\d+)(.*)$/) {
         return "$1" . ($2 + $base) . ":" . ($3 + $base) . "$4";
     }
+    # A PASTE BASE IS A CELL NUMBER IN THE SAME FRAME, so the offset shifts it
+    # exactly as it shifts a contract. Without this, a block that pastes
+    # anything can only ever be included at offset NOUGHT: the paste rebases
+    # its callee's contracts against a base that is right for the block's own
+    # zero and wrong for wherever the block actually landed, and the error
+    # surfaces far away as a contract naming a cell nobody recognises.
+    # block/shl128 pastes idiom/xor8 at 52 and aes/cmacsubkeys includes it at
+    # 967; the first contract the paste produced said cell 54 while the
+    # pointer stood at 1021.
+    #
+    # Rn AND Ln ARE NOT CELL NUMBERS and must not be touched. A run length is
+    # "forty six arrows" and means the same thing wherever the text lands,
+    # which is the distinction block/copy16's header makes from the other
+    # side: an offset shifts a frame and does not rescale what is inside it.
+    # The self-tests below pin both halves of that.
+    if ($line =~ /^(\s*\@\@\w+\@\@\s+)(-?\d+)(\s*)$/) {
+        return "$1" . ($2 + $base) . "$3";
+    }
     return $line;
+}
+
+# The rebase is the only arithmetic in this file and it rewrites a tracked
+# artifact, which is the combination tools/bftier.pl got wrong by having no
+# test at all. Both polarities, and the Rn case is here because getting it
+# wrong would silently lengthen every walk in an offset block.
+sub selftest {
+    my $fails = 0;
+    my @cases = (
+        ["; ASSERT ptr=+9",        82,  "; ASSERT ptr=91"],
+        ["; ASSERT ptr=+9",        0,   "; ASSERT ptr=9"],
+        ["; ASSERT ptr=+0",        967, "; ASSERT ptr=967"],
+        ["; ASSERT zero +3:+10",   82,  "; ASSERT zero 85:92"],
+        ["\@\@XOR8\@\@ 52",        967, "\@\@XOR8\@\@ 1019"],
+        ["\@\@XOR8\@\@ 52",        0,   "\@\@XOR8\@\@ 52"],
+        ["  R46",                  82,  "  R46"],
+        ["  L885",                 82,  "  L885"],
+        ["  [-L885+R885]",         82,  "  [-L885+R885]"],
+        ["; a comment about cell 9", 82, "; a comment about cell 9"],
+    );
+    for my $c (@cases) {
+        my ($in, $base, $want) = @$c;
+        my $got = rebase($in, $base);
+        if ($got eq $want) {
+            printf "PASS bfinclude selftest: %-24s at %-4d -> %s\n", $in, $base, $got;
+        } else {
+            printf "FAIL bfinclude selftest: %s at %d gave %s  wanted %s\n",
+                   $in, $base, $got, $want;
+            $fails++;
+        }
+    }
+    print $fails ? "bfinclude: $fails selftest(s) failed\n"
+                 : "bfinclude: selftests pass\n";
+    return $fails ? 1 : 0;
 }
 
 sub flatten {
@@ -136,6 +188,7 @@ sub flatten {
     delete $on_stack{$path};
 }
 
+if (@ARGV && $ARGV[0] eq '--selftest') { exit selftest(); }
 if (!@ARGV || $ARGV[0] eq '--help') {
     print STDERR "usage: bfinclude.pl FILE.skel\n";
     exit 2;

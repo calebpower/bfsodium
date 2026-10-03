@@ -201,6 +201,9 @@ nought and it is verified through whatever includes it.
 | `block/copy16` | 0 | 68 | sixteen bytes copied down 885 cells; included TWICE by `aes/ctr128`, which is only possible because its tape was laid out to give the key and the counter the same geometry, and where a wrong copy of either is a wrong published block |
 | `block/copy16back` | 0 | 59 | the staging cells emptied again, which is not tidiness: they are the cipher's own workspace and the schedule's round key, and the cipher is entered immediately afterwards; the same vectors |
 | `block/move16` | 0 | 66 | sixteen bytes moved down 885 cells  the sibling of `block/copy16` for an operand that is SPENT; proved by `aes/cbcenc128`'s two block vector  which is the shortest message that can tell a move from a copy here  and which failed when this was a copy |
+| `block/topbit` | 0 | 73 | a byte's top bit by seven halvings; proved through `block/shl128`, whose published subkey pair is wrong in the first byte if this is |
+| `block/shl128` | 0 | 297 | SP 800-38B section 6.1's doubling in GF(2^128); proved by `aes/cmacsubkeys` against RFC 4493's PUBLISHED K1 and K2, which between them exercise both arms of the reduction, and separately on the all-ones and single-bit edges before the mode existed |
+| `block/moveup16` | 0 | 62 | sixteen bytes moved UP 885 cells; the third of the family that crosses this library's one recurring distance, and proved wherever a cipher's answer has to leave the state |
 | `idiom/add8` | 175 | 183 | every one of the 65536 pairs + two proved identities |
 | `chacha20/add32` | 633 | 168 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
@@ -262,6 +265,7 @@ nought and it is verified through whatever includes it.
 | `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2371 | 313 | the FIPS 197 Appendix A schedule + three more keys |
 | `aes/cbcenc128` | 19326 | 394 | SP 800-38A F.2.1, all four published blocks and block one alone  as a PAIR: the first alone cannot see a broken chain because a block is emitted before it is chained  and that pair is what caught the copy that should have been a move; 272 bytes for the length's borrow; and the zero key and zero IV  where the chained block IS the plaintext  so one zero block is `encrypt128`'s own pinned value |
+| `aes/cmacsubkeys` | 22760 | 105 | RFC 4493 section 4's PUBLISHED K1 and K2, and the zero key as a second independent pair; it exists so that a wrong CMAC tag can be told apart from a wrong subkey, which sixteen opaque bytes cannot do |
 | `aes/ctr128` | 19828 | 738 | SP 800-38A F.5.1, all four published blocks and block one alone, so the pair separates a wrong cipher from a wrong per block restoration; one byte into the second block, which is the cheapest input that carries the counter; and the zero key, whose first sixteen bytes are `encrypt128`'s own pinned value checked four lines above by a different program |
 | `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
@@ -342,14 +346,14 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 578 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 578 | golden vectors, dual oracle |
+| 2 | yes | 580 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 580 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
 | 8 | yes | 19 | Cryptol design proofs, two of which must be refuted |
 | 8a | yes | 3 | the Cryptol oracle is delivered once and is load-bearing |
-| 9 | yes | 9 | legibility and portability |
+| 9 | yes | 10 | legibility and portability |
 | 9a | yes | 1 | style consistency |
 | 9b | yes | 1 | size budget, enforced inside bfstyle |
 | 9c | yes | 4 | provenance: every .bf equals bfexpand of its skeleton |
@@ -3289,7 +3293,90 @@ inverse cipher, and `block/aes128decrypt` cannot be included twice; its header
 says what restructuring that will take. Everything else remaining — GCM, GMAC,
 CMAC, CTR\_DRBG — uses the forward cipher only.
 
+## CMAC's subkeys, and an offset that did not reach far enough
+
+CMAC is the next mode, and it needs something none of the others did: a
+**128-bit doubling in a field that is not the cipher's**. SP 800-38B section
+6.1 derives two subkeys from the cipher applied to the zero block, by shifting
+left one bit and reducing by the polynomial of GF(2^128) when the bit that
+falls off the top is set. Its low byte is `0x87`, where `aes/xtime` reduces by
+`0x1b`. Same shape, different field, and a confusion between them produces
+plausible wrong bytes.
+
+### The subkeys are a program of their own, on purpose
+
+`aes/cmac128` will derive these two values inside itself where nothing can see
+them: a tag is sixteen bytes, and a wrong subkey is a wrong tag with no
+indication of which half went wrong. **RFC 4493 section 4 publishes K1 and
+K2**, so `aes/cmacsubkeys` turns an invisible intermediate into a pinned one —
+the same argument that makes `aes/keyexpand128` and `aes/subbytes` programs in
+their own right rather than only code inside the cipher.
+
+It was also the cheaper order of work. `block/shl128` was built and tested
+against the published pair *before* a line of the mode was written, so when
+the mode is wrong the subkeys will already be known right.
+
+**The published key exercises both arms of the reduction**, which is luck
+worth stating rather than relying on: `L` is `7df7…` whose top bit is clear,
+so `K1` is a plain doubling, and `K1` is `fbee…` whose top bit is set, so `K2`
+takes the `0x87`. One key covers both branches; the zero key adds a second
+independent pair.
+
+### Three new blocks, and the 885 family is now complete
+
+`block/topbit` is the seven-halving chain that takes a byte's high bit. It is
+not new text — it already exists written out inline seven times in `aes/xtime`
+and again in `idiom/add8`'s carry — and **those two are deliberately not
+migrated to it**. A paste reads a callee's committed `.bf`, `xtime` is pasted
+by four files, and the comment change alone would regenerate most of the AES
+tree for no change in instructions. That is owed, not done.
+
+`block/shl128` is the doubling itself, and it is included at a nonzero offset,
+which is what found the next defect.
+
+`block/moveup16` completes the set that crosses this library's one recurring
+distance. Every mode here puts its sixteen-byte working value exactly 885
+cells above the cipher's state, so there are exactly three routines for that
+gap and each is one text: `copy16` goes down and stages, `move16` goes down
+and does not, `moveup16` comes back up. **Up is a separate routine and not a
+parameter**, because an include carries an offset and not a direction: an
+offset shifts where a frame starts and cannot turn `R885` into `L885`.
+
+### The defect: an include offset that shifted contracts but not paste bases
+
+`block/shl128` **pastes** `idiom/xor8` at its own cell 52, and
+`aes/cmacsubkeys` includes the block at 967. The paste rebased xor8's
+contracts against base 52 — correct for the block's own zero and wrong for
+where the block actually landed. The symptom was a contract naming cell 54
+while the pointer stood at 1021, which is a long way from the cause.
+
+**A paste base is a cell number in the same frame as a contract**, so the
+include's offset has to shift it too, and `tools/bfinclude.pl` now does.
+Without that, *a block that pastes anything can only ever be included at
+offset nought* — which happened to be true of every such block until this one,
+which is why it had never bitten. `block/aes128encrypt` and
+`block/aes128decrypt` both paste, and both are included only at zero.
+
+**`Rn` and `Ln` are not shifted**, and the self-tests pin that too. A run
+length is "forty six arrows" and means the same thing wherever the text lands;
+an offset moves a frame and does not rescale what is inside it. Getting that
+wrong would silently lengthen every walk in an offset block.
+
+`bfinclude` had **no self-tests at all**, which is the same combination
+`bftier.pl --fix` was caught with two commits ago: arithmetic that rewrites a
+tracked artifact, unexercised. It has ten now, both polarities.
+
 ## Traps that have actually bitten
+
+- **AN OFFSET THAT SHIFTS SOME CELL NUMBERS AND NOT OTHERS.** `%%block/x%% N`
+  rebased the block's relative contracts and left its `@@PASTE@@ base` lines
+  alone, so a block containing a paste silently only worked at offset nought.
+  The failure surfaces far from the cause — a contract naming a cell nobody
+  recognises — because the paste's own rebasing is correct arithmetic against
+  the wrong origin. The general shape: **when a mechanism translates a frame,
+  it has to translate everything in that frame that names a cell, and nothing
+  that does not.** `Rn` is a length and must be left alone; a contract and a
+  paste base are both cells and must both move.
 
 - **A COPY WHERE A MOVE BELONGED IS NOT A SLOW MOVE.** Brainfuck's `[-x+y]`
   *adds* into the destination, so the copy-not-move rule has a twin that is

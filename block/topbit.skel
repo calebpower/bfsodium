@@ -1,0 +1,73 @@
+; THE TOP BIT OF THE BYTE AT THIS CELL  taken by halving it seven times and
+; keeping the quotient; The byte is REPLACED by its top bit and the pointer
+; comes back here; q t and f sit in the three cells above  which is what
+; block/halve wants  so this block needs FOUR cells and not one;
+;
+; IT COSTS ABOUT TWICE THE VALUE and depends on nothing else  which is the
+; property that makes it usable inside a constant time argument: the work is
+; a function of the byte and not of a secret choice made about it;
+;
+; THIS TEXT ALREADY EXISTS IN aes/xtime  written out seven times inline  and
+; again in idiom/add8's carry; NEITHER IS MIGRATED HERE and that is deliberate
+; rather than lazy: a paste reads a callee's committed artifact  and xtime
+; is pasted by four files  so the comment change alone would regenerate
+; most of the AES tree for no change in instructions; HANDOFF records it;
+;
+; ASSERT ptr=+0
+; halving one of seven; the bit that falls off is not wanted
+%%block/halve%%
+R2
+  [-]
+L2
+R1
+  [-L1+R1]
+L1
+; halving two of seven; the bit that falls off is not wanted
+%%block/halve%%
+R2
+  [-]
+L2
+R1
+  [-L1+R1]
+L1
+; halving three of seven; the bit that falls off is not wanted
+%%block/halve%%
+R2
+  [-]
+L2
+R1
+  [-L1+R1]
+L1
+; halving four of seven; the bit that falls off is not wanted
+%%block/halve%%
+R2
+  [-]
+L2
+R1
+  [-L1+R1]
+L1
+; halving five of seven; the bit that falls off is not wanted
+%%block/halve%%
+R2
+  [-]
+L2
+R1
+  [-L1+R1]
+L1
+; halving six of seven; the bit that falls off is not wanted
+%%block/halve%%
+R2
+  [-]
+L2
+R1
+  [-L1+R1]
+L1
+; halving seven of seven; the bit that falls off is not wanted
+%%block/halve%%
+R2
+  [-]
+L2
+R1
+  [-L1+R1]
+L1
+; ASSERT ptr=+0

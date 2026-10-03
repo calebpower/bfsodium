@@ -1,0 +1,62 @@
+; SIXTEEN BYTES MOVED UP 885 CELLS  leaving the source EMPTY; Entered where
+; the source begins and it leaves the pointer on the source's last cell;
+;
+; THE THIRD OF THE 885 FAMILY  and the distance is not a coincidence: every
+; mode here puts its sixteen byte working value exactly 885 cells above the
+; cipher's state  so the three routines that cross that gap are one text
+; each; block/copy16 goes DOWN and stages  block/move16 goes DOWN and does
+; not  and this one comes back UP;
+;
+; UP IS A SEPARATE ROUTINE AND NOT A PARAMETER  because an include carries an
+; offset and not a direction: the offset shifts where a block's frame starts
+; and cannot turn R885 into L885; That is the same limit block/copy16's
+; header records about distances  seen from the other side;
+;
+; ASSERT ptr=+0
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; the next byte
+R1
+  [-R885+L885]
+; ASSERT ptr=+15

@@ -530,6 +530,22 @@ assembled `.bf` is still judged by every tool in the suite, once, at the end.
   control logic and it does not reopen §6's prohibition on it: there is no
   condition, no loop, and no arithmetic on a name.
 
+  **The offset shifts a PASTE BASE inside the block too, and must.** A block
+  may paste as well as include, and a paste base is a cell number in the same
+  frame as a contract. Without shifting it, a block that pastes anything could
+  only ever be included at offset nought: the paste would rebase its callee's
+  contracts against a base that is right for the block's own zero and wrong
+  for wherever the block actually landed. `block/shl128` pastes `idiom/xor8`
+  at 52 and `aes/cmacsubkeys` includes it at 967; before the fix the first
+  contract the paste produced named cell 54 while the pointer stood at 1021.
+
+  **`Rn` and `Ln` are NOT shifted**, and that is the same distinction from the
+  other side: a run length is "forty six arrows" and means the same thing
+  wherever the text lands. An offset moves a frame; it does not rescale what
+  is inside it. `tools/bfinclude.pl --selftest` pins both halves, because the
+  rebase is the only arithmetic in that file and it rewrites a tracked
+  artifact — the combination `bftier.pl --fix` got wrong by having no test.
+
   This does cost something. `9ed4727` argued for includes by their severity --
   *no base, no entry or exit wrapping, no prologue stripping, no contract
   rebasing* -- and this trades the last of those five for contracts that

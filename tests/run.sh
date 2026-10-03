@@ -133,6 +133,11 @@ run "bffoot self-test" ./tools/bffoot --selftest
 run "bftable self-test" perl tools/bftable.pl --selftest
 run "bftier self-test" perl tools/bftier.pl --selftest
 run "bfdag self-test" perl tools/bfdag.pl --selftest
+# bfinclude was the LAST rewriting tool with no self-test and no line
+# here, which is how its offset came to shift contracts and not paste
+# bases. Every tool that does arithmetic on a tracked artifact is now
+# on this list.
+run "bfinclude self-test" perl tools/bfinclude.pl --selftest
 run "bfgraph self-test" perl tools/bfgraph.pl --selftest
 # Every committed ROUTINE, not a named list of directories. index/ sat outside
 # the old "chacha20 poly1305" globs and so was linted, styled and
@@ -192,6 +197,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
           done)
     want="aead/chacha20poly1305.bf
 aes/cbcenc128.bf
+aes/cmacsubkeys.bf
 aes/ctr128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
@@ -1507,6 +1513,27 @@ run "cbcenc128 on an empty message emits nothing and still lays the table" sh -c
           | ./tools/hx -r | ./tools/bfi aes/cbcenc128.bf | ./tools/hx)
     [ -z "$out" ] || { echo "expected no output  got $out"; exit 1; }
 '
+
+# CMACSUBKEYS turns an invisible intermediate into a checked one. aes/cmac128
+# derives the same two values inside itself where nothing can see them: a tag
+# is sixteen bytes and a wrong subkey is a wrong tag with no indication of
+# which half went wrong. RFC 4493 section 4 PUBLISHES K1 and K2 for its key,
+# so pinning them here is free evidence, and it is the same argument that puts
+# aes/keyexpand128 and aes/subbytes in the suite as programs of their own.
+#
+# THE PUBLISHED LINE EXERCISES BOTH ARMS OF THE REDUCTION, which is lucky and
+# worth saying out loud rather than relying on. L is 7df7..., whose top bit is
+# CLEAR, so K1 is a plain doubling; K1 is fbee..., whose top bit is SET, so K2
+# takes the 0x87. A single key therefore covers both branches of SP 800-38B
+# section 6.1, and the zero-key line below adds a second independent pair.
+#
+# THE FIELD IS NOT THE CIPHER'S. block/shl128 reduces by 0x87, the low byte of
+# the polynomial for GF(2^128); aes/xtime reduces by 0x1b for GF(2^8). The two
+# are the same shape and a confusion between them would produce plausible
+# wrong bytes, so Cryptol spells out `dbl128` separately rather than reusing
+# anything of xtime's.
+dk aes/cmacsubkeys.bf 2b7e151628aed2a6abf7158809cf4f3c fbeed618357133667c85e08f7236a8def7ddac306ae266ccf90bc11ee46d513b cmacsubkeysRun "cmacsubkeys RFC 4493 section 4  K1 and K2  a PUBLISHED value"
+dk aes/cmacsubkeys.bf 00000000000000000000000000000000 cdd297a9df1458771099f4b39468565c9ba52f53be28b0ee2133e96728d0ac3f cmacsubkeysRun "cmacsubkeys the zero key  a second independent pair  DERIVED"
 
 # GFMUL is the general multiply in GF(2^8): peasant multiplication, eight
 # turns, UNROLLED so no counter is needed and every loop is pointer balanced,
