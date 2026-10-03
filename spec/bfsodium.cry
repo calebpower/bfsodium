@@ -2606,6 +2606,24 @@ cbcenc128Run inb = join (drop`{1} chain)
     chain = [iv] # [ encrypt128Run (key # [ p ^ c | p <- blk | c <- prv ])
                    | blk <- pt | prv <- chain ]
 
+// AES-128 in cipher block chaining mode, DECRYPTION (NIST SP 800-38A section
+// 6.2), taking and returning the exact wire bytes aes/cbcdec128.bf reads and
+// writes:
+//   in  = key(16) # iv(16) # len(2 LE) # ciphertext(len), len a multiple of 16
+//   out = plaintext(len)
+//
+// Note what is NOT here: a recursive definition. Encryption chains forward, so
+// cbcenc128Run has to define its chain in terms of itself; decryption's chain
+// is just the ciphertext shifted by one, which is why the mode is
+// parallelisable and why this is the shorter of the two.
+cbcdec128Run : {b} (fin b, 64 >= width b) => [34 + 16*b][8] -> [16*b][8]
+cbcdec128Run inb = join [ [ p ^ c | p <- decrypt128Run (key # blk) | c <- prv ]
+                        | blk <- ct | prv <- [iv] # ct ]
+  where
+    key = take`{16} inb
+    iv  = take`{16} (drop`{16} inb)
+    ct  = split`{b} (drop`{34} inb) : [b][16][8]
+
 // SP 800-38B section 6.1's `dbl`: a 128-bit left shift by one, reduced by the
 // polynomial of GF(2^128) when the bit that falls off the top is set. Its low
 // byte is 0x87, where aes/xtime's field reduces by 0x1b -- same shape, a

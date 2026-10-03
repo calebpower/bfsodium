@@ -101,7 +101,8 @@
   L207
 ; ASSERT ptr=0
 
-%%block/aes128decrypt%%
+%%block/aes128dsetup%%
+%%block/aes128drounds%%
 
 ; emit
 ; the sixteen bytes of the plaintext

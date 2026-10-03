@@ -1,0 +1,230 @@
+; THE KEY SCHEDULE AND THE TABLE SWAP  which is everything an inverse cipher
+; has to do ONCE  however many blocks it goes on to decrypt;
+;
+; It runs the schedule FORWARD against the forward S box  keeping the ten
+; temps the regression will need; then it clears that table and writes the
+; INVERSE one into the same cells; It leaves the pointer at the block's own
+; zero  the inverse table resident  the last round key in the regression
+; window and the ten temps standing;
+;
+; THIS IS WHY CBC DECRYPTION TOOK A RESTRUCTURING AND THE OTHER MODES DID NOT;
+; the forward cipher splits into a table that is laid once and rounds that run
+; many times  because its table SURVIVES a block; this one's does not  it is
+; swapped halfway through  so there is no prefix of the single file that a
+; caller could run once; Splitting it here is what makes the swap a once per
+; message cost instead of a once per block one; At about sixty six thousand
+; instructions to clear the forward table and seventeen more to write the
+; inverse  that is the difference between a mode that is usable and one that
+; is not;
+;
+; THE SPLIT FALLS WHERE IT DOES SO THE INSTRUCTION STREAM DOES NOT MOVE; the
+; inverse table's walk home ends at nought and the per block work opens at
+; nought  so the two concatenated are byte for byte the file they came from
+; and aes/decrypt128 regenerates identical; That is the same test the forward
+; split passed and the same reason the seam is where it is;
+;
+; WHAT A SECOND BLOCK MUST PUT BACK; the rounds next door REGRESS the window
+; and SPEND the ten temps  so a caller decrypting more than one block has to
+; keep a copy of both and restore them before each; That is fifty six bytes
+; against a hundred and fourteen million instructions  and the rounds' own
+; entry contracts police everything else;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x057:0x07e  the temp run{40}  ten four byte schedule temps  WANTED AGAIN
+;   @0x0a0:0x0af  window{16}  the last round key  WANTED AGAIN
+;   @0x0b0:0x0bf  window{16}  phase one's own  spent  and cleared next door
+;   @0x0f3:0x3f5  group 0 and the table  forward  then INVERSE
+
+; ==== phase one : the key schedule  with the FORWARD table ====
+; the first four words ARE the key and they stay in the window; the earlier
+; cut also copied them into a 176 byte schedule  which is gone
+
+; ==== the forward S box is written into the tape ====
+  R246
+; ASSERT ptr=+246
+%%block/sbox256%%
+; ASSERT ptr=+1011
+  L1011
+; ASSERT ptr=+0
+; the round constant starts at one
+  R237+L237
+
+; ten groups of four words
+  ++++++++++
+  [-
+
+; ==== word 4 : slot 0 takes it  temp from slot 3 ====
+; temp is w at i minus 1
+  R188[-R45+R5+L50]R50[-L50+R50]L238R189[-R45+R4+L49]R49[-L49+R49]L238
+  R190[-R45+R3+L48]R48[-L48+R48]L238R191[-R45+R2+L47]R47[-L47+R47]L238
+; RotWord: the four bytes turn left by one
+  R233[-R5+L5]L233R234[-L1+R1]L234R235[-L1+R1]L235R236[-L1+R1]L236R238[-L2+R2]L238
+; SubWord byte 0  through the FORWARD table
+  R233[-R11+L11]R11[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L11+R11]L244
+; SubWord byte 1  through the FORWARD table
+  R234[-R10+L10]R10[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L10+R10]L244
+; SubWord byte 2  through the FORWARD table
+  R235[-R9+L9]R9[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L9+R9]L244
+; SubWord byte 3  through the FORWARD table
+  R236[-R8+L8]R8[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L8+R8]L244
+; the round constant  COPIED because xtime wants it again
+  R233[-L24+R24]L233R237[-L27+R28+L1]R1[-L1+R1]L238
+  R208
+; ASSERT ptr=+208
+@@XOR8@@ 208
+; ASSERT ptr=+208
+  L208
+  R208[-R25+L25]L208R237[-L29+R29]L237
+  R208
+; ASSERT ptr=+208
+@@XTIME@@ 208
+; ASSERT ptr=+208
+  L208
+  R208[-R29+L29]L208
+; THE TEMP IS KEPT  and this is the whole reason the file no longer stores
+; a 176 byte schedule: the inverse cipher's regression needs exactly this
+; value again  and nothing else from the forward pass; It is COPIED because
+; the xorword below SPENDS it;
+  R233[-L146+R151+L5]L233R238[-L5+R5]L238
+  R234[-L146+R150+L4]L234R238[-L4+R4]L238
+  R235[-L146+R149+L3]L235R238[-L3+R3]L238
+  R236[-L146+R148+L2]L236R238[-L2+R2]L238
+; w at i minus 4 against temp
+  R176[-R49+L49]L176R177[-R49+L49]L177R178[-R49+L49]L178R179[-R49+L49]L179R233[-L4+R4]L233R234[-L4+R4]L234R235[-L4+R4]L235R236[-L4+R4]L236
+  R208
+; ASSERT ptr=+208
+@@XORWORD@@ 208
+; ASSERT ptr=+208
+  L208
+; the word goes straight back into its slot; the earlier cut also
+; stored it into a 176 byte schedule  which is what this file no
+; longer keeps
+; and into the slot
+  R225[-L49+R49]L225R226[-L49+R49]L226R227[-L49+R49]L227R228[-L49+R49]L228
+; ASSERT ptr=+0
+
+; ==== word 5 : slot 1 takes it  temp from slot 0 ====
+; temp is w at i minus 1
+  R176[-R57+R5+L62]R62[-L62+R62]L238R177[-R57+R4+L61]R61[-L61+R61]L238
+  R178[-R57+R3+L60]R60[-L60+R60]L238R179[-R57+R2+L59]R59[-L59+R59]L238
+; w at i minus 4 against temp
+  R180[-R45+L45]L180R181[-R45+L45]L181R182[-R45+L45]L182R183[-R45+L45]L183R233[-L4+R4]L233R234[-L4+R4]L234R235[-L4+R4]L235R236[-L4+R4]L236
+  R208
+; ASSERT ptr=+208
+@@XORWORD@@ 208
+; ASSERT ptr=+208
+  L208
+; the word goes straight back into its slot; the earlier cut also
+; stored it into a 176 byte schedule  which is what this file no
+; longer keeps
+; and into the slot
+  R225[-L45+R45]L225R226[-L45+R45]L226R227[-L45+R45]L227R228[-L45+R45]L228
+; ASSERT ptr=+0
+
+; ==== word 6 : slot 2 takes it  temp from slot 1 ====
+; temp is w at i minus 1
+  R180[-R53+R5+L58]R58[-L58+R58]L238R181[-R53+R4+L57]R57[-L57+R57]L238
+  R182[-R53+R3+L56]R56[-L56+R56]L238R183[-R53+R2+L55]R55[-L55+R55]L238
+; w at i minus 4 against temp
+  R184[-R41+L41]L184R185[-R41+L41]L185R186[-R41+L41]L186R187[-R41+L41]L187R233[-L4+R4]L233R234[-L4+R4]L234R235[-L4+R4]L235R236[-L4+R4]L236
+  R208
+; ASSERT ptr=+208
+@@XORWORD@@ 208
+; ASSERT ptr=+208
+  L208
+; the word goes straight back into its slot; the earlier cut also
+; stored it into a 176 byte schedule  which is what this file no
+; longer keeps
+; and into the slot
+  R225[-L41+R41]L225R226[-L41+R41]L226R227[-L41+R41]L227R228[-L41+R41]L228
+; ASSERT ptr=+0
+
+; ==== word 7 : slot 3 takes it  temp from slot 2 ====
+; temp is w at i minus 1
+  R184[-R49+R5+L54]R54[-L54+R54]L238R185[-R49+R4+L53]R53[-L53+R53]L238
+  R186[-R49+R3+L52]R52[-L52+R52]L238R187[-R49+R2+L51]R51[-L51+R51]L238
+; w at i minus 4 against temp
+  R188[-R37+L37]L188R189[-R37+L37]L189R190[-R37+L37]L190R191[-R37+L37]L191R233[-L4+R4]L233R234[-L4+R4]L234R235[-L4+R4]L235R236[-L4+R4]L236
+  R208
+; ASSERT ptr=+208
+@@XORWORD@@ 208
+; ASSERT ptr=+208
+  L208
+; the word goes straight back into its slot; the earlier cut also
+; stored it into a 176 byte schedule  which is what this file no
+; longer keeps
+; and into the slot
+  R225[-L37+R37]L225R226[-L37+R37]L226R227[-L37+R37]L227R228[-L37+R37]L228
+; ASSERT ptr=+0
+
+
+; the run turns so the next temp is written to the same address
+  R87
+%%block/rotate40down4%%
+  L87
+; ASSERT ptr=+0
+  ]
+; ASSERT ptr=+0
+
+; the window drops to where phase two wants it  sixteen cells down
+  R176[-L16+R16]L176R177[-L16+R16]L177R178[-L16+R16]L178R179[-L16+R16]L179
+  R180[-L16+R16]L180R181[-L16+R16]L181R182[-L16+R16]L182R183[-L16+R16]L183
+  R184[-L16+R16]L184R185[-L16+R16]L185R186[-L16+R16]L186R187[-L16+R16]L187
+  R188[-L16+R16]L188R189[-L16+R16]L189R190[-L16+R16]L190R191[-L16+R16]L191
+; ASSERT ptr=+0
+
+; ==== the table is swapped  which is the whole trick ====
+; the forward table is spent; clearing it costs about 33 thousand
+  R246
+; ASSERT ptr=+246
+; entries 0 to 31
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+; entries 32 to 63
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+; entries 64 to 95
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+; entries 96 to 127
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+; entries 128 to 159
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+; entries 160 to 191
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+; entries 192 to 223
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+; entries 224 to 255
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3
+  [-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]R3[-]
+  L1011
+; ASSERT ptr=+0
+; ==== and the INVERSE S box is written into the same cells ====
+  R246
+; ASSERT ptr=+246
+%%block/invsbox256%%
+; ASSERT ptr=+1011
+  L1011
+; ASSERT ptr=+0

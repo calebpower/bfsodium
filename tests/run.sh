@@ -196,6 +196,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
               grep -q "^; INTERFACE" "$f" || echo "$f"
           done)
     want="aead/chacha20poly1305.bf
+aes/cbcdec128.bf
 aes/cbcenc128.bf
 aes/cmac128.bf
 aes/cmacsubkeys.bf
@@ -1514,6 +1515,38 @@ run "cbcenc128 on an empty message emits nothing and still lays the table" sh -c
           | ./tools/hx -r | ./tools/bfi aes/cbcenc128.bf | ./tools/hx)
     [ -z "$out" ] || { echo "expected no output  got $out"; exit 1; }
 '
+
+# CBCDEC128 is the fourth mode and the only one that needed the inverse
+# cipher. Every other mode in the roster runs AES forwards; this one does not,
+# and block/aes128decrypt as it stood could not be used twice -- it lays the
+# forward table, spends it on the key schedule, clears it, and writes the
+# inverse one into the same cells. So it was split, and the vectors here have
+# to test the split as much as the mode.
+#
+# WHAT THE TWO-BLOCK LINE IS FOR. One block exercises the setup and the rounds
+# once each and would pass even if the rounds destroyed every piece of state
+# they touch. TWO blocks is the shortest input that makes the second block run
+# against a schedule that has already been spent and restored -- the fifty six
+# bytes the mode snapshots after the setup. It is the line that fails if the
+# restore set is too small, and it fails at the FIRST reuse rather than three
+# rounds into a wrong byte, because block/aes128drounds carries its own zero
+# contracts over the regions it needs clean.
+#
+# THE 272 BYTE LINE RESTORES THAT SCHEDULE SIXTEEN MORE TIMES, and reaches the
+# length's borrow past 256 while it is at it. Derived by the same small AES
+# used for the other modes, which reproduces F.2.1 before it is trusted to
+# invert it.
+#
+# THE ZERO LINE RUNS THE ROUND TRIP THROUGH A DIFFERENT PROGRAM. With a zero
+# key and a zero IV the chained block is the plaintext itself, so decrypting
+# encrypt128's own pinned 66e94bd4... must give back the zero block. That
+# value is checked elsewhere in the suite by aes/encrypt128, aes/ctr128 and
+# aes/cbcenc128; here it is checked backwards.
+dk aes/cbcdec128.bf 2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f40007649abac8119b246cee98e9b12e9197d5086cb9b507219ee95db113a917678b273bed6b8e3c1743b7116e69e222295163ff1caa1681fac09120eca307586e1a7 6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710 cbcdec128Run "cbcdec128 SP 800_38A F point 2 point 2  all four blocks  a PUBLISHED value"
+dk aes/cbcdec128.bf 2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f10007649abac8119b246cee98e9b12e9197d 6bc1bee22e409f96e93d7e117393172a cbcdec128Run "cbcdec128 SP 800_38A F point 2 point 2 block one alone  a PUBLISHED value"
+dk aes/cbcdec128.bf 2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f20007649abac8119b246cee98e9b12e9197d5086cb9b507219ee95db113a917678b2 6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e51 cbcdec128Run "cbcdec128 two blocks  the shortest input that reuses the schedule  a PUBLISHED prefix"
+dk aes/cbcdec128.bf 2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f10017df76b0c1ab899b33e42f047b91b546f1caa8018c80b15b8e7aea82794adcb00bbc1e295910b9de4f1358dcb4213bdd8eefa3154215f4709af46573fc8cb07b9860dc1dd67ddfd952b41e3aa0cc47a9648738534d37e5e29ae2135af7532e41c1428b847ec6248fa03568d55163aa89885e757fd9c61999178f96a3c78f26befff9a03691d10ad992b32f674d03094a69b14874126563f8ff0a303378a36cbdd861aa9234286fac875aee498d4f0aa1f3968ad1a8d0b1907b2b970e55014600b020a1d3bd59d55a9eaaef67ee20574080bc9ebc7e26385cd4a6333b432f428bfa19e1a6ba1caadeec516ae5bcf662e8f13f5cba16143bf2be82cafc36c65e874ac615e7b199af63af9dafad6f74889fa 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f cbcdec128Run "cbcdec128 272 bytes  seventeen blocks  so the length's borrow runs and the schedule is restored sixteen times  DERIVED"
+dk aes/cbcdec128.bf 0000000000000000000000000000000000000000000000000000000000000000100066e94bd4ef8a2c3b884cfa59ca342b2e 00000000000000000000000000000000 cbcdec128Run "cbcdec128 the zero key and zero IV on encrypt128's own pinned block  which must come back as the zero block  DERIVED"
 
 # CMACSUBKEYS turns an invisible intermediate into a checked one. aes/cmac128
 # derives the same two values inside itself where nothing can see them: a tag
