@@ -191,6 +191,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
               grep -q "^; INTERFACE" "$f" || echo "$f"
           done)
     want="aead/chacha20poly1305.bf
+aes/cbcenc128.bf
 aes/ctr128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
@@ -1463,6 +1464,47 @@ dk aes/ctr128.bf 2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfef
 run "ctr128 on an empty message emits nothing and still lays the table" sh -c '
     out=$(printf "%s" "2b7e151628aed2a6abf7158809cf4f3cf0f1f2f3f4f5f6f7f8f9fafbfcfdfeff0000" \
           | ./tools/hx -r | ./tools/bfi aes/ctr128.bf | ./tools/hx)
+    [ -z "$out" ] || { echo "expected no output  got $out"; exit 1; }
+'
+
+# CBCENC128 is the second mode, and it is deliberately the SAME SHAPE as
+# ctr128: the same tape, the same two includes, the same per-block
+# restoration. What it adds is the chain, so its vectors have to separate a
+# broken chain from a broken cipher.
+#
+# THE PAIR DOES THAT. The block-one line and the four-block line use the same
+# key and IV, so block one is identical in both. A file that encrypts
+# correctly but chains wrongly passes the first and fails the second; a file
+# that chains correctly but encrypts wrongly fails both. Neither line alone
+# can tell those apart, which is the same argument the ctr128 pair above makes
+# and the reason both pairs are kept.
+#
+# THE ZERO LINE TIES THE MODE TO THE BLOCK, and more tightly than it does in
+# counter mode: with a zero IV the first chained block IS the plaintext, so a
+# single zero block encrypts to encrypt128's own pinned 66e94bd4... That value
+# is checked a few lines above by a different program, so a disagreement here
+# is the mode and not the cipher.
+#
+# THE 272 BYTE LINE IS THE BORROW, for the reason the ctr128 note gives: the
+# length is a u16 and its decrement borrows from the high byte only past 256,
+# which no published vector reaches. Seventeen blocks is the cheapest multiple
+# of sixteen past it. Its expectation is DERIVED by the same small AES used
+# for the ctr128 line, which is checked against FIPS 197 Appendix B and C.1
+# and against SP 800-38A F.2.1 and F.5.1 before it is trusted; Cryptol then
+# checks the whole of it independently.
+#
+# THERE IS NO PADDING AND THE LENGTH MUST BE A MULTIPLE OF SIXTEEN. The
+# Cryptol side says so in its TYPE -- it is parameterised by the block count,
+# so a bad length is a type error rather than a quiet wrong answer -- and the
+# brainfuck says so in prose, because it cannot say it any other way.
+dk aes/cbcenc128.bf 2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f40006bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710 7649abac8119b246cee98e9b12e9197d5086cb9b507219ee95db113a917678b273bed6b8e3c1743b7116e69e222295163ff1caa1681fac09120eca307586e1a7 cbcenc128Run "cbcenc128 SP 800_38A F point 2 point 1  all four blocks  a PUBLISHED value"
+dk aes/cbcenc128.bf 2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f10006bc1bee22e409f96e93d7e117393172a 7649abac8119b246cee98e9b12e9197d cbcenc128Run "cbcenc128 SP 800_38A F point 2 point 1 block one alone  a PUBLISHED value"
+dk aes/cbcenc128.bf 2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f1001000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f 7df76b0c1ab899b33e42f047b91b546f1caa8018c80b15b8e7aea82794adcb00bbc1e295910b9de4f1358dcb4213bdd8eefa3154215f4709af46573fc8cb07b9860dc1dd67ddfd952b41e3aa0cc47a9648738534d37e5e29ae2135af7532e41c1428b847ec6248fa03568d55163aa89885e757fd9c61999178f96a3c78f26befff9a03691d10ad992b32f674d03094a69b14874126563f8ff0a303378a36cbdd861aa9234286fac875aee498d4f0aa1f3968ad1a8d0b1907b2b970e55014600b020a1d3bd59d55a9eaaef67ee20574080bc9ebc7e26385cd4a6333b432f428bfa19e1a6ba1caadeec516ae5bcf662e8f13f5cba16143bf2be82cafc36c65e874ac615e7b199af63af9dafad6f74889fa cbcenc128Run "cbcenc128 272 bytes  seventeen blocks  so the length's borrow from the high byte actually runs  DERIVED  see the note above"
+dk aes/cbcenc128.bf 0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000 66e94bd4ef8a2c3b884cfa59ca342b2e cbcenc128Run "cbcenc128 the zero key  zero IV and zero block  which is encrypt128's own pinned block  DERIVED"
+
+run "cbcenc128 on an empty message emits nothing and still lays the table" sh -c '
+    out=$(printf "%s" "2b7e151628aed2a6abf7158809cf4f3c000102030405060708090a0b0c0d0e0f0000" \
+          | ./tools/hx -r | ./tools/bfi aes/cbcenc128.bf | ./tools/hx)
     [ -z "$out" ] || { echo "expected no output  got $out"; exit 1; }
 '
 

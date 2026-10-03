@@ -200,6 +200,7 @@ nought and it is verified through whatever includes it.
 | `block/aes128decrypt` | 0 | 510 | both phases of the inverse cipher, which do not separate because the table is swapped between them; proved by `aes/decrypt128` coming back instruction identical across its own split |
 | `block/copy16` | 0 | 68 | sixteen bytes copied down 885 cells; included TWICE by `aes/ctr128`, which is only possible because its tape was laid out to give the key and the counter the same geometry, and where a wrong copy of either is a wrong published block |
 | `block/copy16back` | 0 | 59 | the staging cells emptied again, which is not tidiness: they are the cipher's own workspace and the schedule's round key, and the cipher is entered immediately afterwards; the same vectors |
+| `block/move16` | 0 | 66 | sixteen bytes moved down 885 cells  the sibling of `block/copy16` for an operand that is SPENT; proved by `aes/cbcenc128`'s two block vector  which is the shortest message that can tell a move from a copy here  and which failed when this was a copy |
 | `idiom/add8` | 175 | 183 | every one of the 65536 pairs + two proved identities |
 | `chacha20/add32` | 633 | 168 | boundary vectors + Cryptol |
 | `idiom/and32` | 268 | 325 | boundary vectors + Cryptol |
@@ -260,6 +261,7 @@ nought and it is verified through whatever includes it.
 | `aes/xorword` | 330 | 72 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2371 | 313 | the FIPS 197 Appendix A schedule + three more keys |
+| `aes/cbcenc128` | 19326 | 394 | SP 800-38A F.2.1, all four published blocks and block one alone  as a PAIR: the first alone cannot see a broken chain because a block is emitted before it is chained  and that pair is what caught the copy that should have been a move; 272 bytes for the length's borrow; and the zero key and zero IV  where the chained block IS the plaintext  so one zero block is `encrypt128`'s own pinned value |
 | `aes/ctr128` | 19828 | 738 | SP 800-38A F.5.1, all four published blocks and block one alone, so the pair separates a wrong cipher from a wrong per block restoration; one byte into the second block, which is the cheapest input that carries the counter; and the zero key, whose first sixteen bytes are `encrypt128`'s own pinned value checked four lines above by a different program |
 | `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
@@ -340,8 +342,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 573 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 573 | golden vectors, dual oracle |
+| 2 | yes | 578 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 578 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -1602,7 +1604,7 @@ mechanical change stays reviewable:
 | held out | why it was tempting, and why not now |
 |---|---|
 | **AES-192 and AES-256** | Nk of 6 and 8, twelve and fourteen rounds, over shapes that already exist. Blocked by nothing. The rebuild would have had to get the looping right for three key sizes at once instead of one. |
-| **Modes** — ~~CTR~~, CBC, GCM, GMAC, CMAC, CTR_DRBG | **CTR is built**; see "The first mode" below for what the cipher had to become and for the three defects it found. The remaining five need the forward cipher only, except CBC decryption, which is the sole consumer of `block/aes128decrypt` and the only one that has to restructure it. |
+| **Modes** — ~~CTR~~, ~~CBC encryption~~, CBC decryption, GCM, GMAC, CMAC, CTR_DRBG | **CTR and CBC encryption are built**; see "The first mode" and "The second mode" below. The four remaining forward-cipher modes are plumbing of the same shape. CBC DECRYPTION is the only one that is not: it is the sole consumer of `block/aes128decrypt`, which cannot be included twice, and its header says what restructuring that takes. |
 | **Unifying `xor32`/`xor64` onto `block/xor8kernel`** | The kernel is duplicated in three files down to the character, which HANDOFF already records as deferred — and `block/xor8kernel` finally makes it cheap. But those two are not AES, and the rebuild's invariant is identical instruction bytes; changing files outside the scope would weaken it. |
 | **Migrating the rest of the library to `%%include%%`** | Agreed to happen, in its own commits. The older `@@NAME@@ base` form keeps working meanwhile; the two coexist by design. |
 | **The deferred cleanup batch above** | Unchanged and still owed: tier 6, the BoneMesh lane, the pin bump, `bfj.c`, the documentation contradictions. |
@@ -3209,7 +3211,95 @@ checked, nobody found out.** A contract that cannot fail is the thing tier 0
 exists to forbid, and twenty-two of them had accumulated in the one place no
 checker was looking.
 
+## The second mode, and a copy where a move belonged
+
+`aes/cbcenc128` is deliberately the **same shape** as `aes/ctr128`: the same
+tape down to the cell, the same two includes, the same per-block restoration.
+That was the point of writing the first mode carefully — the second one should
+be plumbing, and it was, except for one defect that is worth the whole section.
+
+### What chaining costs over counting: almost nothing
+
+Counter mode encrypts a counter it owns. Cipher block chaining encrypts the
+plaintext exclusive-ored with the previous ciphertext. The per-block work is
+identical, and the only new thing is where the block comes from. The chain even
+reuses the conveyor: the chain's head byte is always at `@0x3c7`, it is lifted
+out, the other fifteen slide down, and the exclusive-or's answer goes in at the
+tail — sixteen turns later the chain is back in order holding the whole block.
+That keeps `idiom/xor8` to **one paste**; the alternative was sixteen pastes at
+sixteen fixed offsets, which is the shape this project calls indices rather
+than conveyors.
+
+### The defect: one distance, two routines
+
+Both of this mode's sixteen-byte operands move the same 885 cells, so both
+looked like jobs for `block/copy16`. They are not.
+
+- the **key** is copied, because every block wants it again;
+- the **chain** must be **moved**, because it is *spent* the moment it reaches
+  the state — the next chaining value is the ciphertext that is about to come
+  back into those very cells.
+
+Written as a copy, `block/copy16back` puts the chained plaintext back where the
+ciphertext is about to be moved in, **and a move into an occupied cell adds**.
+So the next chaining value was `(P₁ ⊕ IV) + C₁`, byte-wise, instead of `C₁`.
+
+Two things about how that presented are worth keeping:
+
+**The first block was still correct.** A block is emitted *before* it is
+chained, so a one-block message passes and only two blocks or more can show it.
+The vectors were already written as a pair — block one alone and all four
+published blocks — precisely to separate "the cipher is wrong" from "the
+chaining is wrong", and that is exactly what they did: `len 16 PASS`,
+`len 32 FAIL`.
+
+**The wrong answer looked like a cipher bug and was not.** Recovering it took
+inverting the cipher on the bad output to find the block it had actually
+encrypted, then exclusive-oring the plaintext back out to see the chain value
+it used: `e109678d…` against `7649abac…`, which is the sum, not any rotation
+or reversal of the right answer. Guessing from the ciphertext alone had already
+failed on nine candidates.
+
+`block/move16` is the sibling of `block/copy16` and the difference is not
+speed. It also touches strictly less: `copy16` stages 869 cells below its
+source, which in this mode is the cipher's own round-key region, and `move16`
+has no stage at all.
+
+**The contract that would have caught it is now in the file**:
+`; ASSERT zero 967:982` immediately before the ciphertext is moved into the
+chain. It is the cheap kind — a claim about cells that are supposed to be
+empty, at the one point where "supposed to" was wrong.
+
+### What this mode does not do
+
+**No padding, and the length must be a multiple of sixteen.** The Cryptol side
+says so in its *type* — `cbcenc128Run` is parameterised by the block count, so
+a bad length is a type error rather than a quiet wrong answer — and the
+brainfuck says so in prose, because it cannot say it any other way. Enforcing
+it would cost instructions on every run to catch a caller error the vectors
+cannot produce.
+
+Everything was run under the scratchpad interpreter with contracts **live**
+before any of it was wired into the suite: 124,578,738 steps for one block,
+505,159,372 for the four published ones, and 2,140,222,159 for the 272-byte
+borrow line, every assertion holding.
+
+**Decryption is not here.** CBC is the one mode in the roster that needs the
+inverse cipher, and `block/aes128decrypt` cannot be included twice; its header
+says what restructuring that will take. Everything else remaining — GCM, GMAC,
+CMAC, CTR\_DRBG — uses the forward cipher only.
+
 ## Traps that have actually bitten
+
+- **A COPY WHERE A MOVE BELONGED IS NOT A SLOW MOVE.** Brainfuck's `[-x+y]`
+  *adds* into the destination, so the copy-not-move rule has a twin that is
+  easier to miss: a destination that is supposed to be empty and is not gives
+  a silent wrong answer rather than a crash. In `aes/cbcenc128` the chain was
+  copied into the state and handed back, so the ciphertext was later moved in
+  on top of it and the next chaining value was the *sum* of the two. The first
+  block was still right — a block is emitted before it is chained — so only a
+  two-block message could show it. The guard is a `zero` contract on the
+  destination immediately before the move, which is now there.
 
 - **A DEDUP INSIDE A PASTED BODY IS A CHANGE TO EVERY CALLER, AND ONE REBUILD
   PASS WILL NOT FIND IT.** `keccak/sponge136` and `sponge168` each stated the

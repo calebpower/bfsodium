@@ -1,0 +1,66 @@
+; SIXTEEN BYTES MOVED DOWN 885 CELLS  leaving the source EMPTY; Entered where
+; the source begins and it leaves the pointer on the source's last cell;
+; Every move in it is relative  so the same text does the same job wherever it
+; is included: it moves src through src plus 15 into src minus 885;
+;
+; THE SIBLING OF block/copy16  AND THE DIFFERENCE IS THE WHOLE POINT; that one
+; stages each byte and hands it back  for an operand that is wanted again; this
+; one does not  for an operand that is SPENT by the routine it feeds; A copy
+; where a move belonged is not a slow move: it leaves the old value standing
+; where the new one is about to be written  and in aes/cbcenc128 that meant
+; the next chaining value was the sum of the ciphertext and the plaintext
+; block that produced it; The first block was still right  because a block is
+; emitted before it is chained  so only a message of TWO blocks or more could
+; show it;
+;
+; IT ALSO TOUCHES NOTHING IT DOES NOT HAVE TO; block/copy16 stages 869 cells
+; below its source  which in that mode is the cipher's own round key region;
+; this routine has no stage  so those cells are never written at all;
+; ASSERT ptr=+0
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; the next byte
+R1
+  [-L885+R885]
+; ASSERT ptr=+15

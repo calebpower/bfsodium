@@ -2583,6 +2583,29 @@ ctr128Run inb = [ p ^ k | p <- ptext | k <- ks ]
     ks    = take`{n} (join [ encrypt128Run (key # (split (ctr0 + i) : [16][8]))
                            | i <- [0 ...] : [_][128] ])
 
+// AES-128 in cipher block chaining mode, encryption (NIST SP 800-38A section
+// 6.2), taking and returning the exact wire bytes aes/cbcenc128.bf reads and
+// writes:
+//   in  = key(16) # iv(16) # len(2 LE) # plaintext(len), len a multiple of 16
+//   out = ciphertext(len)
+//
+// Parameterised by the BLOCK COUNT rather than the byte count, which is what
+// makes "a multiple of sixteen" a type error here instead of a silent wrong
+// answer. The brainfuck cannot say that about its own input and its header
+// states the precondition in prose; this is the half of the pair that can.
+//
+// The chain is defined recursively, exactly as the mode is: each ciphertext
+// block is the cipher applied to the plaintext block exclusive-ored with the
+// one before it, and the IV stands in for the block before the first.
+cbcenc128Run : {b} (fin b, 64 >= width b) => [34 + 16*b][8] -> [16*b][8]
+cbcenc128Run inb = join (drop`{1} chain)
+  where
+    key   = take`{16} inb
+    iv    = take`{16} (drop`{16} inb)
+    pt    = split`{b} (drop`{34} inb) : [b][16][8]
+    chain = [iv] # [ encrypt128Run (key # [ p ^ c | p <- blk | c <- prv ])
+                   | blk <- pt | prv <- chain ]
+
 // The general multiply, as the field defines it. The brainfuck does peasant
 // multiplication -- eight guarded exclusive ors and seven doublings -- and
 // spec/perm.cry proves that the two are the same map over all 65536 pairs.

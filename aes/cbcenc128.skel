@@ -1,0 +1,394 @@
+; bfsodium CBCENC128 : AES_128 in cipher block chaining mode  encryption only
+; NIST SP 800_38A section 6 point 2
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table block/aes128encrypt block/copy16 and
+; block/copy16back are INCLUDED; idiom/xor8 is PASTED; Like aes/ctr128 this
+; file is the plumbing of a mode and owns no round and no S box;
+;
+; IO  in:  key{16}  iv{16}  len{2} LE  plaintext{len}
+;     out: ciphertext{len}
+;
+; LEN MUST BE A MULTIPLE OF SIXTEEN; cipher block chaining is defined on whole
+; blocks and this file does no padding  because padding is a choice a caller
+; makes and a primitive that made it for them would be the wrong primitive;
+; A length that is not a multiple of sixteen reads sixteen bytes anyway and
+; takes the count below nought  so the caller is the one that must be right;
+; That is stated here rather than enforced: the check costs instructions on
+; every run to catch a caller error that the vectors cannot produce;
+;
+; THE LENGTH PREFIX is how the program knows when to stop; a bfsodium
+; primitive never relies on end of input;
+;
+; ENCRYPTION ONLY  AND THE DECRYPTION IS NOT NEXT DOOR; CBC is the one mode in
+; the roster that needs the INVERSE cipher  and block/aes128decrypt cannot be
+; included twice: it lays the forward table  spends it on the key schedule
+; clears it and writes the inverse one into the same cells  then runs the
+; rounds; There is no prefix of it a caller can run once; Its header says what
+; restructuring decryption will need; This file needs none of that  because
+; CBC ENCRYPTION USES THE FORWARD CIPHER  exactly as counter mode does;
+;
+; WHAT CHAINING COSTS OVER COUNTING  and it is almost nothing: counter mode
+; encrypts a counter it owns  this one encrypts the plaintext exclusive ored
+; with the previous ciphertext; So the per block work is the same cipher and
+; the same restoration  and the only new thing is that the block being fed in
+; comes from the wire rather than from an increment;
+;
+; THE CHAIN IS A CONVEYOR  which is how the exclusive or stays one paste; The
+; chain's head byte is always at @0x3c7: it is lifted out  the other fifteen
+; slide down  and the result of the exclusive or goes in at the tail; Sixteen
+; turns later the chain is back in its original order holding the whole block;
+; The alternative was sixteen pastes of idiom/xor8 at sixteen fixed offsets
+; which is the shape HANDOFF calls indices rather than conveyors;
+;
+; THE TAPE IS LAID OUT EXACTLY AS aes/ctr128 LAYS IT  down to the cell: the
+; key sits 885 above the window and the chain sits 885 above the state; That
+; was a deliberate choice in the first mode and this is the file that collects
+; on it  having cost nothing to make;
+;
+; ONE DISTANCE  TWO ROUTINES  AND THE DIFFERENCE IS NOT SPEED; the key is
+; COPIED with block/copy16 because every block wants it again; the chain is
+; MOVED with block/move16 because it is SPENT the moment it reaches the state;
+; the next chaining value is the ciphertext that comes back; Writing that
+; second one as a copy leaves the chained plaintext standing where the
+; ciphertext is about to be moved in  and a move into an occupied cell ADDS;
+; The first block is still right  because a block is emitted before it is
+; chained  so only a message of TWO BLOCKS OR MORE can show it; The contract
+; below the cipher now says the chain is empty  and that is the line that
+; would have caught it on the first run;
+;
+; THE WINDOW AND THE ROUND CONSTANT ARE PUT BACK at the head of every block
+; for the reason block/aes128encrypt's own contract now states: the schedule
+; spends the window and leaves the constant at 0x6c;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x374  THE CIPHER'S FRAME  exactly as block/aes128encrypt maps it
+;     @0x000:0x00f  window{16}   the key is COPIED in at every block
+;     @0x010:0x01f  ALSO the key copy's staging cells
+;     @0x02d        rcon  CLEARED at every block
+;     @0x052:0x061  state{16}  the chained block in  the ciphertext out
+;     @0x062:0x071  the round key  and NOTHING of this mode's  because the
+;                   chain is moved rather than copied and has no stage
+;     @0x075:0x374  the S box  laid ONCE by block/aes128table
+;   @0x375:0x384  savedkey{16}  the key as it came off the wire  never spent
+;   @0x3c7:0x3d6  chain{16}  the IV  then each ciphertext block in turn
+;   @0x3d8:0x3d9  remaining{2} u16 LE  message bytes still to read
+;   @0x3da        nz     set while remaining is not zero
+;   @0x3db        bcnt   bytes still to take into this block  starts at 16
+;   @0x3dc        e      the else arm of the borrowing decrement
+;   @0x3dd        t      a copy  so a count can be tested without being eaten
+;   @0x3de        u      puts that copy back
+;   @0x3df:0x3ef  idiom/xor8 pasted at 991; result 991  operands 992 and 993
+;
+; THE GAP AT @0x385:0x3c6 IS NOT WASTE  for the reason aes/ctr128 records: it
+; is what puts the chain exactly 885 cells above the state;
+
+; ==== the key  the initialisation vector and the length ====
+; a read prologue may only ever move right  so each operand is read where
+; it lives rather than read low and moved up
+R885
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=900
+R67
+; ASSERT ptr=967
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=982
+; the two byte length prefix
+R2
+  ,>,
+; ASSERT ptr=985
+L985
+; ASSERT ptr=0
+
+; ==== the S box is written into the tape  ONCE ====
+; ASSERT zero 0:884
+%%block/aes128table%%
+; ASSERT ptr=45
+L45
+; ASSERT ptr=0
+
+; ==== is there anything to do ====
+R984
+; ASSERT ptr=984
+; The count is two bytes  so the flag is set if EITHER is not zero; each byte
+; is copied out through a temp and put straight back  so testing does not eat
+; it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back  so the count survives being looked at
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag  where the loop tests it
+L3
+; ASSERT ptr=986
+
+; ==== one turn of this loop is ONE BLOCK ====
+[
+
+; sixteen bytes go into the block  one per turn of the inner loop
+R1
+; ASSERT ptr=987
+  ++++++++++++++++
+
+; ==== one turn of THIS loop is one plaintext byte ====
+[
+  -
+
+; the head of the chain is lifted into the exclusive or's left operand
+L20
+; ASSERT ptr=967
+  [-R25+L25]
+; and the other fifteen slide down  so the next head is again at 967  and
+; the tail is left empty for the answer
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; ASSERT ptr=982
+; the plaintext byte is read straight into the right operand
+R11
+; ASSERT ptr=993
+  ,
+L2
+; ASSERT ptr=991
+; ASSERT zero 994:1007
+@@XOR8@@ 991
+; ASSERT ptr=991
+; and the answer goes in at the tail of the chain
+  [-L9+R9]
+; ASSERT ptr=991
+
+L7
+; ==== one fewer byte to go  borrowing from the high byte when the low runs out
+; ASSERT ptr=984
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L2
+; ASSERT ptr=988
+  [-]
+  +
+R1
+  [[-]L5-R4-R1]
+L1
+; ASSERT ptr=988
+  [-L3-L1-R4]
+L4
+; ASSERT ptr=984
+R3
+; ASSERT ptr=987
+]
+
+; ==== the chained block is encrypted ====
+; the window and the round constant are what a second block has to put back
+L987
+; ASSERT ptr=0
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+; ASSERT ptr=15
+R30
+; ASSERT ptr=45
+  [-]
+L45
+; ASSERT ptr=0
+; ASSERT zero 0:116
+
+; the key is COPIED into the window  because every block wants it again
+R885
+%%block/copy16%% 885
+; ASSERT ptr=900
+L884
+%%block/copy16back%% 16
+; ASSERT ptr=31
+; and the chained block into the state  which is a MOVE and not a copy;
+; the chain is SPENT the moment it reaches the state  because the next
+; chaining value is the ciphertext that is about to come back  and leaving
+; the old one standing means the move below ADDS to it; That was written as
+; a copy first and the two block vector is what found it
+R936
+%%block/move16%% 967
+; ASSERT ptr=982
+; to the round constant  which is where the cipher begins
+L937
+; ASSERT ptr=45
+; ASSERT zero 16:44
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+
+; ==== the ciphertext goes out  and becomes the next chain ====
+; emitting does not spend a cell and the move does  so each byte leaves and
+; then goes up to the chain  which empties the state for the next block
+; THE CHAIN MUST BE EMPTY HERE and the contract below is not decoration: a
+; move into an occupied cell ADDS  so if the chained block were still
+; standing the next chaining value would be the sum of it and the
+; ciphertext; This file did exactly that until the two block vector failed
+; ASSERT zero 967:982
+R82
+; ASSERT ptr=82
+; byte 0 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 1 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 2 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 3 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 4 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 5 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 6 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 7 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 8 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 9 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 10 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 11 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 12 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 13 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 14 goes out and then goes up
+  .
+  [-R885+L885]
+R1
+; byte 15 goes out and then goes up
+  .
+  [-R885+L885]
+; ASSERT ptr=97
+
+; ==== is there anything left to do ====
+R887
+; ASSERT ptr=984
+; The count is two bytes  so the flag is set if EITHER is not zero; each byte
+; is copied out through a temp and put straight back  so testing does not eat
+; it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back  so the count survives being looked at
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag  where the loop tests it
+L3
+; ASSERT ptr=986
+]
+
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED  for the
+; reason CONVENTIONS section 6 gives: a contract attaches to the NEXT
+; instruction and one written after the last can never fire;
+L985
+; ASSERT ptr=1
+; the round constant is NOT claimed clear  because the schedule leaves it
+; at 0x6c; nor the window  which holds the tenth round key; nor the chain
+; which holds the last ciphertext block; nor the saved key  which is kept
+; ASSERT zero 16:44
+; ASSERT zero 46:116
+; ASSERT zero 984:1007
+L1
