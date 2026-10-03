@@ -227,5 +227,12 @@ R10
 ; at a time as the state was turned over  above; What follows is only
 ; the walk home  and a paste of this routine replaces it with the
 ; caller's own
-L1024
-; ASSERT ptr=0
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED; a contract
+; attaches to the NEXT instruction  so one written after the LAST instruction
+; in a program can never fire at all  while reading exactly like the ones that
+; do; Splitting the walk by one cell costs no instructions and buys a real
+; check on every run; CONVENTIONS section 6 carries the rule
+L1023
+; ASSERT ptr=1
+L1
+

@@ -219,7 +219,7 @@ nought and it is verified through whatever includes it.
 | `chacha20/qrloop` | 1178 | 351 | RFC 8439 §2.2.1 |
 | `chacha20/blockloop` | 4231 | 1252 | RFC 8439 §2.3.2 |
 | `chacha20/blockkeep` | 4899 | 341 | RFC 8439 §2.3.2 + its input surviving |
-| `chacha20/stream` | 6180 | 711 | RFC 8439 §2.4.2 + block edges |
+| `chacha20/stream` | 6205 | 732 | RFC 8439 §2.4.2 + block edges |
 | `poly1305/add136` | 2563 | 542 | boundary vectors + Cryptol |
 | `poly1305/halve136` | 470 | 539 | boundary vectors + Cryptol |
 | `poly1305/fold136` | 962 | 588 | boundary vectors + Cryptol |
@@ -259,7 +259,7 @@ nought and it is verified through whatever includes it.
 | `aes/subbytes` | 636 | 100 | FIPS 197 Appendix B rounds 1 5 and 9 + both ends of the table  255 included |
 | `aes/xorword` | 330 | 72 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
-| `aes/keyexpand128` | 2362 | 306 | the FIPS 197 Appendix A schedule + three more keys |
+| `aes/keyexpand128` | 2371 | 313 | the FIPS 197 Appendix A schedule + three more keys |
 | `aes/ctr128` | 19828 | 738 | SP 800-38A F.5.1, all four published blocks and block one alone, so the pair separates a wrong cipher from a wrong per block restoration; one byte into the second block, which is the cheapest input that carries the counter; and the zero key, whose first sixteen bytes are `encrypt128`'s own pinned value checked four lines above by a different program |
 | `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
@@ -272,12 +272,12 @@ nought and it is verified through whatever includes it.
 | `keccak/rightenc` | 238 | 141 | the same for right_encode |
 | `keccak/bytepad136` | 3903 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
 | `keccak/bytepad168` | 3952 | 251 | the same at SHAKE128's rate, including its own exactly-full limit and the one-string form |
-| `keccak/cshake256` | 170323 | 170 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
-| `keccak/cshake128` | 184509 | 170 | the same at SHAKE128's rate, with NIST sample 1 |
-| `keccak/kmac128` | 208308 | 218 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
-| `keccak/kmac256` | 190918 | 218 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
-| `keccak/tuplehash128` | 232055 | 748 | SP 800-185 §5 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
-| `keccak/tuplehash256` | 215102 | 748 | the same at SHAKE256's rate: NIST samples 4, 5 and 6, and the XOF flag |
+| `keccak/cshake256` | 170333 | 178 | SP 800-185 §3: NIST samples 3 and 4, the empty/empty branch that IS SHAKE, and a non-empty name |
+| `keccak/cshake128` | 184519 | 178 | the same at SHAKE128's rate, with NIST sample 1 |
+| `keccak/kmac128` | 208318 | 226 | SP 800-185 §4 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/kmac256` | 190928 | 226 | the same at SHAKE256's rate: NIST samples 5 and 6, a DERIVED sample 4, and the XOF flag |
+| `keccak/tuplehash128` | 232065 | 756 | SP 800-185 §5 at SHAKE128's rate: NIST samples 1, 2 and 3, and the XOF flag |
+| `keccak/tuplehash256` | 215112 | 756 | the same at SHAKE256's rate: NIST samples 4, 5 and 6, and the XOF flag |
 | `keccak/theta` | 18894 | 878 | the two eye-checkable states  both corner bits  a ladder and a random state + Cryptol |
 | `keccak/rhopi` | 9741 | 334 | the same six states + Cryptol |
 | `keccak/rhopichi` | 32164 | 1026 | rho and pi PASTED  the same six states + Cryptol  all ones is the one chi cannot fake |
@@ -285,15 +285,15 @@ nought and it is verified through whatever includes it.
 | `keccak/rotstate` | 98 | 56 | all zero  a ladder and a random state whose bottom byte travels + Cryptol |
 | `keccak/absorb136` | 68616 | 284 | the published all-zero permutation, and a ladder state with every lane taking a block |
 | `keccak/absorb168` | 72827 | 336 | the same two at SHAKE128's rate: twenty-one lanes, not seventeen |
-| `keccak/parallelhash128` | 276132 | 773 | SP 800-185 §6 at SHAKE128's rate: NIST sample 1, a short last chunk, and the XOF flag |
-| `keccak/parallelhash256` | 264529 | 773 | the same at SHAKE256's rate: NIST samples 4 and 5, a short last chunk, and a chunk bigger than a rate |
-| `keccak/squeeze136` | 52357 | 231 | inside the first rate, and one byte past it, which is the only path that stirs |
-| `keccak/squeeze168` | 52363 | 231 | the same two at SHAKE128's rate |
-| `keccak/sponge136` | 141609 | 497 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
-| `keccak/sha3_256` | 141636 | 59 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
-| `keccak/shake256` | 141638 | 57 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
-| `keccak/sponge168` | 151190 | 504 | one inside the first rate and one past it + Cryptol |
-| `keccak/shake128` | 151213 | 59 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/parallelhash128` | 276143 | 781 | SP 800-185 §6 at SHAKE128's rate: NIST sample 1, a short last chunk, and the XOF flag |
+| `keccak/parallelhash256` | 264540 | 781 | the same at SHAKE256's rate: NIST samples 4 and 5, a short last chunk, and a chunk bigger than a rate |
+| `keccak/squeeze136` | 52366 | 238 | inside the first rate, and one byte past it, which is the only path that stirs |
+| `keccak/squeeze168` | 52372 | 238 | the same two at SHAKE128's rate |
+| `keccak/sponge136` | 141619 | 504 | the same .bf handed a 6 and a 31  and one squeeze past a rate + Cryptol |
+| `keccak/sha3_256` | 141646 | 67 | sponge136 PASTED with a 6; FIPS 202's abc + nothing + both padding boundaries + Cryptol |
+| `keccak/shake256` | 141648 | 65 | sponge136 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
+| `keccak/sponge168` | 151200 | 511 | one inside the first rate and one past it + Cryptol |
+| `keccak/shake128` | 151223 | 67 | sponge168 PASTED with a 31; both sides of the rate and two blocks in one rate out + Cryptol |
 | `keccak/sha3_224` | 66915 | 523 | rate 144 with the constants written in; nothing  abc and both padding boundaries + Cryptol |
 | `keccak/sha3_384` | 62625 | 458 | rate 104  the same four + Cryptol |
 | `keccak/sha3_512` | 59322 | 406 | rate 72  the same four + Cryptol |
@@ -3165,11 +3165,78 @@ because a message ending mid-block leaves the rest of that keystream counted
 and unused, which is the whole reason the tail needs no special case. That is
 the claim `chacha20/stream` got wrong by sweeping.
 
-The checker and the seventeen fixes are their own unit, not this one. Writing the
-rule into CONVENTIONS without the checker would be the exact failure shape this
-project keeps finding: a documented rule nothing enforces.
+**Done, in the unit after this one.** `tools/bfdag.pl` rejects them, with five
+self-tests covering both polarities and the three things an instruction can be
+in a skeleton — a command byte, an `Rn`/`Ln` walk, and a paste or include line.
+Missing those last two would have made the check pass every keccak program by
+accident, which is why they are tested separately. All twenty-two claims are
+live, in one of two shapes:
+
+- **the final walk split** where the file owns it — `L338` to `L337`,
+  contracts, `L1`, which adds no instructions at all, in `aes/keyexpand128`,
+  `chacha20/stream` and the two `squeeze` routines;
+- **a pair that cancels** where the last instruction belongs to a paste and
+  cannot be split from outside — contracts, then `>` then `<`, two
+  instructions against hundreds of millions, in the thirteen keccak programs
+  whose last act is `@@SPONGE@@` or `@@SQUEEZE@@`.
+
+**Twenty-one of the twenty-two were true all along.** `aes/keyexpand128`'s
+`zero 0:24` and `zero 41:44` were checked against four keys including all-ones
+before being made live, and hold; the `ptr=0` after a paste holds because the
+wrapper walks out `exit=` cells — and making it live means **something now
+checks that a routine's declared `exit=` matches where its body actually
+leaves the pointer**, which nothing did before. `bffoot` bounds the footprint;
+it has no opinion on the exit offset.
+
+**The twenty-second was `chacha20/stream`, and it was false in two of its own
+three vectors.** Measured at exit: the remainder of the last keystream block
+stands in `@0x000:0x03f` whenever the message did not end on a block boundary;
+the saved key, counter and nonce stand in `@0x120:0x14f` because they are
+copied rather than moved; and `j` at `@0x153` holds the count of keystream
+left. The replacement names all three as deliberately not clear and claims the
+rest — `zero 64:287`, `zero 336:338`, `zero 340:397` — which is longer than
+`zero 0:397` and is a fact.
+
+One of the twenty-two was stated **twice** — `sponge136` and `sponge168` each
+carried it either side of their `; emit` line — and removing the duplicate
+turned out to be a change to seven downstream artifacts, because the copy
+above `; emit` sits inside the body a paste copies. That is in the traps list,
+along with why one rebuild pass could not see it.
+
+The shape of the original mistake is worth keeping: **a sweeping claim over a
+whole frame was easier to write than the truth, and because it was never
+checked, nobody found out.** A contract that cannot fail is the thing tier 0
+exists to forbid, and twenty-two of them had accumulated in the one place no
+checker was looking.
 
 ## Traps that have actually bitten
+
+- **A DEDUP INSIDE A PASTED BODY IS A CHANGE TO EVERY CALLER, AND ONE REBUILD
+  PASS WILL NOT FIND IT.** `keccak/sponge136` and `sponge168` each stated the
+  same dead contract twice, once either side of their `; emit` line. Removing
+  the duplicate looked like tidying one file. It was not: a paste takes the
+  callee's body *up to* `; emit`, so the copy **above** that line lives inside
+  the pasted body, and deleting it changed seven downstream artifacts —
+  `cshake128`, `cshake256`, `kmac128`, `kmac256`, `sha3_256`, `shake128`,
+  `shake256`.
+
+  The part worth keeping is why it was not caught locally. `tools/rebuild.sh`
+  iterates to a **fixpoint** precisely because a paste reads the callee's
+  committed `.bf`, and the files are walked in directory order: `cshake128`
+  comes before `sponge168`, so pass one gave it the *old* sponge. Pass two is
+  what fixes that, and pass two was skipped on the argument that the gate's
+  tier 9c asserts the same property. **It does — and that is exactly how this
+  was found, as seven `FAIL regenerates` lines.** The argument was right about
+  what tier 9c checks and wrong about what to do with it: the gate is a place
+  to confirm the fixpoint, not a place to go looking for it, and the hour the
+  skipped pass saved was spent twice over on a gate run that failed.
+
+  The instruction counts had already been checked and were exactly right — the
+  four splits added nothing and the thirteen pairs added two each, including
+  `sha3_256` adding two rather than four, which *proved* the strip was working.
+  A correct measurement of the thing that did not change says nothing about the
+  thing that did; the change here was one comment line, in the one region a
+  paste copies.
 
 - **A `--fix` THAT REWRITES THE DOCUMENT IT CHECKS, AND HAD NO SELF-TEST.**
   `tools/bftier.pl --fix` sets a flag when it finds the tier table's separator

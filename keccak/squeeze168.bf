@@ -52340,7 +52340,14 @@
 ; emit  there is nothing left to emit: the answer went out one byte
                                                                ; at a time as the state was turned over  above; What
                                                                ; follows is only the walk home  and a paste of this
-                                                               ; routine replaces it with the caller's own
+                                                               ; routine replaces it with the caller's own THE FINAL
+                                                               ; WALK IS SPLIT so that the exit contract is CHECKED; a
+                                                               ; contract attaches to the NEXT instruction  so one
+                                                               ; written after the LAST instruction in a program can
+                                                               ; never fire at all  while reading exactly like the
+                                                               ; ones that do; Splitting the walk by one cell costs no
+                                                               ; instructions and buys a real check on every run;
+                                                               ; CONVENTIONS section 6 carries the rule
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -52359,5 +52366,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<                                                   ; continued
-                                                               ; ASSERT ptr=0
+  <<<<<<<<<                                                    ; continued
+                                                               ; ASSERT ptr=1
+<
+

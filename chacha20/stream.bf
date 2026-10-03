@@ -6170,11 +6170,36 @@
 <<<                                                            ; to the flag  where the loop tests it
                                                                ; ASSERT ptr=338
 ]
+                                                               ; THE FINAL WALK IS SPLIT so that the exit contract is
+                                                               ; CHECKED; a contract attaches to the NEXT instruction
+                                                               ; so one written after the LAST instruction in a
+                                                               ; program can never fire at all  while reading exactly
+                                                               ; like the ones that do; Splitting the walk by one cell
+                                                               ; costs no instructions and buys a real check on every
+                                                               ; run; CONVENTIONS section 6 carries the rule
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<               ; continued
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 0:397
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                ; continued
+                                                               ; ASSERT ptr=1
+                                                               ; WHAT IS NOT CLAIMED  and why; this file used to say
+                                                               ; zero 0:397 here and that was FALSE in two of its own
+                                                               ; three vectors  which nothing noticed because the
+                                                               ; claim sat after the last instruction and was never
+                                                               ; checked; Measured at exit on all three:
+;   @0x000:0x03f  the REST OF THE KEYSTREAM  empty only when the message
+                                                               ; was a whole number of blocks; a tail is abandoned
+                                                               ; which                 is the whole reason no special
+                                                               ; case is needed
+;   @0x120:0x14f  the saved key  counter and nonce  COPIED and not moved
+                                                               ; because every block wants them again
+;   @0x153        j  the keystream bytes left in the block  nonzero for
+                                                               ; exactly the same tail Everything else IS claimed  and
+                                                               ; now checked:
+                                                               ; ASSERT zero 64:287
+                                                               ; ASSERT zero 336:338
+                                                               ; ASSERT zero 340:397
+<
+

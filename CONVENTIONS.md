@@ -165,6 +165,40 @@ Use them liberally, and especially `ASSERT zero` on a frame at entry and exit �
 that is what makes a routine safe to paste inside a loop. §8 tier 5 is the
 mechanism; this is the advice.
 
+**A contract attaches to the NEXT instruction, so one written after the last
+instruction in a program is not a contract at all.** It is never checked, once,
+by anything — while reading exactly like the ones that are. Seventeen programs
+carried twenty-two of these, which is nearly every exit claim in the library,
+and one of them was false as well as dead: `chacha20/stream` claimed
+`zero 0:397` at exit when a message ending partway through a block leaves the
+rest of that keystream standing. `tools/bfdag.pl` now rejects them.
+
+There are two ways to state an exit claim so that it holds, and which one is
+available depends on who owns the last instruction:
+
+- **Split the final walk** when the file owns it: `L338` becomes `L337`, the
+  contracts, `L1`. This adds **no instructions** — the two walks sum to the
+  one — and the claim attaches to an instruction the file wrote. Prefer it.
+- **Append a pair that cancels** when the last instruction belongs to a paste,
+  which cannot be split from outside: the contracts, then `>` then `<`. Two
+  instructions, against the hundreds of millions these programs run.
+
+A `block/` skeleton is **exempt, and this is not a loophole**: its text is
+substituted into a caller, so a trailing contract there attaches to whatever
+instruction follows the include site. That is exactly how
+`block/aes128table`'s closing `; ASSERT ptr=+45` fires, on the first
+instruction of `block/aes128encrypt`. A **routine** is not exempt: a paste
+stops at `; emit` and drops the tail, and the routine's own `.bf` is run by
+the suite in its own right, which is the run where the claim would be dead.
+
+**State what is true, not what sounds tidy.** A sweeping `zero` over a whole
+frame is the shape that went wrong: it was never checked, so nobody found out,
+and it was easier to write than the truth. The replacement in
+`chacha20/stream` names the three regions that are *deliberately* not clear at
+exit — the abandoned remainder of the last keystream block, the saved key and
+nonce that are copied rather than moved, and the count of keystream left — and
+claims the rest. That is longer and it is a fact.
+
 ---
 
 ## 5. Idiom vocabulary

@@ -151183,8 +151183,18 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<                                                 ; continued
-                                                               ; ASSERT ptr=0
 
 ; emit  every byte of the answer went out inside the squeeze above  so
                                                                ; there is nothing here but the paste's own walk home
+                                                               ; THE PAIR BELOW CARRIES THE EXIT CONTRACT  and does
+                                                               ; nothing else; A contract attaches to the NEXT
+                                                               ; instruction and the last instruction here belongs to
+                                                               ; the paste above  so there was nothing for this claim
+                                                               ; to attach to and it was never checked once; Two moves
+                                                               ; that cancel cost two instructions and make it real;
+                                                               ; The walk cannot be split the way a program's own walk
+                                                               ; can  because it is the paste wrapper's and not this
+                                                               ; file's; CONVENTIONS section 6
                                                                ; ASSERT ptr=0
+  >
+  <

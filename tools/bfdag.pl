@@ -127,6 +127,54 @@ sub check {
         close $fh;
     }
 
+    # A CONTRACT AFTER THE LAST INSTRUCTION IS NOT A CONTRACT. "; ASSERT"
+    # attaches to the NEXT instruction; tools/bfi and the scratchpad
+    # interpreter both check it wherever execution reaches that instruction.
+    # Written after the last instruction in a file there is nothing for it to
+    # attach to, so it is never checked once -- while reading exactly like the
+    # ones that are. Seventeen programs carried twenty-two of them, and at
+    # least one was FALSE as well as dead: chacha20/stream claimed
+    # "zero 0:397" at exit, but a message ending partway through a block
+    # leaves the rest of that keystream sitting in cells 0 to 63.
+    #
+    # A block/ SKELETON IS EXEMPT, and this is not a loophole. Its text is
+    # substituted into a caller, so a trailing contract there attaches to
+    # whatever instruction follows the include site -- which is exactly how
+    # block/aes128table's trailing "; ASSERT ptr=+45" fires, on the first
+    # instruction of block/aes128encrypt. The seam between two blocks is
+    # asserted by both parties and that is worth keeping.
+    #
+    # A ROUTINE IS NOT EXEMPT even though it is pasted, because a paste stops
+    # at "; emit" and drops the tail, and because the routine's own .bf is run
+    # by the suite in its own right -- which is the run where the claim is
+    # dead.
+    for my $f (@files) {
+        next if $f =~ m{/block/};
+        open my $fh, '<', $f or next;
+        my @ls = <$fh>;
+        close $fh;
+        my $last = -1;
+        for my $i (0 .. $#ls) {
+            my $l = $ls[$i];
+            $l =~ s/;.*//;
+            # An instruction in a SKELETON is a command byte, an Rn/Ln walk,
+            # a paste or an include. Missing the last three would have made
+            # this check pass every keccak program by accident.
+            $last = $i if $l =~ /[><+\-.,\[\]]/
+                       || $l =~ /\b[RL]\d+/
+                       || $l =~ /\@\@\w+\@\@/
+                       || $l =~ m{%%[\w/]+%%};
+        }
+        for my $i ($last + 1 .. $#ls) {
+            next unless $ls[$i] =~ /^\s*; ASSERT /;
+            chomp(my $line = $ls[$i]);
+            $line =~ s/^\s+//;
+            push @bad, sprintf(
+                "%s:%d: a contract after the last instruction can never fire: %s",
+                substr($f, length($root) + 1), $i + 1, $line);
+        }
+    }
+
     push @bad, "include cycle: $_" for @cycles;
     push @bad, sprintf("%s is a block nothing includes", substr($_, length($root) + 1))
         for sort @orphans;
@@ -199,9 +247,31 @@ sub selftest {
         $case->("an absolute zero range in a block is caught too",
                 { "block/leaf.skel" => "; leaf\n; ASSERT zero 5:9\n  [-]\n",
                   "top.skel"        => "%%block/leaf%%\n" }, 1);
+        # The fixture carries an instruction AFTER the contract on purpose.
+        # It did not, and when the placement check arrived this case started
+        # failing for a reason it was never about: a contract at the very end
+        # of a program is dead whether it is absolute or relative, and this
+        # one is about absoluteness alone. A fixture that exercises two rules
+        # cannot say which of them it is testing.
         $case->("a contract OUTSIDE a block may be absolute",
                 { "block/leaf.skel" => "; leaf\n  [-]\n",
-                  "top.skel"        => "%%block/leaf%%\n; ASSERT ptr=4\n" }, 0);
+                  "top.skel"        => "%%block/leaf%%\n; ASSERT ptr=4\n  [-]\n" }, 0);
+
+        $case->("a contract AFTER the last instruction in a program is caught",
+                { "block/leaf.skel" => "; leaf\n  [-]\n",
+                  "top.skel"        => "%%block/leaf%%\n  [-]\n; ASSERT ptr=0\n" }, 1);
+        $case->("the same contract BEFORE the last instruction is fine",
+                { "block/leaf.skel" => "; leaf\n  [-]\n",
+                  "top.skel"        => "%%block/leaf%%\n; ASSERT ptr=0\n  [-]\n" }, 0);
+        $case->("a trailing contract in a BLOCK is fine; it attaches to the caller",
+                { "block/leaf.skel" => "; leaf\n  [-]\n; ASSERT ptr=+1\n",
+                  "top.skel"        => "%%block/leaf%%\n  [-]\n" }, 0);
+        $case->("an Rn walk counts as an instruction  so a contract after it is caught",
+                { "block/leaf.skel" => "; leaf\n  [-]\n",
+                  "top.skel"        => "%%block/leaf%%\nR5\n; ASSERT ptr=5\n" }, 1);
+        $case->("an include counts as an instruction  so a contract after it is caught",
+                { "block/leaf.skel" => "; leaf\n  [-]\n",
+                  "top.skel"        => "; top\n%%block/leaf%%\n; ASSERT ptr=0\n" }, 1);
 
         print $fails ? "bfdag: $fails selftest(s) failed\n"
                  : "bfdag: selftests pass\n";

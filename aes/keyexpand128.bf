@@ -2339,6 +2339,13 @@
   >>>>>>                                                       ; continued
   ]
                                                                ; ASSERT ptr=818
+                                                               ; THE FINAL WALK IS SPLIT so that the exit contract is
+                                                               ; CHECKED; a contract attaches to the NEXT instruction
+                                                               ; so one written after the LAST instruction in a
+                                                               ; program can never fire at all  while reading exactly
+                                                               ; like the ones that do; Splitting the walk by one cell
+                                                               ; costs no instructions and buys a real check on every
+                                                               ; run; CONVENTIONS section 6 carries the rule
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -2353,10 +2360,12 @@
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<                                                       ; continued
-                                                               ; ASSERT ptr=0
+  <<<<<                                                        ; continued
+                                                               ; ASSERT ptr=1
                                                                ; ASSERT zero 0:24
                                                                ; ASSERT zero 41:44
+  <
 
 ; emit
                                                                ; every byte went out as it was computed  above
+
