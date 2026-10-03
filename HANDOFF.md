@@ -265,6 +265,7 @@ nought and it is verified through whatever includes it.
 | `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2371 | 313 | the FIPS 197 Appendix A schedule + three more keys |
 | `aes/cbcenc128` | 19326 | 394 | SP 800-38A F.2.1, all four published blocks and block one alone  as a PAIR: the first alone cannot see a broken chain because a block is emitted before it is chained  and that pair is what caught the copy that should have been a move; 272 bytes for the length's borrow; and the zero key and zero IV  where the chained block IS the plaintext  so one zero block is `encrypt128`'s own pinned value |
+| `aes/cmac128` | 41966 | 786 | RFC 4493's four published examples, which cover the padding branch both ways and at one block and at several: empty and 40 bytes take K2, 16 and 64 take K1, and the pairs separate a wrong tweak from a wrong chain; plus 273 bytes, which is past the length's borrow AND needs padding, DERIVED |
 | `aes/cmacsubkeys` | 22760 | 105 | RFC 4493 section 4's PUBLISHED K1 and K2, and the zero key as a second independent pair; it exists so that a wrong CMAC tag can be told apart from a wrong subkey, which sixteen opaque bytes cannot do |
 | `aes/ctr128` | 19828 | 738 | SP 800-38A F.5.1, all four published blocks and block one alone, so the pair separates a wrong cipher from a wrong per block restoration; one byte into the second block, which is the cheapest input that carries the counter; and the zero key, whose first sixteen bytes are `encrypt128`'s own pinned value checked four lines above by a different program |
 | `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
@@ -346,8 +347,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 580 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 580 | golden vectors, dual oracle |
+| 2 | yes | 585 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 585 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 2 | metamorphic |
@@ -1608,7 +1609,7 @@ mechanical change stays reviewable:
 | held out | why it was tempting, and why not now |
 |---|---|
 | **AES-192 and AES-256** | Nk of 6 and 8, twelve and fourteen rounds, over shapes that already exist. Blocked by nothing. The rebuild would have had to get the looping right for three key sizes at once instead of one. |
-| **Modes** — ~~CTR~~, ~~CBC encryption~~, CBC decryption, GCM, GMAC, CMAC, CTR_DRBG | **CTR and CBC encryption are built**; see "The first mode" and "The second mode" below. The four remaining forward-cipher modes are plumbing of the same shape. CBC DECRYPTION is the only one that is not: it is the sole consumer of `block/aes128decrypt`, which cannot be included twice, and its header says what restructuring that takes. |
+| **Modes** — ~~CTR~~, ~~CBC encryption~~, ~~CMAC~~, CBC decryption, GCM, GMAC, CTR_DRBG | **CTR, CBC encryption and CMAC are built**; see "The first mode", "The second mode" and "The third mode" below. The four remaining forward-cipher modes are plumbing of the same shape. CBC DECRYPTION is the only one that is not: it is the sole consumer of `block/aes128decrypt`, which cannot be included twice, and its header says what restructuring that takes. |
 | **Unifying `xor32`/`xor64` onto `block/xor8kernel`** | The kernel is duplicated in three files down to the character, which HANDOFF already records as deferred — and `block/xor8kernel` finally makes it cheap. But those two are not AES, and the rebuild's invariant is identical instruction bytes; changing files outside the scope would weaken it. |
 | **Migrating the rest of the library to `%%include%%`** | Agreed to happen, in its own commits. The older `@@NAME@@ base` form keeps working meanwhile; the two coexist by design. |
 | **The deferred cleanup batch above** | Unchanged and still owed: tier 6, the BoneMesh lane, the pin bump, `bfj.c`, the documentation contradictions. |
@@ -3366,7 +3367,114 @@ wrong would silently lengthen every walk in an offset block.
 `bftier.pl --fix` was caught with two commits ago: arithmetic that rewrites a
 tracked artifact, unexercised. It has ten now, both polarities.
 
+## The third mode, and an include that lost a per cent sign
+
+`aes/cmac128` is the first mode here whose message length may be **anything**,
+including nought. Counter mode takes any length because a keystream does not
+care; cipher block chaining takes only whole blocks because it has no padding;
+this one takes any length because SP 800-38B gives it a padding rule and *two*
+subkeys to tell the padded case from the exact one.
+
+### CMAC is cipher block chaining with a tweak on the last block
+
+That is the whole of it. `X` starts at nought rather than at an IV, each block
+is exclusive-ored into `X` and enciphered, and the last block takes one further
+exclusive or — with K1 if the message filled it exactly, with K2 if it had to
+be padded. Those two were derived and **pinned against RFC 4493's published
+values one commit earlier**, which is why they could be used here without being
+the suspect when something went wrong.
+
+Three decisions made the loop body have no branch in it:
+
+- **The tweak is applied on every block**, and is nought on every block but the
+  last. Exclusive or with nought is the identity, so the pass costs about
+  sixteen runs of `idiom/xor8` against the hundred and fourteen million a block
+  already costs. Same argument `aes/xtime` makes about its own reduction.
+- **The last block is known by the count, not by looking ahead.** After a block
+  has been filled, `remaining` is nought exactly when that block was the last —
+  whether it was filled from the wire or finished with padding. So `last` is
+  simply "remaining is nought", and padding only decides *which* subkey.
+- **The padding is written as it is needed**, one byte at a time inside the same
+  loop that reads. A turn either takes a byte from the wire, or writes the
+  `0x80` that opens the padding, or writes nothing — decided by two flags
+  rather than by three pieces of code.
+
+The conveyor now carries **both** operands: the chain's head and the tweak's
+head are each lifted out, each slides down, and the answer goes in at the
+chain's tail. Sixteen turns later the chain is back in order and *the tweak is
+empty again*, which is what lets the next block start from a clear tweak
+without clearing it.
+
+### Three bugs caught by reading, and one by running
+
+Three were found before the file was ever expanded, by re-reading the
+generator:
+
+- **`nz` can be TWO.** The "is the count nonzero" idiom increments a flag once
+  per nonzero *byte*, so for a length like `0x0101` it holds 2. Every previous
+  use was a loop condition, where any nonzero does. This file used it as a
+  guard — `nz[- read a byte ]` — which would have read **two** bytes on those
+  lengths and one on the rest. The guard now clears `nz` inside the loop
+  instead of decrementing it, so the body runs exactly once whatever `nz`
+  holds. No published vector of any mode here is long enough to show it.
+- **Both inner loops decremented their counter twice**, at the top and again at
+  the bottom, so each would have run eight turns instead of sixteen.
+- **`padded` survives to the end** on a padded message, so the exit contract
+  cannot claim it clear. It is the one cell in that range left unclaimed.
+
+### The fourth: an include that lost a per cent sign
+
+The skeleton is written out by a script, and one line of that script read
+`"%%block/copy16%% %d" % KEY`. Python's `%` formatting treats `%%` as an
+escape for a single `%`, so what landed in the skeleton was
+`%block/copy16% 885`.
+
+**Nothing in the suite could see it.** `bfexpand` left it alone as prose;
+`bfdag` saw no include to resolve and no orphan to report, because
+`block/copy16` is included by other files; `bflint` and `bfstyle` have no
+opinion on a per cent sign. The program simply stopped copying the key into
+the window, and the only thing that noticed was a **pointer contract fifteen
+cells later** — `expected 900, got 885` — which is the whole argument for
+writing those contracts at every seam.
+
+`tools/bfinclude.pl` now rejects a line of the shape `%name%` with one sign on
+each side. Nothing in this project writes that, so there are no false
+positives, and the eight self-tests pin both polarities including a comment
+that happens to contain a per cent sign.
+
+All five vectors were run under the scratchpad interpreter with contracts
+**live** before any was wired into the suite: 242,638,713 steps for the empty
+message, 628,583,499 for the four published blocks, and 2,400,414,564 for the
+273-byte line, every assertion holding.
+
+The general lesson is about **generated text that contains the generator's own
+metacharacters**. The skeletons here are written by scripts in a scratchpad —
+which is allowed, because every number still ends up literal in the committed
+file — but `%%`, `{}` and backslashes are exactly the characters a formatter
+eats, and brainfuck skeletons are made of little else.
+
 ## Traps that have actually bitten
+
+- **A FLAG THAT COUNTS INSTEAD OF SIGNALLING.** The "is this two-byte count
+  nonzero" idiom raises its flag once per nonzero byte, so it holds **2** when
+  both bytes are set. Every use of it was a loop condition, where any nonzero
+  value behaves the same, until one was used as a guard — `flag[- body ]` runs
+  the body *twice* at 2. The shape to watch for: an idiom whose contract is
+  "nonzero means yes" being reused where the magnitude matters. The fix is to
+  clear the flag inside the guard rather than decrement it, which makes the
+  body run exactly once whatever the flag holds.
+
+- **A GENERATED SKELETON CONTAINING THE GENERATOR'S METACHARACTERS.** A line
+  written as `"%%block/copy16%% %d" % KEY` in Python arrives as
+  `%block/copy16% 885`, because `%%` is that formatter's escape for one `%`.
+  The include silently became prose: `bfexpand` ignored it, `bfdag` saw
+  nothing missing because the block has other includers, and the lints have no
+  opinion on a per cent sign. The key was never copied into the window and the
+  only thing that complained was a pointer contract fifteen cells downstream.
+  `bfinclude` now rejects `%name%` outright. **Skeletons are made of `%%`,
+  `[]` and backslashes, which is most of what a formatter eats** — the safe
+  form is concatenation, and the cheap check is to grep the generated file for
+  the construct you meant to emit.
 
 - **AN OFFSET THAT SHIFTS SOME CELL NUMBERS AND NOT OTHERS.** `%%block/x%% N`
   rebased the block's relative contracts and left its `@@PASTE@@ base` lines

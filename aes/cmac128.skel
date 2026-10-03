@@ -1,0 +1,786 @@
+; bfsodium CMAC128 : AES_128 CMAC  NIST SP 800_38B  RFC 4493
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table block/aes128encrypt block/copy16
+; block/copy16back block/move16 block/moveup16 and block/shl128 are INCLUDED;
+; idiom/xor8 is PASTED ONCE;
+;
+; IO  in:  key{16}  len{2} LE  message{len}
+;     out: tag{16}
+;
+; THE LENGTH MAY BE ANYTHING  including nought  which is the first mode here
+; that can say so; counter mode takes any length because a keystream does not
+; care  cipher block chaining takes only whole blocks because it has no
+; padding  and this one takes any length because SP 800_38B gives it a
+; padding rule and TWO subkeys to tell the padded case from the exact one;
+;
+; CMAC IS CIPHER BLOCK CHAINING WITH A TWEAK ON THE LAST BLOCK; that is the
+; whole of it; X starts at nought rather than at an IV  each block is
+; exclusive ored into X and enciphered  and the LAST block takes one further
+; exclusive or: with K1 if the message filled it exactly  and with K2 if it
+; had to be padded; aes/cmacsubkeys derives and PINS those two against
+; RFC 4493's published values  which is why they are not derived blind here;
+;
+; THE TWEAK IS APPLIED ON EVERY BLOCK  and is NOUGHT on every block but the
+; last; Exclusive or with nought is the identity  so the pass costs about
+; sixteen runs of idiom/xor8 against the hundred and fourteen million a block
+; already costs  and it buys a loop body with no branch in it; That is the
+; same argument aes/xtime makes about its own reduction;
+;
+; THE LAST BLOCK IS KNOWN BY THE COUNT AND NOT BY LOOKING AHEAD; after a
+; block has been filled  remaining is nought exactly when that block was the
+; last  whether it was filled from the wire or finished with padding; So
+; `last` is simply "remaining is nought"  and the only thing padding changes
+; is WHICH subkey the tweak comes from;
+;
+; THE PADDING IS WRITTEN AS IT IS NEEDED  one byte at a time inside the same
+; loop that reads: a turn either takes a byte from the wire or writes the
+; 0x80 that opens the padding or writes nothing at all  and which of the
+; three is decided by two flags rather than by three pieces of code;
+;
+; THE CONVEYOR CARRIES BOTH OPERANDS; the chain's head is always at @0x3c7
+; and the tweak's at @0x3a5  each is lifted out  each slides down  and the
+; answer goes in at the chain's tail; Sixteen turns later the chain is back
+; in order and THE TWEAK IS EMPTY AGAIN  which is what lets the next block
+; start from a clear tweak without clearing it;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x374  the cipher's frame  exactly as block/aes128encrypt maps it
+;   @0x375:0x384  savedkey{16}  the key as it came off the wire  never spent
+;   @0x385:0x394  K1{16}  the subkey for a message that filled its last block
+;   @0x395:0x3a4  K2{16}  the subkey for a message that had to be padded
+;   @0x3a5:0x3b4  T{16}   the tweak  NOUGHT except on the last block
+;   @0x3c7:0x3d6  X{16}   the chain  and the tag at the end
+;   @0x3c7:0x40b  ALSO the block/shl128 frame  during the setup only  which
+;                 is why the control cells below start above it
+;   @0x40c:0x40d  remaining{2} u16 LE
+;   @0x40e        nz      remaining is not nought
+;   @0x40f        more    the outer loop runs while this is set
+;   @0x410        e       the else arm of the borrowing decrement
+;   @0x411:0x412  t u     a copy and its hand back
+;   @0x413        padded  set once the 0x80 has been written
+;   @0x414        b       the byte this turn folds into the chain
+;   @0x415        j       bytes still to fold into this block
+;   @0x416        np      the message has NOT been padded yet
+;   @0x417        nzn     remaining IS nought
+;   @0x418        last    this block is the final one
+;   @0x419        lf      the last block was filled exactly  so the tweak is K1
+;   @0x41a:0x42a  idiom/xor8 pasted at 1050; result 1050  operands 1051 1052
+
+; ==== the key and the length ====
+R885
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=900
+; the length prefix lives above the setup's scratch
+R136
+  ,>,
+; ASSERT ptr=1037
+L1037
+; ASSERT ptr=0
+
+; ==== the S box is written into the tape  ONCE ====
+; ASSERT zero 0:884
+%%block/aes128table%%
+; ASSERT ptr=45
+L45
+; ASSERT ptr=0
+
+; ==== L is the cipher on the zero block  and the two subkeys follow ====
+; the state is still clear  which IS the zero block that SP 800_38B wants
+R885
+%%block/copy16%% 885
+; ASSERT ptr=900
+L884
+%%block/copy16back%% 16
+; ASSERT ptr=31
+; to the round constant  which is where the cipher begins
+R14
+; ASSERT zero 16:44
+; ASSERT zero 46:116
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+; L goes up to the doubling frame
+R82
+; ASSERT zero 967:1035
+%%block/moveup16%% 82
+; ASSERT ptr=97
+R870
+; ASSERT ptr=967
+%%block/shl128%% 967
+; ASSERT ptr=967
+
+; ==== K1 is kept and doubled again for K2 ====
+; K1 is COPIED  because the second doubling needs it where it stands
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+; the next byte
+R1
+  [-L66+R32+R34]
+L34
+  [-R34+L34]
+R34
+L15
+; ASSERT ptr=967
+%%block/shl128%% 967
+; ASSERT ptr=967
+; and K2 is MOVED out  which leaves the chain clear  as CMAC wants
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+; the next byte
+R1
+  [-L50+R50]
+L982
+; ASSERT zero 967:1035
+
+; ==== the outer loop runs once per block ====
+R1039
+  +
+; ASSERT ptr=1039
+[
+
+; sixteen bytes go into this block  one per turn of the inner loop
+R6
+  ++++++++++++++++
+; ASSERT ptr=1045
+
+; ==== one turn of THIS loop is one byte folded into the chain ====
+[
+  -
+
+; is there anything left on the wire
+L9
+; The count is two bytes  so the flag is set if EITHER is not zero; each
+; byte is copied out through a temp and put straight back  so testing it
+; does not eat it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1038
+
+; the flag says the byte came from the wire; the guard below unsets it
+; when the wire is spent  and THAT is what starts the padding
+R9
+  [-]
+  +
+L9
+; the wire still has a byte: take it  spend one from the count  and record
+; that this turn was not a padding turn;
+; THE GUARD CLEARS nz RATHER THAN DECREMENTING IT  because nz counts the
+; NONZERO BYTES of the count and is TWO for a length like 0x0101; a guard
+; written as a decrement would read two bytes on those lengths and one on
+; the rest  which no published vector is long enough to show
+  [
+  [-]
+R6
+  ,
+L8
+; one fewer byte to go  borrowing from the high byte when the low runs out
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L2
+  [-]
+  +
+R1
+  [[-]L5-R4-R1]
+L1
+  [-L3-L1-R4]
+L4
+; ASSERT ptr=1036
+R11
+  [-]
+L9
+  ]
+; ASSERT ptr=1038
+
+; the wire is spent: this turn pads; the FIRST padding byte is 0x80 and
+; every one after it is nought  which is what np distinguishes
+R9
+  [
+  -
+L4
+; padded is wanted again next turn  so testing it may not eat it
+  [-L2+R1+R1]
+L1
+  [-R1+L1]
+R1
+R3
+  [-]
+  +
+L5
+  [[-]R5-L5]
+R5
+  [
+  -
+; the byte that opens the padding
+L2
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+L1
+  +
+R3
+  ]
+R1
+  ]
+; ASSERT ptr=1047
+
+; ==== the byte meets the head of the chain ====
+; the chain's head is lifted into the exclusive or's left operand
+L80
+  [-R84+L84]
+; and the other fifteen slide down  leaving the tail for the answer
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; ASSERT ptr=982
+R62
+  [-R8+L8]
+R6
+; ASSERT ptr=1050
+; ASSERT zero 1053:1066
+@@XOR8@@ 1050
+; ASSERT ptr=1050
+; and the answer goes in at the tail of the chain
+  [-L68+R68]
+; back to the counter  which the top of the loop already decremented
+L5
+; ASSERT ptr=1045
+]
+
+; ==== was that the last block  and if so which subkey tweaks it ====
+; remaining is nought exactly when this block was the last  however it was
+; filled; padding only decides WHICH subkey  and never WHETHER
+L9
+; The count is two bytes  so the flag is set if EITHER is not zero; each
+; byte is copied out through a temp and put straight back  so testing it
+; does not eat it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1038
+R10
+  [-]
+  +
+L10
+  [[-]R10-L10]
+R10
+; ASSERT ptr=1048
+; the last block was filled exactly when it is last and was not padded
+R1
+  [-]
+L1
+; last is wanted again below
+  [-L7+R1+R6]
+L6
+  [-R6+L6]
+R6
+L7
+  [[-]R8+L8]
+R2
+; and padded is wanted on every later turn
+  [-L2+R1+R1]
+L1
+  [-R1+L1]
+R1
+L2
+  [[-]R8-L8]
+R8
+; ASSERT ptr=1049
+
+; the tweak is K1 when the last block was exact  and K2 when it was padded;
+; on every other block both guards stay shut and the tweak stays nought
+  [
+  -
+; K1 is MOVED  because the mode ends on this block
+L148
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+; the next byte
+R1
+  [-R32+L32]
+R133
+  ]
+L6
+  [-L2+R1+R1]
+L1
+  [-R1+L1]
+R1
+L2
+  [
+  [-]
+; K2 is MOVED  for the same reason
+L124
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+; the next byte
+R1
+  [-R16+L16]
+R109
+  ]
+; ASSERT ptr=1041
+
+; ==== the tweak meets the chain  sixteen turns  both on conveyors ====
+R4
+  ++++++++++++++++
+; ASSERT ptr=1045
+[
+  -
+; the chain's head out
+L78
+  [-R84+L84]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; and the tweak's head out  which empties the tweak as it goes
+L49
+  [-R119+L119]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R102
+; ASSERT ptr=1050
+; ASSERT zero 1053:1066
+@@XOR8@@ 1050
+  [-L68+R68]
+; back to the counter  which the top of the loop already decremented
+L5
+; ASSERT ptr=1045
+]
+
+; ==== and the chained block is enciphered ====
+; the window and the round constant are what a second block has to put back
+L1045
+; ASSERT ptr=0
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+; ASSERT ptr=15
+R30
+  [-]
+L45
+; ASSERT zero 0:116
+; the key is COPIED  because every block wants it again
+R885
+%%block/copy16%% 885
+; ASSERT ptr=900
+L884
+%%block/copy16back%% 16
+; ASSERT ptr=31
+; and the chain is MOVED into the state  because the cipher's answer is
+R936
+; the next chain and would otherwise be added to what was left standing
+%%block/move16%% 967
+; ASSERT ptr=982
+L937
+; ASSERT zero 16:44
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+; and the answer comes back up to the chain
+R82
+; ASSERT zero 967:982
+%%block/moveup16%% 82
+; ASSERT ptr=97
+
+; ==== one more block  unless that was the last ====
+R942
+  [-]
+  +
+R9
+  [[-]L9-R9]
+L9
+; ASSERT ptr=1039
+]
+
+; ==== the tag ====
+L72
+; ASSERT ptr=967
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; ASSERT ptr=982
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED  for the
+; reason CONVENTIONS section 6 gives
+L981
+; ASSERT ptr=1
+; the window holds the tenth round key and the round constant holds 0x6c  so
+; neither is claimed; the chain holds the tag; everything else this file
+; owns is clear  including the tweak  which the conveyor emptied
+; ASSERT zero 16:44
+; ASSERT zero 46:116
+; ASSERT zero 933:948
+; ASSERT zero 1036:1042
+; padded is NOT claimed: it is still set when the message needed padding
+; ASSERT zero 1044:1066
+L1

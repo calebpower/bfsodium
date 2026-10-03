@@ -197,6 +197,7 @@ run "the files declaring no INTERFACE are exactly the known ones" sh -c '
           done)
     want="aead/chacha20poly1305.bf
 aes/cbcenc128.bf
+aes/cmac128.bf
 aes/cmacsubkeys.bf
 aes/ctr128.bf
 aes/decrypt128.bf
@@ -1534,6 +1535,40 @@ run "cbcenc128 on an empty message emits nothing and still lays the table" sh -c
 # anything of xtime's.
 dk aes/cmacsubkeys.bf 2b7e151628aed2a6abf7158809cf4f3c fbeed618357133667c85e08f7236a8def7ddac306ae266ccf90bc11ee46d513b cmacsubkeysRun "cmacsubkeys RFC 4493 section 4  K1 and K2  a PUBLISHED value"
 dk aes/cmacsubkeys.bf 00000000000000000000000000000000 cdd297a9df1458771099f4b39468565c9ba52f53be28b0ee2133e96728d0ac3f cmacsubkeysRun "cmacsubkeys the zero key  a second independent pair  DERIVED"
+
+# CMAC128 is the third mode and the first whose message length may be
+# ANYTHING, including nought. Counter mode takes any length because a
+# keystream does not care; cipher block chaining takes only whole blocks
+# because it has no padding; this one takes any length because SP 800-38B
+# gives it a padding rule and TWO subkeys to tell the padded case from the
+# exact one.
+#
+# RFC 4493'S FOUR EXAMPLES COVER THE BRANCH BOTH WAYS AND TWICE EACH, which is
+# why all four are here rather than a representative two:
+#
+#   0  bytes   padded, one block      -> K2, and the only input that reaches
+#                                        the padding with nothing before it
+#   16 bytes   exact,  one block      -> K1, no chaining
+#   40 bytes   padded, three blocks   -> K2, with chaining before it
+#   64 bytes   exact,  four blocks    -> K1, with chaining before it
+#
+# The pair at one block and the pair at several separate "the tweak is wrong"
+# from "the chain is wrong", the same way the ctr128 and cbcenc128 pairs do.
+# The empty message is the one that would be easiest to special-case wrongly:
+# SP 800-38B spells out that it still has ONE block, where a plain ceiling
+# division gives none.
+#
+# THE 273 BYTE LINE IS BOTH REMAINING HAZARDS AT ONCE. It is past 256, so the
+# length's borrow from the high byte runs -- the arm no published vector of
+# any mode here reaches -- and it is not a multiple of sixteen, so the last
+# block pads as well. Derived by the same small AES used for the ctr128 and
+# cbcenc128 lines, which reproduces all four RFC 4493 tags before it is
+# trusted to compute a fifth; Cryptol then checks it independently.
+dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c0000 bb1d6929e95937287fa37d129b756746 cmac128Run "cmac128 RFC 4493 example 1  the EMPTY message  a PUBLISHED value"
+dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c10006bc1bee22e409f96e93d7e117393172a 070a16b46b4d4144f79bdd9dd04a287c cmac128Run "cmac128 RFC 4493 example 2  one exact block  a PUBLISHED value"
+dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c28006bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411 dfa66747de9ae63030ca32611497c827 cmac128Run "cmac128 RFC 4493 example 3  forty bytes  so the last block PADS  a PUBLISHED value"
+dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c40006bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710 51f0bebf7e3b9d92fc49741779363cfe cmac128Run "cmac128 RFC 4493 example 4  four exact blocks  a PUBLISHED value"
+dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c1101000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f10 a8a86f3ec45d6e9ec62ef7f84c93b62d cmac128Run "cmac128 273 bytes  past the length's borrow AND needing padding  DERIVED"
 
 # GFMUL is the general multiply in GF(2^8): peasant multiplication, eight
 # turns, UNROLLED so no counter is needed and every loop is pointer balanced,

@@ -2631,6 +2631,44 @@ cmacsubkeysRun key = split (k1 # k2)
     k1 = dbl128 l
     k2 = dbl128 k1
 
+// AES-128 CMAC (NIST SP 800-38B, RFC 4493), taking and returning the exact
+// wire bytes aes/cmac128.bf reads and writes:
+//   in  = key(16) # len(2 LE) # message(len)
+//   out = tag(16)
+//
+// The block count is `max 1 (n /^ 16)`: ceiling division, except that the
+// empty message still has one block, which is the case SP 800-38B spells out
+// separately and the one a naive ceiling gets wrong.
+//
+// The padding is written unconditionally and then TRUNCATED, which is how the
+// two cases collapse into one expression: appending 0x80 and zeroes and then
+// taking 16*b bytes leaves the message alone when it already filled its last
+// block, and pads it when it did not. Which subkey the last block takes is
+// the only thing that still has to branch.
+// No constraint relating 16*b to n is needed or wanted: the source of the
+// take below is n + 1 + 16*b bytes long, so it is always at least 16*b.
+// Writing `16 * b >= n + 1` here was WRONG and compiled anyway, because a
+// declared constraint is only checked at the call site: it is false for
+// every exact multiple (n = 16 wants 16 >= 17), so the four-block and
+// one-block vectors failed in the batch while the spec itself loaded.
+cmac128Run : {n, b} (fin n, 64 >= width n, b == max 1 (n /^ 16))
+          => [18 + n][8] -> [16][8]
+cmac128Run inb = split (chain ! 0)
+  where
+    key     = take`{16} inb
+    msg     = drop`{18} inb
+    exact   = (`n > (0 : [64])) && ((`n % (16 : [64])) == 0)
+    sk      = cmacsubkeysRun key
+    k1      = join (take`{16} sk)
+    k2      = join (drop`{16} sk)
+    padded  = take`{16 * b} (msg # [0x80] # (zero : [16 * b][8]))
+    ms      = [ join blk | blk <- split`{b} padded : [b][16][8] ]
+    tweak   = if exact then k1 else k2
+    tweaked = (take`{b - 1} ms) # [ (ms ! 0) ^ tweak ]
+    chain   = [zero : [128]]
+            # [ join (encrypt128Run (key # split (c ^ m)))
+              | m <- tweaked | c <- chain ]
+
 // The general multiply, as the field defines it. The brainfuck does peasant
 // multiplication -- eight guarded exclusive ors and seven doublings -- and
 // spec/perm.cry proves that the two are the same map over all 65536 pairs.

@@ -98,8 +98,24 @@ sub rebase {
 # artifact, which is the combination tools/bftier.pl got wrong by having no
 # test at all. Both polarities, and the Rn case is here because getting it
 # wrong would silently lengthen every walk in an offset block.
+sub looks_mangled {
+    my ($l) = @_;
+    return $l =~ m{^\s*%[\w/]+%(?:\s+-?\d+)?\s*$} ? 1 : 0;
+}
+
 sub selftest {
     my $fails = 0;
+    for my $c (["%block/copy16% 885", 1], ["%block/copy16%", 1],
+               ["  %block/x% 3  ", 1], ["%%block/copy16%% 885", 0],
+               ["%%block/copy16%%", 0], ["; a comment mentioning 50% of it", 0],
+               ["  R885", 0], ["\@\@XOR8\@\@ 52", 0]) {
+        my ($in, $want) = @$c;
+        my $got = looks_mangled($in);
+        if ($got == $want) { printf "PASS bfinclude selftest: mangled(%s) = %d
+", $in, $got }
+        else { printf "FAIL bfinclude selftest: mangled(%s) = %d  wanted %d
+", $in, $got, $want; $fails++ }
+    }
     my @cases = (
         ["; ASSERT ptr=+9",        82,  "; ASSERT ptr=91"],
         ["; ASSERT ptr=+9",        0,   "; ASSERT ptr=9"],
@@ -173,6 +189,23 @@ sub flatten {
         # text. It carries no command byte, so it would expand to nothing and
         # the block would simply be absent -- the same silent failure an
         # unregistered @@paste@@ used to have, and it is caught the same way.
+        # AN INCLUDE THAT LOST A PER CENT SIGN LOOKS LIKE NOTHING AT ALL.
+        # Nothing in this project writes `%name%` with one sign on each side,
+        # so a line of that exact shape is an include that was damaged on the
+        # way in. It happened to a generated skeleton: the text went through a
+        # formatter that treats `%%` as an escape for one `%`, so
+        # `%%block/copy16%% 885` arrived as `%block/copy16% 885`. bfexpand
+        # left it alone as prose, bfdag saw no include to resolve and no
+        # orphan to report, bflint and bfstyle have no opinion on a per cent
+        # sign, and the program simply stopped copying the key. The only thing
+        # that noticed was a pointer contract fifteen cells later.
+        if (looks_mangled($l)) {
+            print STDERR "bfinclude: $path:$line: an include with one per cent sign:\n";
+            print STDERR "          $l\n";
+            print STDERR "          an include is %%name%% with TWO signs each side;\n";
+            print STDERR "          this is what a %%-escaping formatter leaves behind\n";
+            exit 1;
+        }
         if ($l =~ /%%/) {
             print STDERR "bfinclude: $path:$line: malformed include:\n";
             print STDERR "          $l\n";
