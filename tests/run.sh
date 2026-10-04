@@ -204,6 +204,7 @@ aes/ctr128.bf
 aes/ctrdrbg128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
+aes/gfmul128.bf
 aes/invsubbytes.bf
 aes/keyexpand128.bf
 aes/subbytes.bf
@@ -1642,6 +1643,37 @@ dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1
 dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f4000 1686ffcf9f358be74452e647ba156aab05135797117fd1ab317d318c660e3d1814810c15d85da5665c2518b4553fb155b85442c7900e7d827a11c60d18f424e5e4b3c024b1d42b2be20f5235d21d9f756278ce950089c748131487441dabc862 ctrdrbg128Run_64 "ctrdrbg128 four blocks  DERIVED"
 dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1101 1686ffcf9f358be74452e647ba156aab05135797117fd1ab317d318c660e3d1814810c15d85da5665c2518b4553fb155b85442c7900e7d827a11c60d18f424e5e4b3c024b1d42b2be20f5235d21d9f756278ce950089c748131487441dabc862d0c5050e72ed8022db15af755f6144ab96e302eb5f309234ed39978f6b217ee8bda24c9195a78bc941858155209064df12f8cb3e2a7a2df3cd2ae75197e3c6d122e64441b49deabc95944905e48de6777b52f79ac1c34cd221c41bd98a7ac02b4c24103ea7b2adeeddb1fb0b3905c75b7519f331e9d2aa74128f1876e813b03d4c6bfd30949625bdbd7efdb6f2ad506aab06c56fc110829872111798cf77687b1510fe486575e23b13e7a60636d6097dce59475b3a99e4ff5512445613175d7661f95ad187a363d54a48bdc9b2564a6013 ctrdrbg128Run_273 "ctrdrbg128 past the length's borrow from the high byte  and not a multiple of sixteen  DERIVED"
 
+# GFMUL128 is multiplication in GF(2^128) as GCM defines it, and it is the
+# piece GHASH and GCM are built out of. It is pinned on its own, before
+# either exists, for the reason aes/cmacsubkeys was: a tag is sixteen opaque
+# bytes and a wrong multiply is a wrong tag with nothing to say which part
+# went wrong.
+#
+# THE FIELD IS NOT THE ONE CMAC USES. Same polynomial, but GCM writes its
+# elements BIT REFLECTED, so the shift goes right and the reduction lands at
+# the top where dbl128's goes left and lands at the bottom. block/shr128gcm
+# and block/shl128 are mirror images and deliberately separate files; a reader
+# who assumed one was the other would get plausible wrong bytes, which is
+# exactly the failure these vectors exist to prevent.
+#
+# THE ANCHOR IS THE SUBKEY. No standard publishes a bare multiplication
+# vector, so the products below are DERIVED -- but H is the cipher on the zero
+# block, which for the zero key is 66e94bd4ef8a2c3b884cfa59ca342b2e, and that
+# value is pinned by aes/encrypt128, aes/ctr128, aes/cbcenc128 and
+# aes/cbcdec128. So one end of these vectors is published even though the
+# products are not.
+#
+# AND THE FIELD LAWS NEED NO ORACLE AT ALL -- see tier 7. Identity, the
+# absorbing zero, commutativity and distributivity over exclusive or are
+# properties of the operation itself, not of anything this project computed,
+# and they are checked against the program directly. A multiply that is wrong
+# in a way all four laws survive is a very particular kind of wrong.
+dk aes/gfmul128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e80000000000000000000000000000000 66e94bd4ef8a2c3b884cfa59ca342b2e gfmul128Run "gfmul128 the subkey times the identity  which in this reflected field is 0x80 and fifteen noughts  so the answer is the subkey; H here is the cipher on the zero block  a PUBLISHED value four other programs pin"
+dk aes/gfmul128.bf 8000000000000000000000000000000066e94bd4ef8a2c3b884cfa59ca342b2e 66e94bd4ef8a2c3b884cfa59ca342b2e gfmul128Run "gfmul128 and the same the other way round  because the field commutes"
+dk aes/gfmul128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e00000000000000000000000000000000 00000000000000000000000000000000 gfmul128Run "gfmul128 anything times nought"
+dk aes/gfmul128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e66e94bd4ef8a2c3b884cfa59ca342b2e a569901bb4b18906f5059d24465c904d gfmul128Run "gfmul128 the subkey squared"
+dk aes/gfmul128.bf 82b70eee7f1a5039bef07ec2347f066ed08f5dc7512447e3404300026b6e5455 c1e72abc8c505fbe2a26e3e0a4f4fefe gfmul128Run "gfmul128 two arbitrary elements  DERIVED"
+
 
 # GFMUL is the general multiply in GF(2^8): peasant multiplication, eight
 # turns, UNROLLED so no counter is needed and every loop is pointer balanced,
@@ -1995,6 +2027,40 @@ m7pt=4c616469657320616e642047656e746c
 # advanced a different number of times and the trailing Update starts
 # somewhere else. An implementation that got that wrong would pass this check
 # and fail the vectors above, which is why both are here.
+# THE FIELD LAWS, which rest on no reference of ours. These are properties of
+# multiplication in GF(2^128) itself, not of anything this project computed,
+# so a multiply that satisfies all four while being wrong is a very
+# particular kind of wrong. The only arithmetic here that is not the
+# program's own is an exclusive or of two hex strings, done a nibble at a
+# time in POSIX awk -- strtonum and xor() are gawk extensions and the guests
+# do not both have them.
+run "gfmul128 obeys the laws of the field it claims to be" sh -c '
+    m() { printf "%s%s" "$1" "$2" | ./tools/hx -r | ./tools/bfi aes/gfmul128.bf | ./tools/hx; }
+    x() { awk -v a="$1" -v b="$2" '"'"'BEGIN{
+            h = "0123456789abcdef";
+            for (i = 1; i <= 32; i++) {
+              av = index(h, substr(a, i, 1)) - 1;
+              bv = index(h, substr(b, i, 1)) - 1;
+              v = 0; p = 1;
+              for (k = 0; k < 4; k++) {
+                if (int(av / p) % 2 != int(bv / p) % 2) v += p;
+                p *= 2;
+              }
+              printf "%x", v;
+            }
+          }'"'"'; }
+    one=80000000000000000000000000000000
+    nil=00000000000000000000000000000000
+    p=66e94bd4ef8a2c3b884cfa59ca342b2e
+    q=0123456789abcdeffedcba9876543210
+    [ "$(x $p $p)" = "$nil" ] || { echo "the awk exclusive or is wrong"; exit 1; }
+    [ "$(m $p $one)" = "$p" ] || { echo "identity failed"; exit 1; }
+    [ "$(m $p $nil)" = "$nil" ] || { echo "the absorbing zero failed"; exit 1; }
+    [ "$(m $p $q)" = "$(m $q $p)" ] || { echo "commutativity failed"; exit 1; }
+    lhs=$(m "$(x $p $q)" "$q")
+    rhs=$(x "$(m $p $q)" "$(m $q $q)")
+    [ "$lhs" = "$rhs" ] || { echo "distributivity failed: $lhs vs $rhs"; exit 1; }
+'
 run "ctrdrbg128 sixteen bytes are the first sixteen of sixty four" sh -c '
     e=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
     a=$(printf "%s1000" "$e" | ./tools/hx -r | ./tools/bfi aes/ctrdrbg128.bf | ./tools/hx)

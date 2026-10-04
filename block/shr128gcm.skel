@@ -1,0 +1,396 @@
+; A 128 BIT VALUE SHIFTED RIGHT ONE BIT IN THE FIELD GCM USES  reducing by
+; 0xe1 at the TOP when the bit that falls off the END was set;
+;
+; NIST SP 800_38D section 6 point 3  the inner step of Algorithm 1;
+;
+; THIS IS NOT block/shl128 AND IT IS NOT A REUSE OF IT; GCM's field is the
+; same polynomial as CMAC's but written BIT REFLECTED  so where that one
+; shifts LEFT and reduces with 0x87 into the LAST byte  this one shifts RIGHT
+; and reduces with 0xe1 into the FIRST; The two are mirror images and sharing
+; text between them would mean parameterising a direction  which an include
+; offset cannot do and which block/moveup16's header records from the other
+; side; Two files  and the field laws in the suite are what keep them honest;
+;
+; IN PLACE; the value goes in at cell nought through fifteen  big endian  and
+; the answer comes back there; Everything above is scratch and left clear;
+;
+; A BYTE SHIFTED RIGHT IS block/halve  which hands back the quotient AND the
+; bit that fell off  so one pass over the sixteen bytes produces both halves
+; of what the shift needs: the new bytes  and the bits that have to travel
+; one place up into the byte before;
+;
+; THE REDUCTION IS UNCONDITIONAL  for the reason aes/xtime gives: the bit
+; that fell off the whole value is taken as a VALUE  0xe1 is multiplied by it
+; and the exclusive or runs whatever that came to;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x00:0x0f  v  the value  big endian  the byte at nought most significant
+;   @0x10:0x1f  q  each byte shifted right one
+;   @0x20:0x2f  p  each bit that fell off; the one at 0x2f is the reduction
+;   @0x30:0x33  the block/halve frame  byte q t f
+;   @0x34:0x44  idiom/xor8 pasted at 0x34; result 0x34  operands 0x35 0x36
+;
+; ASSERT ptr=+0
+; ASSERT zero +16:+68
+
+; ==== every byte is halved  which gives the new byte and the bit below ====
+; byte 0 of sixteen
+  [-R48+L48]
+R48
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L33+R33]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L18+R18]
+; byte 1 of sixteen
+L49
+  [-R47+L47]
+R47
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L32+R32]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L17+R17]
+; byte 2 of sixteen
+L48
+  [-R46+L46]
+R46
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L31+R31]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L16+R16]
+; byte 3 of sixteen
+L47
+  [-R45+L45]
+R45
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L30+R30]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L15+R15]
+; byte 4 of sixteen
+L46
+  [-R44+L44]
+R44
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L29+R29]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L14+R14]
+; byte 5 of sixteen
+L45
+  [-R43+L43]
+R43
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L28+R28]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L13+R13]
+; byte 6 of sixteen
+L44
+  [-R42+L42]
+R42
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L27+R27]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L12+R12]
+; byte 7 of sixteen
+L43
+  [-R41+L41]
+R41
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L26+R26]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L11+R11]
+; byte 8 of sixteen
+L42
+  [-R40+L40]
+R40
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L25+R25]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L10+R10]
+; byte 9 of sixteen
+L41
+  [-R39+L39]
+R39
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L24+R24]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L9+R9]
+; byte 10 of sixteen
+L40
+  [-R38+L38]
+R38
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L23+R23]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L8+R8]
+; byte 11 of sixteen
+L39
+  [-R37+L37]
+R37
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L22+R22]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L7+R7]
+; byte 12 of sixteen
+L38
+  [-R36+L36]
+R36
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L21+R21]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L6+R6]
+; byte 13 of sixteen
+L37
+  [-R35+L35]
+R35
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L20+R20]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L5+R5]
+; byte 14 of sixteen
+L36
+  [-R34+L34]
+R34
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L19+R19]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L4+R4]
+; byte 15 of sixteen
+L35
+  [-R33+L33]
+R33
+%%block/halve%%
+; the quotient is the byte's new value
+R1
+  [-L18+R18]
+; and the bit that fell off travels up to the byte before it
+R1
+  [-L3+R3]
+
+; ==== the new bytes go back into place ====
+; byte 0
+L34
+  [-L16+R16]
+; byte 1
+R1
+  [-L16+R16]
+; byte 2
+R1
+  [-L16+R16]
+; byte 3
+R1
+  [-L16+R16]
+; byte 4
+R1
+  [-L16+R16]
+; byte 5
+R1
+  [-L16+R16]
+; byte 6
+R1
+  [-L16+R16]
+; byte 7
+R1
+  [-L16+R16]
+; byte 8
+R1
+  [-L16+R16]
+; byte 9
+R1
+  [-L16+R16]
+; byte 10
+R1
+  [-L16+R16]
+; byte 11
+R1
+  [-L16+R16]
+; byte 12
+R1
+  [-L16+R16]
+; byte 13
+R1
+  [-L16+R16]
+; byte 14
+R1
+  [-L16+R16]
+; byte 15
+R1
+  [-L16+R16]
+
+; ==== and each takes the bit that fell out of the byte after it ====
+; the bit is nought or one  so the guard runs at most once and adds the
+; weight of the top bit; the offset is the same for every byte  which is
+; what the tape map was laid out to make true
+; the bit from byte 0 joins byte 1
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 1 joins byte 2
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 2 joins byte 3
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 3 joins byte 4
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 4 joins byte 5
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 5 joins byte 6
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 6 joins byte 7
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 7 joins byte 8
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 8 joins byte 9
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 9 joins byte 10
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 10 joins byte 11
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 11 joins byte 12
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 12 joins byte 13
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 13 joins byte 14
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+; the bit from byte 14 joins byte 15
+R1
+  [-L31
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++++
+  R31]
+
+; ==== the bit that fell off the WHOLE value is the reduction ====
+; it is not tested; 0xe1 is multiplied by it  so the exclusive or below
+; runs against 0xe1 or against nought and costs the same either way
+R1
+  [-R6
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++++++++++++++
+  L6]
+
+; ==== and the first byte takes it ====
+L47
+  [-R54+L54]
+R52
+; ASSERT ptr=+52
+; ASSERT zero +55:+68
+@@XOR8@@ 52
+; ASSERT ptr=+52
+  [-L52+R52]
+L52
+; ASSERT ptr=+0
+; ASSERT zero +16:+68

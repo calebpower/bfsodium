@@ -185,6 +185,8 @@ nought and it is verified through whatever includes it.
 |---|---|---|---|
 | `block/walk256` | 0 | 22 | a leaf; the indexed walk, through index/fetch256's nine vectors and everything that reads a table |
 | `block/halve` | 0 | 4 | a leaf; every routine that includes it, which is `xor8` and `xtime` |
+| `block/shr128gcm` | 0 | 396 | SP 800-38D's inner shift: right one bit, reduced with 0xe1 at the top; the MIRROR of block/shl128 and not a reuse of it, which the field laws in tier 7 are what police |
+| `block/ghashmul` | 0 | 439 | SP 800-38D Algorithm 1; proved through `aes/gfmul128` against the published subkey, against Cryptol, and against the four laws of the field itself |
 | `block/inc128` | 0 | 423 | a 128-bit big-endian counter stepped by one; `aes/ctr128` was migrated onto it with its instruction stream byte-identical, which is the proof, and its four published SP 800-38A blocks exercise the carry because F.5's counter is f0f1..feff |
 | `block/drbgupdate` | 0 | 527 | SP 800-90A section 10.2.1.2; proved through `aes/ctrdrbg128`, whose n=0 vector is the Update chain and nothing else |
 | `block/xor8kernel` | 0 | 32 | a leaf; `idiom/xor8`'s vectors and its 1024 run sweep |
@@ -275,6 +277,7 @@ nought and it is verified through whatever includes it.
 | `aes/ctrdrbg128` | 58568 | 325 | five DERIVED lengths including nought and a truncating one, plus a METAMORPHIC check that rests on no reference of ours: sixteen bytes must be the first sixteen of sixty-four. NOTHING HERE IS PUBLISHED and the section below says why and what stands in for it |
 | `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
+| `aes/gfmul128` | 1193 | 49 | five products, anchored at one end by the published subkey H and checked by Cryptol; and separately the IDENTITY, the absorbing zero, COMMUTATIVITY and DISTRIBUTIVITY, which rest on no reference anyone here wrote |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
 | `aes/invmixcolumns` | 12669 | 85 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 166 | 113 | all ten Appendix B rounds run backwards + round trips ShiftRows |
@@ -352,11 +355,11 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 595 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 595 | golden vectors, dual oracle |
+| 2 | yes | 600 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 600 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
-| 7 | yes | 3 | metamorphic |
+| 7 | yes | 4 | metamorphic |
 | 8 | yes | 19 | Cryptol design proofs, two of which must be refuted |
 | 8a | yes | 3 | the Cryptol oracle is delivered once and is load-bearing |
 | 9 | yes | 10 | legibility and portability |
@@ -1614,7 +1617,7 @@ mechanical change stays reviewable:
 | held out | why it was tempting, and why not now |
 |---|---|
 | **AES-192 and AES-256** | Nk of 6 and 8, twelve and fourteen rounds, over shapes that already exist. Blocked by nothing. The rebuild would have had to get the looping right for three key sizes at once instead of one. |
-| **Modes** — ~~CTR~~, ~~CBC~~, ~~CMAC~~, ~~CTR_DRBG~~, GCM, GMAC | **CTR, CBC both ways and CMAC are built**; see the four "mode" sections below. **The structural work is done**: CBC decryption was the only mode that needed the inverse cipher and the only one that needed anything restructured, and `block/aes128decrypt` is now the pair `aes128dsetup` and `aes128drounds`. What is left is GCM and GMAC, which need GHASH — a 128-bit carry-less multiply, and much the largest piece remaining. `block/shl128` is NOT the shift it wants: GHASH's field is bit reflected, so it shifts RIGHT and reduces with 0xe1 at the top where the CMAC field shifts left and reduces with 0x87 at the bottom. A sibling block, not a reuse. |
+| **Modes** — ~~CTR~~, ~~CBC~~, ~~CMAC~~, ~~CTR_DRBG~~, GCM, GMAC | **CTR, CBC both ways and CMAC are built**; see the four "mode" sections below. **The structural work is done**: CBC decryption was the only mode that needed the inverse cipher and the only one that needed anything restructured, and `block/aes128decrypt` is now the pair `aes128dsetup` and `aes128drounds`. What is left is GCM and GMAC, which need GHASH — a 128-bit carry-less multiply, and much the largest piece remaining. **The multiply is built and pinned** as `aes/gfmul128`, with the field laws behind it; what is left is GHASH over a message and then GCM and GMAC on top. Note the measured cost: one multiply is about 300 million steps, three times a block of AES, so GHASH is the larger half of a GCM and not a rounding error against the cipher. |
 | **Unifying `xor32`/`xor64` onto `block/xor8kernel`** | The kernel is duplicated in three files down to the character, which HANDOFF already records as deferred — and `block/xor8kernel` finally makes it cheap. But those two are not AES, and the rebuild's invariant is identical instruction bytes; changing files outside the scope would weaken it. |
 | **Migrating the rest of the library to `%%include%%`** | Agreed to happen, in its own commits. The older `@@NAME@@ base` form keeps working meanwhile; the two coexist by design. |
 | **The deferred cleanup batch above** | Unchanged and still owed: tier 6, the BoneMesh lane, the pin bump, `bfj.c`, the documentation contradictions. |
@@ -3618,6 +3621,80 @@ SP 800-90A asks for there.
 
 Verified under the scratchpad interpreter with contracts **live**: 482,281,505
 steps at `n = 0`, 609,821,517 at 16, 735,581,837 at 17 and 993,446,868 at 64.
+
+## GCM's field, pinned before anything is built on it
+
+GHASH and GCM rest on multiplication in GF(2^128), and that multiply is
+`aes/gfmul128` — pinned on its own, with no cipher and no table, before either
+exists. The argument is `aes/cmacsubkeys`': a tag is sixteen opaque bytes, and
+a wrong multiply is a wrong tag with nothing to say which part went wrong.
+
+### The field is not the one CMAC uses, and the shift is not the one it uses
+
+The polynomial is the same. **GCM writes its elements bit-reflected** — bit 0
+of byte 0 is the highest-order coefficient — so the shift goes **right** and
+the reduction lands at the **top** with `0xe1`, where `block/shl128` shifts
+left and reduces at the bottom with `0x87`.
+
+`block/shr128gcm` is therefore a **mirror image of `block/shl128`, not a reuse
+of it**. Sharing text between them would mean parameterising a *direction*,
+and an include offset shifts a frame but cannot turn `R885` into `L885` —
+which is the limit `block/moveup16`'s header records from the other side. Two
+files, and the field laws are what keep them honest.
+
+A byte shifted right is `block/halve`, which hands back the quotient **and**
+the bit that fell off, so one pass over the sixteen bytes produces both halves
+of what the shift needs: the new bytes, and the bits that travel one place up.
+
+### What the evidence is, since no standard publishes a multiplication vector
+
+Three things that do not share a source:
+
+- **One end is published.** GCM's subkey H is the cipher on the zero block,
+  which for the zero key is `66e94bd4ef8a2c3b884cfa59ca342b2e` — a value
+  `encrypt128`, `ctr128`, `cbcenc128` and `cbcdec128` already pin. So vectors
+  multiplying H are anchored at one end even though the products are derived.
+- **Cryptol checks the construction** independently, as for every other vector.
+- **The field laws need no oracle at all.** Identity (which in this reflected
+  representation is `0x80` and fifteen noughts), the absorbing zero,
+  commutativity, and distributivity over exclusive or are properties of the
+  operation itself. They are checked against the program directly in tier 7.
+  A multiply that is wrong in a way all four laws survive is a very particular
+  kind of wrong.
+
+The law check carries one piece of arithmetic that is not the program's own —
+an exclusive or of two hex strings — and it is done a nibble at a time in
+**POSIX awk**, because `strtonum` and `xor()` are gawk extensions and the two
+guests do not both have them. It checks itself first (`x(p,p)` must be zero)
+before it is used to judge anything.
+
+### Three conveyors, and a cost correction
+
+`block/ghashmul` runs SP 800-38D's Algorithm 1 over 128 bits with **no index
+anywhere**: X gives up its head byte and slides, the eight bits of that byte
+give up their head and slide, and Z gives up its head and takes a new tail.
+That keeps `idiom/xor8` to one paste and `block/shr128gcm` to one include
+across all 128 iterations.
+
+The bits come out of `halve` **low first** and Algorithm 1 wants them high
+first, so the eighth halving's bit is written to the *first* cell of the bit
+run and the first halving's to the last. The conveyor then reads them in the
+order the algorithm asks for, and no reversal is needed anywhere else.
+
+The branch is not a branch: the bit multiplies a *copy* of V and the exclusive
+or runs unconditionally against that, so the work does not depend on the
+operands. Same argument `aes/xtime` makes.
+
+**And a correction worth recording, because it changes how GCM should be
+costed.** A multiply was expected to be far cheaper than an AES block — the
+reasoning was that 128 iterations of a shift and a conditional xor is small
+beside ten rounds over a 768-cell table. Measured, **one multiply is about
+300 million steps**, which is the same order as a block of AES (114 million)
+and about three times it. The halvings dominate: 128 shifts of sixteen bytes
+is 2,048 calls to `block/halve`, each costing about twice the value it halves.
+So a GHASH over *n* blocks is not a rounding error against the cipher — it is
+the larger half. Any estimate of GCM's cost that assumed otherwise, including
+the one in this file's own next-steps table, was wrong.
 
 ## Traps that have actually bitten
 

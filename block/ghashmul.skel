@@ -1,0 +1,439 @@
+; MULTIPLICATION IN GF(2^128) AS GCM DEFINES IT  NIST SP 800_38D Algorithm 1
+;
+;   Z = 0  and V = Y
+;   for each of the 128 bits of X  MOST SIGNIFICANT FIRST
+;       if the bit is set  Z takes V
+;       V shifts right one in the field
+;
+; Both operands are SPENT; X is halved away to nothing and Y is shifted a
+; hundred and twenty eight times; A caller that wants either again keeps a
+; copy; GHASH wants H again on every block and does exactly that;
+;
+; THE FIELD IS NOT THE ONE CMAC USES even though the polynomial is; GCM writes
+; its elements BIT REFLECTED  so the shift goes RIGHT and reduces with 0xe1
+; at the top; block/shr128gcm is that step and its header says why it is a
+; separate file from block/shl128 rather than a parameter of it;
+;
+; THE BRANCH IS NOT A BRANCH; the bit multiplies a COPY of V and the exclusive
+; or runs unconditionally against that  so the work does not depend on the
+; bit; Exclusive or with nought is the identity; Same argument aes/xtime
+; makes  and the reason the cost of a multiply here does not depend on its
+; operands;
+;
+; THREE CONVEYORS AND NO INDEX  which is what keeps idiom/xor8 to ONE paste
+; and block/shr128gcm to one include; X gives up its head byte and slides  the
+; eight bits of that byte give up their head and slide  and Z gives up its
+; head and takes a new tail; Nothing is ever addressed by a computed offset;
+;
+; THE BITS COME OUT BACKWARDS AND ARE STORED BACKWARDS; halving a byte yields
+; its LOW bit first  and Algorithm 1 wants the HIGH bit first  so the eighth
+; halving's bit is written to the first cell of the bit run and the first
+; halving's to the last; Then the conveyor reads them in the order the
+; algorithm asks for  and no reversal is needed anywhere else;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x00:0x0f  Z   the accumulator; the product comes back here
+;   @0x10:0x1f  X   the bit source  SPENT
+;   @0x20:0x64  the block/shr128gcm frame; V is its first sixteen cells  SPENT
+;   @0x65:0x6c  B{8}   the bits of the byte in hand  high bit first
+;   @0x6d:0x7c  VC{16} V multiplied by the bit  SPENT by the exclusive or
+;   @0x7d:0x8c  the copy temps that keep V alive
+;   @0x8d i  @0x8e j  @0x8f k   the byte  bit and exclusive or counters
+;   @0x90:0x93  the block/halve frame  byte q t f
+;   @0x94:0xa4  idiom/xor8 pasted at 148; result 148  operands 149 150
+;
+; ASSERT ptr=+0
+; ASSERT zero +0:+15
+; ASSERT zero +48:+164
+
+; ==== one turn per byte of X  sixteen of them ====
+R141
+  ++++++++++++++++
+; ASSERT ptr=+141
+[
+  -
+; the bit source gives up its head byte
+L125
+  [-R128+L128]
+; and the rest of it slides down
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+
+; ==== eight halvings  and the bits are stored in reverse ====
+; halving 1 of eight; its bit is the one Algorithm 1 wants last
+R113
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L38+R38]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+; halving 2 of eight; its bit is the one Algorithm 1 wants in the middle
+L1
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L39+R39]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+; halving 3 of eight; its bit is the one Algorithm 1 wants in the middle
+L1
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L40+R40]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+; halving 4 of eight; its bit is the one Algorithm 1 wants in the middle
+L1
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L41+R41]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+; halving 5 of eight; its bit is the one Algorithm 1 wants in the middle
+L1
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L42+R42]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+; halving 6 of eight; its bit is the one Algorithm 1 wants in the middle
+L1
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L43+R43]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+; halving 7 of eight; its bit is the one Algorithm 1 wants in the middle
+L1
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L44+R44]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+; halving 8 of eight; its bit is the one Algorithm 1 wants first
+L1
+%%block/halve%%
+; the bit that fell off
+R2
+  [-L45+R45]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+; ASSERT ptr=+144
+
+; ==== one turn per bit  eight of them  high bit first ====
+L2
+  ++++++++
+; ASSERT ptr=+142
+[
+  -
+; the bit multiplies a COPY of V; if it is nought the copy does not happen
+; and the exclusive or below runs against sixteen clear cells
+L41
+  [
+  [-]
+L69
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+; the next byte
+R1
+  [-R77+R16+L93]
+R93
+  [-L93+R93]
+L93
+R54
+  ]
+; the bits slide down so the next one is again at the head
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+
+; ==== Z takes it  sixteen turns on two conveyors ====
+R35
+  ++++++++++++++++
+; ASSERT ptr=+143
+[
+  -
+; Z gives up its head
+L143
+  [-R149+L149]
+; and slides  leaving its tail for the answer
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; and the multiplied copy gives up its head
+R94
+  [-R41+L41]
+; and slides too  which empties it for the next bit
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+; the next cell
+R1
+  [-L1+R1]
+R24
+; ASSERT ptr=+148
+; ASSERT zero +151:+164
+@@XOR8@@ 148
+; and Z takes the tail
+  [-L133+R133]
+L5
+; ASSERT ptr=+143
+]
+
+; ==== and V shifts right one in the field ====
+L111
+; ASSERT ptr=+32
+%%block/shr128gcm%% 32
+; ASSERT ptr=+32
+R110
+; ASSERT ptr=+142
+]
+L1
+; ASSERT ptr=+141
+]
+L141
+; ASSERT ptr=+0
+; X is spent to nothing and V has been shifted a hundred and twenty eight
+; times; neither is claimed to hold anything in particular  but everything
+; this block used as scratch is clear
+; ASSERT zero +101:+140
+; ASSERT zero +141:+164

@@ -2668,6 +2668,27 @@ ctrdrbg128Run_64  = ctrdrbg128`{64}
 ctrdrbg128Run_273 : [34][8] -> [305][8]
 ctrdrbg128Run_273 = ctrdrbg128`{273}
 
+// GCM's field (NIST SP 800-38D section 6.3). The polynomial is the same one
+// CMAC uses, but GCM writes its elements BIT REFLECTED: bit 0 of byte 0 is
+// the highest-order coefficient. So the shift goes RIGHT and the reduction
+// lands at the TOP, where dbl128 above shifts left and reduces at the bottom.
+// Two mirror-image operations, written out separately on purpose -- a reader
+// who assumed one was the other would get plausible wrong bytes.
+gcmShr : [128] -> [128]
+gcmShr v = if v ! 0 then w ^ 0xe1000000000000000000000000000000 else w
+  where w = v >> 1
+
+// SP 800-38D Algorithm 1, bit by bit, most significant first.
+gcmMul : [128] -> [128] -> [128]
+gcmMul x y = zs ! 0
+  where
+    vs = [y] # [ gcmShr v | v <- vs ]
+    zs = [0] # [ if x @ i then z ^ v else z
+               | z <- zs | v <- vs | i <- [0 .. 127] ]
+
+gfmul128Run : [32][8] -> [16][8]
+gfmul128Run inb = split (gcmMul (join (take`{16} inb)) (join (drop`{16} inb)))
+
 // SP 800-38B section 6.1's `dbl`: a 128-bit left shift by one, reduced by the
 // polynomial of GF(2^128) when the bit that falls off the top is set. Its low
 // byte is 0x87, where aes/xtime's field reduces by 0x1b -- same shape, a

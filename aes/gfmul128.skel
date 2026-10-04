@@ -1,0 +1,49 @@
+; bfsodium GFMUL128 : multiplication in GF(2^128) as GCM defines it
+; NIST SP 800_38D section 6 point 3
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/ghashmul is INCLUDED  and brings block/shr128gcm and
+; block/halve with it; idiom/xor8 is PASTED once  inside it;
+;
+; IO  in:  X{16}  Y{16}
+;     out: (X dot Y){16}
+;
+; THIS EXISTS TO BE PINNED  and it is the cheapest program in the AES half of
+; this library: no cipher  no S box  no table; A GHASH over a long message is
+; hundreds of these and a GCM is that plus the cipher  so a wrong multiply is
+; a wrong tag with nothing to say which part went wrong; Here it is sixteen
+; bytes in and sixteen out;
+;
+; AND IT CAN BE CHECKED WITHOUT AN ORACLE AT ALL  which matters because the
+; standard prints no multiplication vectors; The field has laws: the identity
+; in this reflected representation is 0x80 followed by fifteen noughts  the
+; product with nought is nought  the operation commutes  and it distributes
+; over exclusive or; The suite checks all four against this program  and
+; those checks rest on no reference anyone here wrote;
+;
+; THE ONE PUBLISHED ANCHOR IS THE SUBKEY; GCM's H is the cipher on the zero
+; block  which for the zero key is 66e94bd4ef8a2c3b884cfa59ca342b2e  a value
+; four other programs in this suite already pin; So a vector multiplying that
+; H is anchored at one end even though the product itself is derived;
+;
+; TAPE MAP  (home @0)
+;   @0x00:0x0f  Z  the accumulator; the product comes back here
+;   @0x10:0x1f  X  read here  and SPENT
+;   @0x20:0x2f  Y  read here  and SPENT
+;   @0x20:0x64  ALSO the block/shr128gcm frame  which is why Y lands at 0x20
+;   @0x65:0xa4  block/ghashmul's own scratch  as its tape map lists it
+
+; the two operands  read straight into the cells the multiply wants them in
+R16
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=47
+L47
+; ASSERT ptr=0
+; ASSERT zero 0:15
+
+%%block/ghashmul%%
+; ASSERT ptr=0
+
+; emit
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
