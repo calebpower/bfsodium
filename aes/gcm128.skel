@@ -1,0 +1,1415 @@
+; bfsodium GCM128 : AES_128 in Galois/Counter Mode  NIST SP 800_38D
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table block/aes128encrypt block/copy16
+; block/copy16back block/inc128 block/halve and block/ghashstep are INCLUDED;
+; idiom/xor8 is PASTED  here and inside the GHASH step;
+;
+; IO  in:  key{16}  iv{12}  alen{2} LE  aad{alen}  plen{2} LE  pt{plen}
+;     out: ciphertext{plen}  tag{16}
+;
+; Both lengths are read before the bytes they count  and a bfsodium primitive
+; never relies on end of input; The IO is aead/chacha20poly1305's  deliberately
+; so: the two AEADs in this library take the same shape of wire message;
+;
+; THE IV IS NINETY SIX BITS  which is the only size with a simple J0; SP
+; 800_38D says that for any other length J0 is itself a GHASH  and that is a
+; different program; Twelve bytes is also the only size anyone should use;
+;
+; THE CIPHERTEXT IS NEVER STORED; sixteen bytes are encrypted  written out and
+; folded into the hash  and then the next sixteen; So the tape does not grow
+; with the message  which is the rule aead/chacha20poly1305's header records
+; after an earlier cut of it reached 903 thousand lines by unrolling;
+;
+; WHAT IS HASHED  and every piece of it padded to a whole block:
+;   AAD  pad16  ciphertext  pad16  len(AAD) in bits{8}  len(C) in bits{8}
+; Padding is landing a nought when the input has run out; the block being
+; assembled slides a byte at a time and the slide leaves a nought behind  so
+; a short block pads itself and no flag is needed;
+;
+; THREE CIPHER RUNS THAT ARE NOT THE KEYSTREAM; the subkey H is the cipher on
+; the zero block  the tag mask is the cipher on J0  and then the counter runs
+; from J0 plus one; All three put the key back first  because the schedule
+; spends the window;
+;
+; GHASH IS THE LARGER HALF  which is worth knowing before reading the costs:
+; one multiply is about three hundred million instructions against a hundred
+; and fourteen million for a block of AES  so a GCM over n blocks spends most
+; of its time in the field and not in the cipher;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x374  the cipher's frame  as block/aes128encrypt maps it
+;   @0x375:0x384  K{16}    the key  never spent
+;   @0x385:0x394  J0{16}   the pre counter block: the IV and then 0 0 0 1
+;   @0x395:0x3a4  EK0{16}  the cipher on J0; the tag mask
+;   @0x3a5:0x3b4  H{16}    the GHASH subkey; the cipher on the zero block
+;   @0x3b5:0x3c4  the temps that keep H and J0 alive across their copies
+;   @0x3c7:0x3d6  the running counter  copy16 at 967 puts it in the state
+;   @0x3d7:0x3da  block/inc128's scratch
+;   @0x3db:0x3ea  GB{16}  the block being assembled for the hash
+;   @0x3eb:0x3fa  Y{16}   the GHASH accumulator
+;   @0x400:0x4a4  block/ghashmul's frame  reached through block/ghashstep
+;   @0x4b0:0x4b1  alen{2} kept  because the length block needs it after the
+;                 count has been run down
+;   @0x4b2:0x4b3  plen{2} kept  for the same reason
+;   @0x4b4:0x4b5  remaining{2}  the working countdown
+;   @0x4b6 nz  @0x4b7 more  @0x4b8 e  @0x4b9:0x4ba t u  @0x4bb j
+;   @0x4bc:0x4c1  the length scratch
+;   @0x4c4:0x4c7  block/halve's frame
+;   @0x4cc:0x4dc  idiom/xor8 pasted at 1228
+
+; ==== the key  the IV and the length of the associated data ====
+R885
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=900
+; the IV is the first twelve bytes of the pre counter block
+R1
+  ,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=912
+R288
+  ,>,
+; ASSERT ptr=1201
+; and the last four bytes of it are nought nought nought one
+L285
+  +
+L916
+; ASSERT ptr=0
+
+; ==== the S box is written into the tape  ONCE ====
+; ASSERT zero 0:884
+%%block/aes128table%%
+L45
+; ASSERT ptr=0
+
+; ==== the subkey is the cipher on the zero block ====
+; the state is still clear  which IS the zero block
+; the key goes into the window
+; the window holds the tenth round key and the constant holds 0x6c  so
+; both go back before every run
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+R30
+  [-]
+L45
+; ASSERT zero 0:81
+; the key is COPIED  because every run wants it again
+R885
+%%block/copy16%% 885
+L884
+%%block/copy16back%% 16
+R14
+; ASSERT zero 16:44
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+; and the answer is H
+R82
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+; the next byte
+R1
+  [-R851+L851]
+
+; ==== and the tag mask is the cipher on the pre counter block ====
+; the key again
+; the window holds the tenth round key and the constant holds 0x6c  so
+; both go back before every run
+L97
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+R30
+  [-]
+L45
+; ASSERT zero 0:81
+; the key is COPIED  because every run wants it again
+R885
+%%block/copy16%% 885
+L884
+%%block/copy16back%% 16
+; J0 is COPIED into the state  because it is wanted again
+R870
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-L819+R867+L48]
+R48
+  [-L48+R48]
+L48
+L871
+; ASSERT zero 16:44
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+; and the answer is the tag mask
+R82
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the next byte
+R1
+  [-R835+L835]
+; the counter starts at J0 and is stepped before use
+R804
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+; the next byte
+R1
+  [-R66+L18+L48]
+R48
+  [-L48+R48]
+L48
+
+; ==== the associated data is hashed  sixteen bytes at a time ====
+; the count to work down  with alen kept for the end
+R284
+  [-R4+L255+R251]
+L251
+  [-R251+L251]
+R251
+; the next byte
+R1
+  [-R4+L255+R251]
+L251
+  [-R251+L251]
+R251
+R3
+; the flag is set if EITHER byte of the count is not nought; each is
+; copied out through a temp and put straight back
+; the flag starts down
+R2
+  [-]
+; the low byte out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; and a nonzero temp raises the flag
+L1
+  [[-]L3+R3]
+; the high byte the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1206
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=1207
+[
+R4
+  ++++++++++++++++
+; ASSERT ptr=1211
+[
+  -
+; the block slides  and the slide is what pads it with noughts
+L223
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R202
+; the flag is set if EITHER byte of the count is not nought; each is
+; copied out through a temp and put straight back
+; the flag starts down
+R2
+  [-]
+; the low byte out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; and a nonzero temp raises the flag
+L1
+  [[-]L3+R3]
+; the high byte the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1206
+; a byte is taken only while the count has something left; the guard
+; CLEARS nz rather than decrementing it  because nz counts the nonzero
+; BYTES of the count and is two for a length like 0x0101
+  [
+  [-]
+L204
+  ,
+R202
+; one fewer byte  borrowing from the high byte when the low runs out
+; the low byte out to a temp and a spare
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; the borrow is assumed
+L2
+  [-]
+  +
+; and withdrawn if the low byte had something to give
+R1
+  [[-]L5-R4-R1]
+; otherwise the high byte pays and the low wraps
+L1
+  [-L3-L1-R4]
+L4
+R2
+  ]
+R5
+; ASSERT ptr=1211
+]
+; home  which is where the hash step is entered
+L1211
+; ASSERT ptr=0
+%%block/ghashstep%%
+; ASSERT ptr=0
+R1204
+; the flag is set if EITHER byte of the count is not nought; each is
+; copied out through a temp and put straight back
+; the flag starts down
+R2
+  [-]
+; the low byte out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; and a nonzero temp raises the flag
+L1
+  [[-]L3+R3]
+; the high byte the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1206
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=1207
+]
+
+; ==== the length of the plaintext ====
+L5
+  ,>,
+; ASSERT ptr=1203
+; the count to work down  with plen kept for the end
+L1
+  [-R2+L255+R253]
+L253
+  [-R253+L253]
+R253
+; the next byte
+R1
+  [-R2+L255+R253]
+L253
+  [-R253+L253]
+R253
+R1
+; the flag is set if EITHER byte of the count is not nought; each is
+; copied out through a temp and put straight back
+; the flag starts down
+R2
+  [-]
+; the low byte out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; and a nonzero temp raises the flag
+L1
+  [[-]L3+R3]
+; the high byte the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1206
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=1207
+[
+
+; the counter steps  and SP 800_38D counts from J0 plus one
+L240
+%%block/inc128%% 967
+; ASSERT ptr=983
+; a counter that wrapped is out of keystream and the standard leaves that
+; to the caller  as RFC 8439 does for the other stream cipher here
+  [-]
+; the counter is enciphered  and that is sixteen keystream bytes
+; the window holds the tenth round key and the constant holds 0x6c  so
+; both go back before every run
+L983
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+R30
+  [-]
+L45
+; ASSERT zero 0:81
+; the key is COPIED  because every run wants it again
+R885
+%%block/copy16%% 885
+L884
+%%block/copy16back%% 16
+; the counter is COPIED into the state  it is wanted again
+R936
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+; the next byte
+R1
+  [-L885+R867+R18]
+L18
+  [-R18+L18]
+R18
+L937
+; ASSERT zero 16:44
+%%block/aes128encrypt%%
+; ASSERT ptr=0
+R1211
+  ++++++++++++++++
+; ASSERT ptr=1211
+[
+  -
+; the hash block slides  which pads it when the message runs out
+L223
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R202
+; the flag is set if EITHER byte of the count is not nought; each is
+; copied out through a temp and put straight back
+; the flag starts down
+R2
+  [-]
+; the low byte out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; and a nonzero temp raises the flag
+L1
+  [[-]L3+R3]
+; the high byte the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1206
+; a plaintext byte is taken only while the count has something left
+  [
+  [-]
+; the keystream byte meets it
+L1124
+  [-R1147+L1147]
+R1148
+  ,
+L2
+; ASSERT ptr=1228
+; ASSERT zero 1231:1244
+@@XOR8@@ 1228
+; the ciphertext byte goes out  and then into the hash block
+  .
+  [-L226+R226]
+L24
+; one fewer byte  borrowing from the high byte when the low runs out
+; the low byte out to a temp and a spare
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; the borrow is assumed
+L2
+  [-]
+  +
+; and withdrawn if the low byte had something to give
+R1
+  [[-]L5-R4-R1]
+; otherwise the high byte pays and the low wraps
+L1
+  [-L3-L1-R4]
+L4
+R2
+  ]
+; the keystream head is dropped whether it was used or not
+L1124
+  [-]
+; and the rest of the block slides down
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R1114
+; ASSERT ptr=1211
+]
+; home  which is where the hash step is entered
+L1211
+; ASSERT ptr=0
+%%block/ghashstep%%
+; ASSERT ptr=0
+R1204
+; the flag is set if EITHER byte of the count is not nought; each is
+; copied out through a temp and put straight back
+; the flag starts down
+R2
+  [-]
+; the low byte out to a temp and a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it back
+R6
+  [-L6+R6]
+; and a nonzero temp raises the flag
+L1
+  [[-]L3+R3]
+; the high byte the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1206
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=1207
+]
+
+; ==== and the last block hashed is the two lengths  in bits ====
+; ASSERT zero 987:1002
+
+; ==== the associated data's length in BITS  as three big endian bytes ====
+; the count is at most 65535  so eight times it is under 2^19 and three
+; bytes hold it; low byte times eight wraps into the last  the low
+; byte's top three bits carry into the middle  and the high byte does
+; the same one place up; No carry propagation is needed because the two
+; contributions to the middle byte cannot overflow it: seven at most
+; from below and 248 at most from above
+L7
+  [-R20+L7+L13]
+R13
+  [-L13+R13]
+L13
+; times eight  wrapping at the byte
+; doubling 1 of 3; the cell wraps at 256 and the wrap is the shift
+R20
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 2 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 3 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+  [-L226+R226]
+L20
+  [-R20+L7+L13]
+R13
+  [-L13+R13]
+L13
+; shifted right five  which is its top three bits
+R20
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+  [-L227+R227]
+L19
+  [-R19+L7+L12]
+R12
+  [-L12+R12]
+L12
+; times eight  wrapping at the byte
+; doubling 1 of 3; the cell wraps at 256 and the wrap is the shift
+R19
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 2 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 3 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+  [-L227+R227]
+L19
+  [-R19+L7+L12]
+R12
+  [-L12+R12]
+L12
+; shifted right five  which is its top three bits
+R19
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+  [-L228+R228]
+L8
+
+; ==== the plaintext's length in BITS  as three big endian bytes ====
+; the count is at most 65535  so eight times it is under 2^19 and three
+; bytes hold it; low byte times eight wraps into the last  the low
+; byte's top three bits carry into the middle  and the high byte does
+; the same one place up; No carry propagation is needed because the two
+; contributions to the middle byte cannot overflow it: seven at most
+; from below and 248 at most from above
+L10
+  [-R18+L7+L11]
+R11
+  [-L11+R11]
+L11
+; times eight  wrapping at the byte
+; doubling 1 of 3; the cell wraps at 256 and the wrap is the shift
+R18
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 2 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 3 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+  [-L218+R218]
+L18
+  [-R18+L7+L11]
+R11
+  [-L11+R11]
+L11
+; shifted right five  which is its top three bits
+R18
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+  [-L219+R219]
+L17
+  [-R17+L7+L10]
+R10
+  [-L10+R10]
+L10
+; times eight  wrapping at the byte
+; doubling 1 of 3; the cell wraps at 256 and the wrap is the shift
+R17
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 2 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+; doubling 3 of 3; the cell wraps at 256 and the wrap is the shift
+  [-L8+R8]
+L8
+  [-R8++L8]
+R8
+  [-L219+R219]
+L17
+  [-R17+L7+L10]
+R10
+  [-L10+R10]
+L10
+; shifted right five  which is its top three bits
+R17
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+%%block/halve%%
+; the bit that fell off is not wanted
+R2
+  [-]
+; and the quotient goes back to be halved again
+L1
+  [-L1+R1]
+L1
+  [-L220+R220]
+L8
+L1212
+; ASSERT ptr=0
+%%block/ghashstep%%
+; ASSERT ptr=0
+
+; ==== the tag is the hash exclusive ored with the mask ====
+R1211
+  ++++++++++++++++
+; ASSERT ptr=1211
+[
+  -
+; the hash gives up its head
+L208
+  [-R226+L226]
+; and slides
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; and the mask gives up its head  which empties it as it goes
+L101
+  [-R313+L313]
+; and slides too
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R296
+; ASSERT ptr=1228
+; ASSERT zero 1231:1244
+@@XOR8@@ 1228
+  .
+  [-]
+L17
+; ASSERT ptr=1211
+]
+
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED  for the
+; reason CONVENTIONS section 6 gives
+L1210
+; ASSERT ptr=1
+; the key  the counter and the subkey are all still standing  and so is
+; the table; everything this file works in is clear
+; ASSERT zero 987:1018
+; ASSERT zero 1024:1188
+; ASSERT zero 1204:1244
+L1

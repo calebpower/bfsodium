@@ -187,6 +187,7 @@ nought and it is verified through whatever includes it.
 | `block/halve` | 0 | 4 | a leaf; every routine that includes it, which is `xor8` and `xtime` |
 | `block/shr128gcm` | 0 | 396 | SP 800-38D's inner shift: right one bit, reduced with 0xe1 at the top; the MIRROR of block/shl128 and not a reuse of it, which the field laws in tier 7 are what police |
 | `block/ghashmul` | 0 | 494 | SP 800-38D Algorithm 1; proved through `aes/gfmul128` against the published subkey, against Cryptol, and against the four laws of the field itself |
+| `block/ghashstep` | 0 | 339 | one block folded into a GHASH; included three times by `aes/gcm128` and proved by its vectors, two of which exist precisely because the empty one does not reach two of those three call sites |
 | `block/inc128` | 0 | 423 | a 128-bit big-endian counter stepped by one; `aes/ctr128` was migrated onto it with its instruction stream byte-identical, which is the proof, and its four published SP 800-38A blocks exercise the carry because F.5's counter is f0f1..feff |
 | `block/drbgupdate` | 0 | 527 | SP 800-90A section 10.2.1.2; proved through `aes/ctrdrbg128`, whose n=0 vector is the Update chain and nothing else |
 | `block/xor8kernel` | 0 | 32 | a leaf; `idiom/xor8`'s vectors and its 1024 run sweep |
@@ -279,6 +280,7 @@ nought and it is verified through whatever includes it.
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
 | `aes/gfmul128` | 1236 | 49 | five products, anchored at one end by the published subkey H and checked by Cryptol; and separately the IDENTITY, the absorbing zero, COMMUTATIVITY and DISTRIBUTIVITY, which rest on no reference anyone here wrote |
 | `aes/ghash128` | 1992 | 528 | four block counts anchored at one end by the published subkey H; the empty one and the single zero block BOTH answer nought and are both kept, because a program that skipped the loop would pass the first and one whose multiply returned its first operand would pass both; two blocks is where the accumulator feeds back AND where a copy of H that should have been a move would show |
+| `aes/gcm128` | 61615 | 1415 | five shapes, chosen one per PATH rather than per feature: nothing, plaintext only, associated data only (which is GMAC), one whole block of each, and twenty bytes of each so both sections pad. The first two agree with the tags universally quoted as GCM's test cases 1 and 2, reproduced here from the standard's text alone |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
 | `aes/invmixcolumns` | 12669 | 85 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 166 | 113 | all ten Appendix B rounds run backwards + round trips ShiftRows |
@@ -356,8 +358,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 604 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 604 | golden vectors, dual oracle |
+| 2 | yes | 609 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 609 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 4 | metamorphic |
@@ -1618,7 +1620,7 @@ mechanical change stays reviewable:
 | held out | why it was tempting, and why not now |
 |---|---|
 | **AES-192 and AES-256** | Nk of 6 and 8, twelve and fourteen rounds, over shapes that already exist. Blocked by nothing. The rebuild would have had to get the looping right for three key sizes at once instead of one. |
-| **Modes** — ~~CTR~~, ~~CBC~~, ~~CMAC~~, ~~CTR_DRBG~~, GCM, GMAC | **CTR, CBC both ways and CMAC are built**; see the four "mode" sections below. **The structural work is done**: CBC decryption was the only mode that needed the inverse cipher and the only one that needed anything restructured, and `block/aes128decrypt` is now the pair `aes128dsetup` and `aes128drounds`. What is left is GCM and GMAC, which need GHASH — a 128-bit carry-less multiply, and much the largest piece remaining. **The multiply is built and pinned** as `aes/gfmul128`, with the field laws behind it; what is left is GHASH over a message and then GCM and GMAC on top. Note the measured cost: one multiply is about 300 million steps, three times a block of AES, so GHASH is the larger half of a GCM and not a rounding error against the cipher. |
+| **Modes** — ~~CTR~~, ~~CBC~~, ~~CMAC~~, ~~CTR_DRBG~~, ~~GCM~~, ~~GMAC~~ | **CTR, CBC both ways and CMAC are built**; see the four "mode" sections below. **The structural work is done**: CBC decryption was the only mode that needed the inverse cipher and the only one that needed anything restructured, and `block/aes128decrypt` is now the pair `aes128dsetup` and `aes128drounds`. What is left is GCM and GMAC, which need GHASH — a 128-bit carry-less multiply, and much the largest piece remaining. **THE ROSTER IS COMPLETE.** GMAC is not a separate program: SP 800-38D defines it as GCM with an empty plaintext, so it is `aes/gcm128` with `plen = 0` and a vector of its own. Note the measured cost: one multiply is about 300 million steps, three times a block of AES, so GHASH is the larger half of a GCM. |
 | **Unifying `xor32`/`xor64` onto `block/xor8kernel`** | The kernel is duplicated in three files down to the character, which HANDOFF already records as deferred — and `block/xor8kernel` finally makes it cheap. But those two are not AES, and the rebuild's invariant is identical instruction bytes; changing files outside the scope would weaken it. |
 | **Migrating the rest of the library to `%%include%%`** | Agreed to happen, in its own commits. The older `@@NAME@@ base` form keeps working meanwhile; the two coexist by design. |
 | **The deferred cleanup batch above** | Unchanged and still owed: tier 6, the BoneMesh lane, the pin bump, `bfj.c`, the documentation contradictions. |
@@ -3697,7 +3699,99 @@ So a GHASH over *n* blocks is not a rounding error against the cipher — it is
 the larger half. Any estimate of GCM's cost that assumed otherwise, including
 the one in this file's own next-steps table, was wrong.
 
+## The last mode, and where GMAC went
+
+`aes/gcm128` is the sixth mode and the only AEAD in the AES half of this
+library. With it the roster the owner set is complete: CTR, CBC both ways,
+CMAC, CTR\_DRBG, GCM and GMAC.
+
+### GMAC is a line in the test file, not a program
+
+SP 800-38D defines GMAC as **GCM with the plaintext empty** and the data to
+authenticate passed as associated data. That is exactly `aes/gcm128` with
+`plen = 0`. A separate `aes/gmac128` would have been thirteen hundred
+duplicated lines for an IO convenience — the caller appends two nought bytes —
+and duplicating thirteen hundred lines to save two is the shape this library
+exists not to have. It is a vector with its own label instead.
+
+### What the vectors are, and what is actually claimed
+
+No test values appear in SP 800-38D's text. The reference that computed these
+was written from the standard's description, and then on the all-zero input
+produced `58e2fccefa7e3061367f1d57a4e7455a` — the tag universally quoted as
+GCM's first test case — and on one zero block produced `0388dace…` and
+`ab6e47d4…`, quoted as its second.
+
+**Landing on both of those from the structure alone is strong corroboration**,
+and the brainfuck then reproduced all three independently. They are still
+labelled DERIVED, because nobody here read them out of the source document.
+What is claimed is the *agreement*, which a reader can check in a minute. That
+is a better position than `aes/ctrdrbg128` is in, where there is no widely
+quoted value to agree with at all.
+
+The last vector is the one that earns its place: twenty bytes of each means
+**both** the associated data and the ciphertext are padded to a block boundary,
+and the length block's two counts are not the lengths of what was hashed. A
+program that hashed the padded lengths, or forgot to pad one of the two
+sections, passes every other line.
+
+### Three cipher runs that are not the keystream
+
+The subkey `H` is the cipher on the zero block, the tag mask is the cipher on
+`J0`, and only then does the counter run from `J0 + 1`. All three put the key
+back first, because the schedule spends the window — the fact measured back
+when the forward cipher was first split, now collected for the sixth time.
+
+**The IV is ninety-six bits**, which is the only length with a simple `J0`. SP
+800-38D says that for any other length `J0` is itself a GHASH, and that is a
+different program.
+
+**The ciphertext is never stored.** Sixteen bytes are encrypted, written out
+and folded into the hash, then the next sixteen — the rule
+`aead/chacha20poly1305`'s header records after an earlier cut of it reached
+903 thousand lines by unrolling over the message.
+
+### The padding is the slide
+
+Every piece of what GHASH eats is padded to a whole block: `AAD ‖ pad ‖ C ‖
+pad ‖ len(A) ‖ len(C)`. None of that needs a flag or a special case, because
+the block being assembled **slides a byte at a time and a slide leaves a
+nought behind**. When the input runs out the remaining turns slide and pad.
+That is `chacha20poly1305`'s trick, and it is the second time it has saved a
+whole class of part-block machinery.
+
+The length block is the one piece of arithmetic: both counts are in **bits**,
+so each `u16` has to become three bytes. Rather than propagate carries, the
+value is split — `lo × 8` wraps into the last byte, `lo >> 5` and `hi × 8`
+both land in the middle, and `hi >> 5` is the first. The two contributions to
+the middle byte cannot overflow it (at most seven from below and 248 from
+above), so no carry is needed anywhere.
+
+### The bug: a block entered at the wrong cell
+
+`block/ghashstep` is entered at the caller's own nought, and after each inner
+loop the pointer sits on that loop's counter. Two of the three call sites
+walked home first and one pair did not.
+
+**The empty-input vector passed anyway** — with no associated data and no
+plaintext neither loop runs, so only the length block's call site executes,
+and that one was right. The tag it produced was `58e2fcce…`, the correct
+published-by-consensus answer, which is exactly the kind of result that makes
+a wrong program look finished. The next two vectors failed on
+`block/ghashstep`'s own entry contract, at the instruction that should have
+been at cell nought, rather than in a wrong tag two billion steps later.
+
 ## Traps that have actually bitten
+
+- **A VECTOR THAT PASSES BECAUSE IT SKIPS THE BROKEN PART.** `aes/gcm128`'s
+  empty-input vector produced the right tag while two of its three call sites
+  into `block/ghashstep` entered at the wrong cell — with no associated data
+  and no plaintext, neither of those sites runs. The answer was correct *and*
+  famous, which is the worst combination: a value you recognise is the one you
+  stop interrogating. The guard is that every call site a program has should
+  be reached by some vector, and the cheap way to know is a vector per path
+  rather than per feature — here, one with AAD only, one with plaintext only,
+  and one with both.
 
 - **A `# TIER n` MARKER DROPPED MID-FILE STEALS EVERY LINE AFTER IT.** The
   suite's markers run until the next one, so adding `# TIER 7` beside a new

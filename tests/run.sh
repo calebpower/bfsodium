@@ -204,6 +204,7 @@ aes/ctr128.bf
 aes/ctrdrbg128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
+aes/gcm128.bf
 aes/gfmul128.bf
 aes/ghash128.bf
 aes/invsubbytes.bf
@@ -1700,6 +1701,45 @@ dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e0000 000000000000000000000000
 dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e100000000000000000000000000000000000 00000000000000000000000000000000 ghash128Run "ghash128 one block of noughts  which is nought times H  so the answer is nought again but by a different route  DERIVED"
 dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e1000000102030405060708090a0b0c0d0e0f 9673155feb4b3741b24db4ad03ba38d1 ghash128Run "ghash128 one block  DERIVED"
 dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e2000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 5fc84be708181f1619433ea1199ad142 ghash128Run "ghash128 two blocks  the shortest input where the accumulator feeds back  DERIVED"
+
+# GCM128 is the last mode, and the only AEAD in the AES half of this library.
+# It is also the only one whose cost is dominated by something other than the
+# cipher: one multiply in GF(2^128) is about three hundred million
+# instructions against a hundred and fourteen million for a block of AES, so
+# a GCM spends most of its time in GHASH.
+#
+# THE IV IS NINETY SIX BITS, which is the only length with a simple J0. SP
+# 800-38D says that for any other length J0 is itself a GHASH, and that is a
+# different program. Twelve bytes is also the only length anyone should use.
+#
+# WHAT THESE VECTORS ARE. No test values appear in SP 800-38D's text. The
+# reference that computed these was written from the standard's description
+# and then, on the all-zero input, produced 58e2fccefa7e3061367f1d57a4e7455a
+# -- the tag universally quoted as GCM's first test case -- and on one zero
+# block produced 0388dace... and ab6e47d4..., quoted as its second. Landing on
+# both of those from the structure alone is strong corroboration, and the
+# brainfuck then reproduced all three independently. They are still labelled
+# DERIVED, because nobody here read them out of the source document; what is
+# claimed is the agreement, which a reader can check in a minute.
+#
+# GMAC IS THE THIRD LINE AND NOT A SEPARATE PROGRAM. SP 800-38D defines GMAC
+# as GCM with the plaintext empty and the data to authenticate passed as
+# associated data, which is exactly this program with plen = 0. A separate
+# file would have been thirteen hundred duplicated lines for an IO
+# convenience, which is the shape this library exists not to have. The caller
+# appends two nought bytes.
+#
+# THE LAST LINE IS THE PADDING, and it is the one that would catch a mistake
+# the others cannot: twenty bytes of each means BOTH the associated data and
+# the ciphertext are padded to a block boundary with noughts, and the length
+# block's two counts are not the lengths of what was hashed. A program that
+# hashed the padded lengths, or forgot to pad one of the two sections, passes
+# every other line here.
+dk aes/gcm128.bf 0000000000000000000000000000000000000000000000000000000000000000 58e2fccefa7e3061367f1d57a4e7455a gcm128Run_0_0 "gcm128 nothing at all  no associated data and no plaintext  so the hash is one length block; this is the case whose tag is universally quoted as GCM's first  and the reference here reproduces it from the standard's text alone  DERIVED"
+dk aes/gcm128.bf 000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000 0388dace60b6a392f328c2b971b2fe78ab6e47d42cec13bdf53a67b21257bddf gcm128Run_0_16 "gcm128 one block of zero plaintext  the case whose ciphertext and tag are quoted as GCM's second  DERIVED"
+dk aes/gcm128.bf 000000000000000000000000000000000000000000000000000000001000000102030405060708090a0b0c0d0e0f0000 8a44ec70da3a66ff6d07c57b3f607245 gcm128Run_16_0 "gcm128 associated data and NO plaintext  which is GMAC; see the note  DERIVED"
+dk aes/gcm128.bf 000102030405060708090a0b0c0d0e0f000102030405060708090a0b1000000102030405060708090a0b0c0d0e0f1000000102030405060708090a0b0c0d0e0f 936da5cd621ef15343db6b813aae7e07b78d0a7e34ee32f93a48f33b862f43b3 gcm128Run_16_16 "gcm128 one whole block of each  so both hash sections and the counter all run  DERIVED"
+dk aes/gcm128.bf 000102030405060708090a0b0c0d0e0f000102030405060708090a0b1400000102030405060708090a0b0c0d0e0f1011121314006465666768696a6b6c6d6e6f7071727374757677 f709c1a90e729d3f27bf0fe546d2027bc7536c917ef067a6a2e6875088c1136bf6bc4728 gcm128Run_20_20 "gcm128 twenty bytes of each  so BOTH are padded to a block boundary and the length block's two counts differ from the byte counts  DERIVED"
 
 
 # GFMUL is the general multiply in GF(2^8): peasant multiplication, eight

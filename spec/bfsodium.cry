@@ -2703,6 +2703,52 @@ ghash128Run inb = split (ys ! 0)
     xs = [ join blk | blk <- split`{b} (drop`{18} inb) : [b][16][8] ]
     ys = [0 : [128]] # [ gcmMul (y ^ x) h | y <- ys | x <- xs ]
 
+// AES-128 in Galois/Counter Mode (NIST SP 800-38D), with a 96-bit IV, taking
+// and returning the exact wire bytes aes/gcm128.bf reads and writes:
+//   in  = key(16) # iv(12) # alen(2 LE) # aad(alen) # plen(2 LE) # pt(plen)
+//   out = ciphertext(plen) # tag(16)
+//
+// Both lengths are TYPES here. They have to be: the input length alone gives
+// only their sum, so Cryptol cannot recover them, which is why the wrappers
+// below name both. The brainfuck reads them off the wire, and a program that
+// read them wrongly would emit the wrong number of bytes.
+//
+// The padding is written as a take over the data followed by zeroes, which
+// is the same trick cmac128Run uses: it leaves the data alone when it already
+// fills its last block and pads it when it does not.
+// The widths are stated over 8*a and 8*p, not a and p: the length block
+// holds BIT counts, so the literals below are three bits wider than the byte
+// counts and `64 >= width a` does not imply what they need.
+gcm128 : {a, p} (fin a, fin p, 64 >= width (8 * a), 64 >= width (8 * p))
+      => [32 + a + p][8] -> [p + 16][8]
+gcm128 inb = ct # split (join (encrypt128Run (key # split j0)) ^ (ys ! 0))
+  where
+    key = take`{16} inb
+    iv  = take`{12} (drop`{16} inb)
+    aad = take`{a} (drop`{30} inb)
+    pt  = drop`{32 + a} inb
+    h   = join (encrypt128Run (key # zero))
+    j0  = join iv # 0x00000001
+    ks  = take`{p} (join [ encrypt128Run (key # split (j0 + i))
+                         | i <- [1 ...] : [_][128] ])
+    ct  = [ x ^ k | x <- pt | k <- ks ]
+    pd  = take`{16 * (a /^ 16)} (aad # (zero : [16 * (a /^ 16)][8]))
+        # take`{16 * (p /^ 16)} (ct  # (zero : [16 * (p /^ 16)][8]))
+        # split`{8} ((`(a * 8)) : [64])
+        # split`{8} ((`(p * 8)) : [64])
+    bs  = split`{(a /^ 16) + (p /^ 16) + 1} pd : [_][16][8]
+    ys  = [0 : [128]] # [ gcmMul (y ^ join b) h | y <- ys | b <- bs ]
+gcm128Run_0_0 : [32][8] -> [16][8]
+gcm128Run_0_0 = gcm128`{0, 0}
+gcm128Run_0_16 : [48][8] -> [32][8]
+gcm128Run_0_16 = gcm128`{0, 16}
+gcm128Run_16_0 : [48][8] -> [16][8]
+gcm128Run_16_0 = gcm128`{16, 0}
+gcm128Run_16_16 : [64][8] -> [32][8]
+gcm128Run_16_16 = gcm128`{16, 16}
+gcm128Run_20_20 : [72][8] -> [36][8]
+gcm128Run_20_20 = gcm128`{20, 20}
+
 // SP 800-38B section 6.1's `dbl`: a 128-bit left shift by one, reduced by the
 // polynomial of GF(2^128) when the bit that falls off the top is set. Its low
 // byte is 0x87, where aes/xtime's field reduces by 0x1b -- same shape, a

@@ -1,0 +1,339 @@
+; ONE BLOCK FOLDED INTO A GHASH  which is Y = (Y xor X) dot H;
+;
+; NIST SP 800_38D section 6 point 4; aes/gcm128 does this three times: over
+; the associated data  over the ciphertext  and over the length block; The
+; three are the same seven hundred lines  so they are one file;
+;
+; Entered and left at the caller's own nought; the block to fold is at
+; @0x3db:0x3ea and is SPENT  the accumulator at @0x3eb:0x3fa is replaced  and
+; the subkey at @0x3a5:0x3b4 is COPIED and survives;
+;
+; THE SUBKEY SURVIVES AND THE BLOCK DOES NOT  and that asymmetry is the whole
+; of the bookkeeping here; block/ghashmul spends both of ITS operands  so the
+; accumulator MOVES into the bit source and the subkey is COPIED into the
+; value; A GCM folds as many blocks as the message has and every one of them
+; wants H again;
+;
+; THE BLOCK IS LEFT CLEAR  which is what lets the caller build the next one by
+; sliding bytes into it without clearing first; the exclusive or consumes it
+; a byte at a time on a conveyor;
+;
+; CONTRACTS ARE RELATIVE; this block is included at offset nought three times
+; so they resolve to the addresses aes/gcm128's tape map names;
+;
+; ASSERT ptr=+0
+
+; ==== the accumulator takes the block  sixteen turns on two conveyors ====
+R1211
+  ++++++++++++++++
+; ASSERT ptr=+1211
+[
+  -
+; the accumulator gives up its head
+L208
+  [-R226+L226]
+; and slides  leaving its tail for the answer
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; and the block gives up its head  which empties it as it goes
+L31
+  [-R243+L243]
+; and slides too
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R226
+; ASSERT ptr=+1228
+; ASSERT zero +1231:+1244
+@@XOR8@@ 1228
+  [-L210+R210]
+L17
+; ASSERT ptr=+1211
+]
+
+; ==== and the multiply ====
+; the accumulator MOVES into the bit source because the product replaces
+; it; the subkey is COPIED into the value because the next block wants it
+; the accumulator goes in as the bit source
+L208
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; the next byte
+R1
+  [-R37+L37]
+; and a copy of the subkey as the value
+L85
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-R123+L107+L16]
+R16
+  [-L16+R16]
+L16
+R76
+; ASSERT ptr=+1024
+; ASSERT zero +1024:+1039
+%%block/ghashmul%% 1024
+; ASSERT ptr=+1024
+; and the product becomes the accumulator  which empties the multiply's own for the next block
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+; the next byte
+R1
+  [-L21+R21]
+L1039
+; ASSERT ptr=+0
+; ASSERT zero +987:+1002
+; ASSERT zero +1024:+1188
