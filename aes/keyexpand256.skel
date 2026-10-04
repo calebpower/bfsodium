@@ -1,0 +1,95 @@
+; bfsodium KEYEXPAND256 : the AES_256 key schedule  240 bytes from 32
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table and block/aeskeyexpand256 are INCLUDED
+; and the second brings block/walk256 and block/rkappend with it;
+; aes/xorword aes/xtime and idiom/xor8 are PASTED inside it;
+;
+; THIS FILE LAYS THE S BOX  not the schedule block; that is deliberate and
+; it is what lets a CIPHER include the schedule: the cipher needs the same
+; table for its own SubBytes  and block/sbox256 is a DELTA CODED run that
+; assumes every cell begins at nought  so laying it twice doubles all 256
+; entries; One table  one lay down  two readers;
+;
+; IO  in:  key{32}
+;     out: w{240}     the fifteen round keys  in order
+;
+; FIPS 197 section 5 point 2 with Nk of eight; This is aes/keyexpand128's
+; sibling and the two differ in exactly three things: the window is eight
+; slots rather than four  the group looped is eight words rather than four
+; and there is a SECOND transform rule  a bare SubWord at every eighth word
+; offset by four  which exists at no other key size;
+;
+; THIS EXISTS TO BE PINNED; FIPS 197 Appendix A point 3 publishes the whole
+; expanded key for a known one  so the hardest part of AES_256 is checked
+; against somebody else's arithmetic rather than against ours; The cipher
+; then includes the same block  so what the vectors here pin is what the
+; cipher runs;
+;
+; THERE IS NO INTERFACE LINE AND THAT IS FORCED  for the reason
+; aes/keyexpand128 has none: the S box walk advances three cells a turn  so
+; tools/bffoot cannot bound a footprint; This is a PROGRAM;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x473  block/aeskeyexpand256's frame  as its own tape map lists it
+;     @0x019:0x038  window{32}  the key is read straight into it
+;     @0x075:0x374  the S box  laid here and shared with the schedule
+;     @0x384:0x473  the sixty words  which this file emits
+
+; the key goes straight into the window  which is where the schedule wants it
+R25
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=56
+L56
+; ASSERT ptr=0
+; ASSERT zero 57:1139
+
+; the S box first  because the schedule reads it and does not lay it
+%%block/aes128table%%
+; ASSERT ptr=45
+L45
+; ASSERT ptr=0
+
+%%block/aeskeyexpand256%%
+; ASSERT ptr=0
+
+; emit
+; the fifteen round keys  in order
+R900
+
+; the last byte is emitted AFTER the contract  so the contract has an
+; instruction to attach to; a claim written after the last one can never
+; fire  which tools/bfdag now refuses  and which it refused here
+; round key 0
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 1
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 2
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 3
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 4
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 5
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 6
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 7
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 8
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 9
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 10
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 11
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 12
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 13
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; round key 14
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; ASSERT ptr=1139
+  .

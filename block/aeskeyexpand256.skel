@@ -1,0 +1,1798 @@
+; THE AES_256 KEY SCHEDULE  sixty words from eight  into a buffer;
+;
+; FIPS 197 section 5 point 2 with Nk of eight and Nr of fourteen; Word i is
+; w at i minus eight exclusive ored with temp  where temp is w at i minus one;
+; every EIGHTH word puts temp through RotWord then SubWord then the round
+; constant  and every eighth word OFFSET BY FOUR puts it through SubWord
+; alone; That second rule exists ONLY at this key size and it is the whole
+; difference between this schedule and the other two;
+;
+; EIGHT STATIC SLOTS AND NO SHIFTING  which is aes/keyexpand128's argument at
+; a wider key: the schedule only ever wants w at i minus Nk and w at i
+; minus one  so an Nk word window is enough  and because the group of eight
+; words is written ONCE and looped  word i lives in slot i mod eight and the
+; slot each step touches is a constant in the text;
+;
+; FIFTY TWO WORDS IS SIX GROUPS AND A PART ONE; six turns of the
+; loop make forty eight and the last four are written out below it; That is
+; the same shape aes/encrypt128 has for its tenth round  and for the same
+; reason: a loop whose last turn differs is two pieces of text  not a flag;
+;
+; THE BUFFER IS A CONVEYOR; each new word slides the two hundred and forty
+; cells one word to the left and lands at the tail  so nothing is ever
+; addressed by a computed offset and the words come to rest in order; Sixty
+; appends at two hundred and thirty six moves is a few million instructions
+; which against this file's work is a small part  and against the cipher
+; that consumes it is nothing;
+;
+; WHY A BUFFER AT ALL  when aes/keyexpand128 emits each word as it is made:
+; because a CIPHER cannot read its own standard output; aes/keyexpand256
+; includes this and emits the buffer  and the ciphers include it and consume
+; the buffer from the front; One schedule  two uses  and the published
+; vectors of the program are what pin the ciphers' copy of it;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x000:0x018  the paste workspace; aes/xorword reaches 0 to 24 and
+;                 aes/xtime 0 to 21; every paste sits at this block's zero
+;   @0x019:0x038  window{32}  eight slots of four; slot s at 25 plus 4s
+;   @0x039:0x03c  temp{4}   w at i minus one  worked on in place
+;   @0x03d        rcon      the round constant
+;   @0x03e        g         the cell a copy hands its value back through
+;   @0x072:0x074  group 0 of the walk; ITS TRAIL IS NEVER SET
+;   @0x075:0x372  groups 1 to 256  the S box  LAID BY THE CALLER
+;   @0x37a        cnt  groups of eight still to do
+;   @0x380:0x383  the word being appended; it ABUTS the buffer because
+;                 block/rkappend240 lays the buffer at its own plus four
+;   @0x384:0x473  the sixty words  in order  once this block is done
+;
+; THE ENTRY CLAIM NAMES ONLY THE CELLS THIS BLOCK OWNS  and that is not
+; fussiness; it used to read "zero from temp to the end of the buffer"  which
+; was true of the schedule PROGRAM and false of every cipher: by the time a
+; cipher includes this  the S box is laid at 117 and the plaintext is in the
+; state at 82  and the claim failed on the table's first datum and then on
+; the plaintext's second byte; A block may only make claims about its own
+; frame  and the cells between are the CALLER's business;
+;
+; ASSERT ptr=+0
+; ASSERT zero +57:+62
+; ASSERT zero +890:+890
+; ASSERT zero +896:+899
+; ASSERT zero +900:+1139
+
+; ==== the eight words of the key are the first eight of the schedule ====
+; word 0
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R25
+  [-R871+L834+L37]
+R37
+  [-L37+R37]
+L37
+; byte 1 of it
+R1
+  [-R871+L835+L36]
+R36
+  [-L36+R36]
+L36
+; byte 2 of it
+R1
+  [-R871+L836+L35]
+R35
+  [-L35+R35]
+L35
+; byte 3 of it
+R1
+  [-R871+L837+L34]
+R34
+  [-L34+R34]
+L34
+R868
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+; word 1
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+L867
+  [-R867+L834+L33]
+R33
+  [-L33+R33]
+L33
+; byte 1 of it
+R1
+  [-R867+L835+L32]
+R32
+  [-L32+R32]
+L32
+; byte 2 of it
+R1
+  [-R867+L836+L31]
+R31
+  [-L31+R31]
+L31
+; byte 3 of it
+R1
+  [-R867+L837+L30]
+R30
+  [-L30+R30]
+L30
+R864
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+; word 2
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+L863
+  [-R863+L834+L29]
+R29
+  [-L29+R29]
+L29
+; byte 1 of it
+R1
+  [-R863+L835+L28]
+R28
+  [-L28+R28]
+L28
+; byte 2 of it
+R1
+  [-R863+L836+L27]
+R27
+  [-L27+R27]
+L27
+; byte 3 of it
+R1
+  [-R863+L837+L26]
+R26
+  [-L26+R26]
+L26
+R860
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+; word 3
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+L859
+  [-R859+L834+L25]
+R25
+  [-L25+R25]
+L25
+; byte 1 of it
+R1
+  [-R859+L835+L24]
+R24
+  [-L24+R24]
+L24
+; byte 2 of it
+R1
+  [-R859+L836+L23]
+R23
+  [-L23+R23]
+L23
+; byte 3 of it
+R1
+  [-R859+L837+L22]
+R22
+  [-L22+R22]
+L22
+R856
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+; word 4
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+L855
+  [-R855+L834+L21]
+R21
+  [-L21+R21]
+L21
+; byte 1 of it
+R1
+  [-R855+L835+L20]
+R20
+  [-L20+R20]
+L20
+; byte 2 of it
+R1
+  [-R855+L836+L19]
+R19
+  [-L19+R19]
+L19
+; byte 3 of it
+R1
+  [-R855+L837+L18]
+R18
+  [-L18+R18]
+L18
+R852
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+; word 5
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+L851
+  [-R851+L834+L17]
+R17
+  [-L17+R17]
+L17
+; byte 1 of it
+R1
+  [-R851+L835+L16]
+R16
+  [-L16+R16]
+L16
+; byte 2 of it
+R1
+  [-R851+L836+L15]
+R15
+  [-L15+R15]
+L15
+; byte 3 of it
+R1
+  [-R851+L837+L14]
+R14
+  [-L14+R14]
+L14
+R848
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+; word 6
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+L847
+  [-R847+L834+L13]
+R13
+  [-L13+R13]
+L13
+; byte 1 of it
+R1
+  [-R847+L835+L12]
+R12
+  [-L12+R12]
+L12
+; byte 2 of it
+R1
+  [-R847+L836+L11]
+R11
+  [-L11+R11]
+L11
+; byte 3 of it
+R1
+  [-R847+L837+L10]
+R10
+  [-L10+R10]
+L10
+R844
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+; word 7
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+L843
+  [-R843+L834+L9]
+R9
+  [-L9+R9]
+L9
+; byte 1 of it
+R1
+  [-R843+L835+L8]
+R8
+  [-L8+R8]
+L8
+; byte 2 of it
+R1
+  [-R843+L836+L7]
+R7
+  [-L7+R7]
+L7
+; byte 3 of it
+R1
+  [-R843+L837+L6]
+R6
+  [-L6+R6]
+L6
+R840
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== the round constant starts at one ====
+; the S box is NOT laid here; the caller lays it with block/aes128table
+; and the cipher that includes this block reads the SAME table for its
+; own SubBytes; laying it twice would be worse than wasteful because
+; block/sbox256 is delta coded against ZEROED cells and a second pass
+; doubles every entry
+R61
+  +
+L61
+; ASSERT ptr=+0
+
+; ==== 6 groups of eight words ====
+R890
+  ++++++
+; ASSERT ptr=+890
+[
+  -
+L890
+; ASSERT ptr=+0
+
+; ==== word 8k plus 0 : slot 0 takes it  temp comes from slot 7 ====
+; byte 0 of temp  copied because the slot is wanted again
+R53
+  [-R4+R5+L9]
+R9
+  [-L9+R9]
+L9
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R4+R4+L8]
+R8
+  [-L8+R8]
+L8
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R4+R3+L7]
+R7
+  [-L7+R7]
+L7
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R4+R2+L6]
+R6
+  [-L6+R6]
+L6
+; RotWord: the four bytes turn left by one
+R1
+  [-R5+L5]
+; byte 1 steps down
+R1
+  [-L1+R1]
+; byte 2 steps down
+R1
+  [-L1+R1]
+; byte 3 steps down
+R1
+  [-L1+R1]
+R2
+  [-L2+R2]
+; SubWord: each byte through the S box
+; byte 0 through the table
+L5
+  [-R58+L58]
+; the index goes to group one's walker  which is where the walk starts
+R58
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L58+R58]
+L58
+; byte 1 through the table
+R1
+  [-R57+L57]
+; the index goes to group one's walker  which is where the walk starts
+R57
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L57+R57]
+L57
+; byte 2 through the table
+R1
+  [-R56+L56]
+; the index goes to group one's walker  which is where the walk starts
+R56
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L56+R56]
+L56
+; byte 3 through the table
+R1
+  [-R55+L55]
+; the index goes to group one's walker  which is where the walk starts
+R55
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L55+R55]
+L55
+; the round constant goes into the first byte only  and it is
+; COPIED  because it is wanted again to make the next one
+L3
+  [-L56+R56]
+R4
+  [-L59+R60+L1]
+R1
+  [-L1+R1]
+L1
+L61
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  [-R57+L57]
+; and the constant becomes the next one  which is xtime of it
+R61
+  [-L61+R61]
+L61
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  [-R61+L61]
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R25
+  [-L8+R8]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L8+R8]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L8+R8]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L8+R8]
+; byte 0 of temp  also spent
+R29
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R8+L8]
+; byte 1 of the answer
+R1
+  [-R8+L8]
+; byte 2 of the answer
+R1
+  [-R8+L8]
+; byte 3 of the answer
+R1
+  [-R8+L8]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R5
+  [-R871+L834+L37]
+R37
+  [-L37+R37]
+L37
+; byte 1 of it
+R1
+  [-R871+L835+L36]
+R36
+  [-L36+R36]
+L36
+; byte 2 of it
+R1
+  [-R871+L836+L35]
+R35
+  [-L35+R35]
+L35
+; byte 3 of it
+R1
+  [-R871+L837+L34]
+R34
+  [-L34+R34]
+L34
+R868
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 8k plus 1 : slot 1 takes it  temp comes from slot 0 ====
+; byte 0 of temp  copied because the slot is wanted again
+R25
+  [-R32+R5+L37]
+R37
+  [-L37+R37]
+L37
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R32+R4+L36]
+R36
+  [-L36+R36]
+L36
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R32+R3+L35]
+R35
+  [-L35+R35]
+L35
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R32+R2+L34]
+R34
+  [-L34+R34]
+L34
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 0 of temp  also spent
+R25
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R12+L12]
+; byte 1 of the answer
+R1
+  [-R12+L12]
+; byte 2 of the answer
+R1
+  [-R12+L12]
+; byte 3 of the answer
+R1
+  [-R12+L12]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R9
+  [-R867+L834+L33]
+R33
+  [-L33+R33]
+L33
+; byte 1 of it
+R1
+  [-R867+L835+L32]
+R32
+  [-L32+R32]
+L32
+; byte 2 of it
+R1
+  [-R867+L836+L31]
+R31
+  [-L31+R31]
+L31
+; byte 3 of it
+R1
+  [-R867+L837+L30]
+R30
+  [-L30+R30]
+L30
+R864
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 8k plus 2 : slot 2 takes it  temp comes from slot 1 ====
+; byte 0 of temp  copied because the slot is wanted again
+R29
+  [-R28+R5+L33]
+R33
+  [-L33+R33]
+L33
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R28+R4+L32]
+R32
+  [-L32+R32]
+L32
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R28+R3+L31]
+R31
+  [-L31+R31]
+L31
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R28+R2+L30]
+R30
+  [-L30+R30]
+L30
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 0 of temp  also spent
+R21
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R16+L16]
+; byte 1 of the answer
+R1
+  [-R16+L16]
+; byte 2 of the answer
+R1
+  [-R16+L16]
+; byte 3 of the answer
+R1
+  [-R16+L16]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R13
+  [-R863+L834+L29]
+R29
+  [-L29+R29]
+L29
+; byte 1 of it
+R1
+  [-R863+L835+L28]
+R28
+  [-L28+R28]
+L28
+; byte 2 of it
+R1
+  [-R863+L836+L27]
+R27
+  [-L27+R27]
+L27
+; byte 3 of it
+R1
+  [-R863+L837+L26]
+R26
+  [-L26+R26]
+L26
+R860
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 8k plus 3 : slot 3 takes it  temp comes from slot 2 ====
+; byte 0 of temp  copied because the slot is wanted again
+R33
+  [-R24+R5+L29]
+R29
+  [-L29+R29]
+L29
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R24+R4+L28]
+R28
+  [-L28+R28]
+L28
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R24+R3+L27]
+R27
+  [-L27+R27]
+L27
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R24+R2+L26]
+R26
+  [-L26+R26]
+L26
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 0 of temp  also spent
+R17
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R20+L20]
+; byte 1 of the answer
+R1
+  [-R20+L20]
+; byte 2 of the answer
+R1
+  [-R20+L20]
+; byte 3 of the answer
+R1
+  [-R20+L20]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R17
+  [-R859+L834+L25]
+R25
+  [-L25+R25]
+L25
+; byte 1 of it
+R1
+  [-R859+L835+L24]
+R24
+  [-L24+R24]
+L24
+; byte 2 of it
+R1
+  [-R859+L836+L23]
+R23
+  [-L23+R23]
+L23
+; byte 3 of it
+R1
+  [-R859+L837+L22]
+R22
+  [-L22+R22]
+L22
+R856
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 8k plus 4 : slot 4 takes it  temp comes from slot 3 ====
+; byte 0 of temp  copied because the slot is wanted again
+R37
+  [-R20+R5+L25]
+R25
+  [-L25+R25]
+L25
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R20+R4+L24]
+R24
+  [-L24+R24]
+L24
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R20+R3+L23]
+R23
+  [-L23+R23]
+L23
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R20+R2+L22]
+R22
+  [-L22+R22]
+L22
+; SubWord alone  which is the rule this key size adds
+; byte 0 through the table
+R17
+  [-R58+L58]
+; the index goes to group one's walker  which is where the walk starts
+R58
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L58+R58]
+L58
+; byte 1 through the table
+R1
+  [-R57+L57]
+; the index goes to group one's walker  which is where the walk starts
+R57
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L57+R57]
+L57
+; byte 2 through the table
+R1
+  [-R56+L56]
+; the index goes to group one's walker  which is where the walk starts
+R56
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L56+R56]
+L56
+; byte 3 through the table
+R1
+  [-R55+L55]
+; the index goes to group one's walker  which is where the walk starts
+R55
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L55+R55]
+L55
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+L19
+  [-L24+R24]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L24+R24]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L24+R24]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L24+R24]
+; byte 0 of temp  also spent
+R13
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R24+L24]
+; byte 1 of the answer
+R1
+  [-R24+L24]
+; byte 2 of the answer
+R1
+  [-R24+L24]
+; byte 3 of the answer
+R1
+  [-R24+L24]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R21
+  [-R855+L834+L21]
+R21
+  [-L21+R21]
+L21
+; byte 1 of it
+R1
+  [-R855+L835+L20]
+R20
+  [-L20+R20]
+L20
+; byte 2 of it
+R1
+  [-R855+L836+L19]
+R19
+  [-L19+R19]
+L19
+; byte 3 of it
+R1
+  [-R855+L837+L18]
+R18
+  [-L18+R18]
+L18
+R852
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 8k plus 5 : slot 5 takes it  temp comes from slot 4 ====
+; byte 0 of temp  copied because the slot is wanted again
+R41
+  [-R16+R5+L21]
+R21
+  [-L21+R21]
+L21
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R16+R4+L20]
+R20
+  [-L20+R20]
+L20
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R16+R3+L19]
+R19
+  [-L19+R19]
+L19
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R16+R2+L18]
+R18
+  [-L18+R18]
+L18
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L28+R28]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L28+R28]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L28+R28]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L28+R28]
+; byte 0 of temp  also spent
+R9
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R28+L28]
+; byte 1 of the answer
+R1
+  [-R28+L28]
+; byte 2 of the answer
+R1
+  [-R28+L28]
+; byte 3 of the answer
+R1
+  [-R28+L28]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R25
+  [-R851+L834+L17]
+R17
+  [-L17+R17]
+L17
+; byte 1 of it
+R1
+  [-R851+L835+L16]
+R16
+  [-L16+R16]
+L16
+; byte 2 of it
+R1
+  [-R851+L836+L15]
+R15
+  [-L15+R15]
+L15
+; byte 3 of it
+R1
+  [-R851+L837+L14]
+R14
+  [-L14+R14]
+L14
+R848
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 8k plus 6 : slot 6 takes it  temp comes from slot 5 ====
+; byte 0 of temp  copied because the slot is wanted again
+R45
+  [-R12+R5+L17]
+R17
+  [-L17+R17]
+L17
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R12+R4+L16]
+R16
+  [-L16+R16]
+L16
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R12+R3+L15]
+R15
+  [-L15+R15]
+L15
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R12+R2+L14]
+R14
+  [-L14+R14]
+L14
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L32+R32]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L32+R32]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L32+R32]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L32+R32]
+; byte 0 of temp  also spent
+R5
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R32+L32]
+; byte 1 of the answer
+R1
+  [-R32+L32]
+; byte 2 of the answer
+R1
+  [-R32+L32]
+; byte 3 of the answer
+R1
+  [-R32+L32]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R29
+  [-R847+L834+L13]
+R13
+  [-L13+R13]
+L13
+; byte 1 of it
+R1
+  [-R847+L835+L12]
+R12
+  [-L12+R12]
+L12
+; byte 2 of it
+R1
+  [-R847+L836+L11]
+R11
+  [-L11+R11]
+L11
+; byte 3 of it
+R1
+  [-R847+L837+L10]
+R10
+  [-L10+R10]
+L10
+R844
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 8k plus 7 : slot 7 takes it  temp comes from slot 6 ====
+; byte 0 of temp  copied because the slot is wanted again
+R49
+  [-R8+R5+L13]
+R13
+  [-L13+R13]
+L13
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R8+R4+L12]
+R12
+  [-L12+R12]
+L12
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R8+R3+L11]
+R11
+  [-L11+R11]
+L11
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R8+R2+L10]
+R10
+  [-L10+R10]
+L10
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L36+R36]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L36+R36]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L36+R36]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L36+R36]
+; byte 0 of temp  also spent
+R1
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R36+L36]
+; byte 1 of the answer
+R1
+  [-R36+L36]
+; byte 2 of the answer
+R1
+  [-R36+L36]
+; byte 3 of the answer
+R1
+  [-R36+L36]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R33
+  [-R843+L834+L9]
+R9
+  [-L9+R9]
+L9
+; byte 1 of it
+R1
+  [-R843+L835+L8]
+R8
+  [-L8+R8]
+L8
+; byte 2 of it
+R1
+  [-R843+L836+L7]
+R7
+  [-L7+R7]
+L7
+; byte 3 of it
+R1
+  [-R843+L837+L6]
+R6
+  [-L6+R6]
+L6
+R840
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+R890
+; ASSERT ptr=+890
+]
+L890
+; ASSERT ptr=+0
+
+; ==== and the last 4 words  which are not a whole group ====
+
+; ==== word 56 : slot 0 takes it  temp comes from slot 7 ====
+; byte 0 of temp  copied because the slot is wanted again
+R53
+  [-R4+R5+L9]
+R9
+  [-L9+R9]
+L9
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R4+R4+L8]
+R8
+  [-L8+R8]
+L8
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R4+R3+L7]
+R7
+  [-L7+R7]
+L7
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R4+R2+L6]
+R6
+  [-L6+R6]
+L6
+; RotWord: the four bytes turn left by one
+R1
+  [-R5+L5]
+; byte 1 steps down
+R1
+  [-L1+R1]
+; byte 2 steps down
+R1
+  [-L1+R1]
+; byte 3 steps down
+R1
+  [-L1+R1]
+R2
+  [-L2+R2]
+; SubWord: each byte through the S box
+; byte 0 through the table
+L5
+  [-R58+L58]
+; the index goes to group one's walker  which is where the walk starts
+R58
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L58+R58]
+L58
+; byte 1 through the table
+R1
+  [-R57+L57]
+; the index goes to group one's walker  which is where the walk starts
+R57
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L57+R57]
+L57
+; byte 2 through the table
+R1
+  [-R56+L56]
+; the index goes to group one's walker  which is where the walk starts
+R56
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L56+R56]
+L56
+; byte 3 through the table
+R1
+  [-R55+L55]
+; the index goes to group one's walker  which is where the walk starts
+R55
+  [-R3+L3]
+R3
+%%block/walk256%%
+; ASSERT ptr=+115
+  [-L55+R55]
+L55
+; the round constant goes into the first byte only  and it is
+; COPIED  because it is wanted again to make the next one
+L3
+  [-L56+R56]
+R4
+  [-L59+R60+L1]
+R1
+  [-L1+R1]
+L1
+L61
+; ASSERT ptr=+0
+@@XOR8@@ 0
+; ASSERT ptr=+0
+  [-R57+L57]
+; and the constant becomes the next one  which is xtime of it
+R61
+  [-L61+R61]
+L61
+; ASSERT ptr=+0
+@@XTIME@@ 0
+; ASSERT ptr=+0
+  [-R61+L61]
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R25
+  [-L8+R8]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L8+R8]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L8+R8]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L8+R8]
+; byte 0 of temp  also spent
+R29
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R8+L8]
+; byte 1 of the answer
+R1
+  [-R8+L8]
+; byte 2 of the answer
+R1
+  [-R8+L8]
+; byte 3 of the answer
+R1
+  [-R8+L8]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R5
+  [-R871+L834+L37]
+R37
+  [-L37+R37]
+L37
+; byte 1 of it
+R1
+  [-R871+L835+L36]
+R36
+  [-L36+R36]
+L36
+; byte 2 of it
+R1
+  [-R871+L836+L35]
+R35
+  [-L35+R35]
+L35
+; byte 3 of it
+R1
+  [-R871+L837+L34]
+R34
+  [-L34+R34]
+L34
+R868
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 57 : slot 1 takes it  temp comes from slot 0 ====
+; byte 0 of temp  copied because the slot is wanted again
+R25
+  [-R32+R5+L37]
+R37
+  [-L37+R37]
+L37
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R32+R4+L36]
+R36
+  [-L36+R36]
+L36
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R32+R3+L35]
+R35
+  [-L35+R35]
+L35
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R32+R2+L34]
+R34
+  [-L34+R34]
+L34
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L12+R12]
+; byte 0 of temp  also spent
+R25
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R12+L12]
+; byte 1 of the answer
+R1
+  [-R12+L12]
+; byte 2 of the answer
+R1
+  [-R12+L12]
+; byte 3 of the answer
+R1
+  [-R12+L12]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R9
+  [-R867+L834+L33]
+R33
+  [-L33+R33]
+L33
+; byte 1 of it
+R1
+  [-R867+L835+L32]
+R32
+  [-L32+R32]
+L32
+; byte 2 of it
+R1
+  [-R867+L836+L31]
+R31
+  [-L31+R31]
+L31
+; byte 3 of it
+R1
+  [-R867+L837+L30]
+R30
+  [-L30+R30]
+L30
+R864
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 58 : slot 2 takes it  temp comes from slot 1 ====
+; byte 0 of temp  copied because the slot is wanted again
+R29
+  [-R28+R5+L33]
+R33
+  [-L33+R33]
+L33
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R28+R4+L32]
+R32
+  [-L32+R32]
+L32
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R28+R3+L31]
+R31
+  [-L31+R31]
+L31
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R28+R2+L30]
+R30
+  [-L30+R30]
+L30
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L16+R16]
+; byte 0 of temp  also spent
+R21
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R16+L16]
+; byte 1 of the answer
+R1
+  [-R16+L16]
+; byte 2 of the answer
+R1
+  [-R16+L16]
+; byte 3 of the answer
+R1
+  [-R16+L16]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R13
+  [-R863+L834+L29]
+R29
+  [-L29+R29]
+L29
+; byte 1 of it
+R1
+  [-R863+L835+L28]
+R28
+  [-L28+R28]
+L28
+; byte 2 of it
+R1
+  [-R863+L836+L27]
+R27
+  [-L27+R27]
+L27
+; byte 3 of it
+R1
+  [-R863+L837+L26]
+R26
+  [-L26+R26]
+L26
+R860
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+
+; ==== word 59 : slot 3 takes it  temp comes from slot 2 ====
+; byte 0 of temp  copied because the slot is wanted again
+R33
+  [-R24+R5+L29]
+R29
+  [-L29+R29]
+L29
+; byte 1 of temp  copied because the slot is wanted again
+R1
+  [-R24+R4+L28]
+R28
+  [-L28+R28]
+L28
+; byte 2 of temp  copied because the slot is wanted again
+R1
+  [-R24+R3+L27]
+R27
+  [-L27+R27]
+L27
+; byte 3 of temp  copied because the slot is wanted again
+R1
+  [-R24+R2+L26]
+R26
+  [-L26+R26]
+L26
+; the new word is w at i minus eight against temp
+; byte 0 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 1 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 2 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 3 of w at i minus Nk  which is SPENT by the exclusive or
+R1
+  [-L20+R20]
+; byte 0 of temp  also spent
+R17
+  [-L36+R36]
+; byte 1 of temp  also spent
+R1
+  [-L36+R36]
+; byte 2 of temp  also spent
+R1
+  [-L36+R36]
+; byte 3 of temp  also spent
+R1
+  [-L36+R36]
+L60
+; ASSERT ptr=+0
+@@XORWORD@@ 0
+; ASSERT ptr=+0
+; and the answer comes back in a  and goes into the slot
+; byte 0 of the answer
+R17
+  [-R20+L20]
+; byte 1 of the answer
+R1
+  [-R20+L20]
+; byte 2 of the answer
+R1
+  [-R20+L20]
+; byte 3 of the answer
+R1
+  [-R20+L20]
+; the word is COPIED to the staging cells and the buffer slides one
+; word to take it; a MOVE would empty the slot  and every slot is
+; still wanted: as w at i minus eight by the next group's word
+; of the same number  and as w at i minus one by the word after it
+; byte 0 of it
+R17
+  [-R859+L834+L25]
+R25
+  [-L25+R25]
+L25
+; byte 1 of it
+R1
+  [-R859+L835+L24]
+R24
+  [-L24+R24]
+L24
+; byte 2 of it
+R1
+  [-R859+L836+L23]
+R23
+  [-L23+R23]
+L23
+; byte 3 of it
+R1
+  [-R859+L837+L22]
+R22
+  [-L22+R22]
+L22
+R856
+; ASSERT ptr=+896
+%%block/rkappend240%% 896
+; ASSERT ptr=+896
+L896
+; ASSERT ptr=+0
+; ASSERT ptr=+0
+; the window holds the last eight words and the table is still
+; readable;
+; everything this block used as scratch is clear
+; ASSERT zero +0:+24
+; the round constant is NOT claimed clear: seven of them are used and it
+; holds one more than this width ever asks for
+; ASSERT zero +57:+60
+; ASSERT zero +62:+62
+; ASSERT zero +890:+890

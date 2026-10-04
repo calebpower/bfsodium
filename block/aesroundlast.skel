@@ -1,0 +1,65 @@
+; SUB BYTES AND SHIFT ROWS over the state at @0x052:0x061  which between
+; them are AES's final round  and the first two thirds of every other one;
+;
+; FIPS 197 section 5 point 1; The final round differs from the rest in
+; exactly one way: it has no MixColumns; So the question is which of the two
+; files is written out and which is the include  and the answer is this one
+; is the smaller claim: SubBytes then ShiftRows is a thing in its own right
+; and block/aesroundcore is that thing with a MixColumns after it;
+;
+; WHICH MEANS THE FINAL ROUND IS NOT A COPY OF THE OTHERS; before this split
+; a cipher wrote its last round out by hand  and the sixteen S box walks in
+; it were sixteen walks that merely LOOKED like the ones above; Now they are
+; the same text  and a defect in a walk cannot be present in one round and
+; absent from the other;
+;
+; THE TABLE IS READ AND PUT BACK; block/walk256 copies each datum it reads
+; and restores it  so the S box survives and a caller lays it once;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+; ASSERT ptr=+0
+
+; SubBytes byte 0
+  R82[-R33+L33]R33[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L33+R33]L115
+; SubBytes byte 1
+  R83[-R32+L32]R32[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L32+R32]L115
+; SubBytes byte 2
+  R84[-R31+L31]R31[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L31+R31]L115
+; SubBytes byte 3
+  R85[-R30+L30]R30[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L30+R30]L115
+; SubBytes byte 4
+  R86[-R29+L29]R29[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L29+R29]L115
+; SubBytes byte 5
+  R87[-R28+L28]R28[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L28+R28]L115
+; SubBytes byte 6
+  R88[-R27+L27]R27[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L27+R27]L115
+; SubBytes byte 7
+  R89[-R26+L26]R26[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L26+R26]L115
+; SubBytes byte 8
+  R90[-R25+L25]R25[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L25+R25]L115
+; SubBytes byte 9
+  R91[-R24+L24]R24[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L24+R24]L115
+; SubBytes byte 10
+  R92[-R23+L23]R23[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L23+R23]L115
+; SubBytes byte 11
+  R93[-R22+L22]R22[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L22+R22]L115
+; SubBytes byte 12
+  R94[-R21+L21]R21[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L21+R21]L115
+; SubBytes byte 13
+  R95[-R20+L20]R20[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L20+R20]L115
+; SubBytes byte 14
+  R96[-R19+L19]R19[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L19+R19]L115
+; SubBytes byte 15
+  R97[-R18+L18]R18[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L18+R18]L115
+; ShiftRows  pasted where the state already is
+  R82
+; ASSERT ptr=+82
+@@SHIFTROWS@@ 82
+; ASSERT ptr=+82
+  L82
+; ASSERT ptr=+0

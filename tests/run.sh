@@ -204,11 +204,13 @@ aes/ctr128.bf
 aes/ctrdrbg128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
+aes/encrypt256.bf
 aes/gcm128.bf
 aes/gfmul128.bf
 aes/ghash128.bf
 aes/invsubbytes.bf
 aes/keyexpand128.bf
+aes/keyexpand256.bf
 aes/subbytes.bf
 chacha20/stream.bf
 index/fetch256.bf
@@ -1404,6 +1406,39 @@ dk aes/encrypt128.bf 000102030405060708090a0b0c0d0e0f00112233445566778899aabbccd
 dk aes/encrypt128.bf 2b7e151628aed2a6abf7158809cf4f3c3243f6a8885a308d313198a2e0370734 3925841d02dc09fbdc118597196a0b32 encrypt128Run "encrypt128 FIPS 197 Appendix B  the worked example  a PUBLISHED value"
 dk aes/encrypt128.bf 00000000000000000000000000000000000000000000000000000000000000ff f70ddef93ba62588242a0e67d0d645e0 encrypt128Run "encrypt128 the zero key on a block of one byte  DERIVED"
 dk aes/encrypt128.bf 0000000000000000000000000000000000000000000000000000000000000000 66e94bd4ef8a2c3b884cfa59ca342b2e encrypt128Run "encrypt128 the zero key on the zero block  DERIVED"
+
+# AES-256, which is a different KEY SCHEDULE and the same cipher.
+#
+# The round function does not depend on Nk at all -- only the schedule does,
+# and the number of rounds -- so block/aesroundcore is written once and both
+# key sizes include it. What is new here is entirely in aes/keyexpand256:
+# eight words per group rather than four, and a SECOND transform rule, a bare
+# SubWord at every eighth word offset by four, which exists at no other key
+# size. That rule is the one a transcription of the 128 case silently omits,
+# and the Appendix A.3 line below is what would catch it -- it publishes all
+# 240 bytes, so the first word it gets wrong is named.
+#
+# THE SCHEDULE IS STORED, NOT MADE JUST IN TIME. At Nk = 8 the window produces
+# eight words per turn and the rounds consume four, so the two run at
+# different rates and the aes/encrypt128 shape would need an index. Instead
+# block/rkappend puts each word on the tail of a 240-cell buffer as it is
+# made and block/rkconsume takes sixteen bytes off the head as each round
+# runs. Conveyors at both ends; no round key is ever addressed by a computed
+# offset, and the text of a round does not know which round it is.
+#
+# WHICH IS WHY THE SCHEDULE IS A PROGRAM OF ITS OWN. aes/keyexpand256 emits
+# the buffer and is pinned against somebody else's arithmetic; aes/encrypt256
+# includes the same block, so what these four lines pin is what the cipher
+# runs. A cipher vector alone could not say WHICH of sixty words was wrong.
+dk aes/keyexpand256.bf 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff49ba354118e6925afa51a8b5f2067fcdea8b09c1a93d194cdbe49846eb75d5b9ad59aecb85bf3c917fee94248de8ebe96b5a9328a2678a647983122292f6c79b3812c81addadf48ba24360af2fab8b46498c5bfc9bebd198e268c3ba709e0421468007bacb2df331696e939e46c518d80c814e20476a9fb8a5025c02d59c58239de1369676ccc5a71fa2563959674ee155886ca5d2e2f31d77e0af1fa27cf73c3749c47ab18501ddae2757e4f7401905acafaaae3e4d59b349adf6acebd10190dfe4890d1e6188d0b046df344706c631e keyexpand256Run "keyexpand256 FIPS 197 Appendix A point 3  a PUBLISHED schedule  all 240 bytes of it"
+dk aes/keyexpand256.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fa573c29fa176c498a97fce93a572c09c1651a8cd0244beda1a5da4c10640badeae87dff00ff11b68a68ed5fb03fc15676de1f1486fa54f9275f8eb5373b8518dc656827fc9a799176f294cec6cd5598b3de23a75524775e727bf9eb45407cf390bdc905fc27b0948ad5245a4c1871c2f45f5a66017b2d387300d4d33640a820a7ccff71cbeb4fe5413e6bbf0d261a7dff01afafee7a82979d7a5644ab3afe6402541fe719bf500258813bbd55a721c0a4e5a6699a9f24fe07e572baacdf8cdea24fc79ccbf0979e9371ac23c6d68de36 keyexpand256Run "keyexpand256 the FIPS 197 Appendix C point 3 key  DERIVED  and the one the cipher below runs on  so the schedule the vectors pin is the schedule it uses"
+dk aes/keyexpand256.bf 0000000000000000000000000000000000000000000000000000000000000000 000000000000000000000000000000000000000000000000000000000000000062636363626363636263636362636363aafbfbfbaafbfbfbaafbfbfbaafbfbfb6f6c6ccf0d0f0fac6f6c6ccf0d0f0fac7d8d8d6ad77676917d8d8d6ad77676915354edc15e5be26d31378ea23c38810e968a81c141fcf7503c717a3aeb070cab9eaa8f28c0f16d45f1c6e3e7cdfe62e92b312bdf6acddc8f56bca6b5bdbbaa1e6406fd52a4f79017553173f098cf11196dbba90b0776758451cad331ec71792fe7b0e89c4347788b16760b7b8eb91a6274ed0ba1739b7e252251ad14ce20d43b10f80a1753bf729c45c979e7cb706385 keyexpand256Run "keyexpand256 an all nought key  DERIVED  where the bare SubWord rule shows plainly: every fourth word is the S box of the last"
+dk aes/keyexpand256.bf ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe8e9e9e917161616e8e9e9e9171616160fb8b8b8f04747470fb8b8b8f04747474a4949655d5f5f73b5b6b69aa2a0a08c355858dcc51f1f9bcaa7a7233ae0e064afa80ae5f2f755964741e30ce5e14380eca0421129bf5d8ae318faa9d9f81acde60ab7d014fde24653bc014ab65d42caa2ec6e658b5333ef684bc946b1b3d38b9b6c8a188f91685edc2d69146a702bdea0bd9f782beeac9743a565d1f216b65afc22349173b35ccfaf9e35dbc5ee1e050695ed132d7b41846ede24559cc8920f546d424f27de1e8088402b5b4dae355e keyexpand256Run "keyexpand256 an all ones key  DERIVED"
+
+dk aes/encrypt256.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00112233445566778899aabbccddeeff 8ea2b7ca516745bfeafc49904b496089 encrypt256Run "encrypt256 FIPS 197 Appendix C point 3  a PUBLISHED value"
+dk aes/encrypt256.bf 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff46bc1bee22e409f96e93d7e117393172a f3eed1bdb5d2a03c064b5a7e3db181f8 encrypt256Run "encrypt256 the SP 800-38A AES_256 key and its first plaintext block  DERIVED  and it AGREES with the first ciphertext block that F point 1 point 5 publishes; it is also the key the schedule above is pinned on"
+dk aes/encrypt256.bf 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 dc95c078a2408989ad48a21492842087 encrypt256Run "encrypt256 the zero key on the zero block  DERIVED  and it agrees with the value universally quoted for it; it is also the shape that would survive a round key conveyor handing over nothing at all"
+dk aes/encrypt256.bf 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff 4d4f06c6f17c2903abc750b28eda2e34 encrypt256Run "encrypt256 the zero key on a block of one byte  DERIVED  so diffusion has to carry the last cell of the state into all sixteen"
 
 # CTR128 is the FIRST MODE, and the first file here that uses a cipher as a
 # component rather than being one. It includes block/aes128table once and

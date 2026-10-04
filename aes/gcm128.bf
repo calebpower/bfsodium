@@ -4964,6 +4964,80 @@
   >>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>   ; continued
   >>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       ; continued
+                                                               ; ONE AES ROUND WITHOUT ITS KEY  which is SubBytes
+                                                               ; then ShiftRows  then MixColumns  over the state at
+                                                               ; @0x052:0x061;
+;
+                                                               ; FIPS 197 section 5 point 1; The fourth step of a
+                                                               ; round  AddRoundKey  is NOT here  and that is the
+                                                               ; whole reason this is a file: it is the only step that
+                                                               ; needs to know where the round key came from; A cipher
+                                                               ; that makes its schedule just in time has it in the
+                                                               ; window; one that stores the schedule has it on a
+                                                               ; conveyor; Everything before AddRoundKey is the same
+                                                               ; either way and for every key size;
+;
+                                                               ; SO THIS IS THE PART THAT AES_192 AND AES_256 SHARE
+                                                               ; WITH AES_128; the round function does not depend on
+                                                               ; Nk at all; only the SCHEDULE does  and only the
+                                                               ; number of rounds; so writing it once is the
+                                                               ; difference between one copy of it in this library and
+                                                               ; six;
+;
+                                                               ; IT IS ALSO NOT THE LAST ROUND; FIPS 197's final round
+                                                               ; has no MixColumns  so a caller writes that one out;
+                                                               ; That is the same shape aes/encrypt128 already had
+                                                               ; when the nine middle rounds were a loop and the tenth
+                                                               ; was written below it;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives a round and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x032:0x061  aes/mixcolumns pasted at 50  so its state cells are 82 to 97
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
+                                                               ; SUB BYTES AND SHIFT ROWS over the state at
+                                                               ; @0x052:0x061  which between them are AES's final
+                                                               ; round  and the first two thirds of every other one;
+;
+                                                               ; FIPS 197 section 5 point 1; The final round differs
+                                                               ; from the rest in exactly one way: it has no
+                                                               ; MixColumns; So the question is which of the two files
+                                                               ; is written out and which is the include  and the
+                                                               ; answer is this one is the smaller claim: SubBytes
+                                                               ; then ShiftRows is a thing in its own right and
+                                                               ; block/aesroundcore is that thing with a MixColumns
+                                                               ; after it;
+;
+                                                               ; WHICH MEANS THE FINAL ROUND IS NOT A COPY OF THE
+                                                               ; OTHERS; before this split a cipher wrote its last
+                                                               ; round out by hand  and the sixteen S box walks in it
+                                                               ; were sixteen walks that merely LOOKED like the ones
+                                                               ; above; Now they are the same text  and a defect in a
+                                                               ; walk cannot be present in one round and absent from
+                                                               ; the other;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; SubBytes byte 0
   >>>>>>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -5224,6 +5298,7 @@
                                                                ; ASSERT ptr=82
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
+                                                               ; ASSERT ptr=0
                                                                ; ASSERT ptr=0
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>           ; MixColumns  pasted so its state cells are the state
                                                                ; ASSERT ptr=50
@@ -13050,6 +13125,7 @@
                                                                ; ASSERT ptr=50
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=0
+
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the round key is COPIED beside the state; addroundkey
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<   ; spends it and the window is wanted again  for round 1
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -16192,6 +16268,40 @@
   >>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>   ; continued
   >>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       ; continued
+                                                               ; SUB BYTES AND SHIFT ROWS over the state at
+                                                               ; @0x052:0x061  which between them are AES's final
+                                                               ; round  and the first two thirds of every other one;
+;
+                                                               ; FIPS 197 section 5 point 1; The final round differs
+                                                               ; from the rest in exactly one way: it has no
+                                                               ; MixColumns; So the question is which of the two files
+                                                               ; is written out and which is the include  and the
+                                                               ; answer is this one is the smaller claim: SubBytes
+                                                               ; then ShiftRows is a thing in its own right and
+                                                               ; block/aesroundcore is that thing with a MixColumns
+                                                               ; after it;
+;
+                                                               ; WHICH MEANS THE FINAL ROUND IS NOT A COPY OF THE
+                                                               ; OTHERS; before this split a cipher wrote its last
+                                                               ; round out by hand  and the sixteen S box walks in it
+                                                               ; were sixteen walks that merely LOOKED like the ones
+                                                               ; above; Now they are the same text  and a defect in a
+                                                               ; walk cannot be present in one round and absent from
+                                                               ; the other;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; SubBytes byte 0
   >>>>>>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -16452,6 +16562,7 @@
                                                                ; ASSERT ptr=82
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
+                                                               ; ASSERT ptr=0
                                                                ; ASSERT ptr=0
                                                                ; and the last round has NO MixColumns  which is what
                                                                ; makes decryption possible at all the round key is
@@ -23314,6 +23425,80 @@
   >>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>   ; continued
   >>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       ; continued
+                                                               ; ONE AES ROUND WITHOUT ITS KEY  which is SubBytes
+                                                               ; then ShiftRows  then MixColumns  over the state at
+                                                               ; @0x052:0x061;
+;
+                                                               ; FIPS 197 section 5 point 1; The fourth step of a
+                                                               ; round  AddRoundKey  is NOT here  and that is the
+                                                               ; whole reason this is a file: it is the only step that
+                                                               ; needs to know where the round key came from; A cipher
+                                                               ; that makes its schedule just in time has it in the
+                                                               ; window; one that stores the schedule has it on a
+                                                               ; conveyor; Everything before AddRoundKey is the same
+                                                               ; either way and for every key size;
+;
+                                                               ; SO THIS IS THE PART THAT AES_192 AND AES_256 SHARE
+                                                               ; WITH AES_128; the round function does not depend on
+                                                               ; Nk at all; only the SCHEDULE does  and only the
+                                                               ; number of rounds; so writing it once is the
+                                                               ; difference between one copy of it in this library and
+                                                               ; six;
+;
+                                                               ; IT IS ALSO NOT THE LAST ROUND; FIPS 197's final round
+                                                               ; has no MixColumns  so a caller writes that one out;
+                                                               ; That is the same shape aes/encrypt128 already had
+                                                               ; when the nine middle rounds were a loop and the tenth
+                                                               ; was written below it;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives a round and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x032:0x061  aes/mixcolumns pasted at 50  so its state cells are 82 to 97
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
+                                                               ; SUB BYTES AND SHIFT ROWS over the state at
+                                                               ; @0x052:0x061  which between them are AES's final
+                                                               ; round  and the first two thirds of every other one;
+;
+                                                               ; FIPS 197 section 5 point 1; The final round differs
+                                                               ; from the rest in exactly one way: it has no
+                                                               ; MixColumns; So the question is which of the two files
+                                                               ; is written out and which is the include  and the
+                                                               ; answer is this one is the smaller claim: SubBytes
+                                                               ; then ShiftRows is a thing in its own right and
+                                                               ; block/aesroundcore is that thing with a MixColumns
+                                                               ; after it;
+;
+                                                               ; WHICH MEANS THE FINAL ROUND IS NOT A COPY OF THE
+                                                               ; OTHERS; before this split a cipher wrote its last
+                                                               ; round out by hand  and the sixteen S box walks in it
+                                                               ; were sixteen walks that merely LOOKED like the ones
+                                                               ; above; Now they are the same text  and a defect in a
+                                                               ; walk cannot be present in one round and absent from
+                                                               ; the other;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; SubBytes byte 0
   >>>>>>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -23574,6 +23759,7 @@
                                                                ; ASSERT ptr=82
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
+                                                               ; ASSERT ptr=0
                                                                ; ASSERT ptr=0
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>           ; MixColumns  pasted so its state cells are the state
                                                                ; ASSERT ptr=50
@@ -31400,6 +31586,7 @@
                                                                ; ASSERT ptr=50
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=0
+
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the round key is COPIED beside the state; addroundkey
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<   ; spends it and the window is wanted again  for round 1
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -34542,6 +34729,40 @@
   >>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>   ; continued
   >>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       ; continued
+                                                               ; SUB BYTES AND SHIFT ROWS over the state at
+                                                               ; @0x052:0x061  which between them are AES's final
+                                                               ; round  and the first two thirds of every other one;
+;
+                                                               ; FIPS 197 section 5 point 1; The final round differs
+                                                               ; from the rest in exactly one way: it has no
+                                                               ; MixColumns; So the question is which of the two files
+                                                               ; is written out and which is the include  and the
+                                                               ; answer is this one is the smaller claim: SubBytes
+                                                               ; then ShiftRows is a thing in its own right and
+                                                               ; block/aesroundcore is that thing with a MixColumns
+                                                               ; after it;
+;
+                                                               ; WHICH MEANS THE FINAL ROUND IS NOT A COPY OF THE
+                                                               ; OTHERS; before this split a cipher wrote its last
+                                                               ; round out by hand  and the sixteen S box walks in it
+                                                               ; were sixteen walks that merely LOOKED like the ones
+                                                               ; above; Now they are the same text  and a defect in a
+                                                               ; walk cannot be present in one round and absent from
+                                                               ; the other;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; SubBytes byte 0
   >>>>>>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -34802,6 +35023,7 @@
                                                                ; ASSERT ptr=82
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
+                                                               ; ASSERT ptr=0
                                                                ; ASSERT ptr=0
                                                                ; and the last round has NO MixColumns  which is what
                                                                ; makes decryption possible at all the round key is
@@ -44268,6 +44490,80 @@
   >>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>   ; continued
   >>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       ; continued
+                                                               ; ONE AES ROUND WITHOUT ITS KEY  which is SubBytes
+                                                               ; then ShiftRows  then MixColumns  over the state at
+                                                               ; @0x052:0x061;
+;
+                                                               ; FIPS 197 section 5 point 1; The fourth step of a
+                                                               ; round  AddRoundKey  is NOT here  and that is the
+                                                               ; whole reason this is a file: it is the only step that
+                                                               ; needs to know where the round key came from; A cipher
+                                                               ; that makes its schedule just in time has it in the
+                                                               ; window; one that stores the schedule has it on a
+                                                               ; conveyor; Everything before AddRoundKey is the same
+                                                               ; either way and for every key size;
+;
+                                                               ; SO THIS IS THE PART THAT AES_192 AND AES_256 SHARE
+                                                               ; WITH AES_128; the round function does not depend on
+                                                               ; Nk at all; only the SCHEDULE does  and only the
+                                                               ; number of rounds; so writing it once is the
+                                                               ; difference between one copy of it in this library and
+                                                               ; six;
+;
+                                                               ; IT IS ALSO NOT THE LAST ROUND; FIPS 197's final round
+                                                               ; has no MixColumns  so a caller writes that one out;
+                                                               ; That is the same shape aes/encrypt128 already had
+                                                               ; when the nine middle rounds were a loop and the tenth
+                                                               ; was written below it;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives a round and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x032:0x061  aes/mixcolumns pasted at 50  so its state cells are 82 to 97
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
+                                                               ; SUB BYTES AND SHIFT ROWS over the state at
+                                                               ; @0x052:0x061  which between them are AES's final
+                                                               ; round  and the first two thirds of every other one;
+;
+                                                               ; FIPS 197 section 5 point 1; The final round differs
+                                                               ; from the rest in exactly one way: it has no
+                                                               ; MixColumns; So the question is which of the two files
+                                                               ; is written out and which is the include  and the
+                                                               ; answer is this one is the smaller claim: SubBytes
+                                                               ; then ShiftRows is a thing in its own right and
+                                                               ; block/aesroundcore is that thing with a MixColumns
+                                                               ; after it;
+;
+                                                               ; WHICH MEANS THE FINAL ROUND IS NOT A COPY OF THE
+                                                               ; OTHERS; before this split a cipher wrote its last
+                                                               ; round out by hand  and the sixteen S box walks in it
+                                                               ; were sixteen walks that merely LOOKED like the ones
+                                                               ; above; Now they are the same text  and a defect in a
+                                                               ; walk cannot be present in one round and absent from
+                                                               ; the other;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; SubBytes byte 0
   >>>>>>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -44528,6 +44824,7 @@
                                                                ; ASSERT ptr=82
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
+                                                               ; ASSERT ptr=0
                                                                ; ASSERT ptr=0
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>           ; MixColumns  pasted so its state cells are the state
                                                                ; ASSERT ptr=50
@@ -52354,6 +52651,7 @@
                                                                ; ASSERT ptr=50
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=0
+
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the round key is COPIED beside the state; addroundkey
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<   ; spends it and the window is wanted again  for round 1
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<<<<<<<<<<<<<<<<<<<<   ; continued
@@ -55496,6 +55794,40 @@
   >>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>   ; continued
   >>>>>>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       ; continued
+                                                               ; SUB BYTES AND SHIFT ROWS over the state at
+                                                               ; @0x052:0x061  which between them are AES's final
+                                                               ; round  and the first two thirds of every other one;
+;
+                                                               ; FIPS 197 section 5 point 1; The final round differs
+                                                               ; from the rest in exactly one way: it has no
+                                                               ; MixColumns; So the question is which of the two files
+                                                               ; is written out and which is the include  and the
+                                                               ; answer is this one is the smaller claim: SubBytes
+                                                               ; then ShiftRows is a thing in its own right and
+                                                               ; block/aesroundcore is that thing with a MixColumns
+                                                               ; after it;
+;
+                                                               ; WHICH MEANS THE FINAL ROUND IS NOT A COPY OF THE
+                                                               ; OTHERS; before this split a cipher wrote its last
+                                                               ; round out by hand  and the sixteen S box walks in it
+                                                               ; were sixteen walks that merely LOOKED like the ones
+                                                               ; above; Now they are the same text  and a defect in a
+                                                               ; walk cannot be present in one round and absent from
+                                                               ; the other;
+;
+                                                               ; THE TABLE IS READ AND PUT BACK; block/walk256 copies
+                                                               ; each datum it reads and restores it  so the S box
+                                                               ; survives and a caller lays it once;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+                                                               ; ASSERT ptr=0
+
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; SubBytes byte 0
   >>>>>>>>>>>>>>>>>>>>>>>>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -55756,6 +56088,7 @@
                                                                ; ASSERT ptr=82
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
+                                                               ; ASSERT ptr=0
                                                                ; ASSERT ptr=0
                                                                ; and the last round has NO MixColumns  which is what
                                                                ; makes decryption possible at all the round key is

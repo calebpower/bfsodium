@@ -1,0 +1,42 @@
+; ONE AES ROUND WITHOUT ITS KEY  which is SubBytes  then ShiftRows  then
+; MixColumns  over the state at @0x052:0x061;
+;
+; FIPS 197 section 5 point 1; The fourth step of a round  AddRoundKey  is NOT
+; here  and that is the whole reason this is a file: it is the only step that
+; needs to know where the round key came from; A cipher that makes its
+; schedule just in time has it in the window; one that stores the schedule
+; has it on a conveyor; Everything before AddRoundKey is the same either way
+; and for every key size;
+;
+; SO THIS IS THE PART THAT AES_192 AND AES_256 SHARE WITH AES_128; the round
+; function does not depend on Nk at all; only the SCHEDULE does  and only the
+; number of rounds; so writing it once is the difference between one copy of
+; it in this library and six;
+;
+; IT IS ALSO NOT THE LAST ROUND; FIPS 197's final round has no MixColumns  so
+; a caller writes that one out; That is the same shape aes/encrypt128 already
+; had when the nine middle rounds were a loop and the tenth was written
+; below it;
+;
+; THE TABLE IS READ AND PUT BACK; block/walk256 copies each datum it reads and
+; restores it  so the S box survives a round and a caller lays it once;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x032:0x061  aes/mixcolumns pasted at 50  so its state cells are 82 to 97
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the S box above it  READ ONLY
+;
+; ASSERT ptr=+0
+
+%%block/aesroundlast%%
+; ASSERT ptr=+0
+; MixColumns  pasted so its state cells are the state
+  R50
+; ASSERT ptr=+50
+@@MIXCOLUMNS@@ 50
+; ASSERT ptr=+50
+  L50
+; ASSERT ptr=+0
+

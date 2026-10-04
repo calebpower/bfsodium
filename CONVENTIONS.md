@@ -530,6 +530,19 @@ assembled `.bf` is still judged by every tool in the suite, once, at the end.
   control logic and it does not reopen §6's prohibition on it: there is no
   condition, no loop, and no arithmetic on a name.
 
+  **A block may claim only the cells it OWNS, and not the gaps between
+  them.** The right to make a relative claim is not a right to claim
+  everything above the block's zero. `block/aeskeyexpand256` opened with
+  `zero +57:+1139`, one range covering its temporaries, its counter and its
+  buffer and *everything in between* — which was true of the schedule
+  program, where nothing else was on the tape, and false of every cipher that
+  includes the same block, where by then the S box is laid at 117 and the
+  plaintext is in the state at 82. The claim failed on the table's first
+  datum and then on the plaintext's second byte. Four narrow ranges say the
+  same thing about the block and say nothing about the caller, which is what
+  makes a block reusable at all: the gaps are the caller's business and a
+  second caller fills them differently from the first.
+
   **The offset shifts a PASTE BASE inside the block too, and must.** A block
   may paste as well as include, and a paste base is a cell number in the same
   frame as a contract. Without shifting it, a block that pastes anything could
