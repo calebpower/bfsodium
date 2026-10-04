@@ -1,0 +1,528 @@
+; bfsodium GHASH128 : NIST SP 800_38D section 6 point 4
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/ghashmul is INCLUDED  and brings block/shr128gcm and
+; block/halve with it; idiom/xor8 is PASTED TWICE  once inside the multiply
+; and once here;
+;
+; IO  in:  H{16}  len{2} LE  blocks{len}
+;     out: Y{16}
+;
+;   Y = 0
+;   for each sixteen byte block X:  Y = (Y xor X) dot H
+;
+; LEN MUST BE A MULTIPLE OF SIXTEEN; GHASH is defined on whole blocks and the
+; padding GCM does is GCM's business  not this function's; SP 800_38D says so
+; in as many words: the input to GHASH is already a multiple of the block
+; size by the time GCM assembles it;
+;
+; THE SUBKEY IS COPIED AND NOT MOVED  every block; block/ghashmul SPENDS both
+; of its operands; the bit source is halved away and the value is shifted a
+; hundred and twenty eight times  and H is wanted by every block after this
+; one; That is the copy not move rule again  and it is the fifth place in
+; this library where it decides the shape of a loop;
+;
+; THE ACCUMULATOR GOES IN AS THE BIT SOURCE  and H as the value; the product
+; is the same either way because the field commutes  which tier 7 checks  but
+; the COST is not symmetric: the bit source is halved away byte by byte and
+; the value is shifted; Putting the accumulator first keeps H's sixteen bytes
+; out of the halving chain  which is where the work is;
+;
+; ONE MULTIPLY IS ABOUT THREE HUNDRED MILLION INSTRUCTIONS  which is three
+; times a block of AES  so a GHASH over n blocks is the larger half of a GCM
+; and not a rounding error against the cipher; That was measured  not
+; assumed  and the first estimate was two orders of magnitude out;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x0a4  the block/ghashmul frame  as its own tape map lists it
+;     @0x000:0x00f  its accumulator; the product lands here
+;     @0x010:0x01f  its bit source; the running Y goes in here
+;     @0x020:0x02f  its value; a copy of H goes in here
+;   @0x0c8:0x0d7  Y{16}   the running hash  nought to begin with
+;   @0x0d8:0x0e7  H{16}   the subkey  read once and kept
+;   @0x0e8:0x0f7  the temps that keep H alive across the copy
+;   @0x0f8:0x107  XB{16}  the block in hand
+;   @0x108:0x109  remaining{2} u16 LE
+;   @0x10a nz  @0x10b more  @0x10c e  @0x10d:0x10e t u
+;   @0x10f j
+;   @0x110:0x120  idiom/xor8 pasted at 272  for the Y xor X step
+
+; ==== the subkey and the length ====
+R216
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=231
+R33
+  ,>,
+; ASSERT ptr=265
+L265
+; ASSERT ptr=0
+
+; ==== is there anything to hash ====
+R264
+; The count is two bytes  so the flag is set if EITHER is not zero; each
+; byte is copied out through a temp and put straight back  so testing it
+; does not eat it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=266
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=267
+[
+
+; sixteen bytes of block come in  one per turn
+R4
+  ++++++++++++++++
+; ASSERT ptr=271
+[
+  -
+; the buffer slides and the new byte lands at its tail
+L22
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+  ,
+R1
+; one fewer byte to go  borrowing from the high byte when the low runs out
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L2
+  [-]
+  +
+R1
+  [[-]L5-R4-R1]
+L1
+  [-L3-L1-R4]
+L4
+; ASSERT ptr=264
+; back to the counter  which the top of the loop already decremented
+R7
+; ASSERT ptr=271
+]
+
+; ==== Y takes the block  sixteen turns on two conveyors ====
+  ++++++++++++++++
+; ASSERT ptr=271
+[
+  -
+; the accumulator gives up its head
+L71
+  [-R73+L73]
+; and slides  leaving its tail for the answer
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; and the block gives up its head  which empties it as it goes
+R33
+  [-R26+L26]
+; and slides too
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R9
+; ASSERT ptr=272
+; ASSERT zero 275:288
+@@XOR8@@ 272
+  [-L57+R57]
+L1
+; ASSERT ptr=271
+]
+
+; ==== and the multiply  which spends both of its operands ====
+; the accumulator MOVES into the bit source  because the product replaces
+; it; the subkey is COPIED into the value  because every later block wants
+; it again
+L71
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+; the next byte
+R1
+  [-L184+R184]
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+; the next byte
+R1
+  [-L184+R200+L16]
+R16
+  [-L16+R16]
+L16
+L231
+; ASSERT ptr=0
+; ASSERT zero 0:15
+; ASSERT zero 48:164
+%%block/ghashmul%%
+; ASSERT ptr=0
+; and the product becomes the new accumulator  which empties the
+; multiply's own accumulator for the next block
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+; the next byte
+R1
+  [-R200+L200]
+R249
+; The count is two bytes  so the flag is set if EITHER is not zero; each
+; byte is copied out through a temp and put straight back  so testing it
+; does not eat it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=266
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=267
+]
+
+; ==== the hash ====
+L67
+; ASSERT ptr=200
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; ASSERT ptr=215
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED  for the
+; reason CONVENTIONS section 6 gives
+L214
+; ASSERT ptr=1
+; Y is the answer and H is still standing; everything else is clear
+; ASSERT zero 0:164
+; ASSERT zero 232:263
+; ASSERT zero 264:288
+L1

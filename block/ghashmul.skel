@@ -430,10 +430,65 @@ R110
 L1
 ; ASSERT ptr=+141
 ]
-L141
+
+; ==== and V is cleared  which is NOT the same as being spent ====
+; X really is gone: the conveyor consumed it a byte at a time and the
+; halvings took each byte to nought; V is not; shifting right in this
+; field REDUCES  so bits are fed back in at the top and after a hundred
+; and twenty eight shifts V holds a residue rather than nought; A caller
+; that copied a fresh value in over it would be adding to that residue  so
+; this block clears it and says so below  rather than leaving every caller
+; to remember; aes/ghash128's exit contract is what caught it
+L109
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+L47
 ; ASSERT ptr=+0
-; X is spent to nothing and V has been shifted a hundred and twenty eight
-; times; neither is claimed to hold anything in particular  but everything
-; this block used as scratch is clear
-; ASSERT zero +101:+140
-; ASSERT zero +141:+164
+; X is spent to nothing by the conveyor and V is cleared above  so the
+; whole frame above the accumulator is clear and a caller may copy fresh
+; operands straight in
+; ASSERT zero +16:+164

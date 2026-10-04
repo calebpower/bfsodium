@@ -205,6 +205,7 @@ aes/ctrdrbg128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
 aes/gfmul128.bf
+aes/ghash128.bf
 aes/invsubbytes.bf
 aes/keyexpand128.bf
 aes/subbytes.bf
@@ -1673,6 +1674,32 @@ dk aes/gfmul128.bf 8000000000000000000000000000000066e94bd4ef8a2c3b884cfa59ca342
 dk aes/gfmul128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e00000000000000000000000000000000 00000000000000000000000000000000 gfmul128Run "gfmul128 anything times nought"
 dk aes/gfmul128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e66e94bd4ef8a2c3b884cfa59ca342b2e a569901bb4b18906f5059d24465c904d gfmul128Run "gfmul128 the subkey squared"
 dk aes/gfmul128.bf 82b70eee7f1a5039bef07ec2347f066ed08f5dc7512447e3404300026b6e5455 c1e72abc8c505fbe2a26e3e0a4f4fefe gfmul128Run "gfmul128 two arbitrary elements  DERIVED"
+
+# GHASH128 is SP 800-38D section 6.4: Y starts at nought and each block
+# becomes Y = (Y xor X) dot H. It is the multiply above in a loop, and it is
+# pinned separately for the same reason the multiply was pinned before it --
+# so that when a GCM tag is wrong there is somewhere to look.
+#
+# THE SUBKEY IS THE ANCHOR, as it is for the multiply: H here is the cipher on
+# the zero block, 66e94bd4ef8a2c3b884cfa59ca342b2e, pinned by four other
+# programs in this suite. The hashes themselves are DERIVED.
+#
+# THE FIRST TWO LINES BOTH ANSWER NOUGHT AND ARE BOTH WORTH HAVING. No blocks
+# at all reaches the length test and returns the accumulator untouched; one
+# block of noughts goes all the way through a multiply and comes back to the
+# same place. A program that skipped the loop entirely would pass the first
+# and fail nothing else; one whose multiply returned its first operand would
+# pass both and fail the third.
+#
+# TWO BLOCKS IS WHERE THE ACCUMULATOR FEEDS BACK, and it is also where the
+# subkey has to survive having been spent -- block/ghashmul halves its bit
+# source away and shifts its value a hundred and twenty eight times, so H is
+# COPIED in for every block. One block would not notice if that copy were a
+# move.
+dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e0000 00000000000000000000000000000000 ghash128Run "ghash128 no blocks at all  so the answer is the nought it starts from  and the only input that reaches the length test without multiplying  DERIVED"
+dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e100000000000000000000000000000000000 00000000000000000000000000000000 ghash128Run "ghash128 one block of noughts  which is nought times H  so the answer is nought again but by a different route  DERIVED"
+dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e1000000102030405060708090a0b0c0d0e0f 9673155feb4b3741b24db4ad03ba38d1 ghash128Run "ghash128 one block  DERIVED"
+dk aes/ghash128.bf 66e94bd4ef8a2c3b884cfa59ca342b2e2000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 5fc84be708181f1619433ea1199ad142 ghash128Run "ghash128 two blocks  the shortest input where the accumulator feeds back  DERIVED"
 
 
 # GFMUL is the general multiply in GF(2^8): peasant multiplication, eight

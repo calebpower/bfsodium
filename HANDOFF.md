@@ -186,7 +186,7 @@ nought and it is verified through whatever includes it.
 | `block/walk256` | 0 | 22 | a leaf; the indexed walk, through index/fetch256's nine vectors and everything that reads a table |
 | `block/halve` | 0 | 4 | a leaf; every routine that includes it, which is `xor8` and `xtime` |
 | `block/shr128gcm` | 0 | 396 | SP 800-38D's inner shift: right one bit, reduced with 0xe1 at the top; the MIRROR of block/shl128 and not a reuse of it, which the field laws in tier 7 are what police |
-| `block/ghashmul` | 0 | 439 | SP 800-38D Algorithm 1; proved through `aes/gfmul128` against the published subkey, against Cryptol, and against the four laws of the field itself |
+| `block/ghashmul` | 0 | 494 | SP 800-38D Algorithm 1; proved through `aes/gfmul128` against the published subkey, against Cryptol, and against the four laws of the field itself |
 | `block/inc128` | 0 | 423 | a 128-bit big-endian counter stepped by one; `aes/ctr128` was migrated onto it with its instruction stream byte-identical, which is the proof, and its four published SP 800-38A blocks exercise the carry because F.5's counter is f0f1..feff |
 | `block/drbgupdate` | 0 | 527 | SP 800-90A section 10.2.1.2; proved through `aes/ctrdrbg128`, whose n=0 vector is the Update chain and nothing else |
 | `block/xor8kernel` | 0 | 32 | a leaf; `idiom/xor8`'s vectors and its 1024 run sweep |
@@ -277,7 +277,8 @@ nought and it is verified through whatever includes it.
 | `aes/ctrdrbg128` | 58568 | 325 | five DERIVED lengths including nought and a truncating one, plus a METAMORPHIC check that rests on no reference of ours: sixteen bytes must be the first sixteen of sixty-four. NOTHING HERE IS PUBLISHED and the section below says why and what stands in for it |
 | `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
-| `aes/gfmul128` | 1193 | 49 | five products, anchored at one end by the published subkey H and checked by Cryptol; and separately the IDENTITY, the absorbing zero, COMMUTATIVITY and DISTRIBUTIVITY, which rest on no reference anyone here wrote |
+| `aes/gfmul128` | 1236 | 49 | five products, anchored at one end by the published subkey H and checked by Cryptol; and separately the IDENTITY, the absorbing zero, COMMUTATIVITY and DISTRIBUTIVITY, which rest on no reference anyone here wrote |
+| `aes/ghash128` | 1992 | 528 | four block counts anchored at one end by the published subkey H; the empty one and the single zero block BOTH answer nought and are both kept, because a program that skipped the loop would pass the first and one whose multiply returned its first operand would pass both; two blocks is where the accumulator feeds back AND where a copy of H that should have been a move would show |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
 | `aes/invmixcolumns` | 12669 | 85 | all nine Appendix B rounds run backwards + round trips MixColumns |
 | `aes/invshiftrows` | 166 | 113 | all ten Appendix B rounds run backwards + round trips ShiftRows |
@@ -355,8 +356,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 600 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 600 | golden vectors, dual oracle |
+| 2 | yes | 604 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 604 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 4 | metamorphic |

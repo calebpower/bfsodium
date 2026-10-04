@@ -2689,6 +2689,20 @@ gcmMul x y = zs ! 0
 gfmul128Run : [32][8] -> [16][8]
 gfmul128Run inb = split (gcmMul (join (take`{16} inb)) (join (drop`{16} inb)))
 
+// GHASH (NIST SP 800-38D section 6.4), taking and returning the exact wire
+// bytes aes/ghash128.bf reads and writes:
+//   in  = H(16) # len(2 LE) # blocks(len), len a multiple of 16
+//   out = Y(16)
+// Parameterised by the BLOCK count, so "a multiple of sixteen" is a type
+// error here rather than a silent wrong answer -- the same reason
+// cbcenc128Run counts blocks instead of bytes.
+ghash128Run : {b} (fin b, 64 >= width b) => [18 + 16*b][8] -> [16][8]
+ghash128Run inb = split (ys ! 0)
+  where
+    h  = join (take`{16} inb)
+    xs = [ join blk | blk <- split`{b} (drop`{18} inb) : [b][16][8] ]
+    ys = [0 : [128]] # [ gcmMul (y ^ x) h | y <- ys | x <- xs ]
+
 // SP 800-38B section 6.1's `dbl`: a 128-bit left shift by one, reduced by the
 // polynomial of GF(2^128) when the bit that falls off the top is set. Its low
 // byte is 0x87, where aes/xtime's field reduces by 0x1b -- same shape, a
