@@ -1,9 +1,9 @@
-; bfsodium KEYEXPAND256 : the AES_256 key schedule  240 bytes from 32
+; bfsodium KEYEXPAND192 : the AES_192 key schedule  208 bytes from 24
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
-; HAND WRITTEN; block/aes128table and block/aeskeyexpand256 are INCLUDED
-; and the second brings block/walk256 and block/rkappend240 with it;
+; HAND WRITTEN; block/aes128table and block/aeskeyexpand192 are INCLUDED
+; and the second brings block/walk256 and block/rkappend208 with it;
 ; aes/xorword aes/xtime and idiom/xor8 are PASTED inside it;
 ;
 ; THIS FILE LAYS THE S BOX  not the schedule block; that is deliberate and
@@ -12,17 +12,19 @@
 ; assumes every cell begins at nought  so laying it twice doubles all 256
 ; entries; One table  one lay down  two readers;
 ;
-; IO  in:  key{32}
-;     out: w{240}     the fifteen round keys  in order
+; IO  in:  key{24}
+;     out: w{208}     the thirteen round keys  in order
 ;
-; FIPS 197 section 5 point 2 with Nk of eight; This is aes/keyexpand128's
-; sibling and the two differ in exactly three things: the window is eight
-; slots rather than four  the group looped is eight words rather than four  and
-; there is a SECOND transform rule  a bare SubWord at every eighth word
-; offset by four  which exists at no other key size;
+; FIPS 197 section 5 point 2 with Nk of six; This is aes/keyexpand128's
+; sibling and the two differ in exactly three things: the window is six
+; slots rather than four  the group looped is six words rather than four  and
+; there is NO second transform rule  where the Nk of eight schedule has
+; one; An absence is the hardest thing to write a check for  and the
+; published schedule below is the only way to do it: it gives every byte  so
+; a rule applied where it should not be is named at the word it touched;
 ;
 ; THIS EXISTS TO BE PINNED; FIPS 197 Appendix A publishes the whole expanded
-; key for a known one at every key size  so the hardest part of AES_256 is
+; key for a known one at every key size  so the hardest part of AES_192 is
 ; checked against somebody else's arithmetic rather than against ours; The
 ; cipher then includes the same block  so what the vectors here pin is what
 ; the cipher runs;
@@ -32,18 +34,18 @@
 ; tools/bffoot cannot bound a footprint; This is a PROGRAM;
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x473  block/aeskeyexpand256's frame  as its own tape map lists it
-;     @0x019:0x038  window{32}  the key is read straight into it
+;   @0x000:0x453  block/aeskeyexpand192's frame  as its own tape map lists it
+;     @0x019:0x030  window{24}  the key is read straight into it
 ;     @0x075:0x374  the S box  laid here and shared with the schedule
-;     @0x384:0x473  the sixty words  which this file emits
+;     @0x384:0x453  the fifty two words  which this file emits
 
 ; the key goes straight into the window  which is where the schedule wants it
 R25
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; ASSERT ptr=56
-L56
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=48
+L48
 ; ASSERT ptr=0
-; ASSERT zero 57:1139
+; ASSERT zero 49:1107
 
 ; the S box first  because the schedule reads it and does not lay it
 %%block/aes128table%%
@@ -51,11 +53,11 @@ L56
 L45
 ; ASSERT ptr=0
 
-%%block/aeskeyexpand256%%
+%%block/aeskeyexpand192%%
 ; ASSERT ptr=0
 
 ; emit
-; the fifteen round keys  in order
+; the thirteen round keys  in order
 R900
 
 ; the last byte is emitted AFTER the contract  so the contract has an
@@ -86,10 +88,6 @@ R900
 ; round key 11
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
 ; round key 12
-  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
-; round key 13
-  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
-; round key 14
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
-; ASSERT ptr=1139
+; ASSERT ptr=1107
   .

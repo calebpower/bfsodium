@@ -1,0 +1,155 @@
+; THE ROUND KEY CONVEYOR  one round key taken off the front of the schedule
+; buffer  which is two hundred and eight cells  and the whole buffer slid up to
+; meet the next one;
+;
+; THE NAME CARRIES THE BUFFER LENGTH  as keccak/sponge136 and sponge168 do
+; and for the same reason: the length is not an offset  it is the NUMBER OF
+; MOVES  so it is different text and not the same text at a different base;
+; the other AES key size wants a buffer of its own length  so it has a
+; pair of its own;
+;
+; THIS IS THE OTHER HALF OF THE STORED SCHEDULE DESIGN; its sibling puts a
+; word on the tail as the schedule is made  and this takes sixteen bytes off
+; the head as the cipher runs; Between them no round key is ever addressed by
+; a computed offset  which is the library's conveyor rule and the reason an
+; AES_256 cipher is the same text as an AES_128 one with a different count;
+;
+; A MOVE AND NOT A COPY  in both halves; the round key cells are SPENT by
+; AddRoundKey  which exclusive ors the key into the state and empties it  so
+; the buffer hands its head over rather than lending it; The entry contract
+; below claims those sixteen cells are already clear  which is the cheap
+; guard against the copy where a move belonged: a copy into an occupied cell
+; ADDS  and the answer is wrong somewhere far away;
+;
+; TWO HUNDRED AND EIGHT MOVES A TURN  sixteen to take the key
+; and one hundred and ninety two to close the gap  and a cipher turns it once
+; per round; It is the same arithmetic the appending half does from the
+; other end  and against a round of AES it is not measurable;
+;
+; THE TAIL EMPTIES AS THE CONVEYOR RUNS; after the slide the top sixteen
+; cells hold nothing  because the slide moved out of them and nothing moved
+; in; The exit contract says so  and that is what would catch a slide whose
+; count was one word short;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero  which IS the round key cell)
+;   @0x000:0x00f  round key{16}  clear on entry  full on exit
+;   @0x322:0x3f1  the schedule buffer{208}  shorter by a round key on exit
+;
+; ASSERT ptr=+0
+; ASSERT zero +0:+15
+
+; ==== the head sixteen bytes become the round key ====
+; key bytes 0 to 3
+  R802[-L802+R802]R1[-L802+R802]R1[-L802+R802]R1[-L802+R802]
+; key bytes 4 to 7
+  R1[-L802+R802]R1[-L802+R802]R1[-L802+R802]R1[-L802+R802]
+; key bytes 8 to 11
+  R1[-L802+R802]R1[-L802+R802]R1[-L802+R802]R1[-L802+R802]
+; key bytes 12 to 15
+  R1[-L802+R802]R1[-L802+R802]R1[-L802+R802]R1[-L802+R802]
+; ASSERT ptr=+817
+
+; ==== and the buffer closes the gap  a word at a time ====
+; buffer bytes 16 to 19 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 20 to 23 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 24 to 27 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 28 to 31 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 32 to 35 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 36 to 39 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 40 to 43 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 44 to 47 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 48 to 51 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 52 to 55 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 56 to 59 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 60 to 63 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 64 to 67 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 68 to 71 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 72 to 75 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 76 to 79 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 80 to 83 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 84 to 87 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 88 to 91 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 92 to 95 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 96 to 99 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 100 to 103 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 104 to 107 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 108 to 111 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 112 to 115 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 116 to 119 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 120 to 123 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 124 to 127 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 128 to 131 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 132 to 135 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 136 to 139 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 140 to 143 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 144 to 147 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 148 to 151 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 152 to 155 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 156 to 159 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 160 to 163 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 164 to 167 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 168 to 171 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 172 to 175 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 176 to 179 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 180 to 183 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 184 to 187 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 188 to 191 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 192 to 195 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 196 to 199 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 200 to 203 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; buffer bytes 204 to 207 slide
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; ASSERT ptr=+1009
+L1009
+; the top sixteen cells are what the conveyor just vacated
+; ASSERT zero +994:+1009
+; ASSERT ptr=+0

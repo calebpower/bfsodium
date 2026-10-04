@@ -1,9 +1,9 @@
-; bfsodium KEYEXPAND256 : the AES_256 key schedule  240 bytes from 32
+; bfsodium KEYEXPAND192 : the AES_192 key schedule  208 bytes from 24
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
-; HAND WRITTEN; block/aes128table and block/aeskeyexpand256 are INCLUDED
-; and the second brings block/walk256 and block/rkappend240 with it;
+; HAND WRITTEN; block/aes128table and block/aeskeyexpand192 are INCLUDED
+; and the second brings block/walk256 and block/rkappend208 with it;
 ; aes/xorword aes/xtime and idiom/xor8 are PASTED inside it;
 ;
 ; THIS FILE LAYS THE S BOX  not the schedule block; that is deliberate and
@@ -12,17 +12,19 @@
 ; assumes every cell begins at nought  so laying it twice doubles all 256
 ; entries; One table  one lay down  two readers;
 ;
-; IO  in:  key{32}
-;     out: w{240}     the fifteen round keys  in order
+; IO  in:  key{24}
+;     out: w{208}     the thirteen round keys  in order
 ;
-; FIPS 197 section 5 point 2 with Nk of eight; This is aes/keyexpand128's
-; sibling and the two differ in exactly three things: the window is eight
-; slots rather than four  the group looped is eight words rather than four  and
-; there is a SECOND transform rule  a bare SubWord at every eighth word
-; offset by four  which exists at no other key size;
+; FIPS 197 section 5 point 2 with Nk of six; This is aes/keyexpand128's
+; sibling and the two differ in exactly three things: the window is six
+; slots rather than four  the group looped is six words rather than four  and
+; there is NO second transform rule  where the Nk of eight schedule has
+; one; An absence is the hardest thing to write a check for  and the
+; published schedule below is the only way to do it: it gives every byte  so
+; a rule applied where it should not be is named at the word it touched;
 ;
 ; THIS EXISTS TO BE PINNED; FIPS 197 Appendix A publishes the whole expanded
-; key for a known one at every key size  so the hardest part of AES_256 is
+; key for a known one at every key size  so the hardest part of AES_192 is
 ; checked against somebody else's arithmetic rather than against ours; The
 ; cipher then includes the same block  so what the vectors here pin is what
 ; the cipher runs;
@@ -32,19 +34,18 @@
 ; tools/bffoot cannot bound a footprint; This is a PROGRAM;
 ;
 ; TAPE MAP  (home @0)
-;   @0x000:0x473  block/aeskeyexpand256's frame  as its own tape map lists it
-;     @0x019:0x038  window{32}  the key is read straight into it
+;   @0x000:0x453  block/aeskeyexpand192's frame  as its own tape map lists it
+;     @0x019:0x030  window{24}  the key is read straight into it
 ;     @0x075:0x374  the S box  laid here and shared with the schedule
-;     @0x384:0x473  the sixty words  which this file emits
+;     @0x384:0x453  the fifty two words  which this file emits
 
 >>>>>>>>>>>>>>>>>>>>>>>>>                                      ; the key goes straight into the window  which is where
                                                                ; the schedule wants it
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>
-  ,>,>,                                                        ; continued
-                                                               ; ASSERT ptr=56
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+                                                               ; ASSERT ptr=48
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=0
-                                                               ; ASSERT zero 57:1139
+                                                               ; ASSERT zero 49:1107
 
                                                                ; the S box first  because the schedule reads it and
                                                                ; does not lay it THE AES S BOX LAID INTO THE TAPE  256
@@ -568,45 +569,46 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                                                ; ASSERT ptr=0
 
-                                                               ; THE AES_256 KEY SCHEDULE  sixty words from eight
+                                                               ; THE AES_192 KEY SCHEDULE  fifty two words from six
                                                                ; into a buffer;
 ;
-                                                               ; FIPS 197 section 5 point 2 with Nk of eight and Nr of
-                                                               ; fourteen; Word i is w at i minus eight exclusive ored
+                                                               ; FIPS 197 section 5 point 2 with Nk of six and Nr of
+                                                               ; twelve; Word i is w at i minus six exclusive ored
                                                                ; with temp  where temp is w at i minus one; every
-                                                               ; EIGHTH word puts temp through RotWord then SubWord
-                                                               ; then the round constant  and every eighth word OFFSET
-                                                               ; BY FOUR puts it through SubWord alone; That second
-                                                               ; rule exists ONLY at this key size and it is the whole
-                                                               ; difference between this schedule and the other two;
+                                                               ; SIXTH word puts temp through RotWord then SubWord
+                                                               ; then the round constant  and every other word is
+                                                               ; taken as it stands; There is no second transform rule
+                                                               ; here; that one belongs to Nk of eight alone  and its
+                                                               ; absence is the only thing in this file that an Nk of
+                                                               ; eight reader has to look twice at;
 ;
-                                                               ; EIGHT STATIC SLOTS AND NO SHIFTING  which is
+                                                               ; SIX STATIC SLOTS AND NO SHIFTING  which is
                                                                ; aes/keyexpand128's argument at a wider key: the
                                                                ; schedule only ever wants w at i minus Nk and w at i
                                                                ; minus one  so an Nk word window is enough  and
-                                                               ; because the group of eight words is written ONCE and
-                                                               ; looped  word i lives in slot i mod eight and the slot
+                                                               ; because the group of six words is written ONCE and
+                                                               ; looped  word i lives in slot i mod six and the slot
                                                                ; each step touches is a constant in the text;
 ;
-                                                               ; FIFTY TWO WORDS IS SIX GROUPS AND A PART ONE; six
-                                                               ; turns of the loop make forty eight and the last four
+                                                               ; FORTY SIX WORDS IS SEVEN GROUPS AND A PART ONE; seven
+                                                               ; turns of the loop make forty two and the last four
                                                                ; are written out below it; That is the same shape
                                                                ; aes/encrypt128 has for its tenth round  and for the
                                                                ; same reason: a loop whose last turn differs is two
                                                                ; pieces of text  not a flag;
 ;
                                                                ; THE BUFFER IS A CONVEYOR; each new word slides the
-                                                               ; two hundred and forty cells one word to the left and
+                                                               ; two hundred and eight cells one word to the left and
                                                                ; lands at the tail  so nothing is ever addressed by a
                                                                ; computed offset and the words come to rest in order;
-                                                               ; Sixty appends at two hundred and thirty six moves is
-                                                               ; a few million instructions which against this file's
+                                                               ; Fifty two appends at two hundred and four moves is a
+                                                               ; few million instructions which against this file's
                                                                ; work is a small part  and against the cipher that
                                                                ; consumes it is nothing;
 ;
                                                                ; WHY A BUFFER AT ALL  when aes/keyexpand128 emits each
                                                                ; word as it is made: because a CIPHER cannot read its
-                                                               ; own standard output; aes/keyexpand256 includes this
+                                                               ; own standard output; aes/keyexpand192 includes this
                                                                ; and emits the buffer  and the ciphers include it and
                                                                ; consume the buffer from the front; One schedule  two
                                                                ; uses  and the published vectors of the program are
@@ -619,17 +621,17 @@
 ;   @0x000:0x018  the paste workspace; aes/xorword reaches 0 to 24 and
                                                                ; aes/xtime 0 to 21; every paste sits at this block's
                                                                ; zero
-;   @0x019:0x038  window{32}  eight slots of four; slot s at 25 plus 4s
+;   @0x019:0x030  window{24}  six slots of four; slot s at 25 plus 4s
 ;   @0x039:0x03c  temp{4}   w at i minus one  worked on in place
 ;   @0x03d        rcon      the round constant
 ;   @0x03e        g         the cell a copy hands its value back through
 ;   @0x072:0x074  group 0 of the walk; ITS TRAIL IS NEVER SET
 ;   @0x075:0x372  groups 1 to 256  the S box  LAID BY THE CALLER
-;   @0x37a        cnt  groups of eight still to do
+;   @0x37a        cnt  groups of six still to do
 ;   @0x380:0x383  the word being appended; it ABUTS the buffer because
-                                                               ; block/rkappend240 lays the buffer at its own plus
+                                                               ; block/rkappend208 lays the buffer at its own plus
                                                                ; four
-;   @0x384:0x473  the sixty words  in order  once this block is done
+;   @0x384:0x453  the fifty two words  in order  once this block is done
 ;
                                                                ; THE ENTRY CLAIM NAMES ONLY THE CELLS THIS BLOCK OWNS
                                                                ; and that is not fussiness; it used to read "zero from
@@ -646,14 +648,14 @@
                                                                ; ASSERT zero 57:62
                                                                ; ASSERT zero 890:890
                                                                ; ASSERT zero 896:899
-                                                               ; ASSERT zero 900:1139
+                                                               ; ASSERT zero 900:1107
 
-; ============================================================ ; the eight words of the key are the first eight of the
+; ============================================================ ; the six words of the key are the first six of the
                                                                ; schedule
                                                                ; word 0 the word is COPIED to the staging cells and
                                                                ; the buffer slides one word to take it; a MOVE would
                                                                ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
+                                                               ; at i minus six by the next group's word of the same
                                                                ; number  and as w at i minus one by the word after it
                                                                ; byte 0 of it
 >>>>>>>>>>>>>>>>>>>>>>>>>
@@ -821,7 +823,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -833,9 +835,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -867,7 +869,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -926,15 +928,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -943,42 +937,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -986,7 +975,7 @@
                                                                ; word 1 the word is COPIED to the staging cells and
                                                                ; the buffer slides one word to take it; a MOVE would
                                                                ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
+                                                               ; at i minus six by the next group's word of the same
                                                                ; number  and as w at i minus one by the word after it
                                                                ; byte 0 of it
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1164,7 +1153,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -1176,9 +1165,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -1210,7 +1199,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -1269,15 +1258,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -1286,42 +1267,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -1329,7 +1305,7 @@
                                                                ; word 2 the word is COPIED to the staging cells and
                                                                ; the buffer slides one word to take it; a MOVE would
                                                                ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
+                                                               ; at i minus six by the next group's word of the same
                                                                ; number  and as w at i minus one by the word after it
                                                                ; byte 0 of it
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1505,7 +1481,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -1517,9 +1493,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -1551,7 +1527,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -1610,15 +1586,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -1627,42 +1595,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -1670,7 +1633,7 @@
                                                                ; word 3 the word is COPIED to the staging cells and
                                                                ; the buffer slides one word to take it; a MOVE would
                                                                ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
+                                                               ; at i minus six by the next group's word of the same
                                                                ; number  and as w at i minus one by the word after it
                                                                ; byte 0 of it
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1844,7 +1807,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -1856,9 +1819,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -1890,7 +1853,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -1949,15 +1912,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -1966,42 +1921,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -2009,7 +1959,7 @@
                                                                ; word 4 the word is COPIED to the staging cells and
                                                                ; the buffer slides one word to take it; a MOVE would
                                                                ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
+                                                               ; at i minus six by the next group's word of the same
                                                                ; number  and as w at i minus one by the word after it
                                                                ; byte 0 of it
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2183,7 +2133,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -2195,9 +2145,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -2229,7 +2179,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -2288,15 +2238,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -2305,42 +2247,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -2348,7 +2285,7 @@
                                                                ; word 5 the word is COPIED to the staging cells and
                                                                ; the buffer slides one word to take it; a MOVE would
                                                                ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
+                                                               ; at i minus six by the next group's word of the same
                                                                ; number  and as w at i minus one by the word after it
                                                                ; byte 0 of it
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2522,7 +2459,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -2534,9 +2471,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -2568,7 +2505,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -2627,15 +2564,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -2644,720 +2573,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
-<<<
-                                                               ; ASSERT ptr=896
-                                                               ; ASSERT zero 896:899
-                                                               ; ASSERT ptr=896
-                                                               ; word 6 the word is COPIED to the staging cells and
-                                                               ; the buffer slides one word to take it; a MOVE would
-                                                               ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                            ; continued
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<+<<<<<<<<<<<<<]                                            ; continued
->>>>>>>>>>>>>
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
->                                                              ; byte 1 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<+<<<<<<<<<<<<]                                            ; continued
->>>>>>>>>>>>
-  [-<<<<<<<<<<<<+>>>>>>>>>>>>]
-<<<<<<<<<<<<
->                                                              ; byte 2 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<+<<<<<<<<<<<]                                            ; continued
->>>>>>>>>>>
-  [-<<<<<<<<<<<+>>>>>>>>>>>]
-<<<<<<<<<<<
->                                                              ; byte 3 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<+<<<<<<<<<<]                                            ; continued
->>>>>>>>>>
-  [-<<<<<<<<<<+>>>>>>>>>>]
-<<<<<<<<<<
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                               ; continued
-                                                               ; ASSERT ptr=896
-                                                               ; A ROUND KEY WORD APPENDED TO THE SCHEDULE BUFFER
-                                                               ; which slides to take it;
-;
-                                                               ; The four bytes at this block's own nought are the
-                                                               ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
-                                                               ; off the front  the rest slides one word LEFT  and the
-                                                               ; new word lands in the four cells the slide emptied;
-;
-                                                               ; THE NAME CARRIES THE BUFFER LENGTH  as
-                                                               ; keccak/sponge136 and sponge168 do and for the same
-                                                               ; reason: the length is not an offset  it is the NUMBER
-                                                               ; OF MOVES  so it is different text and not the same
-                                                               ; text at a different base; the other AES key size
-                                                               ; wants a buffer of its own length  so it has a pair of
-                                                               ; its own;
-;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
-                                                               ; hold the schedule in order; Nothing is ever addressed
-                                                               ; by a computed offset  which is the conveyor this
-                                                               ; library uses wherever a sequence is built or consumed
-                                                               ; and the reason a key schedule needs no index;
-;
-                                                               ; THE STAGING WORD ABUTS THE BUFFER and a caller may
-                                                               ; not leave a gap; the buffer is at THIS BLOCK's plus
-                                                               ; four and nowhere else; A gap is silent  and it was
-                                                               ; silent for one run: every append lands a word early
-                                                               ; the schedule comes out shifted  and the first thing
-                                                               ; that notices is a wrong ciphertext two hundred
-                                                               ; million instructions later;
-;
-                                                               ; THE LEFTMOST WORD IS CLEARED AND NOT MOVED; a move
-                                                               ; into it would land on the staging word at this
-                                                               ; block's nought  which is the word about to be
-                                                               ; appended; That is a one cell mistake with a four cell
-                                                               ; blast radius and it is the reason the clear is
-                                                               ; written out rather than folded into the slide;
-;
-                                                               ; IT IS A BLOCK BECAUSE THE SLIDE IS SOME HUNDREDS OF
-                                                               ; LINES and a schedule appends from twenty places in
-                                                               ; its text; written out that is thousands of lines of
-                                                               ; skeleton  past the size budget that exists to stop a
-                                                               ; file being generated rather than written;
-;
-                                                               ; CONTRACTS ARE RELATIVE and the include's offset
-                                                               ; resolves them;
-;
-                                                               ; TAPE MAP  (relative to the block's own zero)
-;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
-;
-                                                               ; ASSERT ptr=896
-
-; ============================================================ ; the leftmost word falls off the front
-  >>>>[-]>[-]>[-]>[-]                                          ; four clears  not four moves
-
-; ============================================================ ; and everything above it slides one word left
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 4 to 7 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 8 to 11 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 12 to 15 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 16 to 19 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 20 to 23 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 24 to 27 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 28 to 31 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 32 to 35 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 36 to 39 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 40 to 43 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 44 to 47 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 48 to 51 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 52 to 55 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 56 to 59 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 60 to 63 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 64 to 67 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 68 to 71 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 72 to 75 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 76 to 79 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 80 to 83 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 84 to 87 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 88 to 91 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 92 to 95 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 96 to 99 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 100 to 103 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 104 to 107 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 108 to 111 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 112 to 115 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 116 to 119 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 120 to 123 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 124 to 127 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 128 to 131 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 132 to 135 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 136 to 139 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 140 to 143 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 144 to 147 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 148 to 151 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 152 to 155 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 156 to 159 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 160 to 163 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 164 to 167 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 168 to 171 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 172 to 175 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 176 to 179 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 180 to 183 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 184 to 187 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 188 to 191 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 192 to 195 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
-
-; ============================================================ ; the new word lands in the four cells the slide
-                                                               ; emptied
-                                                               ; the walk is the same for all four  because source and
-                                                               ; destination move together
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
-<<<
-                                                               ; ASSERT ptr=896
-                                                               ; ASSERT zero 896:899
-                                                               ; ASSERT ptr=896
-                                                               ; word 7 the word is COPIED to the staging cells and
-                                                               ; the buffer slides one word to take it; a MOVE would
-                                                               ; empty the slot  and every slot is still wanted: as w
-                                                               ; at i minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                ; continued
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<   ; continued
-  <<<<<<<<]                                                    ; continued
->>>>>>>>>
-  [-<<<<<<<<<+>>>>>>>>>]
-<<<<<<<<<
->                                                              ; byte 1 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+   ; continued
-  <<<<<<<<]                                                    ; continued
->>>>>>>>
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<
->                                                              ; byte 2 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  +<<<<<<<]                                                    ; continued
->>>>>>>
-  [-<<<<<<<+>>>>>>>]
-<<<<<<<
->                                                              ; byte 3 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <+<<<<<<]                                                    ; continued
->>>>>>
-  [-<<<<<<+>>>>>>]
-<<<<<<
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>                                   ; continued
-                                                               ; ASSERT ptr=896
-                                                               ; A ROUND KEY WORD APPENDED TO THE SCHEDULE BUFFER
-                                                               ; which slides to take it;
-;
-                                                               ; The four bytes at this block's own nought are the
-                                                               ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
-                                                               ; off the front  the rest slides one word LEFT  and the
-                                                               ; new word lands in the four cells the slide emptied;
-;
-                                                               ; THE NAME CARRIES THE BUFFER LENGTH  as
-                                                               ; keccak/sponge136 and sponge168 do and for the same
-                                                               ; reason: the length is not an offset  it is the NUMBER
-                                                               ; OF MOVES  so it is different text and not the same
-                                                               ; text at a different base; the other AES key size
-                                                               ; wants a buffer of its own length  so it has a pair of
-                                                               ; its own;
-;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
-                                                               ; hold the schedule in order; Nothing is ever addressed
-                                                               ; by a computed offset  which is the conveyor this
-                                                               ; library uses wherever a sequence is built or consumed
-                                                               ; and the reason a key schedule needs no index;
-;
-                                                               ; THE STAGING WORD ABUTS THE BUFFER and a caller may
-                                                               ; not leave a gap; the buffer is at THIS BLOCK's plus
-                                                               ; four and nowhere else; A gap is silent  and it was
-                                                               ; silent for one run: every append lands a word early
-                                                               ; the schedule comes out shifted  and the first thing
-                                                               ; that notices is a wrong ciphertext two hundred
-                                                               ; million instructions later;
-;
-                                                               ; THE LEFTMOST WORD IS CLEARED AND NOT MOVED; a move
-                                                               ; into it would land on the staging word at this
-                                                               ; block's nought  which is the word about to be
-                                                               ; appended; That is a one cell mistake with a four cell
-                                                               ; blast radius and it is the reason the clear is
-                                                               ; written out rather than folded into the slide;
-;
-                                                               ; IT IS A BLOCK BECAUSE THE SLIDE IS SOME HUNDREDS OF
-                                                               ; LINES and a schedule appends from twenty places in
-                                                               ; its text; written out that is thousands of lines of
-                                                               ; skeleton  past the size budget that exists to stop a
-                                                               ; file being generated rather than written;
-;
-                                                               ; CONTRACTS ARE RELATIVE and the include's offset
-                                                               ; resolves them;
-;
-                                                               ; TAPE MAP  (relative to the block's own zero)
-;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
-;
-                                                               ; ASSERT ptr=896
-
-; ============================================================ ; the leftmost word falls off the front
-  >>>>[-]>[-]>[-]>[-]                                          ; four clears  not four moves
-
-; ============================================================ ; and everything above it slides one word left
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 4 to 7 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 8 to 11 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 12 to 15 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 16 to 19 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 20 to 23 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 24 to 27 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 28 to 31 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 32 to 35 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 36 to 39 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 40 to 43 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 44 to 47 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 48 to 51 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 52 to 55 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 56 to 59 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 60 to 63 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 64 to 67 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 68 to 71 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 72 to 75 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 76 to 79 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 80 to 83 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 84 to 87 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 88 to 91 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 92 to 95 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 96 to 99 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 100 to 103 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 104 to 107 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 108 to 111 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 112 to 115 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 116 to 119 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 120 to 123 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 124 to 127 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 128 to 131 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 132 to 135 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 136 to 139 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 140 to 143 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 144 to 147 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 148 to 151 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 152 to 155 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 156 to 159 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 160 to 163 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 164 to 167 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 168 to 171 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 172 to 175 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 176 to 179 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 180 to 183 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 184 to 187 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 188 to 191 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 192 to 195 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
-
-; ============================================================ ; the new word lands in the four cells the slide
-                                                               ; emptied
-                                                               ; the walk is the same for all four  because source and
-                                                               ; destination move together
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -3394,7 +2640,7 @@
   <                                                            ; continued
                                                                ; ASSERT ptr=0
 
-; ============================================================ ; 6 groups of eight words
+; ============================================================ ; 7 groups of six words
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -3411,7 +2657,7 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>                                           ; continued
-  ++++++
+  +++++++
                                                                ; ASSERT ptr=890
 [
   -
@@ -3434,32 +2680,32 @@
                                                                ; ASSERT ptr=0
 
 ; ============================================================ ; word 8k plus 0 : slot 0 takes it  temp comes from
-                                                               ; slot 7
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          ; byte 0 of temp  copied because the slot is wanted
+                                                               ; slot 5
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                  ; byte 0 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>>>>+<<<<<<<<<]
->>>>>>>>>
-  [-<<<<<<<<<+>>>>>>>>>]
-<<<<<<<<<
+  [->>>>>>>>>>>>+>>>>>+<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<<<<
 >                                                              ; byte 1 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>>>+<<<<<<<<]
->>>>>>>>
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<
+  [->>>>>>>>>>>>+>>>>+<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<<<
 >                                                              ; byte 2 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>>+<<<<<<<]
->>>>>>>
-  [-<<<<<<<+>>>>>>>]
-<<<<<<<
+  [->>>>>>>>>>>>+>>>+<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<<
 >                                                              ; byte 3 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>+<<<<<<]
->>>>>>
-  [-<<<<<<+>>>>>>]
-<<<<<<
->                                                              ; RotWord: the four bytes turn left by one
+  [->>>>>>>>>>>>+>>+<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<
+>>>>>>>>>                                                      ; RotWord: the four bytes turn left by one
   [->>>>>+<<<<<]
 >                                                              ; byte 1 steps down
   [-<+>]
@@ -3904,8 +3150,8 @@
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<]                                                   ; continued
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >>>>>>>>>>>>>>>>>>>>>>>>>
   [-<<<<<<<<+>>>>>>>>]
@@ -4244,9 +3490,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -4412,7 +3658,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -4424,9 +3670,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -4458,7 +3704,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -4517,15 +3763,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -4534,42 +3772,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -4626,8 +3859,8 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>]                                               ; continued
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]
@@ -4966,9 +4199,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -5130,7 +4363,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -5142,9 +4375,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -5176,7 +4409,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -5235,15 +4468,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -5252,42 +4477,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -5344,8 +4564,8 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>]                                                       ; continued
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
@@ -5684,9 +4904,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -5846,7 +5066,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -5858,9 +5078,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -5892,7 +5112,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -5951,15 +5171,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -5968,42 +5180,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -6057,8 +5264,8 @@
 >>>>>>>>>>>>>>>>>>>>>>>>>>
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
@@ -6397,9 +5604,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -6557,7 +5764,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -6569,9 +5776,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -6603,7 +5810,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -6662,15 +5869,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -6679,42 +5878,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -6763,168 +5957,10 @@
 >>>>>>>>>>>>>>>>>>>>>>
   [-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<<<<<<<<<
-                                                               ; SubWord alone  which is the rule this key size adds
-                                                               ; byte 0 through the table
->>>>>>>>>>>>>>>>>
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]                                                         ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>     ; the index goes to group one's walker  which is where
-                                                               ; the walk starts
-  [->>>+<<<]
->>>
-                                                               ; THE INDEXED WALK  entered at group 1's walker with
-                                                               ; the index in it; the tape is groups of three  (d a b)
-                                                               ; and the answer comes to rest in group 0's walker; the
-                                                               ; caller owns the two lines that put the index there
-                                                               ; and its own contract  because a pointer assertion
-                                                               ; belongs to the file being assembled;
-;
-                                                               ; THIS IS WHY AES CANNOT BE PASTED; the walk advances
-                                                               ; three cells a turn  so no loop here is pointer
-                                                               ; balanced  so tools/bffoot will not bound it and
-                                                               ; tools/bfexpand will not paste a file holding it; an
-                                                               ; INCLUDE does not care and that is the whole reason
-                                                               ; this is a block; the walk out: spend one step  carry
-                                                               ; what is left to the next group  drop a trail  and
-                                                               ; step on; a walk of nought stops where it starts
-  [-[->>>+<<<]>+<>>>]
-                                                               ; the datum is COPIED into the walker and put back from
-                                                               ; the trail cell  which is nought in this group because
-                                                               ; the walk stopped before setting it; that is what
-                                                               ; leaves the table fit to be read again
-  <[->+>+<<]>>[-<<+>>]<
-                                                               ; the walk back: hand the value down one group  then
-                                                               ; follow the trail while it is set  clearing it; group
-                                                               ; 0's trail is never set and that is what stops the
-                                                               ; walk
-  [-<<<+>>>]<<[-<[-<<<+>>>]<<]
-  <                                                            ; and the value has come to rest in group 0's walker
-                                                               ; ASSERT ptr=115
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>]                                                         ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
->                                                              ; byte 1 through the table
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <]                                                           ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      ; the index goes to group one's walker  which is where
-                                                               ; the walk starts
-  [->>>+<<<]
->>>
-                                                               ; THE INDEXED WALK  entered at group 1's walker with
-                                                               ; the index in it; the tape is groups of three  (d a b)
-                                                               ; and the answer comes to rest in group 0's walker; the
-                                                               ; caller owns the two lines that put the index there
-                                                               ; and its own contract  because a pointer assertion
-                                                               ; belongs to the file being assembled;
-;
-                                                               ; THIS IS WHY AES CANNOT BE PASTED; the walk advances
-                                                               ; three cells a turn  so no loop here is pointer
-                                                               ; balanced  so tools/bffoot will not bound it and
-                                                               ; tools/bfexpand will not paste a file holding it; an
-                                                               ; INCLUDE does not care and that is the whole reason
-                                                               ; this is a block; the walk out: spend one step  carry
-                                                               ; what is left to the next group  drop a trail  and
-                                                               ; step on; a walk of nought stops where it starts
-  [-[->>>+<<<]>+<>>>]
-                                                               ; the datum is COPIED into the walker and put back from
-                                                               ; the trail cell  which is nought in this group because
-                                                               ; the walk stopped before setting it; that is what
-                                                               ; leaves the table fit to be read again
-  <[->+>+<<]>>[-<<+>>]<
-                                                               ; the walk back: hand the value down one group  then
-                                                               ; follow the trail while it is set  clearing it; group
-                                                               ; 0's trail is never set and that is what stops the
-                                                               ; walk
-  [-<<<+>>>]<<[-<[-<<<+>>>]<<]
-  <                                                            ; and the value has come to rest in group 0's walker
-                                                               ; ASSERT ptr=115
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >]                                                           ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
->                                                              ; byte 2 through the table
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  +<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]   ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>       ; the index goes to group one's walker  which is where
-                                                               ; the walk starts
-  [->>>+<<<]
->>>
-                                                               ; THE INDEXED WALK  entered at group 1's walker with
-                                                               ; the index in it; the tape is groups of three  (d a b)
-                                                               ; and the answer comes to rest in group 0's walker; the
-                                                               ; caller owns the two lines that put the index there
-                                                               ; and its own contract  because a pointer assertion
-                                                               ; belongs to the file being assembled;
-;
-                                                               ; THIS IS WHY AES CANNOT BE PASTED; the walk advances
-                                                               ; three cells a turn  so no loop here is pointer
-                                                               ; balanced  so tools/bffoot will not bound it and
-                                                               ; tools/bfexpand will not paste a file holding it; an
-                                                               ; INCLUDE does not care and that is the whole reason
-                                                               ; this is a block; the walk out: spend one step  carry
-                                                               ; what is left to the next group  drop a trail  and
-                                                               ; step on; a walk of nought stops where it starts
-  [-[->>>+<<<]>+<>>>]
-                                                               ; the datum is COPIED into the walker and put back from
-                                                               ; the trail cell  which is nought in this group because
-                                                               ; the walk stopped before setting it; that is what
-                                                               ; leaves the table fit to be read again
-  <[->+>+<<]>>[-<<+>>]<
-                                                               ; the walk back: hand the value down one group  then
-                                                               ; follow the trail while it is set  clearing it; group
-                                                               ; 0's trail is never set and that is what stops the
-                                                               ; walk
-  [-<<<+>>>]<<[-<[-<<<+>>>]<<]
-  <                                                            ; and the value has come to rest in group 0's walker
-                                                               ; ASSERT ptr=115
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  +>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]   ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
->                                                              ; byte 3 through the table
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]     ; continued
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>        ; the index goes to group one's walker  which is where
-                                                               ; the walk starts
-  [->>>+<<<]
->>>
-                                                               ; THE INDEXED WALK  entered at group 1's walker with
-                                                               ; the index in it; the tape is groups of three  (d a b)
-                                                               ; and the answer comes to rest in group 0's walker; the
-                                                               ; caller owns the two lines that put the index there
-                                                               ; and its own contract  because a pointer assertion
-                                                               ; belongs to the file being assembled;
-;
-                                                               ; THIS IS WHY AES CANNOT BE PASTED; the walk advances
-                                                               ; three cells a turn  so no loop here is pointer
-                                                               ; balanced  so tools/bffoot will not bound it and
-                                                               ; tools/bfexpand will not paste a file holding it; an
-                                                               ; INCLUDE does not care and that is the whole reason
-                                                               ; this is a block; the walk out: spend one step  carry
-                                                               ; what is left to the next group  drop a trail  and
-                                                               ; step on; a walk of nought stops where it starts
-  [-[->>>+<<<]>+<>>>]
-                                                               ; the datum is COPIED into the walker and put back from
-                                                               ; the trail cell  which is nought in this group because
-                                                               ; the walk stopped before setting it; that is what
-                                                               ; leaves the table fit to be read again
-  <[->+>+<<]>>[-<<+>>]<
-                                                               ; the walk back: hand the value down one group  then
-                                                               ; follow the trail while it is set  clearing it; group
-                                                               ; 0's trail is never set and that is what stops the
-                                                               ; walk
-  [-<<<+>>>]<<[-<[-<<<+>>>]<<]
-  <                                                            ; and the value has come to rest in group 0's walker
-                                                               ; ASSERT ptr=115
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]     ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
-<<<<<<<<<<<<<<<<<<<
+>
   [-<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>]
 >                                                              ; byte 1 of w at i minus Nk  which is SPENT by the
                                                                ; exclusive or
@@ -7261,9 +6297,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>>>>>>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -7421,7 +6457,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -7433,9 +6469,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -7467,7 +6503,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -7526,15 +6562,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -7543,42 +6571,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -7627,8 +6650,8 @@
 >>>>>>>>>>>>>>>>>>
   [-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -7975,9 +6998,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>>>>>>>>>>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -8135,7 +7158,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -8147,9 +7170,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -8181,7 +7204,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -8240,15 +7263,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -8257,1470 +7272,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
-<<<
-                                                               ; ASSERT ptr=896
-                                                               ; ASSERT zero 896:899
-                                                               ; ASSERT ptr=896
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
-                                                               ; ASSERT ptr=0
-
-; ============================================================ ; word 8k plus 6 : slot 6 takes it  temp comes from
-                                                               ; slot 5
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                  ; byte 0 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>>>>>+>>>>>+<<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>>
-  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
-<<<<<<<<<<<<<<<<<
->                                                              ; byte 1 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>>>>>+>>>>+<<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>>
-  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
-<<<<<<<<<<<<<<<<
->                                                              ; byte 2 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>>>>>+>>>+<<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>>
-  [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
-<<<<<<<<<<<<<<<
->                                                              ; byte 3 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>>>>>+>>+<<<<<<<<<<<<<<]
->>>>>>>>>>>>>>
-  [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
-<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
-                                                               ; or
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->                                                              ; byte 1 of w at i minus Nk  which is SPENT by the
-                                                               ; exclusive or
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->                                                              ; byte 2 of w at i minus Nk  which is SPENT by the
-                                                               ; exclusive or
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->                                                              ; byte 3 of w at i minus Nk  which is SPENT by the
-                                                               ; exclusive or
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>]                                                   ; continued
->>>>>                                                          ; byte 0 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 1 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 2 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 3 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-  >>>>>>>>>>>>>>>>>>>>>>>>                                     ; walk in to this routine entry offset
-                                                               ; ASSERT ptr=24
-                                                               ; ASSERT zero 0:16
-  <<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-  >>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]<<<<<   ; byte 0 of each word
-  <<<<<<<<<<<<                                                 ; continued
-  >>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>
-  >>>>]<<<<<<<<<<<<<<<<<<<<<                                   ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
-  >>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]<<   ; byte 1 of each word
-  <<<<<<<<<<<<<<<<                                             ; continued
-  >>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>
-  >>>>>>>]<<<<<<<<<<<<<<<<<<<<<<                               ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
-  >>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>   ; byte 2 of each word
-  ]<<<<<<<<<<<<<<<<<<<                                         ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>
-  >>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<                           ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
-  >>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>   ; byte 3 of each word
-  >>>]<<<<<<<<<<<<<<<<<<<<                                     ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>
-  >>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<                       ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
-                                                               ; ASSERT zero 0:16
-                                                               ; ASSERT zero 21:24
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-                                                               ; and the answer comes back in a  and goes into the
-                                                               ; slot byte 0 of the answer
->>>>>>>>>>>>>>>>>
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
->                                                              ; byte 1 of the answer
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
->                                                              ; byte 2 of the answer
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
->                                                              ; byte 3 of the answer
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<]                                                   ; continued
-                                                               ; the word is COPIED to the staging cells and the
-                                                               ; buffer slides one word to take it; a MOVE would empty
-                                                               ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<+<<<<<<<<<<<<<]                                            ; continued
->>>>>>>>>>>>>
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
->                                                              ; byte 1 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<+<<<<<<<<<<<<]                                            ; continued
->>>>>>>>>>>>
-  [-<<<<<<<<<<<<+>>>>>>>>>>>>]
-<<<<<<<<<<<<
->                                                              ; byte 2 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<+<<<<<<<<<<<]                                            ; continued
->>>>>>>>>>>
-  [-<<<<<<<<<<<+>>>>>>>>>>>]
-<<<<<<<<<<<
->                                                              ; byte 3 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<+<<<<<<<<<<]                                            ; continued
->>>>>>>>>>
-  [-<<<<<<<<<<+>>>>>>>>>>]
-<<<<<<<<<<
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                               ; continued
-                                                               ; ASSERT ptr=896
-                                                               ; A ROUND KEY WORD APPENDED TO THE SCHEDULE BUFFER
-                                                               ; which slides to take it;
-;
-                                                               ; The four bytes at this block's own nought are the
-                                                               ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
-                                                               ; off the front  the rest slides one word LEFT  and the
-                                                               ; new word lands in the four cells the slide emptied;
-;
-                                                               ; THE NAME CARRIES THE BUFFER LENGTH  as
-                                                               ; keccak/sponge136 and sponge168 do and for the same
-                                                               ; reason: the length is not an offset  it is the NUMBER
-                                                               ; OF MOVES  so it is different text and not the same
-                                                               ; text at a different base; the other AES key size
-                                                               ; wants a buffer of its own length  so it has a pair of
-                                                               ; its own;
-;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
-                                                               ; hold the schedule in order; Nothing is ever addressed
-                                                               ; by a computed offset  which is the conveyor this
-                                                               ; library uses wherever a sequence is built or consumed
-                                                               ; and the reason a key schedule needs no index;
-;
-                                                               ; THE STAGING WORD ABUTS THE BUFFER and a caller may
-                                                               ; not leave a gap; the buffer is at THIS BLOCK's plus
-                                                               ; four and nowhere else; A gap is silent  and it was
-                                                               ; silent for one run: every append lands a word early
-                                                               ; the schedule comes out shifted  and the first thing
-                                                               ; that notices is a wrong ciphertext two hundred
-                                                               ; million instructions later;
-;
-                                                               ; THE LEFTMOST WORD IS CLEARED AND NOT MOVED; a move
-                                                               ; into it would land on the staging word at this
-                                                               ; block's nought  which is the word about to be
-                                                               ; appended; That is a one cell mistake with a four cell
-                                                               ; blast radius and it is the reason the clear is
-                                                               ; written out rather than folded into the slide;
-;
-                                                               ; IT IS A BLOCK BECAUSE THE SLIDE IS SOME HUNDREDS OF
-                                                               ; LINES and a schedule appends from twenty places in
-                                                               ; its text; written out that is thousands of lines of
-                                                               ; skeleton  past the size budget that exists to stop a
-                                                               ; file being generated rather than written;
-;
-                                                               ; CONTRACTS ARE RELATIVE and the include's offset
-                                                               ; resolves them;
-;
-                                                               ; TAPE MAP  (relative to the block's own zero)
-;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
-;
-                                                               ; ASSERT ptr=896
-
-; ============================================================ ; the leftmost word falls off the front
-  >>>>[-]>[-]>[-]>[-]                                          ; four clears  not four moves
-
-; ============================================================ ; and everything above it slides one word left
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 4 to 7 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 8 to 11 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 12 to 15 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 16 to 19 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 20 to 23 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 24 to 27 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 28 to 31 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 32 to 35 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 36 to 39 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 40 to 43 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 44 to 47 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 48 to 51 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 52 to 55 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 56 to 59 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 60 to 63 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 64 to 67 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 68 to 71 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 72 to 75 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 76 to 79 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 80 to 83 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 84 to 87 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 88 to 91 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 92 to 95 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 96 to 99 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 100 to 103 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 104 to 107 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 108 to 111 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 112 to 115 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 116 to 119 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 120 to 123 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 124 to 127 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 128 to 131 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 132 to 135 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 136 to 139 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 140 to 143 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 144 to 147 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 148 to 151 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 152 to 155 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 156 to 159 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 160 to 163 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 164 to 167 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 168 to 171 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 172 to 175 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 176 to 179 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 180 to 183 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 184 to 187 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 188 to 191 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 192 to 195 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
-
-; ============================================================ ; the new word lands in the four cells the slide
-                                                               ; emptied
-                                                               ; the walk is the same for all four  because source and
-                                                               ; destination move together
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
-<<<
-                                                               ; ASSERT ptr=896
-                                                               ; ASSERT zero 896:899
-                                                               ; ASSERT ptr=896
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
-                                                               ; ASSERT ptr=0
-
-; ============================================================ ; word 8k plus 7 : slot 7 takes it  temp comes from
-                                                               ; slot 6
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>              ; byte 0 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>+>>>>>+<<<<<<<<<<<<<]
->>>>>>>>>>>>>
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
->                                                              ; byte 1 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>+>>>>+<<<<<<<<<<<<]
->>>>>>>>>>>>
-  [-<<<<<<<<<<<<+>>>>>>>>>>>>]
-<<<<<<<<<<<<
->                                                              ; byte 2 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>+>>>+<<<<<<<<<<<]
->>>>>>>>>>>
-  [-<<<<<<<<<<<+>>>>>>>>>>>]
-<<<<<<<<<<<
->                                                              ; byte 3 of temp  copied because the slot is wanted
-                                                               ; again
-  [->>>>>>>>+>>+<<<<<<<<<<]
->>>>>>>>>>
-  [-<<<<<<<<<<+>>>>>>>>>>]
-<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
-                                                               ; or
->
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 1 of w at i minus Nk  which is SPENT by the
-                                                               ; exclusive or
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 2 of w at i minus Nk  which is SPENT by the
-                                                               ; exclusive or
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 3 of w at i minus Nk  which is SPENT by the
-                                                               ; exclusive or
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 0 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 1 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 2 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
->                                                              ; byte 3 of temp  also spent
-  [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>]                                           ; continued
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-  >>>>>>>>>>>>>>>>>>>>>>>>                                     ; walk in to this routine entry offset
-                                                               ; ASSERT ptr=24
-                                                               ; ASSERT zero 0:16
-  <<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-  >>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]<<<<<   ; byte 0 of each word
-  <<<<<<<<<<<<                                                 ; continued
-  >>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>
-  >>>>]<<<<<<<<<<<<<<<<<<<<<                                   ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<]
-  >>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]<<   ; byte 1 of each word
-  <<<<<<<<<<<<<<<<                                             ; continued
-  >>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>
-  >>>>>>>]<<<<<<<<<<<<<<<<<<<<<<                               ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<]
-  >>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>   ; byte 2 of each word
-  ]<<<<<<<<<<<<<<<<<<<                                         ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>
-  >>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<                           ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<]
-  >>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>   ; byte 3 of each word
-  >>>]<<<<<<<<<<<<<<<<<<<<                                     ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>[-<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>
-  >>>>>>>>>>>>>]<<<<<<<<<<<<<<<<<<<<<<<<                       ; continued
-                                                               ; ASSERT ptr=0
-  >>                                                           ; walk in to this routine entry offset
-                                                               ; beneath them
-                                                               ; ASSERT ptr=2
-                                                               ; ASSERT zero 0:0
-                                                               ; ASSERT zero 3:16
-<                                                              ; x is staged into a
-                                                               ; ASSERT ptr=1
-  [->>+<<]
->                                                              ; and y into b
-  [->>>>>+<<<<<]
->>>>>>>>>>>>                                                   ; the weight starts at one
-                                                               ; ASSERT ptr=14
-  +
-> ++++++++                                                     ; and there are eight bits to do
-                                                               ; ASSERT ptr=15
-; ============================================================ ; ; ; eight bit steps
-                                                               ; the kernel is a block now  and idiom/xor32 and
-                                                               ; idiom/xor64 carry the same one inline; building those
-                                                               ; two on it is held out of this rebuild and recorded in
-                                                               ; HANDOFF rather than forgotten; THE EIGHT BIT STEPS OF
-                                                               ; AN EXCLUSIVE OR  entered at cnt with the fourteen
-                                                               ; cell frame below it: a qa pa fa b qb pb fb t ft res p
-                                                               ; cnt tmp; a and b are halved away  t ends as the
-                                                               ; exclusive or of each bit pair  and res gathers the
-                                                               ; weight whenever t is set; CONVENTIONS section 5
-                                                               ; carries the entry;
-;
-                                                               ; THIS IS THE KERNEL idiom/xor32 and idiom/xor64 also
-                                                               ; carry  down to the character; they are not yet built
-                                                               ; on it  which HANDOFF records as held out of the
-                                                               ; rebuild rather than forgotten;
-  [-
-  <<<<<<<<<<<<                                                 ; HALVE a  giving qa and pa
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  >>>>                                                         ; HALVE b  giving qb and pb
-                                                               ; HALVE  the byte at this cell  with q t and f in the
-                                                               ; three cells above it; q becomes it shifted right one
-                                                               ; and t the bit that fell off; the pointer comes back
-                                                               ; here; CONVENTIONS section 5 carries the vocabulary
-                                                               ; entry;
-  [->>>+<[-<+>>-<]>[-<+>]<<<]
-  << [->>>>>>>+<[->-<]>[-<+>]<<<<<<<]                          ; the low bit of a toggles t
-  >>>> [->>>+<[->-<]>[-<+>]<<<]                                ; the low bit of b toggles t
-  >> [->>>[-<+>>>+<<]>>[-<<+>>]<<<<<]                          ; if t then res gets the weight in hand
-  <<<<<<< [-<+>]                                               ; a becomes qa
-  >>>> [-<+>]                                                  ; b becomes qb
-  >>>>>> [->>+<<]                                              ; the weight goes into the scratch
-  >> [-<<++>>]                                                 ; and comes back doubled
-  <                                                            ; back to the counter
-  ]
-                                                               ; ASSERT ptr=15
-<<                                                             ; the result comes home
-                                                               ; ASSERT ptr=13
-  [-<<<<<<<<<<<<<+>>>>>>>>>>>>>]
-<<<<<<<<<<<<<
-                                                               ; ASSERT ptr=0
-                                                               ; ASSERT zero 1:16
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-  [->>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<]
-                                                               ; ASSERT zero 0:16
-                                                               ; ASSERT zero 21:24
-
-                                                               ; walk back out to the routine base
-
-                                                               ; ASSERT ptr=0
-                                                               ; and the answer comes back in a  and goes into the
-                                                               ; slot byte 0 of the answer
->>>>>>>>>>>>>>>>>
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<]                                           ; continued
->                                                              ; byte 1 of the answer
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<]                                           ; continued
->                                                              ; byte 2 of the answer
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<]                                           ; continued
->                                                              ; byte 3 of the answer
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<]                                           ; continued
-                                                               ; the word is COPIED to the staging cells and the
-                                                               ; buffer slides one word to take it; a MOVE would empty
-                                                               ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+<   ; continued
-  <<<<<<<<]                                                    ; continued
->>>>>>>>>
-  [-<<<<<<<<<+>>>>>>>>>]
-<<<<<<<<<
->                                                              ; byte 1 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+   ; continued
-  <<<<<<<<]                                                    ; continued
->>>>>>>>
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<
->                                                              ; byte 2 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  +<<<<<<<]                                                    ; continued
->>>>>>>
-  [-<<<<<<<+>>>>>>>]
-<<<<<<<
->                                                              ; byte 3 of it
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <+<<<<<<]                                                    ; continued
->>>>>>
-  [-<<<<<<+>>>>>>]
-<<<<<<
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>                                   ; continued
-                                                               ; ASSERT ptr=896
-                                                               ; A ROUND KEY WORD APPENDED TO THE SCHEDULE BUFFER
-                                                               ; which slides to take it;
-;
-                                                               ; The four bytes at this block's own nought are the
-                                                               ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
-                                                               ; off the front  the rest slides one word LEFT  and the
-                                                               ; new word lands in the four cells the slide emptied;
-;
-                                                               ; THE NAME CARRIES THE BUFFER LENGTH  as
-                                                               ; keccak/sponge136 and sponge168 do and for the same
-                                                               ; reason: the length is not an offset  it is the NUMBER
-                                                               ; OF MOVES  so it is different text and not the same
-                                                               ; text at a different base; the other AES key size
-                                                               ; wants a buffer of its own length  so it has a pair of
-                                                               ; its own;
-;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
-                                                               ; hold the schedule in order; Nothing is ever addressed
-                                                               ; by a computed offset  which is the conveyor this
-                                                               ; library uses wherever a sequence is built or consumed
-                                                               ; and the reason a key schedule needs no index;
-;
-                                                               ; THE STAGING WORD ABUTS THE BUFFER and a caller may
-                                                               ; not leave a gap; the buffer is at THIS BLOCK's plus
-                                                               ; four and nowhere else; A gap is silent  and it was
-                                                               ; silent for one run: every append lands a word early
-                                                               ; the schedule comes out shifted  and the first thing
-                                                               ; that notices is a wrong ciphertext two hundred
-                                                               ; million instructions later;
-;
-                                                               ; THE LEFTMOST WORD IS CLEARED AND NOT MOVED; a move
-                                                               ; into it would land on the staging word at this
-                                                               ; block's nought  which is the word about to be
-                                                               ; appended; That is a one cell mistake with a four cell
-                                                               ; blast radius and it is the reason the clear is
-                                                               ; written out rather than folded into the slide;
-;
-                                                               ; IT IS A BLOCK BECAUSE THE SLIDE IS SOME HUNDREDS OF
-                                                               ; LINES and a schedule appends from twenty places in
-                                                               ; its text; written out that is thousands of lines of
-                                                               ; skeleton  past the size budget that exists to stop a
-                                                               ; file being generated rather than written;
-;
-                                                               ; CONTRACTS ARE RELATIVE and the include's offset
-                                                               ; resolves them;
-;
-                                                               ; TAPE MAP  (relative to the block's own zero)
-;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
-;
-                                                               ; ASSERT ptr=896
-
-; ============================================================ ; the leftmost word falls off the front
-  >>>>[-]>[-]>[-]>[-]                                          ; four clears  not four moves
-
-; ============================================================ ; and everything above it slides one word left
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 4 to 7 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 8 to 11 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 12 to 15 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 16 to 19 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 20 to 23 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 24 to 27 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 28 to 31 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 32 to 35 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 36 to 39 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 40 to 43 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 44 to 47 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 48 to 51 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 52 to 55 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 56 to 59 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 60 to 63 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 64 to 67 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 68 to 71 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 72 to 75 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 76 to 79 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 80 to 83 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 84 to 87 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 88 to 91 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 92 to 95 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 96 to 99 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 100 to 103 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 104 to 107 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 108 to 111 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 112 to 115 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 116 to 119 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 120 to 123 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 124 to 127 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 128 to 131 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 132 to 135 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 136 to 139 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 140 to 143 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 144 to 147 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 148 to 151 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 152 to 155 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 156 to 159 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 160 to 163 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 164 to 167 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 168 to 171 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 172 to 175 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 176 to 179 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 180 to 183 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 184 to 187 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 188 to 191 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 192 to 195 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
-
-; ============================================================ ; the new word lands in the four cells the slide
-                                                               ; emptied
-                                                               ; the walk is the same for all four  because source and
-                                                               ; destination move together
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
-  [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -9780,32 +7362,32 @@
 
 ; ============================================================ ; and the last 4 words  which are not a whole group
 
-; ============================================================ ; word 56 : slot 0 takes it  temp comes from slot 7
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          ; byte 0 of temp  copied because the slot is wanted
+; ============================================================ ; word 48 : slot 0 takes it  temp comes from slot 5
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                  ; byte 0 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>>>>+<<<<<<<<<]
->>>>>>>>>
-  [-<<<<<<<<<+>>>>>>>>>]
-<<<<<<<<<
+  [->>>>>>>>>>>>+>>>>>+<<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<<<<
 >                                                              ; byte 1 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>>>+<<<<<<<<]
->>>>>>>>
-  [-<<<<<<<<+>>>>>>>>]
-<<<<<<<<
+  [->>>>>>>>>>>>+>>>>+<<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<<<
 >                                                              ; byte 2 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>>+<<<<<<<]
->>>>>>>
-  [-<<<<<<<+>>>>>>>]
-<<<<<<<
+  [->>>>>>>>>>>>+>>>+<<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<<
 >                                                              ; byte 3 of temp  copied because the slot is wanted
                                                                ; again
-  [->>>>+>>+<<<<<<]
->>>>>>
-  [-<<<<<<+>>>>>>]
-<<<<<<
->                                                              ; RotWord: the four bytes turn left by one
+  [->>>>>>>>>>>>+>>+<<<<<<<<<<<<<<]
+>>>>>>>>>>>>>>
+  [-<<<<<<<<<<<<<<+>>>>>>>>>>>>>>]
+<<<<<<<<<<<<<<
+>>>>>>>>>                                                      ; RotWord: the four bytes turn left by one
   [->>>>>+<<<<<]
 >                                                              ; byte 1 steps down
   [-<+>]
@@ -10250,8 +7832,8 @@
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<]                                                   ; continued
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >>>>>>>>>>>>>>>>>>>>>>>>>
   [-<<<<<<<<+>>>>>>>>]
@@ -10590,9 +8172,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -10758,7 +8340,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -10770,9 +8352,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -10804,7 +8386,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -10863,15 +8445,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -10880,42 +8454,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -10938,7 +8507,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
                                                                ; ASSERT ptr=0
 
-; ============================================================ ; word 57 : slot 1 takes it  temp comes from slot 0
+; ============================================================ ; word 49 : slot 1 takes it  temp comes from slot 0
 >>>>>>>>>>>>>>>>>>>>>>>>>                                      ; byte 0 of temp  copied because the slot is wanted
                                                                ; again
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+>>>>>+<<<<<<<<<<<<<<<<<
@@ -10971,8 +8540,8 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>]                                               ; continued
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >
   [-<<<<<<<<<<<<+>>>>>>>>>>>>]
@@ -11311,9 +8880,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -11475,7 +9044,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -11487,9 +9056,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -11521,7 +9090,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -11580,15 +9149,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -11597,42 +9158,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -11655,7 +9211,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
                                                                ; ASSERT ptr=0
 
-; ============================================================ ; word 58 : slot 2 takes it  temp comes from slot 1
+; ============================================================ ; word 50 : slot 2 takes it  temp comes from slot 1
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>                                  ; byte 0 of temp  copied because the slot is wanted
                                                                ; again
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>+>>>>>+<<<<<<<<<<<<<<<<<<<<<
@@ -11688,8 +9244,8 @@
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>]                                                       ; continued
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >
   [-<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>]
@@ -12028,9 +9584,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -12190,7 +9746,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -12202,9 +9758,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -12236,7 +9792,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -12295,15 +9851,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -12312,42 +9860,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -12370,7 +9913,7 @@
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
                                                                ; ASSERT ptr=0
 
-; ============================================================ ; word 59 : slot 3 takes it  temp comes from slot 2
+; ============================================================ ; word 51 : slot 3 takes it  temp comes from slot 2
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                              ; byte 0 of temp  copied because the slot is wanted
                                                                ; again
   [->>>>>>>>>>>>>>>>>>>>>>>>+>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -12400,8 +9943,8 @@
 >>>>>>>>>>>>>>>>>>>>>>>>>>
   [-<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>]
 <<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                               ; the new word is w at i minus eight against temp byte
-                                                               ; 0 of w at i minus Nk  which is SPENT by the exclusive
+                                                               ; the new word is w at i minus six against temp byte 0
+                                                               ; of w at i minus Nk  which is SPENT by the exclusive
                                                                ; or
 >
   [-<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>]
@@ -12740,9 +10283,9 @@
                                                                ; the word is COPIED to the staging cells and the
                                                                ; buffer slides one word to take it; a MOVE would empty
                                                                ; the slot  and every slot is still wanted: as w at i
-                                                               ; minus eight by the next group's word of the same
-                                                               ; number  and as w at i minus one by the word after it
-                                                               ; byte 0 of it
+                                                               ; minus six by the next group's word of the same number
+                                                               ; and as w at i minus one by the word after it byte 0
+                                                               ; of it
 >>>>>>>>>>>>>>>>>
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -12900,7 +10443,7 @@
 ;
                                                                ; The four bytes at this block's own nought are the
                                                                ; word and the cells above them are the buffer  two
-                                                               ; hundred and forty of them; the leftmost word falls
+                                                               ; hundred and eight of them; the leftmost word falls
                                                                ; off the front  the rest slides one word LEFT  and the
                                                                ; new word lands in the four cells the slide emptied;
 ;
@@ -12912,9 +10455,9 @@
                                                                ; wants a buffer of its own length  so it has a pair of
                                                                ; its own;
 ;
-                                                               ; SIXTY APPENDS LEAVE THE SIXTY WORDS IN ORDER; the
-                                                               ; buffer starts clear so the words that fall off the
-                                                               ; front early are noughts  and after them the cells
+                                                               ; FIFTY TWO APPENDS LEAVE THE FIFTY TWO WORDS IN ORDER;
+                                                               ; the buffer starts clear so the words that fall off
+                                                               ; the front early are noughts  and after them the cells
                                                                ; hold the schedule in order; Nothing is ever addressed
                                                                ; by a computed offset  which is the conveyor this
                                                                ; library uses wherever a sequence is built or consumed
@@ -12946,7 +10489,7 @@
 ;
                                                                ; TAPE MAP  (relative to the block's own zero)
 ;   @0x00:0x03   the word to append  SPENT
-;   @0x04:0xf3   the buffer  which slides one word left
+;   @0x04:0xd3   the buffer  which slides one word left
 ;
                                                                ; ASSERT ptr=896
 
@@ -13005,15 +10548,7 @@
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 196 to 199 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 200 to 203 slide
   >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 204 to 207 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 208 to 211 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 212 to 215 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 216 to 219 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 220 to 223 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 224 to 227 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 228 to 231 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 232 to 235 slide
-  >[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]>[-<<<<+>>>>]         ; buffer bytes 236 to 239 slide
-                                                               ; ASSERT ptr=1139
+                                                               ; ASSERT ptr=1107
 
 ; ============================================================ ; the new word lands in the four cells the slide
                                                                ; emptied
@@ -13022,42 +10557,37 @@
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<                                                    ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                          ; continued
   [->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the staged word  which is SPENT by this
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<   ; continued
+  >>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<]>[->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<]>[->>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   ; continued
-  <<<<<<<<<<<<<<<<<<<<<<<<]                                    ; continued
+  ]                                                            ; continued
 <<<
                                                                ; ASSERT ptr=896
                                                                ; ASSERT zero 896:899
@@ -13080,9 +10610,9 @@
   <<<<<<<<<<<<<<<<<<<<<<<<                                     ; continued
                                                                ; ASSERT ptr=0
                                                                ; ASSERT ptr=0
-                                                               ; the window holds the last eight words and the table
-                                                               ; is still readable; everything this block used as
-                                                               ; scratch is clear
+                                                               ; the window holds the last six words and the table is
+                                                               ; still readable; everything this block used as scratch
+                                                               ; is clear
                                                                ; ASSERT zero 0:24
                                                                ; the round constant is NOT claimed clear: seven of
                                                                ; them are used and it holds one more than this width
@@ -13093,7 +10623,7 @@
                                                                ; ASSERT ptr=0
 
 ; emit
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the fifteen round keys  in order
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; the thirteen round keys  in order
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
@@ -13127,8 +10657,6 @@
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>                             ; round key 9
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>                             ; round key 10
   .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>                             ; round key 11
-  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>                             ; round key 12
-  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.>                             ; round key 13
-  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>                               ; round key 14
-                                                               ; ASSERT ptr=1139
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>                               ; round key 12
+                                                               ; ASSERT ptr=1107
   .

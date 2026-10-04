@@ -2534,6 +2534,37 @@ keyexpand128Run key = join ws
     subword v = [ aesSbox b | b <- v ]
     rcon n = [rcons @ (n - 1), 0x00, 0x00, 0x00]
 
+// The AES-192 key schedule, FIPS 197 section 5.2 with Nk = 6 and Nr = 12.
+// Word i is w[i-6] xor temp, where temp is w[i-1] through RotWord, SubWord
+// and a round constant on every sixth word and taken as it stands otherwise.
+// There is no second transform rule at this key size -- that one belongs to
+// Nk = 8 alone -- and its absence is the only thing here an AES-256 reader
+// has to look twice at.
+//
+// It is written out separately rather than made generic over Nk on purpose:
+// this is the oracle, and a routine shared with the other two sizes would
+// let one misreading of section 5.2 be wrong in three places at once.
+keyexpand192Run : [24][8] -> [208][8]
+keyexpand192Run key = join ws
+  where
+    ws : [52][4][8]
+    ws = split`{6} key # [ (ws @ (i - 6)) ^ temp i | i <- ([6 .. 51] : [46][8]) ]
+    temp i = if i % 6 == 0 then subword (rotword (ws @ (i - 1))) ^ rcon (i / 6)
+              else ws @ (i - 1)
+    rotword v = v <<< 1
+    subword v = [ aesSbox b | b <- v ]
+    rcon n = [rcons @ (n - 1), 0x00, 0x00, 0x00]
+
+// One AES-192 block: encrypt128Run with twelve rounds and a longer schedule.
+encrypt192Run : [40][8] -> [16][8]
+encrypt192Run inb = aesLastRound (foldl aesRound st0 middle) (rks ! 0)
+  where
+    key    = take`{24} inb
+    pt     = drop`{24} inb
+    rks    = split`{13} (keyexpand192Run key)
+    st0    = [ p ^ k | p <- pt | k <- rks @ 0 ]
+    middle = take`{11} (drop`{1} rks)
+
 // The AES-256 key schedule, FIPS 197 section 5.2 with Nk = 8 and Nr = 14.
 // Word i is w[i-8] xor temp, where temp is w[i-1] through RotWord, SubWord
 // and a round constant on every eighth word -- and, at this key size ONLY, a

@@ -204,12 +204,14 @@ aes/ctr128.bf
 aes/ctrdrbg128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
+aes/encrypt192.bf
 aes/encrypt256.bf
 aes/gcm128.bf
 aes/gfmul128.bf
 aes/ghash128.bf
 aes/invsubbytes.bf
 aes/keyexpand128.bf
+aes/keyexpand192.bf
 aes/keyexpand256.bf
 aes/subbytes.bf
 chacha20/stream.bf
@@ -1439,6 +1441,31 @@ dk aes/encrypt256.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1
 dk aes/encrypt256.bf 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff46bc1bee22e409f96e93d7e117393172a f3eed1bdb5d2a03c064b5a7e3db181f8 encrypt256Run "encrypt256 the SP 800-38A AES_256 key and its first plaintext block  DERIVED  and it AGREES with the first ciphertext block that F point 1 point 5 publishes; it is also the key the schedule above is pinned on"
 dk aes/encrypt256.bf 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 dc95c078a2408989ad48a21492842087 encrypt256Run "encrypt256 the zero key on the zero block  DERIVED  and it agrees with the value universally quoted for it; it is also the shape that would survive a round key conveyor handing over nothing at all"
 dk aes/encrypt256.bf 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff 4d4f06c6f17c2903abc750b28eda2e34 encrypt256Run "encrypt256 the zero key on a block of one byte  DERIVED  so diffusion has to carry the last cell of the state into all sixteen"
+
+# AES-192, which is the third key size and the SMALLEST of the three changes.
+#
+# Nk of six and Nr of twelve, over the blocks AES-256 already proved. There is
+# no new idea here at all, which is the point: block/aesroundcore is the round
+# at every key size, block/rkappend208 and block/rkconsume208 are the conveyor
+# at this buffer length, and block/aeskeyexpand192 is the AES-256 schedule
+# generator run with one constant changed.
+#
+# WHAT IS DIFFERENT, AND IT IS AN ABSENCE. At Nk of eight a word whose index
+# is four modulo eight takes a bare SubWord. At Nk of six there is no such
+# rule -- the transform falls on every sixth word and nowhere else. An
+# absence is the hardest thing to test for, so the Appendix A.2 line below
+# does it the only way that works: it publishes all 208 bytes, so a schedule
+# that applied a rule it should not have is named at the first word it
+# touched.
+dk aes/keyexpand192.bf 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7bfe0c91f72402f5a5ec12068e6c827f6b0e7a95b95c56fec24db7b4bd69b5411885a74796e92538fde75fad44bb095386485af05721efb14fa448f6d94d6dce24aa326360113b30e6a25e7ed583b1cf9a27f939436a94f767c0a69407d19da4e1ec1786eb6fa64971485f703222cb8755e26d135233f0b7b340beeb282f18a2596747d26b458c553ea7e1466c9411f1df821f750aad07d753ca4005388fcc5006282d166abc3ce7b5e98ba06f448c773c8ecc720401002202 keyexpand192Run "keyexpand192 FIPS 197 Appendix A point 2  a PUBLISHED schedule  all 208 bytes of it"
+dk aes/keyexpand192.bf 000102030405060708090a0b0c0d0e0f1011121314151617 000102030405060708090a0b0c0d0e0f10111213141516175846f2f95c43f4fe544afef55847f0fa4856e2e95c43f4fe40f949b31cbabd4d48f043b810b7b34258e151ab04a2a5557effb5416245080c2ab54bb43a02f8f662e3a95d66410c08f501857297448d7ebdf1c6ca87f33e3ce510976183519b6934157c9ea351f1e01ea0372a995309167c439e77ff12051edd7e0e887e2fff68608fc842f9dcc154859f5f237a8d5a3dc0c02952beefd63ade601e7827bcdf2ca223800fd8aeda32a4970a331a78dc09c418c271e3a41d5d keyexpand192Run "keyexpand192 the FIPS 197 Appendix C point 2 key  DERIVED  and the one the cipher below runs on  so the schedule the vectors pin is the schedule it uses"
+dk aes/keyexpand192.bf 000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000006263636362636363626363636263636362636363626363639b9898c9f9fbfbaa9b9898c9f9fbfbaa9b9898c9f9fbfbaa90973450696ccffaf2f457330b0fac9990973450696ccffac81d19a9a171d65353858160588a2df9c81d19a9a171d6537bebf49bda9a22c8891fa3a8d1958e51198897f8b8f941abc26896f718f2b43f91ed1797407899c659f00e3ee1094f9583ecbc0f9b1e08300af31fa74a8b8661137b885ff272c7ca432ac886d834c0b6d2c7df11984c5970 keyexpand192Run "keyexpand192 an all nought key  DERIVED; at Nk of six the transform falls on every sixth word rather than every fourth  so the pattern is visibly not aes/keyexpand128's"
+dk aes/keyexpand192.bf ffffffffffffffffffffffffffffffffffffffffffffffff ffffffffffffffffffffffffffffffffffffffffffffffffe8e9e9e917161616e8e9e9e917161616e8e9e9e917161616adaeae19bab8b80f525151e6454747f0adaeae19bab8b80fc5c2d8ed7f7a60e22d2b3104686c76f4c5c2d8ed7f7a60e21712403f686820dd454311d92d2f672de8edbfc09797df228f8cd3b7e7e4f36aa2a7e2b38f88859e67653a5ef0f2e57c2655c33bc1b130516316d2e2ec9e577c8bfb6d227b09885e67919b1aa620ab4bc53679a929a82ed5a25343f7d95acba9598e482fffaee3643a989acd1330b418 keyexpand192Run "keyexpand192 an all ones key  DERIVED"
+
+dk aes/encrypt192.bf 000102030405060708090a0b0c0d0e0f101112131415161700112233445566778899aabbccddeeff dda97ca4864cdfe06eaf70a0ec0d7191 encrypt192Run "encrypt192 FIPS 197 Appendix C point 2  a PUBLISHED value"
+dk aes/encrypt192.bf 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b6bc1bee22e409f96e93d7e117393172a bd334f1d6e45f25ff712a214571fa5cc encrypt192Run "encrypt192 the SP 800-38A AES_192 key and its first plaintext block  DERIVED  and it AGREES with the first ciphertext block that F point 1 point 3 publishes; it is also the key the schedule above is pinned on"
+dk aes/encrypt192.bf 00000000000000000000000000000000000000000000000000000000000000000000000000000000 aae06992acbf52a3e8f4a96ec9300bd7 encrypt192Run "encrypt192 the zero key on the zero block  DERIVED  and it agrees with the value universally quoted for it"
+dk aes/encrypt192.bf 000000000000000000000000000000000000000000000000000000000000000000000000000000ff 94d32ffc3812493ea9ea522896172bfd encrypt192Run "encrypt192 the zero key on a block of one byte  DERIVED  so diffusion has to carry the last cell of the state into all sixteen"
 
 # CTR128 is the FIRST MODE, and the first file here that uses a cipher as a
 # component rather than being one. It includes block/aes128table once and

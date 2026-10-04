@@ -1,29 +1,29 @@
-; bfsodium ENCRYPT256 : AES_256 on one block
+; bfsodium ENCRYPT192 : AES_192 on one block
 ;
 ; NOTE square brackets are brainfuck loops  so comments use braces for counts;
 ;
-; HAND WRITTEN; block/aes128table block/aeskeyexpand256 block/rkconsume240
+; HAND WRITTEN; block/aes128table block/aeskeyexpand192 block/rkconsume208
 ; block/aesroundcore and block/aesroundlast are INCLUDED  and aes/addroundkey
-; is PASTED at 57 from three sites  which run fifteen times between them:
+; is PASTED at 57 from three sites  which run thirteen times between them:
 ; round nought  the loop body  and the last round;
 ;
-; IO  in:  key{32} block{16}
+; IO  in:  key{24} block{16}
 ;     out: block{16}
 ;
-; FIPS 197 with Nk of eight and Nr of fourteen;
+; FIPS 197 with Nk of six and Nr of twelve;
 ;
 ; THE SCHEDULE IS STORED AND THE ROUNDS ARE A CONVEYOR; aes/encrypt128 makes
 ; its round keys just in time  one per round  out of a four slot window; At
-; this key size that does not work: eight words are made per group and four
+; this key size that does not work: six words are made per group and four
 ; rounds consume them  so the window and the rounds run at different rates
 ; and the just in time shape would need an index; So the whole schedule is
-; built first into a two hundred and forty cell buffer  and each round takes
+; built first into a two hundred and eight cell buffer  and each round takes
 ; sixteen bytes off the FRONT and slides the rest up; No round key is ever
 ; addressed by a computed offset  and the text of a round does not know
 ; which round it is;
 ;
-; WHICH IS WHY FOURTEEN ROUNDS IS A COUNTER AND NOT FOURTEEN COPIES;
-; Thirteen of them are identical text under one loop  and the fourteenth is
+; WHICH IS WHY TWELVE ROUNDS IS A COUNTER AND NOT TWELVE COPIES;
+; Eleven of them are identical text under one loop  and the twelfth is
 ; written below it because FIPS 197's last round has no MixColumns; That is
 ; the shape aes/encrypt128 has for its tenth round  and the same argument;
 ;
@@ -35,9 +35,11 @@
 ;
 ; TWO THINGS HAVE TO BE CLEARED BY HAND after the schedule;
 ;
-; The WINDOW at 25 to 56 still holds the last eight words;
-; aes/mixcolumns pastes over 50 to 81  so the two collide
-; directly and the clear is forced;
+; The WINDOW at 25 to 48 still holds the last six words;
+; at this key size that stops short of aes/mixcolumns at 50  and nothing
+; else reads those cells  so the clear is not forced here; it is done anyway
+; because one text serves both key sizes  and a reader should not have to
+; work out per width whether this one happens to be safe;
 ;
 ; The ROUND CONSTANT at 61 holds one more than this width ever asks for  and
 ; 61 sits inside aes/addroundkey's own workspace  so that one is load
@@ -48,7 +50,7 @@
 ;
 ; TAPE MAP  (home @0)
 ;   @0x000:0x018  aes/xorword and aes/xtime workspace  inside the schedule
-;   @0x019:0x038  window{32}  the key is read here  CLEARED before the rounds
+;   @0x019:0x030  window{24}  the key is read here  CLEARED before the rounds
 ;   @0x032:0x051  aes/mixcolumns pasted at 50  over what the window was
 ;   @0x039:0x03e  the schedule's temp  round constant and hand back cell
 ;   @0x052:0x061  state{16}  the block is read here and emitted from here
@@ -56,22 +58,22 @@
 ;   @0x072:0x374  group 0 of the walk and the S box above it
 ;   @0x37a        cnt  rounds still to do
 ;   @0x380:0x383  the schedule's staging word  which ABUTS the buffer
-;   @0x384:0x473  the schedule buffer{240}  shorter by a round key each round
+;   @0x384:0x453  the schedule buffer{208}  shorter by a round key each round
 ;
 ; THERE IS NO INTERFACE LINE AND THAT IS FORCED  for the reason
 ; aes/keyexpand128 has none: the S box walk advances three cells a turn  so
 ; tools/bffoot cannot bound a footprint; This is a PROGRAM;
 ;
 ; ASSERT ptr=0
-; ASSERT zero 0:1139
+; ASSERT zero 0:1107
 
 ; ==== the key goes straight into the window  where the schedule wants it ====
 R25
-  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
-; ASSERT ptr=56
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=48
 
 ; ==== and the block into the state ====
-R26
+R34
   ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
 ; ASSERT ptr=97
 L97
@@ -84,17 +86,17 @@ L45
 ; ASSERT ptr=0
 
 ; ==== the whole schedule  240 bytes  into the buffer ====
-%%block/aeskeyexpand256%%
+%%block/aeskeyexpand192%%
 ; ASSERT ptr=0
 
 ; ==== the two cells the schedule leaves live  and the rounds need dead ====
-; the window still holds the last eight words
+; the window still holds the last six words
 R25
-  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
-  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
-; ASSERT ptr=56
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+; ASSERT ptr=48
 ; and the round constant holds an eighth that nothing wants
-R5
+R13
   [-]
 ; ASSERT ptr=61
 L61
@@ -106,7 +108,7 @@ L61
 ; the next round key comes off the front of the schedule buffer
 R98
 ; ASSERT ptr=98
-%%block/rkconsume240%% 98
+%%block/rkconsume208%% 98
 ; ASSERT ptr=98
 ; and into the state  which spends it
 L41
@@ -116,9 +118,9 @@ L41
 L57
 ; ASSERT ptr=0
 
-; ==== 13 middle rounds  identical text ====
+; ==== 11 middle rounds  identical text ====
 R890
-  +++++++++++++
+  +++++++++++
 ; ASSERT ptr=890
 [
   -
@@ -129,7 +131,7 @@ L890
 ; the next round key comes off the front of the schedule buffer
 R98
 ; ASSERT ptr=98
-%%block/rkconsume240%% 98
+%%block/rkconsume208%% 98
 ; ASSERT ptr=98
 ; and into the state  which spends it
 L41
@@ -150,7 +152,7 @@ L890
 ; the next round key comes off the front of the schedule buffer
 R98
 ; ASSERT ptr=98
-%%block/rkconsume240%% 98
+%%block/rkconsume208%% 98
 ; ASSERT ptr=98
 ; and into the state  which spends it
 L41
@@ -160,7 +162,7 @@ L41
 L57
 ; ASSERT ptr=0
 ; the conveyor has handed over all fifteen round keys and is empty
-; ASSERT zero 900:1139
+; ASSERT zero 900:1107
 
 ; emit
 ; the ciphertext

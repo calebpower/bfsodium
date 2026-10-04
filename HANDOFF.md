@@ -205,6 +205,9 @@ nought and it is verified through whatever includes it.
 | `block/aesroundlast` | 0 | 65 | the first two thirds of the above, which is FIPS 197's final round; the split is what makes the last round the same text as the other thirteen rather than a copy of it |
 | `block/rkappend240` | 0 | 178 | one word onto the tail of the schedule buffer, sliding it; the producing half of the stored-schedule conveyor |
 | `block/rkconsume240` | 0 | 171 | one round key off the head of the schedule buffer, sliding it; the consuming half, and its entry contract claims the round key cells already clear, which is the cheap guard against the copy where a move belonged |
+| `block/rkappend208` | 0 | 162 | the appending conveyor at AES-192's buffer length; a second pair rather than the 240 pair at an offset, because the difference is a number of moves |
+| `block/rkconsume208` | 0 | 155 | the consuming half of the same pair |
+| `block/aeskeyexpand192` | 0 | 1484 | the AES-192 schedule, 208 bytes from 24, and the same generator as the 256 one with Nk changed; proved by `aes/keyexpand192` against FIPS 197 Appendix A.2 |
 | `block/aeskeyexpand256` | 0 | 1798 | the whole AES-256 schedule, 240 bytes from 32, including the bare SubWord rule that exists at no other key size; proved by `aes/keyexpand256` against FIPS 197 Appendix A.3 |
 | `block/aes128encrypt` | 0 | 288 | the forward rounds without their program; the same identity proof, plus the round constant contract that stops a second block starting from the 0x6c the schedule leaves behind |
 | `block/aes128dsetup` | 0 | 230 | the inverse cipher's key schedule and table swap, which happen ONCE however many blocks follow; proved by `aes/decrypt128` regenerating instruction-identical across the split, and by `aes/cbcdec128`'s two-block vector, which is the shortest input that reuses what it leaves behind |
@@ -275,8 +278,10 @@ nought and it is verified through whatever includes it.
 | `aes/xorword` | 330 | 72 | boundary vectors + Cryptol |
 | `aes/addroundkey` | 1356 | 109 | FIPS 197 Appendix B round nought + its own inverse applied twice |
 | `aes/keyexpand128` | 2371 | 313 | the FIPS 197 Appendix A schedule + three more keys |
+| `aes/keyexpand192` | 10662 | 93 | four keys, the first FIPS 197 Appendix A.2, which publishes all 208 bytes -- the only way to test that the bare SubWord rule is ABSENT at this key size |
+| `aes/encrypt192` | 25281 | 174 | four blocks, the first FIPS 197 Appendix C.2, on the same key the schedule above is pinned on |
 | `aes/keyexpand256` | 13134 | 95 | four keys, the first of them FIPS 197 Appendix A.3, which publishes all 240 bytes so the first word it gets wrong is named; the all-nought key is the one where the bare SubWord rule shows plainly |
-| `aes/encrypt256` | 27819 | 166 | four blocks, the first FIPS 197 Appendix C.3, on the same key the schedule above is pinned on, so what the schedule vectors prove is what this runs |
+| `aes/encrypt256` | 27825 | 172 | four blocks, the first FIPS 197 Appendix C.3, on the same key the schedule above is pinned on, so what the schedule vectors prove is what this runs |
 | `aes/cbcdec128` | 31105 | 1206 | SP 800-38A F.2.2 at four blocks, at two and at one: one block would pass even if the rounds destroyed every piece of state they touch, and TWO is the shortest input that runs against a schedule already spent and restored; plus 272 bytes, which restores it sixteen more times and reaches the length's borrow, DERIVED; and the zero key, which runs `encrypt128`'s own pinned block backwards |
 | `aes/cbcenc128` | 19437 | 394 | SP 800-38A F.2.1, all four published blocks and block one alone  as a PAIR: the first alone cannot see a broken chain because a block is emitted before it is chained  and that pair is what caught the copy that should have been a move; 272 bytes for the length's borrow; and the zero key and zero IV  where the chained block IS the plaintext  so one zero block is `encrypt128`'s own pinned value |
 | `aes/cmac128` | 42188 | 786 | RFC 4493's four published examples, which cover the padding branch both ways and at one block and at several: empty and 40 bytes take K2, 16 and 64 take K1, and the pairs separate a wrong tweak from a wrong chain; plus 273 bytes, which is past the length's borrow AND needs padding, DERIVED |
@@ -365,8 +370,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 617 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 617 | golden vectors, dual oracle |
+| 2 | yes | 625 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 625 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 4 | metamorphic |
@@ -1626,7 +1631,7 @@ mechanical change stays reviewable:
 
 | held out | why it was tempting, and why not now |
 |---|---|
-| **AES-192 and ~~AES-256~~** | **AES-256 is built.** Nk of 8, fourteen rounds, a stored schedule on a conveyor at both ends, and a round function shared with AES-128 as `block/aesroundcore`. See the section above. AES-192 is Nk of 6 against the same blocks and is next; migrating `aes/encrypt128` onto the shared core is after it, because by then the core will have been proved by two callers. |
+| **~~AES-192 and AES-256~~** | **AES-256 is built.** Nk of 8, fourteen rounds, a stored schedule on a conveyor at both ends, and a round function shared with AES-128 as `block/aesroundcore`. See the section above. AES-192 is Nk of 6 against the same blocks and is next; migrating `aes/encrypt128` onto the shared core is after it, because by then the core will have been proved by two callers. |
 | **Modes** — ~~CTR~~, ~~CBC~~, ~~CMAC~~, ~~CTR_DRBG~~, ~~GCM~~, ~~GMAC~~ | **CTR, CBC both ways and CMAC are built**; see the four "mode" sections below. **The structural work is done**: CBC decryption was the only mode that needed the inverse cipher and the only one that needed anything restructured, and `block/aes128decrypt` is now the pair `aes128dsetup` and `aes128drounds`. What is left is GCM and GMAC, which need GHASH — a 128-bit carry-less multiply, and much the largest piece remaining. **THE ROSTER IS COMPLETE.** GMAC is not a separate program: SP 800-38D defines it as GCM with an empty plaintext, so it is `aes/gcm128` with `plen = 0` and a vector of its own. Note the measured cost: one multiply is about 300 million steps, three times a block of AES, so GHASH is the larger half of a GCM. |
 | **Unifying `xor32`/`xor64` onto `block/xor8kernel`** | The kernel is duplicated in three files down to the character, which HANDOFF already records as deferred — and `block/xor8kernel` finally makes it cheap. But those two are not AES, and the rebuild's invariant is identical instruction bytes; changing files outside the scope would weaken it. |
 | **Migrating the rest of the library to `%%include%%`** | Agreed to happen, in its own commits. The older `@@NAME@@ base` form keeps working meanwhile; the two coexist by design. |
@@ -3863,7 +3868,82 @@ word most likely to be wrong is a specific one: the bare `SubWord` at every
 eighth word offset by four, a rule that exists at no other key size and is
 exactly what a transcription of the 128 case omits.
 
+## The third key size, which cost a constant
+
+`aes/encrypt192` is Nk = 6 and Nr = 12 over the blocks AES-256 already proved.
+There is no new idea in it, and that is the whole report: `block/aesroundcore`
+is the round at every key size, and `block/aeskeyexpand192` is the AES-256
+schedule generator run with `NK = 6`.
+
+### What is different is an absence
+
+At Nk = 8 a word whose index is 4 mod 8 takes a bare `SubWord`. **At Nk = 6
+there is no such rule.** An absence is the hardest thing to write a test for,
+because a schedule that wrongly applied the rule would still produce 208
+plausible bytes. FIPS 197 Appendix A.2 handles it the only way that works: it
+publishes *all* 208, so the first word a spurious rule touched is named.
+
+### The conveyor is per length, not per key size
+
+`block/rkappend208` and `block/rkconsume208` are a second pair, not the 240
+pair at an offset. The difference between them is the **number of moves**, so
+it is different text — the same reason `keccak/sponge136` and `sponge168` are
+two files. The generators take the length as an argument, so the pair is one
+command each and the duplication lives in the artifact rather than the source.
+
+### Why `aes/encrypt128` keeps its window, and does not get the conveyor
+
+The plan for the key sizes had a fourth step: migrate `aes/encrypt128` onto
+the conveyor as well, so all three ciphers are one shape. **Half of it is
+done** — `aes/encrypt128` includes `block/aesroundcore` and
+`block/aesroundlast` like the other two, instruction for instruction
+unchanged. The conveyor half is **deliberately not done**, and the reason is
+worth recording because it is not the reason anyone would guess.
+
+It is not cost. A 176-cell buffer turned eleven times is about two thousand
+moves against a block of AES at 114 million steps, which is nothing.
+
+It is that **the modes have already built on the footprint**. Every one of
+the six puts its own state immediately above the cipher's frame, starting at
+`0x375` — the first cell after the S box: `aes/ctr128`'s `savedkey` and
+counter, `aes/cmac128`'s `K1`, `K2` and tweak, `aes/gcm128`'s `K`, `J0`,
+`EK0` and `H`. A round-key buffer for a conveyor would have to live in
+exactly that region, so the migration is not a change to one cipher — it is
+a re-lay of six gated modes' tapes, with the regression risk that carries.
+
+And at Nk = 4 the conveyor buys nothing the window does not already have.
+The stored schedule exists because at Nk = 6 and 8 the window produces words
+faster than the rounds consume them, so the rates disagree and a just-in-time
+shape would need an index. **At Nk = 4 the rates match exactly** — four words
+made, four rounds consume them — which is why `aes/encrypt128` was written
+that way in the first place and why it is still right.
+
+So the three ciphers share their round and differ in their schedule, which is
+the shape FIPS 197 itself has. Unifying the last third is available, costs a
+re-lay of six modes, and should be a decision rather than a tidy-up.
+
+### What this does and does not finish
+
+All three key sizes encrypt. **Decryption is still AES-128 only**, and the
+six modes still name `block/aes128encrypt`, so pointing CTR or GCM at a
+192- or 256-bit key is a further piece of work and not a flag.
+
 ## Traps that have actually bitten
+
+- **A CONSTANT THAT SURVIVED THE FILE BECOMING A GENERATOR.** `aes/encrypt256`
+  was written when there was one wide key size, and its read was
+  `",>" * 31 + ","`. When the same text became the generator for both sizes,
+  every count around it was parameterised and that 31 was not. At Nk = 6 the
+  cipher **read eight bytes of the plaintext as if they were key**, and then
+  produced sixteen plausible bytes — the exact failure shape this library
+  keeps meeting, an answer that is wrong and looks like an answer. The FIPS
+  197 C.2 vector caught it, but only because a vector existed; no contract
+  can see a program that read the right NUMBER of bytes into the right cells
+  from the wrong part of the input. The guard is now in both program
+  generators: count the `,` and `.` in the text they just produced and assert
+  it against the width their own IO header line promises. **A generated
+  header that states a width is a claim, and a claim near a generator is
+  cheap to check.**
 
 - **A BLOCK THAT PLACES ITS NEIGHBOUR, AND A CALLER THAT LEFT A GAP.**
   `block/rkappend240` lays the schedule buffer at **its own plus four**,
