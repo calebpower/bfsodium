@@ -1,0 +1,325 @@
+; bfsodium CTRDRBG128 : SP 800_90A CTR_DRBG over AES_128  NO derivation
+; function  no reseed  no personalisation string  no additional input
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table block/aes128encrypt block/copy16
+; block/copy16back block/inc128 and block/drbgupdate are INCLUDED;
+; idiom/xor8 is PASTED ONCE  inside the update;
+;
+; IO  in:  entropy{32}  len{2} LE
+;     out: bits{len}  K{16}  V{16}
+;
+;   instantiate   K and V start at nought; Update(entropy)
+;   generate      V steps and is enciphered until len bytes have gone out
+;   and then      Update(nought)  which SP 800_90A requires
+;
+; WHY THE STATE IS EMITTED AND NOT JUST THE BITS; the trailing Update changes
+; nothing a caller can see in a single generate call  so writing it would be
+; untested code in a cryptographic primitive; Emitting K and V afterwards
+; makes it OBSERVABLE  and the vectors pin it; That is the same reason
+; aes/cmacsubkeys exists as a program rather than only as code inside
+; aes/cmac128  and the same reason aes/keyexpand128 does;
+;
+; NO VECTOR HERE IS PUBLISHED  AND THAT IS WORTH SAYING LOUDLY; SP 800_90A
+; prints no test values in its text  and the CAVP response files that carry
+; them are not in this tree; So every expectation below is DERIVED  which in
+; this project normally means "computed by a small reference that reproduces
+; the published values first"  and here there are no published values for
+; that reference to reproduce; What there IS: the cipher underneath is pinned
+; against FIPS 197 by four other programs  Cryptol checks the construction
+; independently of the brainfuck  and the suite carries a METAMORPHIC check
+; that rests on neither; If a CAVP file ever arrives  it drops straight in;
+;
+; THE METAMORPHIC CHECK IS THE REAL ONE; the returned bits are the leftmost
+; len bytes of a keystream produced block by block  so GENERATING SIXTEEN
+; BYTES MUST GIVE EXACTLY THE FIRST SIXTEEN OF GENERATING SIXTY FOUR; That
+; follows from SP 800_90A's own wording and from nothing this project wrote
+; down  so it is evidence a wrong reference cannot manufacture; The state
+; afterwards is NOT comparable that way  because the counter has advanced a
+; different number of times  and the suite does not pretend otherwise;
+;
+; THE COUNTER IS MODULO TWO TO THE HUNDRED AND TWENTY EIGHTH  so a wrap is
+; not an error  which is the one place this differs from aes/ctr128; Both
+; step the counter with block/inc128 and the difference is only what they do
+; with the carry it hands back;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x374  the cipher's frame  as block/aes128encrypt maps it
+;   @0x375:0x384  K{16}   the generator's key   nought until the instantiate
+;   @0x385:0x3a4  OUT{32} the update's answer
+;   @0x3a5:0x3c4  PRV{32} the entropy  and nought thereafter
+;   @0x3c7:0x3d6  V{16}   the counter
+;   @0x3d7:0x3da  the block/inc128 scratch  carry cz ct cu
+;   @0x40c:0x40d  remaining{2} u16 LE
+;   @0x40e nz   @0x40f more   @0x410 e   @0x411:0x412 t u
+;   @0x413 j    @0x414 the update's two turn counter
+;   @0x418:0x428  idiom/xor8 pasted at 1048  inside the update
+
+; ==== the entropy and the length ====
+; thirty two bytes is seedlen for AES_128 with no derivation function  and
+; they are read straight into the update's provided data
+R933
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=964
+; and the length
+R72
+  ,>,
+; ASSERT ptr=1037
+L1037
+; ASSERT ptr=0
+
+; ==== the S box is written into the tape  ONCE ====
+; ASSERT zero 0:884
+%%block/aes128table%%
+; ASSERT ptr=45
+L45
+; ASSERT ptr=0
+
+; ==== instantiate: K and V are already nought  so this is Update alone ====
+%%block/drbgupdate%%
+; ASSERT ptr=0
+
+; ==== generate ====
+R1036
+; The count is two bytes  so the flag is set if EITHER is not zero; each
+; byte is copied out through a temp and put straight back  so testing it
+; does not eat it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1038
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=1039
+[
+; the counter steps by one
+L72
+%%block/inc128%% 967
+; ASSERT ptr=+983
+; SP 800_90A defines the counter modulo two to the hundred and twenty
+; eighth  so a wrap is not an error here and the carry is dropped; that
+; is the one place this differs from counter mode  which is out of
+; keystream when it wraps
+  [-]
+; ==== the counter is enciphered  and that is sixteen keystream bytes ====
+; the window holds the tenth round key and the constant holds 0x6c  so
+; both are put back before every run  as block/aes128encrypt's own
+; contract requires
+L983
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+R30
+  [-]
+L45
+; ASSERT zero +0:+116
+; the key is COPIED  because every run wants it again
+R885
+%%block/copy16%% 885
+L884
+%%block/copy16back%% 16
+; and so is the counter  which the increment wants again
+R936
+%%block/copy16%% 967
+L884
+%%block/copy16back%% 98
+L68
+; ASSERT zero +16:+44
+%%block/aes128encrypt%%
+; ASSERT ptr=+0
+R1043
+  ++++++++++++++++
+; ASSERT ptr=1043
+
+; ==== one turn is one keystream byte  emitted only if it is wanted ====
+[
+  -
+L7
+; The count is two bytes  so the flag is set if EITHER is not zero; each
+; byte is copied out through a temp and put straight back  so testing it
+; does not eat it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1038
+; the byte goes out only while the count has something left; the guard
+; CLEARS nz rather than decrementing it  because nz counts the nonzero
+; BYTES of the count and is two for a length like 0x0101
+  [
+  [-]
+L956
+  .
+R954
+; one fewer byte to go  borrowing from the high byte when the low runs out
+  [-R5+R1+L6]
+R6
+  [-L6+R6]
+L2
+  [-]
+  +
+R1
+  [[-]L5-R4-R1]
+L1
+  [-L3-L1-R4]
+L4
+R2
+  ]
+; ASSERT ptr=1038
+; the head is dropped whether it went out or not  because the leftover of
+; the last block is discarded  which is what truncation means here
+L956
+  [-]
+; and the rest of the block slides down
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R946
+; ASSERT ptr=1043
+]
+L7
+; The count is two bytes  so the flag is set if EITHER is not zero; each
+; byte is copied out through a temp and put straight back  so testing it
+; does not eat it;
+; the flag starts down
+R2
+  [-]
+; the low byte is copied into a temp and into a spare
+L2
+  [-R5+R1+L6]
+; the spare hands it straight back
+R6
+  [-L6+R6]
+; and if the temp is not nought the flag goes up
+L1
+  [[-]L3+R3]
+; now the high byte  the same way
+L4
+  [-R4+R1+L5]
+; and the same hand back
+R5
+  [-L5+R5]
+; raising the same flag  which is why EITHER byte being set is enough
+L1
+  [[-]L3+R3]
+; to the flag
+L3
+; ASSERT ptr=1038
+R1
+  [-]
+L1
+  [[-]R1+L1]
+R1
+; ASSERT ptr=1039
+]
+
+; ==== the trailing Update  which SP 800_90A requires ====
+; the provided data is already nought  spent by the instantiate call  so
+; this is Update against zeroes exactly as the standard asks
+L1039
+; ASSERT ptr=0
+; ASSERT zero 933:964
+%%block/drbgupdate%%
+; ASSERT ptr=0
+
+; ==== the state goes out after the bits ====
+R885
+; ASSERT ptr=885
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+R67
+; ASSERT ptr=967
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>.
+; ASSERT ptr=982
+; THE FINAL WALK IS SPLIT so that the exit contract is CHECKED  for the
+; reason CONVENTIONS section 6 gives
+L981
+; ASSERT ptr=1
+; K and V are the answer and are not claimed clear; nor is the table;
+; everything this file works in is
+; ASSERT zero 901:964
+; ASSERT zero 983:986
+; ASSERT zero 1036:1064
+L1

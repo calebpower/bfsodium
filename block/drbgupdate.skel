@@ -1,0 +1,527 @@
+; SP 800_90A's CTR_DRBG UPDATE  section 10 point 2 point 1 point 2  for
+; AES_128 with NO derivation function  where seedlen is thirty two bytes;
+;
+;   temp is AES of K over V stepped once  then over V stepped twice
+;   temp = temp exclusive or provided_data
+;   K = temp's first sixteen bytes   V = its last sixteen
+;
+; TWO CIPHER RUNS WRITTEN AS A LOOP OF TWO  and that is not tidiness; each
+; include of block/aes128encrypt is about a hundred and seventy six thousand
+; instructions of PROGRAM TEXT  and this block is itself included twice  so
+; writing the two runs out would put four copies in the file where there are
+; now two; The generate loop next door holds the third and last;
+;
+; THE LOOP BODY CAN BE THE SAME BOTH TIMES because everything that differs
+; between the two halves is on a CONVEYOR; provided_data is thirty two cells
+; that give up their head and slide  and the answer is thirty two cells that
+; slide and take a new tail; So the first turn consumes bytes nought to
+; fifteen and the second sixteen to thirty one  without either turn knowing
+; which it is;
+;
+; AND THE PROVIDED DATA IS SPENT  which is what makes the trailing update
+; free: the instantiate call consumes the entropy into the exclusive or  so
+; those thirty two cells are already nought when the second call runs  and
+; exclusive or with nought is what SP 800_90A asks for there;
+;
+; CONTRACTS ARE RELATIVE; this block is included at offset nought twice  so
+; they resolve to the addresses its caller's tape map names;
+;
+; TAPE MAP  (relative to the block's own zero  which is its caller's)
+;   @0x000:0x374  the cipher's frame
+;   @0x375:0x384  K{16}   the generator's key  replaced at the end
+;   @0x385:0x3a4  OUT{32} the answer  filled tail first over thirty two turns
+;   @0x3a5:0x3c4  PRV{32} provided data  SPENT
+;   @0x3c7:0x3d6  V{16}   the counter  stepped twice  replaced at the end
+;
+; ASSERT ptr=+0
+R1044
+  ++
+; ASSERT ptr=+1044
+[
+  -
+; the counter steps by one
+L77
+%%block/inc128%% 967
+; ASSERT ptr=+983
+; SP 800_90A defines the counter modulo two to the hundred and twenty
+; eighth  so a wrap is not an error here and the carry is dropped; that
+; is the one place this differs from counter mode  which is out of
+; keystream when it wraps
+  [-]
+; ==== the counter is enciphered ====
+; the window holds the tenth round key and the constant holds 0x6c  so
+; both are put back before every run  as block/aes128encrypt's own
+; contract requires
+L983
+  [-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+  R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]R1[-]
+R30
+  [-]
+L45
+; ASSERT zero +0:+116
+; the key is COPIED  because every run wants it again
+R885
+%%block/copy16%% 885
+L884
+%%block/copy16back%% 16
+; and so is the counter  which the increment wants again
+R936
+%%block/copy16%% 967
+L884
+%%block/copy16back%% 98
+L68
+; ASSERT zero +16:+44
+%%block/aes128encrypt%%
+; ASSERT ptr=+0
+R1043
+  ++++++++++++++++
+; ASSERT ptr=+1043
+
+; ==== sixteen turns  each folding one byte into the answer ====
+[
+  -
+; the answer slides first  so its tail is empty for this turn
+L141
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the cipher's output gives up its head
+L850
+  [-R967+L967]
+; and the rest of it slides down
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the provided data gives up its head
+R836
+  [-R117+L117]
+; and the rest of it slides down
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+; the next byte
+R1
+  [-L1+R1]
+R84
+; ASSERT ptr=+1048
+; ASSERT zero +1051:+1064
+@@XOR8@@ 1048
+; and the answer takes the tail
+  [-L116+R116]
+L5
+; ASSERT ptr=+1043
+]
+R1
+; ASSERT ptr=+1044
+]
+
+; ==== and the answer becomes the new key and counter ====
+; both are cleared first  because a move into an occupied cell adds
+; the old key goes
+L159
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; the next byte
+R1
+  [-L16+R16]
+; and the old counter
+R51
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+; the next cell
+R1
+  [-]
+L65
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+; the next byte
+R1
+  [-R50+L50]
+L932
+; ASSERT ptr=+0
+; ASSERT zero +901:+964

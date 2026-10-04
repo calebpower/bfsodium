@@ -201,6 +201,7 @@ aes/cbcenc128.bf
 aes/cmac128.bf
 aes/cmacsubkeys.bf
 aes/ctr128.bf
+aes/ctrdrbg128.bf
 aes/decrypt128.bf
 aes/encrypt128.bf
 aes/invsubbytes.bf
@@ -1603,6 +1604,45 @@ dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c28006bc1bee22e409f96e93d7e1173
 dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c40006bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710 51f0bebf7e3b9d92fc49741779363cfe cmac128Run "cmac128 RFC 4493 example 4  four exact blocks  a PUBLISHED value"
 dk aes/cmac128.bf 2b7e151628aed2a6abf7158809cf4f3c1101000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f10 a8a86f3ec45d6e9ec62ef7f84c93b62d cmac128Run "cmac128 273 bytes  past the length's borrow AND needing padding  DERIVED"
 
+# CTRDRBG128 is SP 800-90A's CTR_DRBG over AES-128, no derivation function,
+# no reseed, no personalisation, no additional input.
+#
+# EVERY EXPECTATION HERE IS DERIVED AND THERE IS NO PUBLISHED ANCHOR. That is
+# worth stating plainly rather than burying in a label. SP 800-90A prints no
+# test values in its text; the ones that exist live in CAVP response files
+# which are not in this tree. Elsewhere in this suite "DERIVED" means "a small
+# reference computed it, and that reference reproduces the published values
+# first" -- for this primitive there are no published values for a reference
+# to reproduce.
+#
+# SO THE EVIDENCE IS BUILT DIFFERENTLY, out of three things that do not share
+# a source:
+#   the CIPHER underneath is pinned against FIPS 197 by four other programs
+#   in this suite, so a wrong AES cannot hide here;
+#   CRYPTOL checks the construction -- the two Update calls, the counter
+#   arithmetic, the truncation -- independently of the brainfuck, as it does
+#   for every other vector;
+#   and the METAMORPHIC check below rests on NEITHER.
+#
+# THE STATE IS EMITTED AFTER THE BITS, and that is the point of the n=0 line.
+# The trailing Update that SP 800-90A requires changes nothing a caller can
+# see in a single generate call, so writing it would otherwise be untested
+# code in a cryptographic primitive. Emitting K and V makes it observable, and
+# n=0 is the input that tests the instantiate and the trailing update with no
+# generate blocks between them to hide behind.
+#
+# THE n=17 LINE IS THE TRUNCATION. Seventeen bytes is two blocks produced and
+# fifteen bytes discarded, and the counter still advances twice -- so the
+# BITS of a truncating call and the STATE after it disagree about how many
+# blocks happened, which is the one place an implementation is likely to
+# count wrong.
+dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0000 1686ffcf9f358be74452e647ba156aab05135797117fd1ab317d318c660e3d18 ctrdrbg128Run_0 "ctrdrbg128 no bits at all  so the answer is the state alone  which is the instantiate and the trailing update and nothing between  DERIVED"
+dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1000 1686ffcf9f358be74452e647ba156aab05135797117fd1ab317d318c660e3d1814810c15d85da5665c2518b4553fb155 ctrdrbg128Run_16 "ctrdrbg128 one block  DERIVED"
+dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1100 1686ffcf9f358be74452e647ba156aab0514810c15d85da5665c2518b4553fb155b85442c7900e7d827a11c60d18f424e5 ctrdrbg128Run_17 "ctrdrbg128 one byte into a second block  so the last block is TRUNCATED  DERIVED"
+dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f4000 1686ffcf9f358be74452e647ba156aab05135797117fd1ab317d318c660e3d1814810c15d85da5665c2518b4553fb155b85442c7900e7d827a11c60d18f424e5e4b3c024b1d42b2be20f5235d21d9f756278ce950089c748131487441dabc862 ctrdrbg128Run_64 "ctrdrbg128 four blocks  DERIVED"
+dk aes/ctrdrbg128.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1101 1686ffcf9f358be74452e647ba156aab05135797117fd1ab317d318c660e3d1814810c15d85da5665c2518b4553fb155b85442c7900e7d827a11c60d18f424e5e4b3c024b1d42b2be20f5235d21d9f756278ce950089c748131487441dabc862d0c5050e72ed8022db15af755f6144ab96e302eb5f309234ed39978f6b217ee8bda24c9195a78bc941858155209064df12f8cb3e2a7a2df3cd2ae75197e3c6d122e64441b49deabc95944905e48de6777b52f79ac1c34cd221c41bd98a7ac02b4c24103ea7b2adeeddb1fb0b3905c75b7519f331e9d2aa74128f1876e813b03d4c6bfd30949625bdbd7efdb6f2ad506aab06c56fc110829872111798cf77687b1510fe486575e23b13e7a60636d6097dce59475b3a99e4ff5512445613175d7661f95ad187a363d54a48bdc9b2564a6013 ctrdrbg128Run_273 "ctrdrbg128 past the length's borrow from the high byte  and not a multiple of sixteen  DERIVED"
+
+
 # GFMUL is the general multiply in GF(2^8): peasant multiplication, eight
 # turns, UNROLLED so no counter is needed and every loop is pointer balanced,
 # which is what makes it pasteable. The branch is not a branch -- a paste
@@ -1945,6 +1985,23 @@ m7pt=4c616469657320616e642047656e746c
 # produces for the same key and nonce starting at counter one. Two programs
 # written at different times from the same RFC; neither is the other's oracle
 # by construction, so agreement is evidence.
+# The one check here that no reference of ours can manufacture. The returned
+# bits are the leftmost len bytes of a keystream produced block by block, so
+# sixteen bytes must be exactly the first sixteen of sixty four. That follows
+# from SP 800-90A's own wording and from nothing this project wrote down.
+#
+# It deliberately compares ONLY the bits. The state afterwards is not
+# comparable: generate consumes ceil(len/16) blocks, so the counter has
+# advanced a different number of times and the trailing Update starts
+# somewhere else. An implementation that got that wrong would pass this check
+# and fail the vectors above, which is why both are here.
+run "ctrdrbg128 sixteen bytes are the first sixteen of sixty four" sh -c '
+    e=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+    a=$(printf "%s1000" "$e" | ./tools/hx -r | ./tools/bfi aes/ctrdrbg128.bf | ./tools/hx)
+    b=$(printf "%s4000" "$e" | ./tools/hx -r | ./tools/bfi aes/ctrdrbg128.bf | ./tools/hx)
+    [ "$(printf %s "$a" | cut -c1-32)" = "$(printf %s "$b" | cut -c1-32)" ] || {
+        echo "the prefix differs: $a vs $b"; exit 1; }
+'
 run "the AEAD ciphertext is the stream cipher at counter one" sh -c '
   a=$(printf %s "$1$2""0000""1000""$3" | ./tools/hx -r \
       | ./tools/bfi aead/chacha20poly1305.bf | ./tools/hx | cut -c1-32)

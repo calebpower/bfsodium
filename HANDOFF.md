@@ -185,6 +185,8 @@ nought and it is verified through whatever includes it.
 |---|---|---|---|
 | `block/walk256` | 0 | 22 | a leaf; the indexed walk, through index/fetch256's nine vectors and everything that reads a table |
 | `block/halve` | 0 | 4 | a leaf; every routine that includes it, which is `xor8` and `xtime` |
+| `block/inc128` | 0 | 423 | a 128-bit big-endian counter stepped by one; `aes/ctr128` was migrated onto it with its instruction stream byte-identical, which is the proof, and its four published SP 800-38A blocks exercise the carry because F.5's counter is f0f1..feff |
+| `block/drbgupdate` | 0 | 527 | SP 800-90A section 10.2.1.2; proved through `aes/ctrdrbg128`, whose n=0 vector is the Update chain and nothing else |
 | `block/xor8kernel` | 0 | 32 | a leaf; `idiom/xor8`'s vectors and its 1024 run sweep |
 | `block/rotate16` | 0 | 49 | a leaf; one turn against a one-place rotation on four states, sixteen turns against the identity, and `aes/subbytes`' own vectors, which come out in order only if the turning is exact |
 | `block/sbox256` | 0 | 524 | a leaf; the S box, through `aes/subbytes`' FIPS 197 vectors and both ends of the table |
@@ -269,7 +271,8 @@ nought and it is verified through whatever includes it.
 | `aes/cbcenc128` | 19326 | 394 | SP 800-38A F.2.1, all four published blocks and block one alone  as a PAIR: the first alone cannot see a broken chain because a block is emitted before it is chained  and that pair is what caught the copy that should have been a move; 272 bytes for the length's borrow; and the zero key and zero IV  where the chained block IS the plaintext  so one zero block is `encrypt128`'s own pinned value |
 | `aes/cmac128` | 41966 | 786 | RFC 4493's four published examples, which cover the padding branch both ways and at one block and at several: empty and 40 bytes take K2, 16 and 64 take K1, and the pairs separate a wrong tweak from a wrong chain; plus 273 bytes, which is past the length's borrow AND needs padding, DERIVED |
 | `aes/cmacsubkeys` | 22760 | 105 | RFC 4493 section 4's PUBLISHED K1 and K2, and the zero key as a second independent pair; it exists so that a wrong CMAC tag can be told apart from a wrong subkey, which sixteen opaque bytes cannot do |
-| `aes/ctr128` | 19828 | 738 | SP 800-38A F.5.1, all four published blocks and block one alone, so the pair separates a wrong cipher from a wrong per block restoration; one byte into the second block, which is the cheapest input that carries the counter; and the zero key, whose first sixteen bytes are `encrypt128`'s own pinned value checked four lines above by a different program |
+| `aes/ctr128` | 19878 | 355 | SP 800-38A F.5.1, all four published blocks and block one alone, so the pair separates a wrong cipher from a wrong per block restoration; one byte into the second block, which is the cheapest input that carries the counter; and the zero key, whose first sixteen bytes are `encrypt128`'s own pinned value checked four lines above by a different program |
+| `aes/ctrdrbg128` | 58568 | 325 | five DERIVED lengths including nought and a truncating one, plus a METAMORPHIC check that rests on no reference of ours: sixteen bytes must be the first sixteen of sixty-four. NOTHING HERE IS PUBLISHED and the section below says why and what stands in for it |
 | `aes/encrypt128` | 16795 | 86 | FIPS 197 Appendix C point 1 and Appendix B  every end to end value the standard publishes  plus its contracts live |
 | `aes/gfmul` | 2122 | 292 | FIPS 197 section 4 point 2 + 2604 runs  and the peasant form PROVED equal to the field |
 | `aes/invmixcolumn` | 3181 | 139 | aes/mixcolumn's published columns inverted + 300 against the FIPS matrix |
@@ -349,11 +352,11 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 590 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 590 | golden vectors, dual oracle |
+| 2 | yes | 595 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 595 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
-| 7 | yes | 2 | metamorphic |
+| 7 | yes | 3 | metamorphic |
 | 8 | yes | 19 | Cryptol design proofs, two of which must be refuted |
 | 8a | yes | 3 | the Cryptol oracle is delivered once and is load-bearing |
 | 9 | yes | 10 | legibility and portability |
@@ -1611,7 +1614,7 @@ mechanical change stays reviewable:
 | held out | why it was tempting, and why not now |
 |---|---|
 | **AES-192 and AES-256** | Nk of 6 and 8, twelve and fourteen rounds, over shapes that already exist. Blocked by nothing. The rebuild would have had to get the looping right for three key sizes at once instead of one. |
-| **Modes** — ~~CTR~~, ~~CBC~~, ~~CMAC~~, GCM, GMAC, CTR_DRBG | **CTR, CBC both ways and CMAC are built**; see the four "mode" sections below. **The structural work is done**: CBC decryption was the only mode that needed the inverse cipher and the only one that needed anything restructured, and `block/aes128decrypt` is now the pair `aes128dsetup` and `aes128drounds`. What is left is GCM and GMAC, which need GHASH — a 128-bit carry-less multiply and much the largest piece remaining — and CTR_DRBG, which reuses the counter plumbing already built. |
+| **Modes** — ~~CTR~~, ~~CBC~~, ~~CMAC~~, ~~CTR_DRBG~~, GCM, GMAC | **CTR, CBC both ways and CMAC are built**; see the four "mode" sections below. **The structural work is done**: CBC decryption was the only mode that needed the inverse cipher and the only one that needed anything restructured, and `block/aes128decrypt` is now the pair `aes128dsetup` and `aes128drounds`. What is left is GCM and GMAC, which need GHASH — a 128-bit carry-less multiply, and much the largest piece remaining. `block/shl128` is NOT the shift it wants: GHASH's field is bit reflected, so it shifts RIGHT and reduces with 0xe1 at the top where the CMAC field shifts left and reduces with 0x87 at the bottom. A sibling block, not a reuse. |
 | **Unifying `xor32`/`xor64` onto `block/xor8kernel`** | The kernel is duplicated in three files down to the character, which HANDOFF already records as deferred — and `block/xor8kernel` finally makes it cheap. But those two are not AES, and the rebuild's invariant is identical instruction bytes; changing files outside the scope would weaken it. |
 | **Migrating the rest of the library to `%%include%%`** | Agreed to happen, in its own commits. The older `@@NAME@@ base` form keeps working meanwhile; the two coexist by design. |
 | **The deferred cleanup batch above** | Unchanged and still owed: tier 6, the BoneMesh lane, the pin bump, `bfj.c`, the documentation contradictions. |
@@ -3531,7 +3534,105 @@ on sight. The generator tracks the pointer and emits the walks, but it does not
 know which cell a hand-written guard body means to reach; that remains the
 author's arithmetic, and this is what it looks like when it is wrong.
 
+## The fifth mode, and a primitive with no published vector
+
+`aes/ctrdrbg128` is SP 800-90A's CTR\_DRBG over AES-128, with no derivation
+function, no reseed, no personalisation string and no additional input. It is
+the cheapest of the remaining modes because almost nothing in it is new: the
+counter, the per-block key restoration and the 885-cell copy family all came
+from `aes/ctr128`.
+
+### The thing that is genuinely different: there is nothing published to pin it to
+
+Every other primitive in this library is anchored to a value somebody else
+computed. **SP 800-90A prints no test values in its text**, and the ones that
+exist live in CAVP response files that are not in this tree. So every
+expectation here is DERIVED, and for once that word does not mean what it
+usually means in this suite — normally it means "a small reference computed
+it, and that reference reproduces the published values first", and here there
+are no published values for a reference to reproduce.
+
+Rather than let that sit behind a label, the evidence is built out of three
+things that do not share a source:
+
+- **the cipher underneath is pinned** against FIPS 197 by four other programs
+  in this suite, so a wrong AES cannot hide here;
+- **Cryptol checks the construction** — the two Update calls, the counter
+  arithmetic, the truncation — independently of the brainfuck;
+- **a metamorphic check rests on neither.** The returned bits are the leftmost
+  `len` bytes of a keystream produced block by block, so sixteen bytes must be
+  exactly the first sixteen of sixty-four. That follows from SP 800-90A's own
+  wording and from nothing this project wrote down, so it is evidence a wrong
+  reference cannot manufacture.
+
+It compares **only the bits**, deliberately. Generate consumes `ceil(len/16)`
+blocks, so after a truncating call the counter has advanced a different number
+of times and the trailing Update starts somewhere else — the *state* is not
+comparable that way and the suite does not pretend it is.
+
+### The state is emitted because otherwise the trailing Update is untested
+
+SP 800-90A requires an Update after generating. In a single generate call it
+changes nothing a caller can see, so implementing it faithfully would mean
+**untested code in a cryptographic primitive** and skipping it would mean an
+implementation that quietly is not the standard.
+
+So the program emits `K` and `V` after the bits. That makes the trailing
+Update observable and pins it, and it is the same argument that makes
+`aes/cmacsubkeys` and `aes/keyexpand128` programs in their own right. The
+`n = 0` vector is the one that earns it: no generate blocks at all, so the
+answer is the instantiate and the trailing Update with nothing between them to
+hide behind.
+
+### `block/inc128`, and one text where there were two
+
+The 128-bit counter step was sixteen near-identical byte bodies written out
+inline in `aes/ctr128`, and this mode wanted the same thing. That is exactly
+the shape the owner's rule names, so it is lifted into `block/inc128` and
+`ctr128` is migrated to it in the same commit: **739 skeleton lines down to
+355, instruction stream byte-identical** at `43e819da4935`.
+
+The block is entered at the counter's base and walks the last sixteen cells to
+the carry itself, so `ctr128`'s own walk gets exactly sixteen shorter and the
+two sum to what was there before. It leaves the pointer **on the carry out**
+rather than dropping it, because the two callers want different things from
+it: counter mode is out of keystream when it wraps, and the generator's
+counter is defined modulo 2¹²⁸ so a wrap is not an error. One text, two
+readings of its result.
+
+### Two Update calls, one copy of the cipher
+
+Each include of `block/aes128encrypt` is about 176,000 instructions of program
+text. `block/drbgupdate` needs two cipher runs and is itself included twice,
+so writing the runs out would have put **four** copies in the file. Written as
+a loop of two it puts two, and the generate loop holds the third and last.
+
+The loop body can be the same both times because everything that differs is on
+a **conveyor**: `provided_data` is thirty-two cells that give up their head and
+slide, and the answer is thirty-two cells that slide and take a new tail. The
+first turn consumes bytes 0–15 and the second 16–31 without either knowing
+which it is. And because the conveyor *spends* the provided data, the trailing
+Update is free: the instantiate call consumes the entropy, so those cells are
+already nought when the second call runs, which is exactly the zero operand
+SP 800-90A asks for there.
+
+Verified under the scratchpad interpreter with contracts **live**: 482,281,505
+steps at `n = 0`, 609,821,517 at 16, 735,581,837 at 17 and 993,446,868 at 64.
+
 ## Traps that have actually bitten
+
+- **A `# TIER n` MARKER DROPPED MID-FILE STEALS EVERY LINE AFTER IT.** The
+  suite's markers run until the next one, so adding `# TIER 7` beside a new
+  check in the middle of the tier 2/4 region reassigned a hundred lines that
+  had nothing to do with it — tier 7 went from 2 to 108 and tiers 2 and 4 each
+  lost the same hundred. `bftier --fix` then wrote the wrong numbers down
+  without complaint, because they *were* the numbers the file now described.
+  **This is the second time**: the same mistake with `# TIER 5` during
+  `aes/ctr128`. The rule is simply that a new check goes in the section that
+  already exists for its tier, however far away that is in the file, and a
+  marker is only ever added when a tier genuinely begins there. The tell is a
+  `--fix` diff where one tier's count jumps by about as much as another's
+  drops.
 
 - **A GUARD THAT STEPS THE WRONG WAY LANDS ON DATA AND CORRUPTS IT SILENTLY.**
   `aes/cbcdec128`'s loop flag sits one cell above the "is the count nonzero"

@@ -19142,7 +19142,55 @@
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   ; continued
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>        ; continued
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>                        ; continued
+                                                               ; A 128 BIT BIG ENDIAN COUNTER STEPPED BY ONE  in
+                                                               ; place; The sixteen bytes live at this block's own
+                                                               ; nought through fifteen  the most significant first
+                                                               ; and four scratch cells sit above them;
+;
+                                                               ; Entered at the VALUE's base and it leaves the pointer
+                                                               ; on the CARRY OUT  at cell sixteen  which the caller
+                                                               ; is expected to look at or throw away; That is
+                                                               ; deliberate: a counter that has wrapped past two to
+                                                               ; the hundred and twenty eighth means something
+                                                               ; different to each caller; counter mode is out of
+                                                               ; keystream and drops it  and SP 800_90A's
+                                                               ; deterministic generator simply keeps going because
+                                                               ; its counter is defined modulo that;
+;
+                                                               ; THE CARRY STARTS SET  so the last byte always
+                                                               ; increments; thereafter a byte increments only if the
+                                                               ; one below it came back to nought  which is tested
+                                                               ; through a COPY  because the byte itself is the answer
+                                                               ; and a test would otherwise eat it; The next carry is
+                                                               ; assumed and then withdrawn  which is the same shape
+                                                               ; aes/xtime uses for its reduction and for the same
+                                                               ; reason: the work does not depend on which way the
+                                                               ; test went;
+;
+                                                               ; THIS TEXT WAS aes/ctr128's  WRITTEN OUT SIXTEEN TIMES
+                                                               ; INLINE; it is lifted here because aes/ctrdrbg128
+                                                               ; wants the same counter stepped the same way  and a
+                                                               ; second copy of sixteen near identical byte bodies is
+                                                               ; exactly the shape the owner's rule names: if
+                                                               ; something repeats a lot it is a component of
+                                                               ; something larger that repeats less; ctr128 is
+                                                               ; migrated to it in the same commit and its instruction
+                                                               ; stream is unchanged  which is the check;
+;
+                                                               ; CONTRACTS ARE RELATIVE and the include's offset
+                                                               ; resolves them;
+;
+                                                               ; TAPE MAP  (relative to the block's own zero)
+;   @0x00:0x0f  the counter  big endian  the byte at nought most significant
+;   @0x10       carry  one on the way in  the carry OUT on the way back
+;   @0x11       cz     set when an incremented byte came back to nought
+;   @0x12       ct     a copy of that byte  so testing does not eat it
+;   @0x13       cu     puts that copy back
+;
+                                                               ; ASSERT ptr=967
+
+>>>>>>>>>>>>>>>>
                                                                ; ASSERT ptr=983
   +
   [                                                            ; byte 1 of sixteen  counting up from the least
@@ -19529,6 +19577,7 @@
   [-<+>]
   <
                                                                ; ASSERT ptr=983
+                                                               ; ASSERT ptr=983
                                                                ; a counter that wrapped past two to the hundred and
                                                                ; twenty eighth is out of keystream  and the carry is
                                                                ; simply dropped
@@ -19826,3 +19875,4 @@
                                                                ; ASSERT zero 983:989
                                                                ; ASSERT zero 991:1011
 <
+

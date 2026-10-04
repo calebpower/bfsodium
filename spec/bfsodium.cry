@@ -2624,6 +2624,50 @@ cbcdec128Run inb = join [ [ p ^ c | p <- decrypt128Run (key # blk) | c <- prv ]
     iv  = take`{16} (drop`{16} inb)
     ct  = split`{b} (drop`{34} inb) : [b][16][8]
 
+// SP 800-90A's CTR_DRBG Update (section 10.2.1.2) over AES-128 with NO
+// derivation function, where seedlen is 32 bytes:
+//   temp = AES(K, V+1) # AES(K, V+2); temp ^= provided; K,V = halves of temp
+drbgUpdate : [32][8] -> [128] -> [128] -> ([128], [128])
+drbgUpdate provided key v = (take`{128} t, drop`{128} t)
+  where
+    t = (join (encrypt128Run (split key # split (v + 1)))
+         # join (encrypt128Run (split key # split (v + 2)))) ^ join provided
+
+// The whole generator, taking the exact wire bytes aes/ctrdrbg128.bf reads
+// and writes: in = entropy(32) # len(2 LE), out = bits(len) # K(16) # V(16).
+//
+// The requested length is a TYPE here and the wire's len field is not read.
+// It cannot be otherwise -- Cryptol's output length cannot depend on a value
+// -- and it costs nothing: a program that misread its own length field would
+// emit the wrong NUMBER of bytes and fail on the spot.
+//
+// Note the counter arithmetic at the end. Generate consumes ceil(n/16)
+// blocks, so the trailing Update starts from V plus that many, and the state
+// therefore depends on the requested length in a way the returned bits do
+// not. That is exactly why the metamorphic check in the suite compares only
+// the bits.
+ctrdrbg128 : {n} (fin n, 64 >= width n) => [34][8] -> [n + 32][8]
+ctrdrbg128 inb = take`{n} ks # split k2 # split v2
+  where
+    (k1, v1) = drbgUpdate (take`{32} inb) 0 0
+    ks       = join [ encrypt128Run (split k1 # split (v1 + i))
+                    | i <- [1 ...] : [_][128] ]
+    (k2, v2) = drbgUpdate zero k1 (v1 + (`(n /^ 16) : [128]))
+
+// Monomorphic wrappers, because a dk line's expression is read by the shell
+// and a backtick in it would be command substitution. This is the same
+// reason keccak's sponge vectors name sponge136sRun_0_3_4_32 and friends.
+ctrdrbg128Run_0   : [34][8] -> [32][8]
+ctrdrbg128Run_0   = ctrdrbg128`{0}
+ctrdrbg128Run_16  : [34][8] -> [48][8]
+ctrdrbg128Run_16  = ctrdrbg128`{16}
+ctrdrbg128Run_17  : [34][8] -> [49][8]
+ctrdrbg128Run_17  = ctrdrbg128`{17}
+ctrdrbg128Run_64  : [34][8] -> [96][8]
+ctrdrbg128Run_64  = ctrdrbg128`{64}
+ctrdrbg128Run_273 : [34][8] -> [305][8]
+ctrdrbg128Run_273 = ctrdrbg128`{273}
+
 // SP 800-38B section 6.1's `dbl`: a 128-bit left shift by one, reduced by the
 // polynomial of GF(2^128) when the bit that falls off the top is set. Its low
 // byte is 0x87, where aes/xtime's field reduces by 0x1b -- same shape, a

@@ -1,0 +1,423 @@
+; A 128 BIT BIG ENDIAN COUNTER STEPPED BY ONE  in place; The sixteen bytes
+; live at this block's own nought through fifteen  the most significant
+; first  and four scratch cells sit above them;
+;
+; Entered at the VALUE's base and it leaves the pointer on the CARRY OUT  at
+; cell sixteen  which the caller is expected to look at or throw away; That
+; is deliberate: a counter that has wrapped past two to the hundred and
+; twenty eighth means something different to each caller; counter mode is out
+; of keystream and drops it  and SP 800_90A's deterministic generator simply
+; keeps going because its counter is defined modulo that;
+;
+; THE CARRY STARTS SET  so the last byte always increments; thereafter a byte
+; increments only if the one below it came back to nought  which is tested
+; through a COPY  because the byte itself is the answer and a test would
+; otherwise eat it; The next carry is assumed and then withdrawn  which is
+; the same shape aes/xtime uses for its reduction and for the same reason:
+; the work does not depend on which way the test went;
+;
+; THIS TEXT WAS aes/ctr128's  WRITTEN OUT SIXTEEN TIMES INLINE; it is lifted
+; here because aes/ctrdrbg128 wants the same counter stepped the same way  and
+; a second copy of sixteen near identical byte bodies is exactly the shape the
+; owner's rule names: if something repeats a lot it is a component of
+; something larger that repeats less; ctr128 is migrated to it in the same
+; commit and its instruction stream is unchanged  which is the check;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x00:0x0f  the counter  big endian  the byte at nought most significant
+;   @0x10       carry  one on the way in  the carry OUT on the way back
+;   @0x11       cz     set when an incremented byte came back to nought
+;   @0x12       ct     a copy of that byte  so testing does not eat it
+;   @0x13       cu     puts that copy back
+;
+; ASSERT ptr=+0
+
+R16
+; ASSERT ptr=+16
+  +
+; byte 1 of sixteen  counting up from the least significant
+  [
+  -
+  L1
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R3+R1+L4]
+  R4
+  [-L4+R4]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 2 of sixteen  counting up from the least significant
+  [
+  -
+  L2
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R4+R1+L5]
+  R5
+  [-L5+R5]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 3 of sixteen  counting up from the least significant
+  [
+  -
+  L3
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R5+R1+L6]
+  R6
+  [-L6+R6]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 4 of sixteen  counting up from the least significant
+  [
+  -
+  L4
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R6+R1+L7]
+  R7
+  [-L7+R7]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 5 of sixteen  counting up from the least significant
+  [
+  -
+  L5
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R7+R1+L8]
+  R8
+  [-L8+R8]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 6 of sixteen  counting up from the least significant
+  [
+  -
+  L6
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R8+R1+L9]
+  R9
+  [-L9+R9]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 7 of sixteen  counting up from the least significant
+  [
+  -
+  L7
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R9+R1+L10]
+  R10
+  [-L10+R10]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 8 of sixteen  counting up from the least significant
+  [
+  -
+  L8
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R10+R1+L11]
+  R11
+  [-L11+R11]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 9 of sixteen  counting up from the least significant
+  [
+  -
+  L9
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R11+R1+L12]
+  R12
+  [-L12+R12]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 10 of sixteen  counting up from the least significant
+  [
+  -
+  L10
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R12+R1+L13]
+  R13
+  [-L13+R13]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 11 of sixteen  counting up from the least significant
+  [
+  -
+  L11
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R13+R1+L14]
+  R14
+  [-L14+R14]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 12 of sixteen  counting up from the least significant
+  [
+  -
+  L12
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R14+R1+L15]
+  R15
+  [-L15+R15]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 13 of sixteen  counting up from the least significant
+  [
+  -
+  L13
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R15+R1+L16]
+  R16
+  [-L16+R16]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 14 of sixteen  counting up from the least significant
+  [
+  -
+  L14
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R16+R1+L17]
+  R17
+  [-L17+R17]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 15 of sixteen  counting up from the least significant
+  [
+  -
+  L15
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R17+R1+L18]
+  R18
+  [-L18+R18]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
+; byte 16 of sixteen  counting up from the least significant
+  [
+  -
+  L16
+  +
+; the byte is copied out and handed straight back  because the byte is
+; itself the answer and a test would otherwise eat it
+  [-R18+R1+L19]
+  R19
+  [-L19+R19]
+; the next carry is assumed  then withdrawn unless the byte came back
+; to nought
+  L2
+  [-]
+  +
+  R1
+  [[-]L1-R1]
+  L2
+  ]
+; and that is the carry the byte above will consume
+  R1
+  [-L1+R1]
+  L1
+; ASSERT ptr=+16
