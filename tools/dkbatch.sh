@@ -66,7 +66,17 @@ n=$(grep -c . "$pairs" || true)
 # One process. An erroring expression prints its complaint and cryptol keeps
 # going, so a bad line costs one answer rather than all of them -- which is
 # exactly why the row count below has to be checked rather than assumed.
-cryptol -b "$script" 2>/dev/null \
+#
+# STDERR IS KEPT, not discarded. It went to /dev/null, which threw away the
+# only account of WHY a question went unanswered at exactly the moment that
+# was the thing anyone needed: the failure said "asked 609 and got 593" and
+# not one word about which sixteen or what was wrong with them. It is still
+# kept out of the answer stream -- a complaint is not an answer -- but it is
+# held, and printed if the count comes up short.
+complaints=$(mktemp)
+trap 'rm -f "$script" "$pairs" "$complaints"' EXIT
+
+cryptol -b "$script" 2>"$complaints" \
     | grep -Eo '0x[0-9a-fA-F]+' \
     | sed 's/^0x//' > "$out.raw"
 
@@ -75,6 +85,13 @@ if [ "$got" -ne "$n" ]; then
     echo "dkbatch: asked $n questions and got $got answers" >&2
     echo "dkbatch: refusing to write a short answer file; the suite would" >&2
     echo "         then skip the cryptol half of every missing vector" >&2
+    # The answers come back in the order the questions were asked, so the
+    # first unanswered one is at the index where counting stopped. That names
+    # a line to look at instead of leaving a range of six hundred.
+    echo "dkbatch: the first unanswered question is number $((got + 1)):" >&2
+    sed -n "$((got + 1))p" "$pairs" | sed 's/^/    /' >&2
+    echo "dkbatch: what cryptol said, which is the part worth reading:" >&2
+    sed 's/^/    /' "$complaints" >&2
     rm -f "$out.raw"
     exit 1
 fi

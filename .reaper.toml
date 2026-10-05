@@ -51,7 +51,18 @@ cmd = "sh tests/run.sh > \"$REAPER_OUT\"/suite.log 2>&1; s=$?; cat \"$REAPER_OUT
 # Never copy host-built binaries onto the guest: a FreeBSD-built bfi looks
 # present to the suite's rebuild and then fails to exec. The guest builds its
 # own from the committed C sources.
+#
+# AND NEVER COPY out/. It is gitignored, so nothing in it is part of what is
+# being judged -- but .gitignore is not what rsync reads, and this list is.
+# Left out, every run shipped whatever the working copy happened to have
+# there: suite logs from earlier runs, the drawio exports, and at one point
+# 392 MB of a container lane's scratch including a second copy of every .bf.
+# The guest BUILDS out/ -- tools/dkbatch.sh writes out/cry.answers into it
+# inside the run -- so sending one is not merely waste, it is uncommitted
+# local state reaching the gate of record. The container lane never showed
+# this because it does `rm -rf /work/out` after copying the tree in.
 exclude = [
+  "/out/",
   "/tools/bfi",
   "/tools/hx",
   "/tools/bflint",
