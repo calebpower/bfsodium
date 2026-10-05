@@ -73,4 +73,25 @@ exclude = [
 
 [resources]
 cores = 2
-ram_gb = 4
+
+# EIGHT, AND THE NUMBER IS MEASURED. It was 4, and at 4 both guests failed
+# all three of tier 8a while the container lane was green -- which reads like
+# a platform problem and is not one. tools/dkbatch.sh asks Cryptol every dual
+# oracle question in ONE process, and that process peaks at 5,407,596 kB
+# (5,280 MiB) of resident memory, sampled from its own VmHWM in the container
+# lane. A guest with 4 GiB for the whole machine cannot hold it: cryptol dies
+# partway, the answer file comes up short, dkbatch refuses to write it, and
+# the two checks that read it fall with it.
+#
+# NOT A REGRESSION FROM ANY ONE COMMIT, which was worth establishing before
+# raising a number to make a failure go away. With the sixteen AES-192/256
+# vectors removed the same measurement gives 5,397,672 kB -- nine mebibytes
+# less, 0.2%. The ceiling had been passed well before them and no run had
+# said so, because this gate is run by hand.
+#
+# The cost is startup, not the questions: a cold cryptol is about 7.4 s and
+# two hundred expressions in one process is about the same, so the batch
+# exists to pay that once. The memory follows the spec being resident, which
+# means this grows with the SPEC and not with the vector count -- a point
+# worth remembering the next time a primitive is added rather than a vector.
+ram_gb = 8

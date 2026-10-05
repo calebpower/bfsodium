@@ -3930,6 +3930,24 @@ six modes still name `block/aes128encrypt`, so pointing CTR or GCM at a
 
 ## Traps that have actually bitten
 
+- **A GATE THAT IS RUN BY HAND DOES NOT TELL YOU WHEN IT STOPPED FITTING.**
+  `[resources] ram_gb` was 4, and `tools/dkbatch.sh` -- which asks Cryptol
+  every dual-oracle question in one process -- peaks at **5,280 MiB**. Both
+  reaper guests therefore failed all three of tier 8a while the container
+  lane was green, which reads exactly like a platform defect and is nothing
+  of the kind: the container had the whole 32 GiB host. The measurement that
+  settled it is cheap and worth repeating — sample the cryptol process's own
+  `VmHWM` while the batch runs.
+  **The part worth keeping** is the second measurement. The obvious suspect
+  was the sixteen AES-192/256 vectors added just before the first run in a
+  while; removing them changes the peak by nine mebibytes, 0.2%. The ceiling
+  had been passed long before, and no run had said so because nobody had run
+  it. *Raising a number because a failure appeared after your change is how
+  you hide the fact that your change was not the cause.*
+  Note which way it scales: the memory is the **spec being resident**, so it
+  grows when a primitive is added, not when a vector is. Adding a thousand
+  vectors is nearly free; adding one more cipher is not.
+
 - **A CONSTANT THAT SURVIVED THE FILE BECOMING A GENERATOR.** `aes/encrypt256`
   was written when there was one wide key size, and its read was
   `",>" * 31 + ","`. When the same text became the generator for both sizes,
