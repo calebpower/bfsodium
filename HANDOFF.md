@@ -6,11 +6,13 @@ actually built and where it has bitten.
 
 ## State
 
-**Gated: 1078 pass, 0 fail on `ubuntu-26.04` AND 1078 pass, 0 fail on
-`freebsd-15.1`, at `9611769`** -- `reaper test`, which the lane section below
-calls the gate of record. `tools/guest-setup.sh` clones and builds brainstem
-at `BRAINSTEM_COMMIT` before the suite starts, so every gate here needs the
-network.
+**Gated: 1345 pass, 0 fail on `ubuntu-26.04` AND 1345 pass, 0 fail on
+`freebsd-15.1`, at `dcb0bdb`** -- `reaper test`, which the lane section below
+calls the gate of record. The previous gate was 1078 at `9611769`, and the
+span between them is the six NIST modes, all of AES-192 and AES-256, and the
+two fixes that made this run possible at all. `tools/guest-setup.sh` clones
+and builds brainstem at `BRAINSTEM_COMMIT` before the suite starts, so every
+gate here needs the network.
 
 **AND THE PREVIOUS ONE WAS 354 AT `7ffd67f`, FIFTY THREE COMMITS AND SEVEN
 HUNDRED AND TWENTY FOUR CHECKS EARLIER.** That is the largest gap this gate
@@ -19,6 +21,16 @@ variants, the whole of SP 800-185, and the whole of AES. Everything in that
 span was green on the container lane the day it landed, and the container
 lane is Linux only -- so for fifty three commits nothing had been compiled by
 a second C compiler, which is the one thing the FreeBSD guest exists for.
+
+**AND THIS GATE FAILED BEFORE IT PASSED, which is the first time that has
+been useful.** The run at `6b0dc50` went red on BOTH guests, all three of
+tier 8a, while the container lane was green -- and the cause was neither the
+platform nor the tree: `tools/dkbatch.sh` holds the whole spec resident to
+ask its questions in one process and peaks at 5,280 MiB, against guests that
+had `ram_gb = 4`. Two guests failing identically is normally the signal that
+something is wrong with the tree; here it meant both were equally short. See
+the trap below, and note which way it scales -- the memory is the SPEC being
+resident, so it grows with a new primitive and not with new vectors.
 
 It came back green, which is the good outcome and not the instructive one.
 **The instructive part is how the gap went unnoticed:** each commit honestly
