@@ -1,0 +1,73 @@
+; INV SHIFT ROWS AND INV SUB BYTES over the state at @0x052:0x061  which
+; between them are the AES inverse cipher's final round  and the first two
+; thirds of every other one;
+;
+; FIPS 197 section 5 point 3; This is block/aesroundlast's mirror and the two
+; differ in exactly two ways: the rows turn RIGHT rather than left  and the
+; steps come in the other order; The forward round substitutes and then
+; shifts; the inverse shifts and then substitutes; That is not a style
+; choice  it is what makes the two functions inverses;
+;
+; THE SUBSTITUTION IS THE SAME SIXTEEN WALKS  character for character  as
+; block/aesroundlast's; There is no InvSubBytes code anywhere in this file:
+; the walk reads whatever table is resident at @0x075  and a caller that has
+; swapped the forward S box for the inverse one gets InvSubBytes from the
+; identical instructions; That is the whole reason the table is a swap rather
+; than a second table at a second address;
+;
+; WHICH MEANS A DEFECT IN A WALK CANNOT BE PRESENT IN ONE DIRECTION AND
+; ABSENT FROM THE OTHER  and the forward vectors already pin the walk;
+;
+; THE TABLE SURVIVES; block/walk256 copies each datum it reads and puts it
+; back  so the inverse table is still readable after a round and a caller
+; lays it once;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x052:0x061  state{16}  read and written in place
+;   @0x072:0x374  group 0 of the walk and the table above it  READ ONLY
+;
+; ASSERT ptr=+0
+
+; InvShiftRows  pasted where the state already is; it comes FIRST here  which
+; is the order the inverse cipher has and the forward one does not
+  R82
+; ASSERT ptr=+82
+@@INVSHIFTROWS@@ 82
+; ASSERT ptr=+82
+  L82
+; ASSERT ptr=+0
+; InvSubBytes byte 0
+  R82[-R33+L33]R33[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L33+R33]L115
+; InvSubBytes byte 1
+  R83[-R32+L32]R32[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L32+R32]L115
+; InvSubBytes byte 2
+  R84[-R31+L31]R31[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L31+R31]L115
+; InvSubBytes byte 3
+  R85[-R30+L30]R30[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L30+R30]L115
+; InvSubBytes byte 4
+  R86[-R29+L29]R29[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L29+R29]L115
+; InvSubBytes byte 5
+  R87[-R28+L28]R28[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L28+R28]L115
+; InvSubBytes byte 6
+  R88[-R27+L27]R27[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L27+R27]L115
+; InvSubBytes byte 7
+  R89[-R26+L26]R26[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L26+R26]L115
+; InvSubBytes byte 8
+  R90[-R25+L25]R25[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L25+R25]L115
+; InvSubBytes byte 9
+  R91[-R24+L24]R24[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L24+R24]L115
+; InvSubBytes byte 10
+  R92[-R23+L23]R23[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L23+R23]L115
+; InvSubBytes byte 11
+  R93[-R22+L22]R22[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L22+R22]L115
+; InvSubBytes byte 12
+  R94[-R21+L21]R21[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L21+R21]L115
+; InvSubBytes byte 13
+  R95[-R20+L20]R20[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L20+R20]L115
+; InvSubBytes byte 14
+  R96[-R19+L19]R19[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L19+R19]L115
+; InvSubBytes byte 15
+  R97[-R18+L18]R18[-R3+L3]R3[-[->>>+<<<]>+<>>>]<[->+>+<<]>>[-<<+>>]<[-<<<+>>>]<<[-<[-<<<+>>>]<<]<[-L18+R18]L115
+; ASSERT ptr=+0

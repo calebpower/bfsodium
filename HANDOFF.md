@@ -215,6 +215,9 @@ nought and it is verified through whatever includes it.
 | `block/aes128table` | 0 | 43 | the S box lay down lifted out of the cipher so a mode can pay for it once; proved by `aes/encrypt128` coming back INSTRUCTION IDENTICAL across the split, and by `aes/ctr128`'s four published blocks, which are wrong in all 256 places if it is ever run twice |
 | `block/aesroundcore` | 0 | 42 | SubBytes, ShiftRows and MixColumns over the state, and deliberately NOT AddRoundKey, which is the only step that needs to know where the round key came from; written once and included by every key size |
 | `block/aesroundlast` | 0 | 65 | the first two thirds of the above, which is FIPS 197's final round; the split is what makes the last round the same text as the other thirteen rather than a copy of it |
+| `block/aesdroundlast` | 0 | 73 | InvShiftRows and InvSubBytes over the state, which between them are the inverse cipher's final round and the first two thirds of every other; its sixteen walks are character for character `block/aesroundlast`'s and become InvSubBytes by virtue of which table is resident |
+| `block/rkreverse208` | 0 | 206 | the AES-192 schedule buffer turned round in round-key groups, so a decryption feeds the ordinary conveyor backwards |
+| `block/rkreverse240` | 0 | 233 | the same at AES-256's buffer length |
 | `block/rkappend240` | 0 | 178 | one word onto the tail of the schedule buffer, sliding it; the producing half of the stored-schedule conveyor |
 | `block/rkconsume240` | 0 | 171 | one round key off the head of the schedule buffer, sliding it; the consuming half, and its entry contract claims the round key cells already clear, which is the cheap guard against the copy where a move belonged |
 | `block/rkappend208` | 0 | 162 | the appending conveyor at AES-192's buffer length; a second pair rather than the 240 pair at an offset, because the difference is a number of moves |
@@ -310,6 +313,8 @@ nought and it is verified through whatever includes it.
 | `aes/invshiftrows` | 166 | 113 | all ten Appendix B rounds run backwards + round trips ShiftRows |
 | `aes/invsubbytes` | 641 | 105 | all ten Appendix B rounds run backwards + round trips SubBytes  both ends of the table |
 | `aes/decrypt128` | 25454 | 110 | both published values run backwards  encrypt128's own vector reversed  and the round trip |
+| `aes/decrypt192` | 31931 | 217 | four ciphertexts, the first FIPS 197 Appendix C.2 in the inverse direction; the last is a round trip against `aes/encrypt192`'s own vector, so the pair pins itself and not only the reference |
+| `aes/decrypt256` | 34874 | 217 | the same at AES-256, against Appendix C.3 |
 | `keccak/leftenc` | 238 | 141 | SP 800-185 §2.3.1 left_encode at every byte count and both sides of every boundary |
 | `keccak/rightenc` | 238 | 141 | the same for right_encode |
 | `keccak/bytepad136` | 3903 | 251 | SP 800-185 bytepad at SHAKE256's rate: both empty, KMAC's own prefix, a customization string, the limit where the block is exactly full, and the ONE-string form KMAC's key needs |
@@ -382,8 +387,8 @@ must have no marker in the suite at all.
 | tier | built | run.sh lines | what it is |
 |---|---|---|---|
 | 1 | yes | 7 | interpreter self-test |
-| 2 | yes | 625 | idiom boundary KATs, interleaved with tier 4 |
-| 4 | yes | 625 | golden vectors, dual oracle |
+| 2 | yes | 633 | idiom boundary KATs, interleaved with tier 4 |
+| 4 | yes | 633 | golden vectors, dual oracle |
 | 5 | yes | 62 | declared contracts under BFI_CONTRACTS |
 | 6 | no | 0 | **differential fuzz, declared and not built** |
 | 7 | yes | 4 | metamorphic |
@@ -3939,6 +3944,73 @@ re-lay of six modes, and should be a decision rather than a tidy-up.
 All three key sizes encrypt. **Decryption is still AES-128 only**, and the
 six modes still name `block/aes128encrypt`, so pointing CTR or GCM at a
 192- or 256-bit key is a further piece of work and not a flag.
+
+## Both directions, at all three key sizes
+
+`aes/decrypt192` and `aes/decrypt256` finish AES. The cipher now runs forward
+and backward at 128, 192 and 256.
+
+### There is no backward key schedule
+
+`aes/decrypt128` has one: it keeps the last round key and ten temps and
+**regresses** the recurrence, which is why it needs no buffer at all. That
+design does not get cheaper at Nk = 6 or 8 — it gets a wider window and, at
+Nk = 8, a second transform rule to undo.
+
+These two don't need it, because the forward cipher at these key sizes
+**already built a buffer**. So the schedule is made the ordinary way and
+`block/rkreverse208` / `rkreverse240` turn it round once, in round-key groups.
+The conveyor then runs completely unchanged — sixteen bytes off the front per
+round, the same `block/rkconsume*` an encryption uses. **The round keys
+arrive last-to-first because the buffer is backwards, not because the
+consumer is**, which is what keeps one round-key consumer in the library
+instead of two.
+
+A consumer reading from the far end was the obvious alternative and cannot be
+written at all: the far end *moves* as the buffer empties, so its address
+would be a computed offset — the one thing the conveyor rule exists to
+forbid. The reverse costs seven swaps of sixteen bytes, which the conveyor
+itself spends every round, fourteen times over.
+
+### The inverse round contains no inverse code
+
+`block/aesdroundlast`'s sixteen S box walks are **character for character**
+`block/aesroundlast`'s — the instruction streams hash identically. They
+become InvSubBytes purely because the caller has swapped the resident table.
+
+Two things follow. The forward vectors pin the walk the inverse ones depend
+on, so a defect in it cannot be present in one direction and absent from the
+other. And what the inverse actually adds is *the order*: shift then
+substitute, where the forward cipher substitutes then shifts. That is not a
+style choice — it is the thing that makes them inverses.
+
+### The table is swapped, not supplemented
+
+The schedule needs the forward S box for SubWord and the rounds need the
+inverse one, and **both are read by the same walk at the same address**. So
+the forward table is laid, the schedule runs, the forward table is cleared
+cell by cell, and `block/invsbox256` goes into the same 768 cells. The clear
+is not tidiness: `invsbox256` is delta-coded against noughts and written over
+a live table would be wrong in 256 places and produce sixteen plausible
+bytes. `block/aes128dsetup` learned this first and its header says so; this
+is the second and third caller to depend on it.
+
+### What pins them
+
+The published Appendix C.2 and C.3 values in the inverse direction, the
+SP 800-38A blocks agreeing with F.1.4 and F.1.6 — and a **round trip**: the
+last vector of each decrypts exactly the ciphertext that
+`aes/encrypt192`/`aes/encrypt256`'s own one-byte vector produces. The two
+programs are therefore pinned against *each other* and not only against a
+common reference, which is the one failure the other six lines would miss: a
+reference wrong in the same way in both directions.
+
+### What is still 128-only
+
+**The modes.** All six name `block/aes128encrypt`, and `aes/cbcdec128` names
+the 128 inverse. Pointing CTR, CBC, CMAC, CTR\_DRBG or GCM at a wider key is
+a separate piece of work, and a real one — see the footprint note under the
+`aes/encrypt128` section, which applies with equal force here.
 
 ## Traps that have actually bitten
 

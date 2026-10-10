@@ -1,0 +1,206 @@
+; THE SCHEDULE BUFFER REVERSED  round key by round key  so that the SAME
+; conveyor feeds a decryption;
+;
+; FIPS 197 section 5 point 3 consumes the round keys last to first; the
+; buffer holds them first to last  because that is the order they are made
+; in and block/rkappend208 can only append; A second conveyor reading from
+; the far end cannot be written at all: the far end MOVES as the buffer
+; empties  so its address would be a computed offset  which is the one
+; thing the conveyor rule exists to forbid; So the buffer is turned round
+; once  here  and block/rkconsume208 then runs unchanged;
+;
+; ONE CONSUMER IN THE LIBRARY  which is what this is for; a decryption is
+; then the same text as an encryption apart from the round body: both take
+; sixteen bytes off the front and slide; A mirrored consumer would have been
+; the same number of lines and would have left two routines to keep right;
+;
+; IT IS CHEAP AND IT IS ONCE; six swaps of sixteen bytes is
+; two hundred and eighty eight moves  against a decryption whose conveyor costs that
+; much EVERY round  thirteen times over; The middle group does not move and the
+; arithmetic says so rather than a special case: with thirteen groups there are
+; six pairs and one left over;
+;
+; THE BYTES INSIDE A ROUND KEY DO NOT TURN  only the groups do; A reversal
+; carried all the way down to the byte would hand each round a key with its
+; bytes backwards  and produce sixteen plausible bytes at the end; No
+; contract here can see that; only a vector can  which is why the published
+; ones go both ways;
+;
+; THE SCRATCH IS THE BLOCK'S OWN  sixteen cells immediately above the
+; buffer  claimed clear at both ends;
+;
+; CONTRACTS ARE RELATIVE and the include's offset resolves them;
+;
+; TAPE MAP  (relative to the block's own zero)
+;   @0x000:0x0cf  the schedule buffer{208}  turned round in place
+;   @0x0d0:0x0df  scratch{16}  one round key in transit
+;
+; ASSERT ptr=+0
+; ASSERT zero +208:+223
+
+; ==== round key 0 and round key 12 change places ====
+; the low one goes to the scratch  byte 3
+  [-R208+L208]R1[-R208+L208]R1[-R208+L208]R1[-R208+L208]
+; the low one goes to the scratch  byte 7
+  R1[-R208+L208]R1[-R208+L208]R1[-R208+L208]R1[-R208+L208]
+; the low one goes to the scratch  byte 11
+  R1[-R208+L208]R1[-R208+L208]R1[-R208+L208]R1[-R208+L208]
+; the low one goes to the scratch  byte 15
+  R1[-R208+L208]R1[-R208+L208]R1[-R208+L208]R1[-R208+L208]
+; the high one comes down  byte 3
+  R177[-L192+R192]R1[-L192+R192]R1[-L192+R192]R1[-L192+R192]
+; the high one comes down  byte 7
+  R1[-L192+R192]R1[-L192+R192]R1[-L192+R192]R1[-L192+R192]
+; the high one comes down  byte 11
+  R1[-L192+R192]R1[-L192+R192]R1[-L192+R192]R1[-L192+R192]
+; the high one comes down  byte 15
+  R1[-L192+R192]R1[-L192+R192]R1[-L192+R192]R1[-L192+R192]
+; and the scratch goes up  byte 3
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; and the scratch goes up  byte 7
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; and the scratch goes up  byte 11
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; and the scratch goes up  byte 15
+  R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]R1[-L16+R16]
+; ASSERT ptr=+223
+
+; ==== round key 1 and round key 11 change places ====
+; the low one goes to the scratch  byte 3
+  L207[-R192+L192]R1[-R192+L192]R1[-R192+L192]R1[-R192+L192]
+; the low one goes to the scratch  byte 7
+  R1[-R192+L192]R1[-R192+L192]R1[-R192+L192]R1[-R192+L192]
+; the low one goes to the scratch  byte 11
+  R1[-R192+L192]R1[-R192+L192]R1[-R192+L192]R1[-R192+L192]
+; the low one goes to the scratch  byte 15
+  R1[-R192+L192]R1[-R192+L192]R1[-R192+L192]R1[-R192+L192]
+; the high one comes down  byte 3
+  R145[-L160+R160]R1[-L160+R160]R1[-L160+R160]R1[-L160+R160]
+; the high one comes down  byte 7
+  R1[-L160+R160]R1[-L160+R160]R1[-L160+R160]R1[-L160+R160]
+; the high one comes down  byte 11
+  R1[-L160+R160]R1[-L160+R160]R1[-L160+R160]R1[-L160+R160]
+; the high one comes down  byte 15
+  R1[-L160+R160]R1[-L160+R160]R1[-L160+R160]R1[-L160+R160]
+; and the scratch goes up  byte 3
+  R17[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; and the scratch goes up  byte 7
+  R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; and the scratch goes up  byte 11
+  R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; and the scratch goes up  byte 15
+  R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; ASSERT ptr=+223
+
+; ==== round key 2 and round key 10 change places ====
+; the low one goes to the scratch  byte 3
+  L191[-R176+L176]R1[-R176+L176]R1[-R176+L176]R1[-R176+L176]
+; the low one goes to the scratch  byte 7
+  R1[-R176+L176]R1[-R176+L176]R1[-R176+L176]R1[-R176+L176]
+; the low one goes to the scratch  byte 11
+  R1[-R176+L176]R1[-R176+L176]R1[-R176+L176]R1[-R176+L176]
+; the low one goes to the scratch  byte 15
+  R1[-R176+L176]R1[-R176+L176]R1[-R176+L176]R1[-R176+L176]
+; the high one comes down  byte 3
+  R113[-L128+R128]R1[-L128+R128]R1[-L128+R128]R1[-L128+R128]
+; the high one comes down  byte 7
+  R1[-L128+R128]R1[-L128+R128]R1[-L128+R128]R1[-L128+R128]
+; the high one comes down  byte 11
+  R1[-L128+R128]R1[-L128+R128]R1[-L128+R128]R1[-L128+R128]
+; the high one comes down  byte 15
+  R1[-L128+R128]R1[-L128+R128]R1[-L128+R128]R1[-L128+R128]
+; and the scratch goes up  byte 3
+  R33[-L48+R48]R1[-L48+R48]R1[-L48+R48]R1[-L48+R48]
+; and the scratch goes up  byte 7
+  R1[-L48+R48]R1[-L48+R48]R1[-L48+R48]R1[-L48+R48]
+; and the scratch goes up  byte 11
+  R1[-L48+R48]R1[-L48+R48]R1[-L48+R48]R1[-L48+R48]
+; and the scratch goes up  byte 15
+  R1[-L48+R48]R1[-L48+R48]R1[-L48+R48]R1[-L48+R48]
+; ASSERT ptr=+223
+
+; ==== round key 3 and round key 9 change places ====
+; the low one goes to the scratch  byte 3
+  L175[-R160+L160]R1[-R160+L160]R1[-R160+L160]R1[-R160+L160]
+; the low one goes to the scratch  byte 7
+  R1[-R160+L160]R1[-R160+L160]R1[-R160+L160]R1[-R160+L160]
+; the low one goes to the scratch  byte 11
+  R1[-R160+L160]R1[-R160+L160]R1[-R160+L160]R1[-R160+L160]
+; the low one goes to the scratch  byte 15
+  R1[-R160+L160]R1[-R160+L160]R1[-R160+L160]R1[-R160+L160]
+; the high one comes down  byte 3
+  R81[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; the high one comes down  byte 7
+  R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; the high one comes down  byte 11
+  R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; the high one comes down  byte 15
+  R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; and the scratch goes up  byte 3
+  R49[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; and the scratch goes up  byte 7
+  R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; and the scratch goes up  byte 11
+  R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; and the scratch goes up  byte 15
+  R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; ASSERT ptr=+223
+
+; ==== round key 4 and round key 8 change places ====
+; the low one goes to the scratch  byte 3
+  L159[-R144+L144]R1[-R144+L144]R1[-R144+L144]R1[-R144+L144]
+; the low one goes to the scratch  byte 7
+  R1[-R144+L144]R1[-R144+L144]R1[-R144+L144]R1[-R144+L144]
+; the low one goes to the scratch  byte 11
+  R1[-R144+L144]R1[-R144+L144]R1[-R144+L144]R1[-R144+L144]
+; the low one goes to the scratch  byte 15
+  R1[-R144+L144]R1[-R144+L144]R1[-R144+L144]R1[-R144+L144]
+; the high one comes down  byte 3
+  R49[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; the high one comes down  byte 7
+  R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; the high one comes down  byte 11
+  R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; the high one comes down  byte 15
+  R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]R1[-L64+R64]
+; and the scratch goes up  byte 3
+  R65[-L80+R80]R1[-L80+R80]R1[-L80+R80]R1[-L80+R80]
+; and the scratch goes up  byte 7
+  R1[-L80+R80]R1[-L80+R80]R1[-L80+R80]R1[-L80+R80]
+; and the scratch goes up  byte 11
+  R1[-L80+R80]R1[-L80+R80]R1[-L80+R80]R1[-L80+R80]
+; and the scratch goes up  byte 15
+  R1[-L80+R80]R1[-L80+R80]R1[-L80+R80]R1[-L80+R80]
+; ASSERT ptr=+223
+
+; ==== round key 5 and round key 7 change places ====
+; the low one goes to the scratch  byte 3
+  L143[-R128+L128]R1[-R128+L128]R1[-R128+L128]R1[-R128+L128]
+; the low one goes to the scratch  byte 7
+  R1[-R128+L128]R1[-R128+L128]R1[-R128+L128]R1[-R128+L128]
+; the low one goes to the scratch  byte 11
+  R1[-R128+L128]R1[-R128+L128]R1[-R128+L128]R1[-R128+L128]
+; the low one goes to the scratch  byte 15
+  R1[-R128+L128]R1[-R128+L128]R1[-R128+L128]R1[-R128+L128]
+; the high one comes down  byte 3
+  R17[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; the high one comes down  byte 7
+  R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; the high one comes down  byte 11
+  R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; the high one comes down  byte 15
+  R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]R1[-L32+R32]
+; and the scratch goes up  byte 3
+  R81[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; and the scratch goes up  byte 7
+  R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; and the scratch goes up  byte 11
+  R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; and the scratch goes up  byte 15
+  R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]R1[-L96+R96]
+; ASSERT ptr=+223
+L223
+; ASSERT ptr=+0
+; the scratch is empty again  and the buffer holds the same thirteen round
+; keys in the other order
+; ASSERT zero +208:+223

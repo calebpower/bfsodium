@@ -203,6 +203,8 @@ aes/cmacsubkeys.bf
 aes/ctr128.bf
 aes/ctrdrbg128.bf
 aes/decrypt128.bf
+aes/decrypt192.bf
+aes/decrypt256.bf
 aes/encrypt128.bf
 aes/encrypt192.bf
 aes/encrypt256.bf
@@ -1441,6 +1443,44 @@ dk aes/encrypt256.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1
 dk aes/encrypt256.bf 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff46bc1bee22e409f96e93d7e117393172a f3eed1bdb5d2a03c064b5a7e3db181f8 encrypt256Run "encrypt256 the SP 800-38A AES_256 key and its first plaintext block  DERIVED  and it AGREES with the first ciphertext block that F point 1 point 5 publishes; it is also the key the schedule above is pinned on"
 dk aes/encrypt256.bf 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 dc95c078a2408989ad48a21492842087 encrypt256Run "encrypt256 the zero key on the zero block  DERIVED  and it agrees with the value universally quoted for it; it is also the shape that would survive a round key conveyor handing over nothing at all"
 dk aes/encrypt256.bf 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff 4d4f06c6f17c2903abc750b28eda2e34 encrypt256Run "encrypt256 the zero key on a block of one byte  DERIVED  so diffusion has to carry the last cell of the state into all sixteen"
+
+# AES-192 and AES-256 DECRYPTION, which completes the cipher in both
+# directions at all three key sizes.
+#
+# THERE IS NO BACKWARD KEY SCHEDULE. aes/decrypt128 has one -- it keeps the
+# last round key and ten temps and regresses the recurrence, which is why it
+# needs no buffer. These two have a buffer already, because the forward
+# cipher at these key sizes needed one, so the schedule is built the ordinary
+# way and block/rkreverse208 or block/rkreverse240 turns it round once. The
+# conveyor then runs completely unchanged: sixteen bytes off the front per
+# round, exactly as an encryption does. The round keys arrive last-to-first
+# because the BUFFER is backwards, not because the consumer is -- which is
+# what keeps one round-key consumer in the library rather than two.
+#
+# block/aesdroundlast CONTAINS NO InvSubBytes CODE. Its sixteen S box walks
+# are character for character block/aesroundlast's, and they become
+# InvSubBytes purely because the caller has swapped the resident table. So
+# the forward vectors pin the walk the inverse ones depend on, and a defect
+# in it cannot be present in one direction and absent from the other. What
+# the inverse adds is the order -- shift THEN substitute, where the forward
+# cipher substitutes then shifts -- which is the thing that makes them
+# inverses rather than a style choice.
+#
+# THE LAST LINE OF EACH IS A ROUND TRIP. Its ciphertext is the value
+# aes/encrypt192 and aes/encrypt256's own one-byte vectors produce, so the
+# two programs are pinned against each other and not only against a common
+# reference. A reference that was wrong in the same way in both directions
+# would pass every other line here.
+dk aes/decrypt192.bf 000102030405060708090a0b0c0d0e0f1011121314151617dda97ca4864cdfe06eaf70a0ec0d7191 00112233445566778899aabbccddeeff decrypt192Run "decrypt192 FIPS 197 Appendix C point 2  a PUBLISHED value  the inverse of the forward line above it"
+dk aes/decrypt192.bf 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7bbd334f1d6e45f25ff712a214571fa5cc 6bc1bee22e409f96e93d7e117393172a decrypt192Run "decrypt192 the SP 800-38A AES_192 key and the first block of its ECB ciphertext  DERIVED  and it AGREES with the plaintext F point 1 point 4 publishes; it is also the key the schedule is pinned on"
+dk aes/decrypt192.bf 000000000000000000000000000000000000000000000000aae06992acbf52a3e8f4a96ec9300bd7 00000000000000000000000000000000 decrypt192Run "decrypt192 the zero key on the cipher of the zero block  DERIVED  which is the shape that would survive a reversed buffer handing over nothing"
+dk aes/decrypt192.bf 00000000000000000000000000000000000000000000000094d32ffc3812493ea9ea522896172bfd 000000000000000000000000000000ff decrypt192Run "decrypt192 the zero key on the cipher of a block of one byte  DERIVED  and a ROUND TRIP: the ciphertext here is what aes/encrypt192's own vector produces  so the two programs are pinned against each other and not only against the reference"
+
+dk aes/decrypt256.bf 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f8ea2b7ca516745bfeafc49904b496089 00112233445566778899aabbccddeeff decrypt256Run "decrypt256 FIPS 197 Appendix C point 3  a PUBLISHED value  the inverse of the forward line above it"
+dk aes/decrypt256.bf 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4f3eed1bdb5d2a03c064b5a7e3db181f8 6bc1bee22e409f96e93d7e117393172a decrypt256Run "decrypt256 the SP 800-38A AES_256 key and the first block of its ECB ciphertext  DERIVED  and it AGREES with the plaintext F point 1 point 6 publishes; it is also the key the schedule is pinned on"
+dk aes/decrypt256.bf 0000000000000000000000000000000000000000000000000000000000000000dc95c078a2408989ad48a21492842087 00000000000000000000000000000000 decrypt256Run "decrypt256 the zero key on the cipher of the zero block  DERIVED  which is the shape that would survive a reversed buffer handing over nothing"
+dk aes/decrypt256.bf 00000000000000000000000000000000000000000000000000000000000000004d4f06c6f17c2903abc750b28eda2e34 000000000000000000000000000000ff decrypt256Run "decrypt256 the zero key on the cipher of a block of one byte  DERIVED  and a ROUND TRIP: the ciphertext here is what aes/encrypt256's own vector produces  so the two programs are pinned against each other and not only against the reference"
+
 
 # AES-192, which is the third key size and the SMALLEST of the three changes.
 #

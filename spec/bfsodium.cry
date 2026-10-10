@@ -2932,6 +2932,35 @@ aesInvRound : [16][8] -> [16][8] -> [16][8]
 aesInvRound st rk =
     invmixcolumnsRun [ x ^ k | x <- invsubbytesRun (invshiftrowsRun st) | k <- rk ]
 
+// The AES-192 and AES-256 inverse ciphers. Same shape as decrypt128Run: the
+// round keys are the forward schedule consumed last-to-first, which is what
+// `reverse` does here and what block/rkreverse208 and block/rkreverse240 do
+// in the brainfuck. The round function does not depend on the key size, so
+// only the schedule and the round count change -- exactly as on the forward
+// side, where encrypt192Run and encrypt256Run differ from encrypt128Run in
+// nothing else.
+decrypt192Run : [40][8] -> [16][8]
+decrypt192Run inb =
+    [ x ^ k | x <- invsubbytesRun (invshiftrowsRun (foldl aesInvRound st0 middle))
+            | k <- rks @ 0 ]
+  where
+    key    = take`{24} inb
+    ct     = drop`{24} inb
+    rks    = split`{13} (keyexpand192Run key)
+    st0    = [ c ^ k | c <- ct | k <- rks ! 0 ]
+    middle = reverse (take`{11} (drop`{1} rks))
+
+decrypt256Run : [48][8] -> [16][8]
+decrypt256Run inb =
+    [ x ^ k | x <- invsubbytesRun (invshiftrowsRun (foldl aesInvRound st0 middle))
+            | k <- rks @ 0 ]
+  where
+    key    = take`{32} inb
+    ct     = drop`{32} inb
+    rks    = split`{15} (keyexpand256Run key)
+    st0    = [ c ^ k | c <- ct | k <- rks ! 0 ]
+    middle = reverse (take`{13} (drop`{1} rks))
+
 decrypt128Run : [32][8] -> [16][8]
 decrypt128Run inb =
     [ x ^ k | x <- invsubbytesRun (invshiftrowsRun (foldl aesInvRound st0 middle))

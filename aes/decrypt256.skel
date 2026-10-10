@@ -1,0 +1,217 @@
+; bfsodium DECRYPT256 : AES_256 inverse cipher on one block
+;
+; NOTE square brackets are brainfuck loops  so comments use braces for counts;
+;
+; HAND WRITTEN; block/aes128table block/aeskeyexpand256 block/invsbox256
+; block/rkreverse240 block/rkconsume240 and block/aesdroundlast are INCLUDED
+; and aes/addroundkey and aes/invmixcolumns are PASTED;
+;
+; IO  in:  key{32} block{16}
+;     out: block{16}
+;
+; FIPS 197 section 5 point 3  the straightforward inverse cipher  with Nk of
+; eight and Nr of fourteen;
+;
+; THE SCHEDULE IS MADE FORWARD AND THEN TURNED ROUND; there is no backward
+; key schedule here; aes/decrypt128 has one: it keeps the last round key and
+; ten temps and REGRESSES the recurrence  and that is why it needs no
+; buffer; This cipher has a buffer already  because the forward cipher at
+; this key size needed one  so the whole schedule is built the ordinary way
+; and block/rkreverse240 turns it round once; The conveyor then runs
+; unchanged  sixteen bytes off the front per round exactly as an encryption
+; does  and the round keys arrive last to first because the BUFFER is
+; backwards rather than because the consumer is;
+;
+; THE TABLE IS SWAPPED  NOT SUPPLEMENTED; the schedule needs the FORWARD S
+; box for SubWord and the rounds need the INVERSE one for InvSubBytes  and
+; both are read by the same walk at the same address; So the forward table is
+; laid  the schedule is run  the forward table is CLEARED and the inverse
+; written into the same cells; The clear is not optional: block/invsbox256 is
+; a delta coded run that assumes every cell begins at nought  and written
+; over a live table it would produce 256 wrong entries and sixteen plausible
+; bytes;
+;
+; WHICH IS WHY block/aesdroundlast CONTAINS NO InvSubBytes CODE; its sixteen
+; walks are character for character block/aesroundlast's  and they become
+; InvSubBytes by virtue of what is resident; The forward vectors therefore
+; pin the walk that the inverse ones use;
+;
+; THE ROUNDS ARE NOT THE FORWARD ROUNDS BACKWARDS; FIPS 197's straightforward
+; inverse puts AddRoundKey BEFORE InvMixColumns  where the forward cipher
+; puts it after  so the loop body here is InvShiftRows InvSubBytes
+; AddRoundKey InvMixColumns and the fourteenth round drops the InvMixColumns;
+;
+; TAPE MAP  (home @0)
+;   @0x000:0x018  aes/xorword and aes/xtime workspace  inside the schedule
+;   @0x019:0x038  window{32}  the key is read here  CLEARED before the rounds
+;   @0x02f:0x061  aes/invmixcolumns pasted at 47  so its state is the state
+;   @0x052:0x061  state{16}  the block is read here and emitted from here
+;   @0x062:0x071  key{16}  one round key at a time  off the conveyor
+;   @0x072:0x374  group 0 of the walk and the table above it  FORWARD then INVERSE
+;   @0x37a        cnt  rounds still to do
+;   @0x384:0x473  the schedule buffer{240}  reversed  then shorter each round
+;   @0x474:0x483  block/rkreverse240's scratch
+;
+; THERE IS NO INTERFACE LINE AND THAT IS FORCED  for the reason
+; aes/keyexpand128 has none: the S box walk advances three cells a turn  so
+; tools/bffoot cannot bound a footprint; This is a PROGRAM;
+;
+; ASSERT ptr=0
+; ASSERT zero 0:1155
+
+; ==== the key goes straight into the window ====
+R25
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=56
+
+; ==== and the ciphertext into the state ====
+R26
+  ,>,>,>,>,>,>,>,>,>,>,>,>,>,>,>,
+; ASSERT ptr=97
+L97
+; ASSERT ptr=0
+
+; ==== the FORWARD S box  which the schedule reads ====
+%%block/aes128table%%
+; ASSERT ptr=45
+L45
+; ASSERT ptr=0
+
+; ==== the whole schedule  in the ordinary order ====
+%%block/aeskeyexpand256%%
+; ASSERT ptr=0
+
+; ==== the two cells the schedule leaves live ====
+; the window still holds the last eight words
+R25
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]
+; ASSERT ptr=56
+; and the round constant holds one more than this width asks for
+R5
+  [-]
+; ASSERT ptr=61
+L61
+; ASSERT ptr=0
+; the state holds the ciphertext  which is why the claim stops short of it
+; ASSERT zero 25:81
+
+; ==== the forward table is CLEARED  all 768 cells of it ====
+; block/invsbox256 is delta coded against noughts and goes in next door;
+; written over a live table it would be wrong in 256 places
+R117
+; cells 117 to 180
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 181 to 244
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 245 to 308
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 309 to 372
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 373 to 436
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 437 to 500
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 501 to 564
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 565 to 628
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 629 to 692
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 693 to 756
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 757 to 820
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; cells 821 to 884
+  [-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]>
+; ASSERT ptr=885
+
+; ==== and the INVERSE one is written into the same cells ====
+L768
+; ASSERT ptr=117
+%%block/invsbox256%%
+; ASSERT ptr=882
+L882
+; ASSERT ptr=0
+
+; ==== the buffer is turned round  so the conveyor feeds backwards ====
+R900
+; ASSERT ptr=900
+%%block/rkreverse240%% 900
+; ASSERT ptr=900
+L900
+; ASSERT ptr=0
+
+; ==== the last round key first  which is AddRoundKey alone ====
+; the next round key comes off the front of the reversed buffer
+R98
+; ASSERT ptr=98
+%%block/rkconsume240%% 98
+; ASSERT ptr=98
+; and into the state  which spends it
+L41
+; ASSERT ptr=57
+@@ADDROUNDKEY@@ 57
+; ASSERT ptr=57
+L57
+; ASSERT ptr=0
+
+; ==== 13 middle rounds  identical text ====
+R890
+  +++++++++++++
+; ASSERT ptr=890
+[
+  -
+L890
+; ASSERT ptr=0
+%%block/aesdroundlast%%
+; ASSERT ptr=0
+; the next round key comes off the front of the reversed buffer
+R98
+; ASSERT ptr=98
+%%block/rkconsume240%% 98
+; ASSERT ptr=98
+; and into the state  which spends it
+L41
+; ASSERT ptr=57
+@@ADDROUNDKEY@@ 57
+; ASSERT ptr=57
+L57
+; ASSERT ptr=0
+; InvMixColumns comes AFTER the round key  which is the inverse order
+R47
+; ASSERT ptr=47
+@@INVMIXCOLUMNS@@ 47
+; ASSERT ptr=47
+R843
+; ASSERT ptr=890
+]
+L890
+; ASSERT ptr=0
+
+; ==== and the fourteenth round  which has no InvMixColumns ====
+%%block/aesdroundlast%%
+; ASSERT ptr=0
+; the next round key comes off the front of the reversed buffer
+R98
+; ASSERT ptr=98
+%%block/rkconsume240%% 98
+; ASSERT ptr=98
+; and into the state  which spends it
+L41
+; ASSERT ptr=57
+@@ADDROUNDKEY@@ 57
+; ASSERT ptr=57
+L57
+; ASSERT ptr=0
+; the conveyor has handed over all fifteen round keys and is empty
+; ASSERT zero 900:1139
+
+; emit
+; the plaintext
+R82
+  .>.>.>.>.>.>.>.>.>.>.>.>.>.>.>
+; the last byte is emitted AFTER the contract  so the contract has an
+; instruction to attach to
+; ASSERT ptr=97
+  .
